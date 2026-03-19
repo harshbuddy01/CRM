@@ -14,6 +14,7 @@ router.post('/login', authValidator.validateLogin, authController.login);
 router.post('/refresh', authController.refresh);
 
 // Protected routes
+router.post('/logout', authenticate, authController.logout);
 router.post('/change-password', authenticate, authValidator.validateChangePassword, authController.changePassword);
 
 // Only admins can create new users

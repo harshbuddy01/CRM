@@ -23,13 +23,24 @@ router.post(
   queryController.create
 );
 
+// Check duplicate phone
+router.get('/duplicate-check', queryController.duplicateCheck);
+
 // Get query details
 router.get('/:id', queryController.getById);
 
 // Update query details
 router.put(
   '/:id', 
+  can('query.edit_own'),
   queryController.update
+);
+
+// Change status
+router.patch(
+  '/:id/status', 
+  can('query.status_change'), 
+  queryController.changeStatus
 );
 
 // Assign query to agent (Admin/Manager only typically, depending on role perms)

@@ -82,6 +82,15 @@ const authenticate = async (req, res, next) => {
       throw new UnauthorizedError('User account is inactive or not found');
     }
 
+    // Ensure user has at least one valid session
+    const sessionExists = await prisma.userSession.findFirst({
+      where: { userId: user.id },
+    });
+    
+    if (!sessionExists) {
+      throw new UnauthorizedError('Session expired or logged out');
+    }
+
     // Load merged permissions (role defaults + personal overrides)
     const permissions = await getUserPermissions(user.id);
 

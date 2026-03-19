@@ -36,6 +36,38 @@ const config = {
 
   // --- Redis ---
   redisUrl: process.env.REDIS_URL || 'redis://localhost:6379',
+
+  // --- External Integrations ---
+  cloudinary: {
+    cloudName: process.env.CLOUDINARY_CLOUD_NAME,
+    apiKey: process.env.CLOUDINARY_API_KEY,
+    apiSecret: process.env.CLOUDINARY_API_SECRET,
+  },
+  
+  razorpay: {
+    keyId: process.env.RAZORPAY_KEY_ID,
+    keySecret: process.env.RAZORPAY_KEY_SECRET,
+    webhookSecret: process.env.RAZORPAY_WEBHOOK_SECRET,
+  },
+  
+  whatsapp: {
+    mode: process.env.WHATSAPP_MODE || 'interakt', // e.g., 'interakt', 'wati', 'meta'
+    interaktApiKey: process.env.INTERAKT_API_KEY,
+  },
+  
+  sendgrid: {
+    apiKey: process.env.SENDGRID_API_KEY,
+  },
+
+  // --- Operational Settings ---
+  upload: {
+    maxFileSize: parseInt(process.env.UPLOAD_MAX_SIZE, 10) || 5 * 1024 * 1024, // 5MB default
+  },
+
+  rateLimit: {
+    windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS, 10) || 15 * 60 * 1000, // 15 minutes
+    max: parseInt(process.env.RATE_LIMIT_MAX, 10) || 100, // Limit each IP to 100 requests per window
+  },
 };
 
 module.exports = config;

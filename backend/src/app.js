@@ -10,6 +10,7 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
+const rateLimit = require('express-rate-limit');
 const config = require('./config');
 const { errorHandler } = require('./middlewares/errorHandler');
 const { NotFoundError } = require('./utils/AppError');
@@ -64,14 +65,34 @@ app.get('/health', (_req, res) => {
 
 const authRoutes = require('./routes/auth.routes');
 const queryRoutes = require('./routes/query.routes');
+
+// Rate Limiters
+const generalLimiter = rateLimit({
+  windowMs: config.rateLimit.windowMs,
+  max: config.rateLimit.max,
+  message: { success: false, message: 'Too many requests, please try again later.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+const loginLimiter = rateLimit({
+  windowMs: 5 * 60 * 1000, // 5 minutes
+  max: 10, // 10 attempts
+  message: { success: false, message: 'Too many login attempts, please try again later.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+app.use('/v1', generalLimiter);
+app.use('/v1/auth', loginLimiter);
 app.use('/v1/auth', authRoutes);
 app.use('/v1/queries', queryRoutes);
 
 // ========================
 // 404 HANDLER
 // ========================
-app.use((req, _res, _next) => {
-  throw new NotFoundError(`Route ${req.originalUrl}`);
+app.use((req, _res, next) => {
+  next(new NotFoundError(`Route ${req.originalUrl} not found`));
 });
 
 // ========================

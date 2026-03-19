@@ -67,6 +67,32 @@ const remove = async (req, res, next) => {
   }
 };
 
+const changeStatus = async (req, res, next) => {
+  try {
+    const { status } = req.body;
+    if (!status) return res.status(400).json({ success: false, message: 'Status is required' });
+    const canViewAll = req.user.permissions['query.view_all'];
+    const canEditAll = req.user.permissions['query.edit_all'];
+    const query = await queryService.changeQueryStatus(req.params.id, status, req.user.id, canViewAll, canEditAll);
+    res.json({ success: true, message: `Query status updated to ${status}`, data: query });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const duplicateCheck = async (req, res, next) => {
+  try {
+    const { phone } = req.query;
+    if (!phone) {
+      return res.status(400).json({ success: false, message: 'Phone number is required' });
+    }
+    const isDuplicate = await queryService.checkDuplicatePhone(phone);
+    res.json({ success: true, data: { isDuplicate } });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   create,
   list,
@@ -74,4 +100,6 @@ module.exports = {
   update,
   assign,
   remove,
+  changeStatus,
+  duplicateCheck,
 };

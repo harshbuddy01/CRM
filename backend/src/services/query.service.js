@@ -165,6 +165,26 @@ const deleteQuery = async (id) => {
   });
 }
 
+const checkDuplicatePhone = async (phone) => {
+  const existing = await prisma.query.findFirst({
+    where: { phone, status: { notIn: ['lost', 'invalid'] } },
+  });
+  return !!existing;
+};
+
+const changeQueryStatus = async (id, status, userId, canViewAll, canEditAll) => {
+  const existing = await getQueryById(id, userId, canViewAll);
+  
+  if (!canEditAll && existing.assignedTo !== userId) {
+    throw new BusinessError('You cannot change the status of a query that is not assigned to you');
+  }
+
+  return await prisma.query.update({
+    where: { id },
+    data: { status },
+  });
+};
+
 module.exports = {
   createQuery,
   listQueries,
@@ -172,4 +192,6 @@ module.exports = {
   updateQuery,
   assignQuery,
   deleteQuery,
+  checkDuplicatePhone,
+  changeQueryStatus,
 };
