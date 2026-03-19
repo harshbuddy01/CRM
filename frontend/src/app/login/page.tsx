@@ -7,7 +7,7 @@ import { api } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
 import { PlaneTakeoff } from 'lucide-react';
 
@@ -60,7 +60,7 @@ export default function LoginPage() {
               <Input
                 id="email"
                 type="email"
-                placeholder="admin@travelcrm.com"
+                placeholder="name@company.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -86,13 +86,7 @@ export default function LoginPage() {
             </Button>
           </form>
         </CardContent>
-        <CardFooter className="flex flex-col space-y-4 pt-4 border-t mt-4 text-center text-sm text-muted-foreground">
-          <p>
-            System Default Credentials:<br/>
-            <strong>email:</strong> admin@travelcrm.com<br/>
-            <strong>password:</strong> Admin@123
-          </p>
-        </CardFooter>
+
       </Card>
     </div>
   );

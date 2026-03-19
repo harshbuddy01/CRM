@@ -26,13 +26,13 @@ export const useAuthStore = create<AuthState>()(
       setAuth: (user, accessToken) => set({ user, accessToken }),
       logout: () => {
         set({ user: null, accessToken: null });
-        localStorage.removeItem('refreshToken');
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('refreshToken');
+        }
       },
     }),
     {
       name: 'auth-storage',
-      // We only persist the user minimal data and access token in Zustand local storage.
-      // Refresh token can be kept separate for added security or handled manually.
     }
   )
 );

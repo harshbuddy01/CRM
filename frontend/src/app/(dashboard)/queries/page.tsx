@@ -29,23 +29,29 @@ type QueryData = {
 export default function QueriesPage() {
   const [queries, setQueries] = useState<QueryData[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   const { user } = useAuthStore();
 
-  const fetchQueries = async () => {
+  const fetchQueries = async (currentPage: number) => {
     try {
       setLoading(true);
-      const res = await api.get('/queries');
+      setError(null);
+      const res = await api.get(`/queries?page=${currentPage}&limit=10`);
       setQueries(res.data.data.queries);
-    } catch (error) {
-      console.error('Failed to fetch queries', error);
+      setTotalPages(res.data.data.pagination?.totalPages || 1);
+    } catch (err) {
+      console.error('Failed to fetch queries', err);
+      setError('Failed to load leads, please try again.');
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchQueries();
-  }, []);
+    fetchQueries(page);
+  }, [page]);
 
   return (
     <div className="space-y-6">
@@ -83,9 +89,15 @@ export default function QueriesPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {queries.length === 0 ? (
+              {error ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center h-24 text-muted-foreground">
+                  <TableCell colSpan={user?.permissions['query.view_all'] ? 7 : 6} className="text-center h-24 text-red-500">
+                    {error}
+                  </TableCell>
+                </TableRow>
+              ) : queries.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={user?.permissions['query.view_all'] ? 7 : 6} className="text-center h-24 text-muted-foreground">
                     No leads found.
                   </TableCell>
                 </TableRow>
@@ -116,6 +128,30 @@ export default function QueriesPage() {
           </Table>
         )}
       </Card>
+
+      {!loading && !error && totalPages > 1 && (
+        <div className="flex items-center justify-end space-x-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+            disabled={page === 1}
+          >
+            Previous
+          </Button>
+          <div className="text-sm text-muted-foreground px-2 font-medium">
+            Page {page} of {totalPages}
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setPage((p) => p + 1)}
+            disabled={page === totalPages}
+          >
+            Next
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

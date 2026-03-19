@@ -25,6 +25,11 @@ const createQuery = async (data) => {
     throw new BusinessError(`Duplicate lead! An active query (${existing.queryCode}) already exists for phone ${data.phone}.`);
   }
 
+  if (data.assignedTo) {
+    const agent = await prisma.user.findUnique({ where: { id: data.assignedTo, isActive: true } });
+    if (!agent) throw new BusinessError('Assigned user is invalid or inactive');
+  }
+
   const queryCode = await generateQueryCode();
 
   return await prisma.query.create({

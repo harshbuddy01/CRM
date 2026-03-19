@@ -27,9 +27,11 @@ export default function DashboardLayout({
   // Prevent hydration mismatch edge cases with Zustand + Next.js
   if (!isMounted) return null;
 
-  // If not logged in and on login route, just render children directly (no layout)
-  if (!user) {
-    return <>{children}</>;
+  // If not logged in and on login route, just render children directly (no layout).
+  // Otherwise, return null to avoid flashing protected content before useEffect redirect fires.
+  if (!user || !accessToken) {
+    if (pathname.startsWith('/login')) return <>{children}</>;
+    return null;
   }
 
   return (

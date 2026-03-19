@@ -20,10 +20,10 @@ export function Sidebar() {
   const links = [
     { href: '/', label: 'Overview', icon: LayoutDashboard, exact: true },
     { href: '/queries', label: 'Queries (Leads)', icon: Target, show: true },
-    { href: '/tours', label: 'Tours & Ops', icon: Map, show: user?.role === 'admin' || user?.role === 'ops' },
+    { href: '/tours', label: 'Tours & Ops', icon: Map, show: user?.permissions['tour.view_all'] || user?.permissions['tour.view_assigned'] },
     { href: '/proposals', label: 'Proposals', icon: FileText, show: true },
-    { href: '/payments', label: 'Payments', icon: CreditCard, show: user?.role === 'admin' || user?.role === 'accounts' },
-    { href: '/users', label: 'Team', icon: Users, show: user?.role === 'admin' },
+    { href: '/payments', label: 'Payments', icon: CreditCard, show: user?.permissions['payment.view_all'] || user?.permissions['payment.view_assigned'] },
+    { href: '/users', label: 'Team', icon: Users, show: user?.permissions['users.view'] },
   ];
 
   return (

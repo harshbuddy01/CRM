@@ -83,8 +83,15 @@ const loginLimiter = rateLimit({
   legacyHeaders: false,
 });
 
-app.use('/v1', generalLimiter);
-app.use('/v1/auth', loginLimiter);
+app.use('/v1', (req, res, next) => {
+  // Skip general limiter for auth routes to prevent double-charging
+  if (req.path.startsWith('/auth')) return next();
+  return generalLimiter(req, res, next);
+});
+
+// Apply login limiter strictly to the login route, not all auth APIs like logout/refresh
+app.use('/v1/auth/login', loginLimiter);
+
 app.use('/v1/auth', authRoutes);
 app.use('/v1/queries', queryRoutes);
 

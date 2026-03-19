@@ -7,7 +7,7 @@ const jwt = require('jsonwebtoken');
 const prisma = require('../config/prisma');
 const config = require('../config');
 const { BusinessError, UnauthorizedError, NotFoundError } = require('../utils/AppError');
-const { getUserPermissions } = require('../middlewares/authenticate');
+const { getUserPermissions } = require('../utils/permissions');
 
 const generateTokens = (user) => {
   const payload = { id: user.id };
@@ -135,7 +135,10 @@ const refreshToken = async (token) => {
 
     return tokens;
   } catch (error) {
-    throw new UnauthorizedError('Invalid or expired refresh token');
+    if (error.name === 'JsonWebTokenError' || error.name === 'TokenExpiredError') {
+      throw new UnauthorizedError('Invalid or expired refresh token');
+    }
+    throw error;
   }
 };
 

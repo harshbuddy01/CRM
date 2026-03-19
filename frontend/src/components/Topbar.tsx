@@ -1,6 +1,7 @@
 'use client';
 
 import { useAuthStore } from '@/lib/auth-store';
+import { api } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
 import { LogOut, User } from 'lucide-react';
@@ -17,7 +18,13 @@ export function Topbar() {
   const { user, logout } = useAuthStore();
   const router = useRouter();
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      const refreshToken = typeof window !== 'undefined' ? localStorage.getItem('refreshToken') : null;
+      if (refreshToken) await api.post('/auth/logout', { refreshToken });
+    } catch (e) {
+      console.error(e);
+    }
     logout();
     router.push('/login');
   };

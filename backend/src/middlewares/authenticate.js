@@ -15,45 +15,7 @@ const config = require('../config');
 const prisma = require('../config/prisma');
 const { UnauthorizedError } = require('../utils/AppError');
 const logger = require('../utils/logger');
-
-/**
- * Loads a user's effective permissions by merging:
- *   1. Role default permissions (from role_permissions table)
- *   2. Per-person overrides (from user_permission_overrides table)
- * Override ALWAYS wins over the role default.
- *
- * @param {string} userId - The user's UUID
- * @returns {Object} - { 'query.view_all': true, 'payment.delete': false, ... }
- */
-async function getUserPermissions(userId) {
-  // Step 1: Load role default permissions
-  const rolePerms = await prisma.$queryRaw`
-    SELECT p.key, rp.granted
-    FROM role_permissions rp
-    JOIN permissions p ON p.id = rp.permission_id
-    JOIN users u ON u.role_id = rp.role_id
-    WHERE u.id = ${userId}::uuid
-  `;
-
-  const perms = {};
-  for (const row of rolePerms) {
-    perms[row.key] = row.granted;
-  }
-
-  // Step 2: Apply personal overrides (wins over role)
-  const overrides = await prisma.$queryRaw`
-    SELECT p.key, upo.granted
-    FROM user_permission_overrides upo
-    JOIN permissions p ON p.id = upo.permission_id
-    WHERE upo.user_id = ${userId}::uuid
-  `;
-
-  for (const override of overrides) {
-    perms[override.key] = override.granted;
-  }
-
-  return perms;
-}
+const { getUserPermissions } = require('../utils/permissions');
 
 /**
  * Express middleware: authenticate
@@ -84,7 +46,10 @@ const authenticate = async (req, res, next) => {
 
     // Ensure user has at least one valid session
     const sessionExists = await prisma.userSession.findFirst({
-      where: { userId: user.id },
+      where: { 
+        userId: user.id,
+        expiresAt: { gt: new Date() }
+      },
     });
     
     if (!sessionExists) {
@@ -116,4 +81,4 @@ const authenticate = async (req, res, next) => {
   }
 };
 
-module.exports = { authenticate, getUserPermissions };
+module.exports = { authenticate };

@@ -33,7 +33,7 @@ api.interceptors.response.use(
       originalRequest._retry = true;
       
       const { logout } = useAuthStore.getState();
-      const refreshToken = localStorage.getItem('refreshToken');
+      const refreshToken = typeof window !== 'undefined' ? localStorage.getItem('refreshToken') : null;
 
       if (refreshToken) {
         try {
@@ -41,7 +41,9 @@ api.interceptors.response.use(
           const { accessToken, refreshToken: newRefresh } = res.data.data;
           
           useAuthStore.setState({ accessToken });
-          localStorage.setItem('refreshToken', newRefresh);
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('refreshToken', newRefresh);
+          }
 
           // Retry the original request with new token
           originalRequest.headers.Authorization = `Bearer ${accessToken}`;
@@ -49,11 +51,11 @@ api.interceptors.response.use(
         } catch {
           // Refresh hit a 401 or failed, force logout
           logout();
-          window.location.href = '/login';
+          if (typeof window !== 'undefined') window.location.href = '/login';
         }
       } else {
         logout();
-        window.location.href = '/login';
+        if (typeof window !== 'undefined') window.location.href = '/login';
       }
     }
 

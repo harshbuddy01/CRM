@@ -8,6 +8,13 @@
 
 require('dotenv').config();
 
+const requiredEnvs = ['DATABASE_URL', 'JWT_SECRET', 'REFRESH_TOKEN_SECRET'];
+for (const env of requiredEnvs) {
+  if (!process.env[env]) {
+    throw new Error(`CRITICAL: Missing environment variable ${env}`);
+  }
+}
+
 const config = {
   // --- Server ---
   port: parseInt(process.env.PORT, 10) || 3001,
