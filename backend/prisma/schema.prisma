@@ -1,0 +1,371 @@
+// ============================================================
+// TravelCRM — Prisma Schema
+// 14 Core Tables + 4 RBAC Tables + 1 Audit Trail Table
+// ============================================================
+// This file is the SINGLE SOURCE OF TRUTH for the database.
+// Run `npx prisma migrate dev` to apply changes.
+// Run `npx prisma generate` to regenerate the client.
+// ============================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================
+// 1. ROLES & PERMISSIONS (RBAC)
+// ============================================================
+
+/// System roles: admin, sales_manager, sales_exec, ops, accounts, field_agent
+model Role {
+  id          String   @id @default(uuid())
+  name        String   @unique /// e.g. 'admin', 'sales_manager'
+  label       String   /// Display name e.g. 'Sales Executive'
+  description String?
+  isSystem    Boolean  @default(true) /// System roles cannot be deleted
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  users           User[]
+  rolePermissions RolePermission[]
+
+  @@map("roles")
+}
+
+/// All granular permission keys like 'query.view_all', 'payment.delete'
+model Permission {
+  id          String  @id @default(uuid())
+  key         String  @unique /// e.g. 'query.view_all'
+  label       String  /// Human readable: 'View all team leads'
+  module      String  /// 'queries','notes','proposals','tours','payments','reports','masters','users'
+  description String?
+
+  rolePermissions RolePermission[]
+  userOverrides   UserPermissionOverride[]
+
+  @@map("permissions")
+}
+
+/// Mapping: which permissions are granted by default to each role
+model RolePermission {
+  id           String  @id @default(uuid())
+  roleId       String  @map("role_id")
+  permissionId String  @map("permission_id")
+  granted      Boolean @default(false)
+
+  role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@unique([roleId, permissionId])
+  @@map("role_permissions")
+}
+
+/// Per-person permission overrides set by Admin
+model UserPermissionOverride {
+  id           String   @id @default(uuid())
+  userId       String   @map("user_id")
+  permissionId String   @map("permission_id")
+  granted      Boolean  /// true = GRANT override, false = REVOKE override
+  reason       String?  /// Optional note by Admin
+  setBy        String   @map("set_by")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  user       User       @relation("UserOverrides", fields: [userId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+  setByUser  User       @relation("OverrideSetBy", fields: [setBy], references: [id])
+
+  @@unique([userId, permissionId])
+  @@map("user_permission_overrides")
+}
+
+// ============================================================
+// 2. USERS
+// ============================================================
+
+model User {
+  id           String   @id @default(uuid())
+  name         String
+  email        String   @unique
+  passwordHash String   @map("password_hash")
+  roleId       String   @map("role_id")
+  isActive     Boolean  @default(true) @map("is_active")
+  mobileOnly   Boolean  @default(false) @map("mobile_only") /// true = Field Agent, PWA only
+  isOnLeave    Boolean  @default(false) @map("is_on_leave")
+  leaveUntil   DateTime? @map("leave_until")
+  maxLeads     Int      @default(50) @map("max_leads") /// Workload cap for assignment
+  lastAssignedAt DateTime? @map("last_assigned_at") /// Round-robin tracking
+  createdBy    String?  @map("created_by")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  role              Role                    @relation(fields: [roleId], references: [id])
+  createdByUser     User?                   @relation("UserCreatedBy", fields: [createdBy], references: [id])
+  createdUsers      User[]                  @relation("UserCreatedBy")
+  permissionOverrides UserPermissionOverride[] @relation("UserOverrides")
+  overridesSetByMe  UserPermissionOverride[] @relation("OverrideSetBy")
+
+  // Relations to business entities
+  assignedQueries   Query[]       @relation("QueryAssignedTo")
+  queryNotes        QueryNote[]
+  proposals         Proposal[]
+  assignedTours     Tour[]        @relation("TourAssignedOps")
+  recordedPayments  Payment[]
+  notifications     Notification[]
+  activityLogs      ActivityLog[]
+
+  @@index([roleId])
+  @@index([isActive])
+  @@index([lastAssignedAt])
+  @@map("users")
+}
+
+// ============================================================
+// 3. QUERIES (LEADS)
+// ============================================================
+
+model Query {
+  id             String    @id @default(uuid())
+  queryCode      String    @unique @map("query_code") /// e.g. QRY-2024-001
+  name           String    /// Customer full name
+  phone          String    /// Primary contact
+  email          String?
+  destination    String?   /// Travel destination(s)
+  travelDateFrom DateTime? @map("travel_date_from") @db.Date
+  travelDateTo   DateTime? @map("travel_date_to") @db.Date
+  adults         Int       @default(1)
+  children       Int       @default(0)
+  budget         Decimal?  @db.Decimal(12, 2)
+  leadSource     String    @map("lead_source") /// 'website','call','walkin','whatsapp','facebook','google','reference','agent'
+  campaignName   String?   @map("campaign_name")
+  status         String    @default("new") /// 'new','followup','dnp','proposal_sent','ready_to_pay','confirmed','lost','invalid'
+  assignedTo     String?   @map("assigned_to")
+  nextFollowupAt DateTime? @map("next_followup_at")
+  mergedInto     String?   @map("merged_into") /// If this query was merged into another
+  deletedAt      DateTime? @map("deleted_at") /// Soft delete
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  assignedUser User?      @relation("QueryAssignedTo", fields: [assignedTo], references: [id])
+  notes        QueryNote[]
+  proposals    Proposal[]
+  tours        Tour[]
+  payments     Payment[]
+
+  @@index([phone])                          // Duplicate check
+  @@index([assignedTo])                     // My leads filter
+  @@index([status])                         // Pipeline queries
+  @@index([nextFollowupAt])                 // Overdue cron query
+  @@index([leadSource])                     // Marketing ROI reporting
+  @@index([createdAt])                      // Date-range filtering
+  @@index([assignedTo, status])             // Agent + status composite
+  @@index([deletedAt])                      // Soft-delete filter
+  @@map("queries")
+}
+
+// ============================================================
+// 4. QUERY NOTES & FOLLOW-UPS
+// ============================================================
+
+model QueryNote {
+  id         String    @id @default(uuid())
+  queryId    String    @map("query_id")
+  userId     String    @map("user_id")
+  note       String
+  followUpAt DateTime? @map("follow_up_at")
+  deletedAt  DateTime? @map("deleted_at")
+  createdAt  DateTime  @default(now()) @map("created_at")
+
+  query Query @relation(fields: [queryId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id])
+
+  @@index([queryId])
+  @@index([userId])
+  @@index([followUpAt])
+  @@map("query_notes")
+}
+
+// ============================================================
+// 5. MASTER TABLES (Destinations & Hotels)
+// ============================================================
+
+model Destination {
+  id          String  @id @default(uuid())
+  name        String  /// e.g. Goa, Manali, Bali
+  country     String?
+  description String?
+  isActive    Boolean @default(true) @map("is_active")
+
+  hotels       Hotel[]
+  proposalDays ProposalDay[]
+
+  @@map("destinations")
+}
+
+model Hotel {
+  id            String   @id @default(uuid())
+  destinationId String   @map("destination_id")
+  name          String
+  category      String?  /// '3*','4*','5*','Budget'
+  basePrice     Decimal? @map("base_price") @db.Decimal(10, 2) /// Cost price per night
+  isActive      Boolean  @default(true) @map("is_active")
+
+  destination  Destination   @relation(fields: [destinationId], references: [id])
+  proposalDays ProposalDay[]
+
+  @@index([destinationId])
+  @@map("hotels")
+}
+
+// ============================================================
+// 6. PROPOSALS & ITINERARIES
+// ============================================================
+
+model Proposal {
+  id           String    @id @default(uuid())
+  queryId      String    @map("query_id")
+  version      Int       @default(1)
+  totalCost    Decimal?  @map("total_cost") @db.Decimal(12, 2)
+  markupPct    Decimal?  @map("markup_pct") @db.Decimal(5, 2)
+  sellingPrice Decimal?  @map("selling_price") @db.Decimal(12, 2)
+  pdfUrl       String?   @map("pdf_url")
+  sentAt       DateTime? @map("sent_at")
+  lastSentAt   DateTime? @map("last_sent_at") /// Cooldown tracking to prevent duplicate sends
+  createdBy    String    @map("created_by")
+  deletedAt    DateTime? @map("deleted_at")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  query Query         @relation(fields: [queryId], references: [id], onDelete: Cascade)
+  user  User          @relation(fields: [createdBy], references: [id])
+  days  ProposalDay[]
+  tours Tour[]
+
+  @@index([queryId])
+  @@map("proposals")
+}
+
+model ProposalDay {
+  id            String   @id @default(uuid())
+  proposalId    String   @map("proposal_id")
+  dayNumber     Int      @map("day_number")
+  destinationId String?  @map("destination_id")
+  hotelId       String?  @map("hotel_id")
+  activities    String?
+  mealsIncluded String?  @map("meals_included") /// 'BB','HB','FB','AI'
+  transport     String?
+  dayCost       Decimal? @map("day_cost") @db.Decimal(10, 2)
+
+  proposal    Proposal     @relation(fields: [proposalId], references: [id], onDelete: Cascade)
+  destination Destination? @relation(fields: [destinationId], references: [id])
+  hotel       Hotel?       @relation(fields: [hotelId], references: [id])
+
+  @@index([proposalId])
+  @@map("proposal_days")
+}
+
+// ============================================================
+// 7. TOURS
+// ============================================================
+
+model Tour {
+  id          String    @id @default(uuid())
+  queryId     String    @map("query_id")
+  proposalId  String?   @map("proposal_id")
+  tourCode    String    @unique @map("tour_code") /// e.g. TUR-2024-001
+  status      String    @default("upcoming") /// 'upcoming','running','completed','cancelled'
+  startDate   DateTime  @map("start_date") @db.Date
+  endDate     DateTime  @map("end_date") @db.Date
+  totalPax    Int?      @map("total_pax")
+  opsNotes    String?   @map("ops_notes")
+  assignedOps String?   @map("assigned_ops")
+  deletedAt   DateTime? @map("deleted_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  query       Query     @relation(fields: [queryId], references: [id])
+  proposal    Proposal? @relation(fields: [proposalId], references: [id])
+  assignedOpsUser User? @relation("TourAssignedOps", fields: [assignedOps], references: [id])
+  payments    Payment[]
+
+  @@index([status])
+  @@index([startDate])
+  @@index([assignedOps])
+  @@map("tours")
+}
+
+// ============================================================
+// 8. PAYMENTS
+// ============================================================
+
+model Payment {
+  id             String    @id @default(uuid())
+  tourId         String?   @map("tour_id")
+  queryId        String?   @map("query_id")
+  amount         Decimal   @db.Decimal(12, 2)
+  mode           String    /// 'upi','neft','card','cash','cheque'
+  referenceUtr   String?   @map("reference_utr")
+  paymentDate    DateTime  @map("payment_date") @db.Date
+  recordedBy     String    @map("recorded_by")
+  status         String    @default("pending") /// 'pending','verified','banked'
+  notes          String?
+  idempotencyKey String?   @unique @map("idempotency_key") /// Prevents duplicate webhook payments
+  deletedAt      DateTime? @map("deleted_at")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  tour  Tour?  @relation(fields: [tourId], references: [id])
+  query Query? @relation(fields: [queryId], references: [id])
+  user  User   @relation(fields: [recordedBy], references: [id])
+
+  @@index([tourId])
+  @@index([queryId])
+  @@index([status])
+  @@index([paymentDate])
+  @@map("payments")
+}
+
+// ============================================================
+// 9. NOTIFICATIONS
+// ============================================================
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  type      String   /// 'followup_due','payment_overdue','tour_starting'
+  message   String
+  relatedId String?  @map("related_id") /// query_id / tour_id etc.
+  isRead    Boolean  @default(false) @map("is_read")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isRead])
+  @@index([createdAt])
+  @@map("notifications")
+}
+
+// ============================================================
+// 10. ACTIVITY LOG (Audit Trail)
+// ============================================================
+
+model ActivityLog {
+  id         String   @id @default(uuid())
+  userId     String   @map("user_id")
+  action     String   /// e.g. 'query.status_changed', 'payment.deleted'
+  entityType String   @map("entity_type") /// 'query','tour','payment','user'
+  entityId   String?  @map("entity_id")
+  oldValue   Json?    @map("old_value")
+  newValue   Json?    @map("new_value")
+  ipAddress  String?  @map("ip_address")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([entityType, entityId])
+  @@index([createdAt])
+  @@map("activity_logs")
+}

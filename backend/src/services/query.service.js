@@ -1,0 +1,175 @@
+// ============================================================
+// TravelCRM — Query (Leads) Service
+// ============================================================
+
+const prisma = require('../config/prisma');
+const { BusinessError, NotFoundError } = require('../utils/AppError');
+const logger = require('../utils/logger');
+
+// Auto-generate query code (e.g., QRY-2024-001)
+const generateQueryCode = async () => {
+  const year = new Date().getFullYear();
+  const count = await prisma.query.count({
+    where: { queryCode: { startsWith: `QRY-${year}-` } },
+  });
+  return `QRY-${year}-${String(count + 1).padStart(3, '0')}`;
+};
+
+const createQuery = async (data) => {
+  // Simple duplicate check by phone number
+  const existing = await prisma.query.findFirst({
+    where: { phone: data.phone, status: { notIn: ['lost', 'invalid'] } },
+  });
+
+  if (existing) {
+    throw new BusinessError(`Duplicate lead! An active query (${existing.queryCode}) already exists for phone ${data.phone}.`);
+  }
+
+  const queryCode = await generateQueryCode();
+
+  return await prisma.query.create({
+    data: {
+      ...data,
+      queryCode,
+      // If travel dates are sent as strings, convert them:
+      travelDateFrom: data.travelDateFrom ? new Date(data.travelDateFrom) : null,
+      travelDateTo: data.travelDateTo ? new Date(data.travelDateTo) : null,
+    },
+  });
+};
+
+const listQueries = async ({ 
+  page = 1, limit = 20, status, search, assignedTo, dateFrom, dateTo, userId, canViewAll 
+}) => {
+  const where = { deletedAt: null };
+
+  // RBAC scope constraint
+  if (!canViewAll) {
+    // Agent can only see their own assigned queries
+    where.assignedTo = userId;
+  } else if (assignedTo) {
+    // Admin filtering by specific agent
+    where.assignedTo = assignedTo;
+  }
+
+  // Filters
+  if (status) where.status = status;
+  if (search) {
+    where.OR = [
+      { name: { contains: search, mode: 'insensitive' } },
+      { phone: { contains: search } },
+      { queryCode: { contains: search, mode: 'insensitive' } },
+    ];
+  }
+
+  // Date range filter
+  if (dateFrom || dateTo) {
+    where.createdAt = {};
+    if (dateFrom) where.createdAt.gte = new Date(dateFrom);
+    if (dateTo) where.createdAt.lte = new Date(dateTo);
+  }
+
+  const offset = (page - 1) * limit;
+  const queries = await prisma.query.findMany({
+    where,
+    skip: offset,
+    take: parseInt(limit, 10),
+    orderBy: { createdAt: 'desc' },
+    include: {
+      assignedUser: { select: { name: true } },
+    },
+  });
+
+  const total = await prisma.query.count({ where });
+
+  return { queries, total, page, totalPages: Math.ceil(total / limit) };
+};
+
+const getQueryById = async (id, userId, canViewAll) => {
+  const query = await prisma.query.findUnique({
+    where: { id },
+    include: {
+      assignedUser: { select: { id: true, name: true } },
+      notes: { orderBy: { createdAt: 'desc' }, include: { user: { select: { name: true } } } },
+    },
+  });
+
+  if (!query || query.deletedAt) throw new NotFoundError('Query');
+
+  if (!canViewAll && query.assignedTo !== userId) {
+    throw new BusinessError('You do not have access to view this query');
+  }
+
+  return query;
+};
+
+const updateQuery = async (id, data, userId, canViewAll, canEditAll) => {
+  const existing = await getQueryById(id, userId, canViewAll); // Re-use read access control
+
+  // If cannot edit all, verify assignment
+  if (!canEditAll && existing.assignedTo !== userId) {
+    throw new BusinessError('You cannot edit a query that is not assigned to you');
+  }
+
+  // Sanitize data — don't allow changing core tracking fields randomly
+  delete data.id;
+  delete data.queryCode;
+  if (data.travelDateFrom) data.travelDateFrom = new Date(data.travelDateFrom);
+  if (data.travelDateTo) data.travelDateTo = new Date(data.travelDateTo);
+
+  return await prisma.query.update({
+    where: { id },
+    data,
+  });
+};
+
+const assignQuery = async (id, assignedToUserId, currentUserId) => {
+  const existingQuery = await prisma.query.findUnique({ where: { id } });
+  if (!existingQuery) throw new NotFoundError('Query');
+
+  const agent = await prisma.user.findUnique({ where: { id: assignedToUserId, isActive: true } });
+  if (!agent) throw new BusinessError('Assigned user is invalid or inactive');
+
+  // Workload check
+  const activeLeadsCount = await prisma.query.count({
+    where: { assignedTo: assignedToUserId, status: { notIn: ['lost', 'invalid', 'confirmed'] } },
+  });
+
+  if (activeLeadsCount >= agent.maxLeads) {
+    throw new BusinessError(`User ${agent.name} has reached their max lead capacity (${agent.maxLeads}).`);
+  }
+
+  const updatedEntity = await prisma.query.update({
+    where: { id },
+    data: { assignedTo: assignedToUserId },
+    include: { assignedUser: { select: { name: true } } }
+  });
+
+  // Track assignment load balancing
+  await prisma.user.update({
+    where: { id: assignedToUserId },
+    data: { lastAssignedAt: new Date() }
+  });
+
+  return updatedEntity;
+};
+
+const deleteQuery = async (id) => {
+  const existing = await prisma.query.findUnique({ where: { id } });
+  if (!existing) throw new NotFoundError('Query');
+  
+  // Soft Delete
+  return await prisma.query.update({
+    where: { id },
+    data: { deletedAt: new Date(), status: 'invalid' }
+  });
+}
+
+module.exports = {
+  createQuery,
+  listQueries,
+  getQueryById,
+  updateQuery,
+  assignQuery,
+  deleteQuery,
+};
