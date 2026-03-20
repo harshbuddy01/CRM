@@ -108,7 +108,11 @@ const getQueryById = async (id, userId, canViewAll) => {
     where: { id },
     include: {
       assignedUser: { select: { id: true, name: true } },
-      notes: { orderBy: { createdAt: 'desc' }, include: { user: { select: { name: true } } } },
+      notes: { 
+        where: { deletedAt: null },
+        orderBy: { createdAt: 'desc' }, 
+        include: { user: { select: { name: true } } } 
+      },
     },
   });
 
