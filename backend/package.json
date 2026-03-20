@@ -4,10 +4,8 @@
   "description": "",
   "main": "src/index.js",
   "scripts": {
-    "start": "npm run start --prefix ../frontend",
-    "dev": "npm run dev --prefix ../frontend",
-    "build": "npm run build --prefix ../frontend && cp -r ../frontend/.next .",
-    "preinstall": "npm install --prefix ../frontend",
+    "start": "node src/index.js",
+    "dev": "nodemon src/index.js",
     "worker": "node src/worker.js",
     "migrate": "prisma migrate deploy",
     "generate": "prisma generate"
