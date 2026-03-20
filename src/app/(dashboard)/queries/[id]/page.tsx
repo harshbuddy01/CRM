@@ -395,11 +395,26 @@ export default function QueryDetailPage() {
           {/* Activity Timeline & Proposals */}
           <Card>
             <CardContent className="p-0">
-              <Tabs defaultValue="timeline" className="w-full" value={activeTab} onValueChange={setActiveTab}>
-                <TabsList className="grid w-full grid-cols-3">
-                  <TabsTrigger value="timeline">Timeline & Notes</TabsTrigger>
-                  <TabsTrigger value="proposals">Proposals</TabsTrigger>
-                  <TabsTrigger value="payments">Payments</TabsTrigger>
+              <Tabs defaultValue="timeline" className="w-full flex flex-col" value={activeTab} onValueChange={setActiveTab}>
+                <TabsList className="flex w-full justify-start gap-8 bg-transparent border-b rounded-none h-12 px-6">
+                  <TabsTrigger 
+                    value="timeline" 
+                    className="flex-none bg-transparent border-none shadow-none px-0 h-full rounded-none data-active:bg-transparent data-active:shadow-none data-active:border-b-2 data-active:border-primary transition-none"
+                  >
+                    Timeline & Notes
+                  </TabsTrigger>
+                  <TabsTrigger 
+                    value="proposals" 
+                    className="flex-none bg-transparent border-none shadow-none px-0 h-full rounded-none data-active:bg-transparent data-active:shadow-none data-active:border-b-2 data-active:border-primary transition-none"
+                  >
+                    Proposals
+                  </TabsTrigger>
+                  <TabsTrigger 
+                    value="payments" 
+                    className="flex-none bg-transparent border-none shadow-none px-0 h-full rounded-none data-active:bg-transparent data-active:shadow-none data-active:border-b-2 data-active:border-primary transition-none"
+                  >
+                    Payments
+                  </TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="timeline" className="mt-6 p-4">
