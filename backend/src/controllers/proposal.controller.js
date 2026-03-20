@@ -6,6 +6,11 @@ const proposalService = require('../services/proposal.service');
 const pdfService = require('../services/pdf.service');
 const queueService = require('../services/queue.service');
 const prisma = require('../config/prisma');
+const config = require('../config');
+
+// Constants for input validation
+const ALLOWED_EVENTS = ['viewed', 'whatsapp_opened', 'email_opened', 'downloaded'];
+const MAX_EVENT_LENGTH = 50;
 
 const createProposal = async (req, res, next) => {
   try {
@@ -117,9 +122,18 @@ const sendWhatsapp = async (req, res, next) => {
     const phone = proposal.query.phone;
 
     if (config.whatsapp.mode === 'manual') {
-      const pdfUrl = `${req.protocol}://${req.get('host')}/api/v1/proposals/${proposal.id}/pdf`;
+      const baseUrl = config.apiUrl || `${req.protocol}://${req.get('host')}/api/v1`;
+      const pdfUrl = `${baseUrl}/proposals/${proposal.id}/pdf`;
+      
+      // Normalize phone: strip all non-digits, ensuring it starts with a country code
+      // If no country code found (length 10), default to 91 (India)
+      let normalizedPhone = phone.replace(/\D/g, '');
+      if (normalizedPhone.length === 10) {
+        normalizedPhone = `91${normalizedPhone}`;
+      }
+      
       const msg = encodeURIComponent(`Hi ${proposal.query.name}, your proposal: ${pdfUrl}`);
-      return res.json({ mode: 'manual', waLink: `https://wa.me/91${phone}?text=${msg}` });
+      return res.json({ mode: 'manual', waLink: `https://wa.me/${normalizedPhone}?text=${msg}` });
     }
 
     const components = [{ type: 'body', parameters: [{ type: 'text', text: proposal.query.name }] }];
@@ -161,6 +175,12 @@ const sendEmail = async (req, res, next) => {
 const logEvent = async (req, res, next) => {
   try {
     const { id, event } = req.params;
+
+    // Validation: Check if event is whitelisted and within length constraints
+    if (!ALLOWED_EVENTS.includes(event) || (event && event.length > MAX_EVENT_LENGTH)) {
+      return res.status(400).json({ success: false, message: 'Invalid or unauthorized event type' });
+    }
+
     const proposal = await proposalService.getProposalById(id);
     
     await prisma.integrationLog.create({

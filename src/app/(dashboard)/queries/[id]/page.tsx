@@ -554,7 +554,7 @@ function QueryProposalsList({ queryId }: { queryId: string }) {
           </div>
           <div className="flex gap-2 items-center">
             
-            <a href={`${process.env.NEXT_PUBLIC_API_URL}/proposals/${p.id}/pdf`} target="_blank" rel="noopener noreferrer">
+            <a href={`${process.env.NEXT_PUBLIC_API_URL || window.location.origin}/api/v1/proposals/${p.id}/pdf`} target="_blank" rel="noopener noreferrer">
               <Button variant="ghost" size="sm">PDF</Button>
             </a>
 
@@ -595,9 +595,23 @@ function QueryProposalsList({ queryId }: { queryId: string }) {
                     <Button 
                       className="bg-emerald-600 hover:bg-emerald-700 w-full"
                       onClick={() => {
-                        window.open(manualWaLink, '_blank');
-                        setWaModalOpenId(null);
-                        setManualWaLink(null);
+                        // Security Validation for external WhatsApp link
+                        try {
+                          const url = new URL(manualWaLink as string);
+                          if (url.protocol !== 'https:') {
+                            throw new Error('Insecure protocol');
+                          }
+                          if (!url.hostname.endsWith('whatsapp.com') && url.hostname !== 'wa.me') {
+                            throw new Error('Unrecognized WhatsApp host');
+                          }
+                          window.open(manualWaLink as string, '_blank');
+                        } catch (err) {
+                          toast.error('Security Block: Invalid WhatsApp link detected');
+                          console.error('Safe-link violation:', err);
+                        } finally {
+                          setWaModalOpenId(null);
+                          setManualWaLink(null);
+                        }
                       }}
                     >
                       Open WhatsApp

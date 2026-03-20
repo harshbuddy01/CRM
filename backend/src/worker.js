@@ -42,9 +42,12 @@ const pdfWorker = new Worker('pdf-generation', async job => {
 }, { connection });
 
 // --- Email Worker ---
-const emailWorker = new Worker('email-sending', async job => {
-  const { queryId, to, subject, htmlContent } = job.data;
-  console.log(`[Email] Sending to ${to}`);
+let emailWorker = null;
+
+if (config.sendgrid.apiKey) {
+  emailWorker = new Worker('email-sending', async job => {
+    const { queryId, to, subject, htmlContent } = job.data;
+    console.log(`[Email] Sending to ${to}`);
   
   try {
     // SendGrid Integration
@@ -74,6 +77,9 @@ const emailWorker = new Worker('email-sending', async job => {
     throw error;
   }
 }, { connection });
+} else {
+  console.warn('⚠️ SendGrid API Key missing — Email Worker NOT started.');
+}
 
 // --- WhatsApp Worker ---
 const whatsappWorker = new Worker('whatsapp-sending', async job => {
@@ -118,9 +124,9 @@ Please find your proposal attached.
 // Graceful Shutdown — handle both SIGINT (Ctrl+C) and SIGTERM (Railway/Docker)
 const gracefulShutdown = async (signal) => {
   console.log(`\n🛑 Received ${signal}. Shutting down workers gracefully...`);
-  await pdfWorker.close();
-  await emailWorker.close();
-  await whatsappWorker.close();
+  if (pdfWorker) await pdfWorker.close();
+  if (emailWorker) await emailWorker.close();
+  if (whatsappWorker) await whatsappWorker.close();
   console.log('✅ All workers closed. Exiting.');
   process.exit(0);
 };
