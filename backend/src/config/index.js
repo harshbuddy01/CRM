@@ -58,7 +58,7 @@ const config = {
   },
   
   whatsapp: {
-    mode: process.env.WHATSAPP_MODE || 'interakt', // e.g., 'interakt', 'wati', 'meta'
+    mode: process.env.WHATSAPP_MODE || 'manual', // was 'interakt'
     interaktApiKey: process.env.INTERAKT_API_KEY,
   },
   

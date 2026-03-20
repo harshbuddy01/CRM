@@ -5,6 +5,7 @@
 const prisma = require('../config/prisma');
 const { BusinessError, NotFoundError } = require('../utils/AppError');
 const logger = require('../utils/logger');
+const { validateTransition } = require('../utils/statusTransitions');
 
 // Auto-generate query code (e.g., QRY-2024-001)
 const generateQueryCode = async () => {
@@ -183,6 +184,8 @@ const changeQueryStatus = async (id, status, userId, canViewAll, canEditAll) => 
   if (!canEditAll && existing.assignedTo !== userId) {
     throw new BusinessError('You cannot change the status of a query that is not assigned to you');
   }
+
+  validateTransition(existing.status, status);
 
   return await prisma.query.update({
     where: { id },

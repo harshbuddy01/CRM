@@ -28,6 +28,7 @@ export default function LoginPage() {
       
       setAuth(user, accessToken);
       localStorage.setItem('refreshToken', refreshToken);
+      document.cookie = `accessToken=${accessToken}; path=/; max-age=86400; secure; samesite=strict`;
       
       toast.success('Login successful', { description: `Welcome back, ${user.name}` });
       router.push('/');
