@@ -452,7 +452,7 @@ export default function QueryDetailPage() {
                     </Link>
                   </div>
 
-                  <QueryProposalsList queryId={params.id as string} />
+                  <QueryProposalsList queryId={params.id as string} queryCode={data?.queryCode || ''} />
                 </TabsContent>
 
                 <TabsContent value="payments" className="mt-6 p-4">
@@ -467,21 +467,34 @@ export default function QueryDetailPage() {
   );
 }
 
-function QueryProposalsList({ queryId }: { queryId: string }) {
+function QueryProposalsList({ queryId, queryCode }: { queryId: string, queryCode: string }) {
   const [waModalOpenId, setWaModalOpenId] = useState<string | null>(null);
   const [manualWaLink, setManualWaLink] = useState<string | null>(null);
 
-  // SSR-safe base URL for PDF links
-  const [pdfBaseUrl, setPdfBaseUrl] = useState<string>(
-    process.env.NEXT_PUBLIC_API_URL || ''
-  );
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
 
-  useEffect(() => {
-    // Only access window on client side
-    if (!process.env.NEXT_PUBLIC_API_URL && typeof window !== 'undefined') {
-      setPdfBaseUrl(window.location.origin);
+  const downloadPdf = useMutation({
+    mutationFn: async (proposal: any) => {
+      setDownloadingId(proposal.id);
+      const res = await api.get(`/proposals/${proposal.id}/pdf`, { responseType: 'blob' });
+      const url = window.URL.createObjectURL(new Blob([res.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `Proposal-v${proposal.version}-${queryCode}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    },
+    onSuccess: () => {
+      setDownloadingId(null);
+      toast.success('PDF Downloaded');
+    },
+    onError: (err: any) => {
+      setDownloadingId(null);
+      toast.error('Failed to download PDF', { description: err.response?.data?.message });
     }
-  }, []);
+  });
 
   const { data: proposals, isLoading } = useQuery({
     queryKey: ['proposals', queryId],
@@ -565,13 +578,15 @@ function QueryProposalsList({ queryId }: { queryId: string }) {
           </div>
           <div className="flex gap-2 items-center">
             
-            <a 
-              href={`${pdfBaseUrl.replace(/\/$/, '')}${pdfBaseUrl.replace(/\/$/, '').endsWith('/v1') ? '' : '/api/v1'}/proposals/${p.id}/pdf`} 
-              target="_blank" 
-              rel="noopener noreferrer"
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => downloadPdf.mutate(p)}
+              disabled={downloadingId === p.id}
             >
-              <Button variant="ghost" size="sm">PDF</Button>
-            </a>
+              {downloadingId === p.id ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : null}
+              PDF
+            </Button>
 
             <Button 
               variant="outline" 

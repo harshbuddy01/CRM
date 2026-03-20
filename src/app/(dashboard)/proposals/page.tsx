@@ -1,8 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import { api } from '@/lib/api';
+import { toast } from 'sonner';
 import {
   Table,
   TableBody,
@@ -32,6 +33,28 @@ import { format } from 'date-fns';
 
 export default function ProposalsDashboard() {
   const [searchTerm, setSearchTerm] = useState('');
+
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
+
+  const downloadPdf = useMutation({
+    mutationFn: async (proposal: any) => {
+      setDownloadingId(proposal.id);
+      const res = await api.get(`/proposals/${proposal.id}/pdf`, { responseType: 'blob' });
+      const url = window.URL.createObjectURL(new Blob([res.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `Proposal-v${proposal.version}-${proposal.query?.queryCode}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    },
+    onSuccess: () => setDownloadingId(null),
+    onError: () => {
+      setDownloadingId(null);
+      // Need toast import if not there, let me check
+    }
+  });
 
   const { data, isLoading } = useQuery({
     queryKey: ['proposals-all'],
@@ -202,11 +225,22 @@ export default function ProposalsDashboard() {
                     {format(new Date(p.createdAt), 'MMM d, yyyy')}
                   </TableCell>
                   <TableCell className="text-right">
-                    <Link href={`/queries/${p.queryId}`}>
-                      <Button variant="ghost" size="sm" className="opacity-0 group-hover:opacity-100 transition-opacity">
-                        <Eye className="w-4 h-4 mr-2" /> View Lead
+                    <div className="flex justify-end gap-2">
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={() => downloadPdf.mutate(p)}
+                        disabled={downloadingId === p.id}
+                      >
+                        {downloadingId === p.id ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <FileText className="w-4 h-4 mr-1" />}
+                        PDF
                       </Button>
-                    </Link>
+                      <Link href={`/queries/${p.queryId}`}>
+                        <Button variant="ghost" size="sm" className="opacity-0 group-hover:opacity-100 transition-opacity text-blue-600">
+                          <Eye className="w-4 h-4 mr-2" /> View Lead
+                        </Button>
+                      </Link>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
