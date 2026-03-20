@@ -566,7 +566,11 @@ function QueryProposalsList({ queryId }: { queryId: string }) {
           </div>
           <div className="flex gap-2 items-center">
             
-            <a href={`${pdfBaseUrl}${pdfBaseUrl.endsWith('/v1') ? '' : '/api/v1'}/proposals/${p.id}/pdf`} target="_blank" rel="noopener noreferrer">
+            <a 
+              href={`${pdfBaseUrl.replace(/\/$/, '')}${pdfBaseUrl.replace(/\/$/, '').endsWith('/v1') ? '' : '/api/v1'}/proposals/${p.id}/pdf`} 
+              target="_blank" 
+              rel="noopener noreferrer"
+            >
               <Button variant="ghost" size="sm">PDF</Button>
             </a>
 

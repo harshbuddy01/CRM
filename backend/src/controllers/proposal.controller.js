@@ -122,7 +122,7 @@ const sendWhatsapp = async (req, res, next) => {
     const phone = proposal.query.phone;
 
     if (config.whatsapp.mode === 'manual') {
-      const baseUrl = config.apiUrl || `${req.protocol}://${req.get('host')}/api/v1`;
+      const baseUrl = (config.apiUrl || `${req.protocol}://${req.get('host')}/api/v1`).replace(/\/$/, '');
       const pdfUrl = `${baseUrl}/proposals/${proposal.id}/pdf`;
       
       // Normalize phone: strip all non-digits, ensuring it starts with a country code
