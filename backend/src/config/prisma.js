@@ -30,10 +30,14 @@ const extendedPrisma = prisma.$extends({
     $allModels: {
       async $allOperations({ model, operation, args, query }) {
         if (softDeleteModels.includes(model)) {
-          // Add deletedAt filter for reads
-          if (operation === 'findFirst' || operation === 'findMany') {
-            args.where = { ...args.where, deletedAt: null };
+          // Add deletedAt filter for all read operations
+          const readOperations = ['findFirst', 'findMany', 'findUnique', 'findFirstOrThrow', 'findUniqueOrThrow', 'count'];
+          if (readOperations.includes(operation)) {
+            args.where = args.where || {};
+            // If it's a unique search by ID, we still want to ensure it's not deleted
+            args.where.deletedAt = null;
           }
+
           // Convert deletes to update(deletedAt)
           if (operation === 'delete') {
             return prisma[model].update({
