@@ -8,9 +8,8 @@ import { useAuthStore } from '@/lib/auth-store';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { Calendar as CalendarIcon, Phone, Mail, MapPin, IndianRupee, Users, Send, Loader2, User, Trash2, ArrowLeft, UserPlus, FileText, Plus, MessageCircle } from 'lucide-react';
+import { Calendar as CalendarIcon, Phone, Mail, MapPin, IndianRupee, Users, Send, Loader2, User, Trash2, ArrowLeft, UserPlus, FileText, Plus, MessageCircle, CreditCard } from 'lucide-react';
 import { toast } from 'sonner';
-
 // ... (in QueryProposalsList add Dialog logic)import { toast } from 'sonner';
 import { Textarea } from '@/components/ui/textarea';
 import { format } from 'date-fns';
@@ -22,6 +21,7 @@ import Link from 'next/link';
 import { cn } from '@/lib/utils';
 
 import { TRANSITIONS } from '@/lib/constants';
+import { PaymentEntryModal } from '@/components/PaymentEntryModal';
 
 const formatStatus = (s: string) => s.replace('_', ' ').toUpperCase();
 
@@ -397,9 +397,10 @@ export default function QueryDetailPage() {
           <Card>
             <CardContent className="p-0">
               <Tabs defaultValue="timeline" className="w-full" value={activeTab} onValueChange={setActiveTab}>
-                <TabsList className="grid w-full grid-cols-2">
+                <TabsList className="grid w-full grid-cols-3">
                   <TabsTrigger value="timeline">Timeline & Notes</TabsTrigger>
                   <TabsTrigger value="proposals">Proposals</TabsTrigger>
+                  <TabsTrigger value="payments">Payments</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="timeline" className="mt-6 p-4">
@@ -453,6 +454,10 @@ export default function QueryDetailPage() {
                   </div>
 
                   <QueryProposalsList queryId={params.id as string} />
+                </TabsContent>
+
+                <TabsContent value="payments" className="mt-6 p-4">
+                  <QueryPaymentsSection queryId={params.id as string} />
                 </TabsContent>
               </Tabs>
             </CardContent>
@@ -627,6 +632,80 @@ function QueryProposalsList({ queryId }: { queryId: string }) {
           </div>
         </div>
       ))}
+    </div>
+  );
+}
+
+function QueryPaymentsSection({ queryId }: { queryId: string }) {
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+
+  const { data: payments, isLoading } = useQuery({
+    queryKey: ['payments', queryId],
+    queryFn: async () => {
+      const res = await api.get(`/payments?queryId=${queryId}`);
+      return res.data.data.payments;
+    }
+  });
+
+  if (isLoading) return <div className="py-8 flex justify-center"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>;
+
+  const totalPaid = payments?.reduce((sum: number, p: any) => sum + Number(p.amount), 0) || 0;
+
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <div>
+          <h3 className="text-lg font-semibold">Payments Received</h3>
+          <p className="text-sm text-muted-foreground">Total Paid: <span className="font-medium text-emerald-600 inline-flex items-center"><IndianRupee className="w-3 h-3 mr-0.5" />{totalPaid.toLocaleString('en-IN')}</span></p>
+        </div>
+        <Button onClick={() => setIsPaymentModalOpen(true)}>
+          <Plus className="w-4 h-4 mr-2" /> Record Deposit
+        </Button>
+      </div>
+
+      {!payments || payments.length === 0 ? (
+        <div className="text-center py-12 border-2 border-dashed rounded-lg">
+          <CreditCard className="w-12 h-12 text-muted-foreground mx-auto mb-4 opacity-50" />
+          <h3 className="text-lg font-medium">No Payments Yet</h3>
+          <p className="text-muted-foreground mb-4">You must record at least one payment before confirming a booking.</p>
+          <Button variant="outline" onClick={() => setIsPaymentModalOpen(true)}>
+            <Plus className="w-4 h-4 mr-2" /> Record Initial Deposit
+          </Button>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {payments.map((p: any) => (
+            <div key={p.id} className="p-4 border rounded-lg flex justify-between items-center">
+              <div>
+                <p className="font-semibold text-lg flex items-center">
+                  <IndianRupee className="w-4 h-4 mr-0.5" /> {Number(p.amount).toLocaleString('en-IN')}
+                </p>
+                <div className="flex items-center gap-2 mt-1 text-sm text-muted-foreground">
+                  <span className="capitalize">{p.mode.replace('_', ' ')}</span>
+                  {p.referenceUtr && <span>• Ref: {p.referenceUtr}</span>}
+                  <span>• {new Date(p.paymentDate).toLocaleDateString('en-GB')}</span>
+                </div>
+              </div>
+              <div className="text-right">
+                <span className={`px-2 py-1 rounded text-xs font-medium ${
+                  p.status === 'verified' ? 'bg-emerald-100 text-emerald-700' :
+                  p.status === 'pending' ? 'bg-amber-100 text-amber-700' :
+                  'bg-red-100 text-red-700'
+                }`}>
+                  {p.status.toUpperCase()}
+                </span>
+                <p className="text-xs text-muted-foreground mt-1">By {p.user?.name || 'System'}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <PaymentEntryModal 
+        isOpen={isPaymentModalOpen} 
+        onClose={() => setIsPaymentModalOpen(false)} 
+        queryId={queryId} 
+      />
     </div>
   );
 }

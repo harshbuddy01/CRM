@@ -79,6 +79,8 @@ const notificationRoutes = require('./routes/notification.routes');
 const reportRoutes = require('./routes/report.routes');
 const masterRoutes = require('./routes/master.routes');
 const proposalRoutes = require('./routes/proposal.routes');
+const paymentRoutes = require('./routes/payment.routes');
+const tourRoutes = require('./routes/tour.routes');
 
 // Rate Limiters
 const generalLimiter = rateLimit({
@@ -117,6 +119,8 @@ apiRouter.use('/notifications', notificationRoutes);
 apiRouter.use('/reports', reportRoutes);
 apiRouter.use('/masters', masterRoutes);
 apiRouter.use('/proposals', proposalRoutes);
+apiRouter.use('/payments', paymentRoutes);
+apiRouter.use('/tours', tourRoutes);
 
 // Mount the router under both prefixes
 app.use('/v1', apiRouter);

@@ -8,11 +8,15 @@
 const app = require('./app');
 const config = require('./config');
 const logger = require('./utils/logger');
+const { startCronJobs } = require('./cron');
 
 const server = app.listen(config.port, () => {
   logger.info(`🚀 TravelCRM API server running on port ${config.port}`);
   logger.info(`📡 Environment: ${config.nodeEnv}`);
   logger.info(`🌐 Frontend URL: ${config.frontendUrl}`);
+  
+  // Start scheduled tasks
+  startCronJobs();
 });
 
 // Graceful shutdown

@@ -236,6 +236,47 @@ const changeQueryStatus = async (id, status, userId, canViewAll, canEditAll) => 
 
   validateTransition(existing.status, status);
 
+  if (status === 'confirmed' && existing.status !== 'confirmed') {
+    // 1. Payment validation — block CONFIRMED if no payment on record
+    const paymentCount = await prisma.payment.count({ where: { queryId: id, status: { not: 'failed' } } });
+    if (paymentCount === 0) {
+      throw new BusinessError('Cannot confirm booking: No verified or pending payment on record.');
+    }
+
+    // 2. Auto-create tour on CONFIRMED status
+    // Safe generated tour code block
+    let tourCode;
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      const year = new Date().getFullYear();
+      const count = await prisma.tour.count({
+        where: { tourCode: { startsWith: `TUR-${year}-` } },
+      });
+      // Added attempt to handle racing offsets
+      tourCode = `TUR-${year}-${String(count + attempt).padStart(3, '0')}`;
+      
+      const exists = await prisma.tour.findUnique({ where: { tourCode } });
+      if (!exists) break;
+    }
+
+    // Find latest proposal
+    const proposal = await prisma.proposal.findFirst({
+      where: { queryId: id },
+      orderBy: { version: 'desc' }
+    });
+
+    await prisma.tour.create({
+      data: {
+        queryId: id,
+        proposalId: proposal ? proposal.id : null,
+        tourCode,
+        status: 'upcoming',
+        startDate: existing.travelDateFrom || new Date(),
+        endDate: existing.travelDateTo || new Date(),
+        totalPax: existing.adults + existing.children,
+      }
+    });
+  }
+
   return await prisma.query.update({
     where: { id },
     data: { status },

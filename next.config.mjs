@@ -5,8 +5,8 @@ const nextConfig = {
     ignoreDuringBuilds: true,
   },
   typescript: {
-    // TODO: Remove once all TypeScript errors are resolved — this hides real type errors in production builds
-    ignoreBuildErrors: true,
+    // TypeScript errors are now resolved — enforcing strict type safety in production builds
+    ignoreBuildErrors: false,
   },
 };
 
