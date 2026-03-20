@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useParams, useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
@@ -472,6 +472,18 @@ function QueryProposalsList({ queryId }: { queryId: string }) {
   const [waModalOpenId, setWaModalOpenId] = useState<string | null>(null);
   const [manualWaLink, setManualWaLink] = useState<string | null>(null);
 
+  // SSR-safe base URL for PDF links
+  const [pdfBaseUrl, setPdfBaseUrl] = useState<string>(
+    process.env.NEXT_PUBLIC_API_URL || ''
+  );
+
+  useEffect(() => {
+    // Only access window on client side
+    if (!process.env.NEXT_PUBLIC_API_URL && typeof window !== 'undefined') {
+      setPdfBaseUrl(window.location.origin);
+    }
+  }, []);
+
   const { data: proposals, isLoading } = useQuery({
     queryKey: ['proposals', queryId],
     queryFn: async () => {
@@ -554,7 +566,7 @@ function QueryProposalsList({ queryId }: { queryId: string }) {
           </div>
           <div className="flex gap-2 items-center">
             
-            <a href={`${process.env.NEXT_PUBLIC_API_URL || window.location.origin}/api/v1/proposals/${p.id}/pdf`} target="_blank" rel="noopener noreferrer">
+            <a href={`${pdfBaseUrl}/api/v1/proposals/${p.id}/pdf`} target="_blank" rel="noopener noreferrer">
               <Button variant="ghost" size="sm">PDF</Button>
             </a>
 
@@ -601,7 +613,13 @@ function QueryProposalsList({ queryId }: { queryId: string }) {
                           if (url.protocol !== 'https:') {
                             throw new Error('Insecure protocol');
                           }
-                          if (!url.hostname.endsWith('whatsapp.com') && url.hostname !== 'wa.me') {
+                          
+                          const isValidHost = 
+                            url.hostname === 'wa.me' || 
+                            url.hostname === 'whatsapp.com' || 
+                            url.hostname.endsWith('.whatsapp.com');
+
+                          if (!isValidHost) {
                             throw new Error('Unrecognized WhatsApp host');
                           }
                           window.open(manualWaLink as string, '_blank');

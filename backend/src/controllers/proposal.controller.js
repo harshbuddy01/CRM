@@ -127,9 +127,12 @@ const sendWhatsapp = async (req, res, next) => {
       
       // Normalize phone: strip all non-digits, ensuring it starts with a country code
       // If no country code found (length 10), default to 91 (India)
-      let normalizedPhone = phone.replace(/\D/g, '');
-      if (normalizedPhone.length === 10) {
-        normalizedPhone = `91${normalizedPhone}`;
+      let normalizedPhone = '';
+      if (phone && typeof phone === 'string') {
+        normalizedPhone = phone.replace(/\D/g, '');
+        if (normalizedPhone.length === 10) {
+          normalizedPhone = `91${normalizedPhone}`;
+        }
       }
       
       const msg = encodeURIComponent(`Hi ${proposal.query.name}, your proposal: ${pdfUrl}`);
