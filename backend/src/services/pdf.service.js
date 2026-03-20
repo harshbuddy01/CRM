@@ -4,6 +4,7 @@
 
 const puppeteer = require('puppeteer');
 const config = require('../config');
+const logger = require('../utils/logger');
 
 /**
  * Generates a PDF buffer from HTML content.
@@ -26,12 +27,12 @@ const generatePdfFromHtml = async (htmlContent) => {
       ignoreHTTPSErrors: true,
     });
 
-    console.log('[PDF] Browser launched successfully');
+    logger.debug('[PDF] Browser launched successfully');
     const page = await browser.newPage();
     
     // Set HTML content and wait for network/fonts to finish loading
     await page.setContent(htmlContent, { waitUntil: 'networkidle0', timeout: 30000 });
-    console.log('[PDF] Page content set');
+    logger.debug('[PDF] Page content set');
 
     // Generate PDF buffer
     const pdfBuffer = await page.pdf({
@@ -44,7 +45,7 @@ const generatePdfFromHtml = async (htmlContent) => {
         left: '20px',
       },
     });
-    console.log(`[PDF] PDF Buffer generated: ${pdfBuffer.length} bytes`);
+    logger.debug(`[PDF] PDF Buffer generated: ${pdfBuffer.length} bytes`);
 
     return pdfBuffer;
 

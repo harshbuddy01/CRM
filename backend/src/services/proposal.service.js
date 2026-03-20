@@ -97,6 +97,7 @@ const listAllProposals = async () => {
       query: { select: { queryCode: true, name: true, destination: true } },
       user: { select: { name: true } }
     },
+    take: 200,
     orderBy: { createdAt: 'desc' }
   });
 };

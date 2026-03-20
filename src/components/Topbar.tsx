@@ -19,7 +19,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 
 type Notification = {
   id: string;
-  title: string;
+  title?: string;
   message: string;
   isRead: boolean;
   actionUrl: string | null;
@@ -116,7 +116,7 @@ export function Topbar() {
                       }}
                     >
                       <div className="flex justify-between items-start mb-1 gap-2">
-                        <p className={`text-sm ${notif.isRead ? 'font-medium' : 'font-bold'}`}>{notif.title}</p>
+                        <p className={`text-sm ${notif.isRead ? 'font-medium' : 'font-bold'}`}>{notif.title || notif.message}</p>
                         <span className="text-[10px] text-muted-foreground whitespace-nowrap">
                           {formatDistanceToNow(new Date(notif.createdAt), { addSuffix: true })}
                         </span>

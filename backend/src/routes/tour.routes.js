@@ -10,8 +10,8 @@ const { can } = require('../middlewares/can');
 
 router.use(authenticate);
 
-router.get('/', can('tour.view_all'), tourController.list);
-router.get('/:id', can('tour.view_all'), tourController.getById);
+router.get('/', can('tour.view_assigned'), tourController.list);
+router.get('/:id', can('tour.view_assigned'), tourController.getById);
 router.get('/:id/refund-estimate', can('cancellation.create'), tourController.refundEstimate);
 router.patch('/:id/ops', can('tour.edit_all'), tourController.updateOps);
 router.post('/:id/cancel', can('cancellation.create'), tourController.cancel);

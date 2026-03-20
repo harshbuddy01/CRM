@@ -84,7 +84,7 @@ export default function TourDetailPage() {
   }
 
   const query = tour.query;
-  const latestProposal = query?.proposals?.[0];
+  const latestProposal = tour.proposal;
   const totalPaid = tour.payments?.reduce((sum: number, p: any) => sum + Number(p.amount), 0) || 0;
   const sellingPrice = latestProposal ? Number(latestProposal.sellingPrice) : 0;
   const balance = sellingPrice - totalPaid;
@@ -290,9 +290,9 @@ export default function TourDetailPage() {
               )}
             </CardHeader>
             <CardContent>
-              {latestProposal?.itinerary ? (
+              {latestProposal?.days ? (
                 <div className="space-y-6 relative before:absolute before:inset-0 before:left-3 before:-translate-x-px before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-border before:to-transparent">
-                  {(latestProposal.itinerary as any[]).map((day: any, idx: number) => (
+                  {(latestProposal.days as any[]).map((day: any, idx: number) => (
                     <div key={idx} className="relative flex items-start group">
                       <div className="flex items-center justify-center w-6 h-6 rounded-full border bg-background text-xs font-bold shrink-0 z-10 mr-4 shadow-sm group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
                         {day.dayNumber}

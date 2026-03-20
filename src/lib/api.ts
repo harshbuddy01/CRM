@@ -3,6 +3,8 @@ import { useAuthStore } from './auth-store';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/v1';
 
+let refreshPromise: Promise<any> | null = null;
+
 export const api = axios.create({
   baseURL: API_URL,
   headers: {
@@ -37,7 +39,12 @@ api.interceptors.response.use(
 
       if (refreshToken) {
         try {
-          const res = await axios.post(`${API_URL}/auth/refresh`, { refreshToken });
+          if (!refreshPromise) {
+            refreshPromise = axios.post(`${API_URL}/auth/refresh`, { refreshToken })
+              .finally(() => { refreshPromise = null; });
+          }
+          
+          const res = await refreshPromise;
           const { accessToken, refreshToken: newRefresh } = res.data.data;
           
           useAuthStore.setState({ accessToken });

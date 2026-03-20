@@ -17,8 +17,12 @@ const listActiveAgents = async () => {
         }
       },
       maxLeads: true,
-      queries: {
-        where: { status: { notIn: ['lost', 'invalid', 'confirmed'] } }
+      _count: {
+        select: {
+          queries: {
+            where: { status: { notIn: ['lost', 'invalid', 'confirmed'] } }
+          }
+        }
       }
     },
     orderBy: { name: 'asc' }

@@ -6,7 +6,7 @@ const express = require('express');
 const router = express.Router();
 const masterController = require('../controllers/master.controller');
 const { authenticate } = require('../middlewares/authenticate');
-const { can, canAny } = require('../middlewares/can');
+const { can } = require('../middlewares/can');
 
 router.use(authenticate);
 
