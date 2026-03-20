@@ -4,7 +4,7 @@
   "description": "",
   "main": "src/index.js",
   "scripts": {
-    "start": "node src/index.js",
+    "start": "node src/index.js & node src/worker.js",
     "dev": "nodemon src/index.js",
     "worker": "node src/worker.js",
     "migrate": "prisma migrate deploy",
