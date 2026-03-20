@@ -101,7 +101,12 @@ const downloadPdf = async (req, res, next) => {
     res.setHeader('Content-Disposition', `attachment; filename=Proposal-v${proposal.version}-${proposal.query.queryCode}.pdf`);
     res.send(pdfBuffer);
   } catch (error) {
-    next(error);
+    console.error('PDF Generation Controller Error:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message,
+      details: error.stack
+    });
   }
 };
 

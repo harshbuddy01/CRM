@@ -2,8 +2,7 @@
 // TravelCRM — PDF Generation Service
 // ============================================================
 
-const puppeteer = require('puppeteer-core');
-const chromium = require('@sparticuz/chromium');
+const puppeteer = require('puppeteer');
 const config = require('../config');
 
 /**
@@ -13,61 +12,17 @@ const config = require('../config');
 const generatePdfFromHtml = async (htmlContent) => {
   let browser = null;
   try {
-    // Determine path based on environment
-    const isProduction = config.nodeEnv === 'production';
-    console.log(`[PDF] Mode: ${isProduction ? 'Production' : 'Local'}`);
-    
-    let executablePath;
-    
-    if (isProduction) {
-      console.log('[PDF] Attempting to resolve Chromium path via @sparticuz/chromium...');
-      executablePath = await chromium.executablePath();
-      
-      // Fallback for Railway/Linux environments if @sparticuz fails
-      if (!executablePath) {
-        const commonPaths = [
-          '/usr/bin/google-chrome',
-          '/usr/bin/google-chrome-stable',
-          '/usr/bin/chromium',
-          '/usr/bin/chromium-browser',
-          '/nix/store/*/bin/google-chrome' // Common for Nixpacks
-        ];
-        console.log('[PDF] @sparticuz returned NULL. Probing common Linux paths...');
-        const fs = require('fs');
-        for (const path of commonPaths) {
-          if (fs.existsSync(path)) {
-            executablePath = path;
-            console.log(`[PDF] Found fallback path: ${path}`);
-            break;
-          }
-        }
-      }
-      console.log(`[PDF] Final Executable Path: ${executablePath || 'NOT FOUND'}`);
-    } else {
-      executablePath =
-        process.platform === 'darwin'
-          ? '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
-          : '/usr/bin/google-chrome';
-    }
-
-    if (isProduction && !executablePath) {
-      console.warn('[PDF] WARNING: Chromium executable path is NULL in production. Attempting standard puppeteer launch...');
-    }
-
     browser = await puppeteer.launch({
-      args: isProduction ? [
-        ...chromium.args,
+      args: [
         '--no-sandbox',
         '--disable-setuid-sandbox',
         '--disable-dev-shm-usage',
         '--disable-gpu',
         '--no-first-run',
         '--no-zygote',
-        '--single-process', // Crucial for low-RAM environments like Railway
-      ] : puppeteer.defaultArgs(),
-      defaultViewport: chromium.defaultViewport,
-      executablePath: executablePath || undefined,
-      headless: isProduction ? chromium.headless : true,
+        '--single-process',
+      ],
+      headless: true,
       ignoreHTTPSErrors: true,
     });
 
