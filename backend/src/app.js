@@ -62,6 +62,17 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 // API ROUTES
 // ========================
 
+// Root redirect/welcome
+app.get('/', (_req, res) => {
+  res.json({
+    success: true,
+    message: 'Welcome to TravelCRM API 🌐',
+    status: 'Operational',
+    api_versions: ['/v1', '/api/v1'],
+    health_check: '/health'
+  });
+});
+
 // Health check endpoint
 app.get('/health', (_req, res) => {
   res.json({
