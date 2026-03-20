@@ -4,7 +4,7 @@
 
 const puppeteer = require('puppeteer-core');
 const chromium = require('@sparticuz/chromium');
-const config = require('../config/env');
+const config = require('../config');
 
 /**
  * Generates a PDF buffer from HTML content.

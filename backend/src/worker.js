@@ -4,7 +4,7 @@
 
 require('dotenv').config();
 const { Worker } = require('bullmq');
-const config = require('./config/env');
+const config = require('./config');
 const prisma = require('./config/prisma');
 
 console.log('👷 BullMQ Worker service initialized.');
