@@ -96,14 +96,22 @@ app.use('/v1', (req, res, next) => {
 
 // Apply login limiter strictly to the login route, not all auth APIs like logout/refresh
 app.use('/v1/auth/login', loginLimiter);
+app.use('/api/v1/auth/login', loginLimiter);
 
-app.use('/v1/auth', authRoutes);
-app.use('/v1/queries', queryRoutes);
-app.use('/v1/users', userRoutes);
-app.use('/v1/notifications', notificationRoutes);
-app.use('/v1/reports', reportRoutes);
-app.use('/v1/masters', masterRoutes);
-app.use('/v1/proposals', proposalRoutes);
+// Base API Router to share between /v1 and /api/v1 prefixes
+const apiRouter = express.Router();
+
+apiRouter.use('/auth', authRoutes);
+apiRouter.use('/queries', queryRoutes);
+apiRouter.use('/users', userRoutes);
+apiRouter.use('/notifications', notificationRoutes);
+apiRouter.use('/reports', reportRoutes);
+apiRouter.use('/masters', masterRoutes);
+apiRouter.use('/proposals', proposalRoutes);
+
+// Mount the router under both prefixes
+app.use('/v1', apiRouter);
+app.use('/api/v1', apiRouter);
 
 // ========================
 // 404 HANDLER
