@@ -22,7 +22,27 @@ const generatePdfFromHtml = async (htmlContent) => {
     if (isProduction) {
       console.log('[PDF] Attempting to resolve Chromium path via @sparticuz/chromium...');
       executablePath = await chromium.executablePath();
-      console.log(`[PDF] Resolved Path: ${executablePath || 'NULL'}`);
+      
+      // Fallback for Railway/Linux environments if @sparticuz fails
+      if (!executablePath) {
+        const commonPaths = [
+          '/usr/bin/google-chrome',
+          '/usr/bin/google-chrome-stable',
+          '/usr/bin/chromium',
+          '/usr/bin/chromium-browser',
+          '/nix/store/*/bin/google-chrome' // Common for Nixpacks
+        ];
+        console.log('[PDF] @sparticuz returned NULL. Probing common Linux paths...');
+        const fs = require('fs');
+        for (const path of commonPaths) {
+          if (fs.existsSync(path)) {
+            executablePath = path;
+            console.log(`[PDF] Found fallback path: ${path}`);
+            break;
+          }
+        }
+      }
+      console.log(`[PDF] Final Executable Path: ${executablePath || 'NOT FOUND'}`);
     } else {
       executablePath =
         process.platform === 'darwin'
@@ -40,6 +60,10 @@ const generatePdfFromHtml = async (htmlContent) => {
         '--no-sandbox',
         '--disable-setuid-sandbox',
         '--disable-dev-shm-usage',
+        '--disable-gpu',
+        '--no-first-run',
+        '--no-zygote',
+        '--single-process', // Crucial for low-RAM environments like Railway
       ] : puppeteer.defaultArgs(),
       defaultViewport: chromium.defaultViewport,
       executablePath: executablePath || undefined,
