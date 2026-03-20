@@ -66,9 +66,11 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.get('/health', (_req, res) => {
   res.json({
     success: true,
-    message: 'TravelCRM API is running',
+    message: 'TravelCRM API is healthy 🚀',
     timestamp: new Date().toISOString(),
     environment: config.nodeEnv,
+    uptime: process.uptime(),
+    memory: process.memoryUsage(),
   });
 });
 
@@ -111,6 +113,16 @@ app.use('/api/v1/auth/login', loginLimiter);
 
 // Base API Router to share between /v1 and /api/v1 prefixes
 const apiRouter = express.Router();
+
+// Base API info
+apiRouter.get('/', (req, res) => {
+  res.json({
+    success: true,
+    message: 'TravelCRM API — Business Hub 🏢',
+    version: '1.0.0',
+    documentation: 'Contact admin for API access',
+  });
+});
 
 apiRouter.use('/auth', authRoutes);
 apiRouter.use('/queries', queryRoutes);

@@ -44,8 +44,8 @@ class BusinessError extends AppError {
 
 /** 404 — Resource not found */
 class NotFoundError extends AppError {
-  constructor(resource = 'Resource') {
-    super(`${resource} not found`, 404);
+  constructor(message = 'Resource not found') {
+    super(message, 404);
   }
 }
 
