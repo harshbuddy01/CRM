@@ -65,6 +65,9 @@ app.get('/health', (_req, res) => {
 
 const authRoutes = require('./routes/auth.routes');
 const queryRoutes = require('./routes/query.routes');
+const userRoutes = require('./routes/user.routes');
+const notificationRoutes = require('./routes/notification.routes');
+const reportRoutes = require('./routes/report.routes');
 
 // Rate Limiters
 const generalLimiter = rateLimit({
@@ -94,6 +97,9 @@ app.use('/v1/auth/login', loginLimiter);
 
 app.use('/v1/auth', authRoutes);
 app.use('/v1/queries', queryRoutes);
+app.use('/v1/users', userRoutes);
+app.use('/v1/notifications', notificationRoutes);
+app.use('/v1/reports', reportRoutes);
 
 // ========================
 // 404 HANDLER

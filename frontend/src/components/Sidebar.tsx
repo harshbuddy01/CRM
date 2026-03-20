@@ -9,7 +9,8 @@ import {
   Map, 
   FileText, 
   CreditCard,
-  Target
+  Target,
+  Columns
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -19,7 +20,8 @@ export function Sidebar() {
 
   const links = [
     { href: '/', label: 'Overview', icon: LayoutDashboard, exact: true },
-    { href: '/queries', label: 'Queries (Leads)', icon: Target, show: true },
+    { href: '/pipeline', label: 'Pipeline', icon: Columns, show: true },
+    { href: '/queries', label: 'Leads List', icon: Target, show: true },
     { href: '/tours', label: 'Tours & Ops', icon: Map, show: user?.permissions['tour.view_all'] || user?.permissions['tour.view_assigned'] },
     { href: '/proposals', label: 'Proposals', icon: FileText, show: true },
     { href: '/payments', label: 'Payments', icon: CreditCard, show: user?.permissions['payment.view_all'] || user?.permissions['payment.view_assigned'] },

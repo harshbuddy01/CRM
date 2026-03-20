@@ -1,0 +1,424 @@
+'use client';
+
+import { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useParams, useRouter } from 'next/navigation';
+import { api } from '@/lib/api';
+import { useAuthStore } from '@/lib/auth-store';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Separator } from '@/components/ui/separator';
+import { Calendar as CalendarIcon, Loader2, User, Phone, Mail, MapPin, IndianRupee, Users, ArrowLeft, Send, UserPlus } from 'lucide-react';
+import { toast } from 'sonner';
+import { Textarea } from '@/components/ui/textarea';
+import { format } from 'date-fns';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { cn } from '@/lib/utils';
+
+// Mirroring the backend transition rules
+const TRANSITIONS: Record<string, string[]> = {
+  new:           ['followup', 'dnp', 'lost', 'invalid'],
+  followup:      ['followup', 'dnp', 'proposal_sent', 'lost', 'invalid'],
+  dnp:           ['followup', 'lost', 'invalid'],
+  proposal_sent: ['followup', 'ready_to_pay', 'lost', 'invalid'],
+  ready_to_pay:  ['confirmed', 'lost'],
+  confirmed:     [],
+  lost:          ['new'],
+  invalid:       ['new'],
+};
+
+const formatStatus = (s: string) => s.replace('_', ' ').toUpperCase();
+
+type Note = {
+  id: string;
+  note: string;
+  followUpAt: string | null;
+  createdAt: string;
+  user: { name: string };
+};
+
+type QueryDetail = {
+  id: string;
+  queryCode: string;
+  name: string;
+  phone: string;
+  email: string | null;
+  destination: string | null;
+  budget: number | null;
+  adults: number;
+  children: number;
+  leadSource: string;
+  status: string;
+  createdAt: string;
+  travelDateFrom: string | null;
+  travelDateTo: string | null;
+  assignedTo: string | null;
+  assignedUser?: { id: string; name: string } | null;
+  notes: Note[];
+};
+
+export default function QueryDetailPage() {
+  const params = useParams();
+  const router = useRouter();
+  const queryId = params.id as string;
+  const { user } = useAuthStore();
+  const queryClient = useQueryClient();
+
+  // --- Data Fetching ---
+  const { data, isLoading, isError } = useQuery({
+    queryKey: ['query', queryId],
+    queryFn: async () => {
+      const res = await api.get(`/queries/${queryId}`);
+      return res.data.data as QueryDetail;
+    },
+    retry: 1,
+  });
+
+  // --- Status Change Mutation ---
+  const statusMutation = useMutation({
+    mutationFn: async (newStatus: string) => {
+      await api.patch(`/queries/${queryId}/status`, { status: newStatus });
+    },
+    onSuccess: (_, variables) => {
+      toast.success(`Status updated to ${formatStatus(variables)}`);
+      queryClient.invalidateQueries({ queryKey: ['query', queryId] });
+      queryClient.invalidateQueries({ queryKey: ['queries'] });
+    },
+    onError: (err: any) => {
+      toast.error('Failed to change status', { description: err.response?.data?.message });
+    }
+  });
+
+  // --- Notes Form State ---
+  const [noteContent, setNoteContent] = useState('');
+  const [followUpDate, setFollowUpDate] = useState<Date | undefined>();
+  const [isSubmittingNote, setIsSubmittingNote] = useState(false);
+
+  // --- Note Submit Function ---
+  const handleAddNote = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!noteContent.trim()) return;
+
+    setIsSubmittingNote(true);
+    try {
+      await api.post(`/queries/${queryId}/notes`, {
+        note: noteContent,
+        followUpAt: followUpDate ? followUpDate.toISOString() : null,
+      });
+      toast.success('Note added successfully');
+      setNoteContent('');
+      setFollowUpDate(undefined);
+      queryClient.invalidateQueries({ queryKey: ['query', queryId] });
+    } catch (err: any) {
+      toast.error('Failed to add note', { description: err.response?.data?.message });
+    } finally {
+      setIsSubmittingNote(false);
+    }
+  };
+
+  // --- Agent Assignment State ---
+  const [isAssignOpen, setIsAssignOpen] = useState(false);
+  const [selectedAgentId, setSelectedAgentId] = useState<string>('');
+
+  const { data: agentsData, isLoading: agentsLoading } = useQuery({
+    queryKey: ['active_agents'],
+    queryFn: async () => {
+      const res = await api.get('/users/agents');
+      return res.data.data;
+    },
+    enabled: isAssignOpen, // Only fetch when modal opens
+  });
+
+  const assignMutation = useMutation({
+    mutationFn: async (agentId: string) => {
+      await api.patch(`/queries/${queryId}/assign`, { assignedTo: agentId });
+    },
+    onSuccess: () => {
+      toast.success('Query assigned successfully');
+      setIsAssignOpen(false);
+      queryClient.invalidateQueries({ queryKey: ['query', queryId] });
+      queryClient.invalidateQueries({ queryKey: ['queries'] });
+    },
+    onError: (err: any) => {
+      toast.error('Assignment Failed', { description: err.response?.data?.message });
+    }
+  });
+
+  if (isLoading) {
+    return <div className="flex h-[50vh] items-center justify-center"><Loader2 className="w-8 h-8 animate-spin opacity-50" /></div>;
+  }
+
+  if (isError || !data) {
+    return (
+      <div className="flex flex-col items-center justify-center h-[50vh] space-y-4">
+        <p className="text-red-500 font-medium">Failed to load lead details. You might not have access.</p>
+        <Button variant="outline" onClick={() => router.back()}>Go Back</Button>
+      </div>
+    );
+  }
+
+  const query = data;
+  const allowedTransitions = TRANSITIONS[query.status] || [];
+  const canEditAll = user?.permissions['query.edit_all'];
+  const canEditStatus = user?.permissions['query.status_change'] && (canEditAll || query.assignedTo === user?.id);
+
+  return (
+    <div className="space-y-6 pb-10">
+      {/* Header */}
+      <div className="flex items-center gap-4">
+        <Button variant="ghost" size="icon" onClick={() => router.push('/queries')}>
+          <ArrowLeft className="w-5 h-5" />
+        </Button>
+        <div>
+          <div className="flex items-center gap-3">
+            <h1 className="text-3xl font-bold tracking-tight">{query.name}</h1>
+            <span className={`px-3 py-1 rounded-full text-xs font-bold tracking-widest ${
+                query.status === 'new' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' :
+                query.status === 'confirmed' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' :
+                query.status === 'lost' || query.status === 'invalid' ? 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400' :
+                'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
+              }`}>
+              {formatStatus(query.status)}
+            </span>
+            <span className="text-muted-foreground text-sm font-medium">{query.queryCode}</span>
+          </div>
+          <p className="text-muted-foreground mt-1 text-sm">
+            Created on {format(new Date(query.createdAt), 'PPpp')} • Assigned to {query.assignedUser?.name || 'Unassigned'}
+          </p>
+        </div>
+
+        {/* Action Buttons */}
+        <div className="ml-auto">
+          {canEditAll && (
+            <Dialog open={isAssignOpen} onOpenChange={setIsAssignOpen}>
+              {/* @ts-ignore */}
+              <DialogTrigger asChild>
+                <Button variant="outline" className="gap-2">
+                  <UserPlus className="w-4 h-4" />
+                  Assign
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Assign Query (Lead)</DialogTitle>
+                  <DialogDescription>
+                    Select an agent to assign this lead to. Load balancing capacities are shown below.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="py-4 space-y-4 max-h-[60vh] overflow-y-auto">
+                  {agentsLoading ? (
+                    <div className="flex justify-center p-4"><Loader2 className="w-6 h-6 animate-spin" /></div>
+                  ) : agentsData?.length === 0 ? (
+                    <p className="text-sm text-muted-foreground text-center">No active agents found.</p>
+                  ) : (
+                    agentsData?.map((agent: any) => {
+                      const isOverloaded = agent.activeLeadCount >= agent.maxLeads;
+                      return (
+                        <div 
+                          key={agent.id} 
+                          className={`flex items-center justify-between p-3 border rounded-lg transition-colors cursor-pointer ${selectedAgentId === agent.id ? 'border-primary bg-primary/5' : 'hover:bg-muted/50'} ${isOverloaded ? 'opacity-60' : ''}`}
+                          onClick={() => !isOverloaded && setSelectedAgentId(agent.id)}
+                        >
+                          <div>
+                            <p className="font-medium text-sm">{agent.name}</p>
+                            <p className="text-xs text-muted-foreground capitalize">{agent.roleName}</p>
+                          </div>
+                          <div className="text-right">
+                            <p className={`text-xs font-semibold ${isOverloaded ? 'text-destructive' : 'text-emerald-600'}`}>
+                              {agent.activeLeadCount} / {agent.maxLeads} Leads
+                            </p>
+                            {isOverloaded && <p className="text-[10px] text-destructive">Capacity Full</p>}
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+                <div className="flex justify-end gap-3 pt-4 border-t">
+                  <Button variant="ghost" onClick={() => setIsAssignOpen(false)}>Cancel</Button>
+                  <Button 
+                    disabled={!selectedAgentId || assignMutation.isPending} 
+                    onClick={() => assignMutation.mutate(selectedAgentId)}
+                  >
+                    {assignMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                    Confirm Assignment
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+          )}
+        </div>
+      </div>
+
+      {/* Status Transition Bar */}
+      {canEditStatus && allowedTransitions.length > 0 && (
+        <Card className="bg-primary/5 border-primary/20">
+          <CardContent className="p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <p className="text-sm font-medium text-primary">Move this lead forward:</p>
+            <div className="flex flex-wrap gap-2">
+              {allowedTransitions.map((nextStatus) => (
+                <Button 
+                  key={nextStatus} 
+                  variant={nextStatus === 'lost' || nextStatus === 'invalid' ? 'destructive' : nextStatus === 'confirmed' ? 'default' : 'secondary'}
+                  size="sm"
+                  onClick={() => statusMutation.mutate(nextStatus)}
+                  disabled={statusMutation.isPending}
+                >
+                  {statusMutation.isPending ? <Loader2 className="w-3 h-3 mr-2 animate-spin" /> : null}
+                  Mark as {formatStatus(nextStatus)}
+                </Button>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        {/* Left Column: Customer Details */}
+        <div className="lg:col-span-1 space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Lead Details</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center gap-3 text-sm">
+                <User className="w-4 h-4 text-muted-foreground" />
+                <span className="font-medium">{query.name}</span>
+              </div>
+              <div className="flex items-center gap-3 text-sm">
+                <Phone className="w-4 h-4 text-muted-foreground" />
+                <span>{query.phone}</span>
+              </div>
+              {query.email && (
+                <div className="flex items-center gap-3 text-sm">
+                  <Mail className="w-4 h-4 text-muted-foreground" />
+                  <span>{query.email}</span>
+                </div>
+              )}
+              <div className="flex items-center gap-3 text-sm">
+                <MapPin className="w-4 h-4 text-muted-foreground" />
+                <span>{query.destination || 'Destination TBD'}</span>
+              </div>
+              <Separator />
+              <div className="grid grid-cols-2 gap-y-4 text-sm">
+                <div>
+                  <p className="text-muted-foreground text-xs mb-1">Budget</p>
+                  <div className="flex items-center font-medium">
+                    <IndianRupee className="w-3 h-3 mr-1" />
+                    {query.budget ? query.budget.toLocaleString('en-IN') : 'TBD'}
+                  </div>
+                </div>
+                <div>
+                  <p className="text-muted-foreground text-xs mb-1">Pax</p>
+                  <div className="flex items-center font-medium">
+                    <Users className="w-3 h-3 mr-1" />
+                    {query.adults} Adults, {query.children} Kids
+                  </div>
+                </div>
+                <div>
+                  <p className="text-muted-foreground text-xs mb-1">Source</p>
+                  <p className="font-medium capitalize">{query.leadSource}</p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground text-xs mb-1">Travel Dates</p>
+                  <p className="font-medium">
+                    {query.travelDateFrom ? format(new Date(query.travelDateFrom), 'MMM d, yyyy') : 'TBD'}
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Right Column: Notes & Timeline */}
+        <div className="lg:col-span-2 space-y-6">
+          
+          {/* Add Note Form */}
+          <Card>
+            <CardContent className="p-4">
+              <form onSubmit={handleAddNote} className="space-y-4">
+                <Textarea 
+                  placeholder="Type a note or log a call..." 
+                  className="min-h-[100px] resize-none"
+                  value={noteContent}
+                  onChange={(e: any) => setNoteContent(e.target.value)}
+                />
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm text-muted-foreground">Follow Up:</p>
+                    <Popover>
+                      {/* @ts-ignore */}
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className={cn(
+                            "w-[160px] justify-start text-left font-normal",
+                            !followUpDate && "text-muted-foreground"
+                          )}
+                        >
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {followUpDate ? format(followUpDate, "PPP") : <span>Pick a date</span>}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={followUpDate}
+                          onSelect={setFollowUpDate}
+                          initialFocus
+                          disabled={(date) => date < new Date(new Date().setHours(0,0,0,0))}
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                  <Button type="submit" disabled={!noteContent.trim() || isSubmittingNote}>
+                    {isSubmittingNote ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Send className="w-4 h-4 mr-2" />}
+                    Add Note
+                  </Button>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
+
+          {/* Activity Timeline */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold tracking-tight">Activity Timeline</h3>
+            {query.notes.length === 0 ? (
+              <div className="text-center p-8 border border-dashed rounded-lg text-muted-foreground">
+                No activity logged yet.
+              </div>
+            ) : (
+              <div className="space-y-4 relative before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-border before:to-transparent">
+                {query.notes.map((note) => (
+                  <div key={note.id} className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
+                    <div className="flex items-center justify-center w-10 h-10 rounded-full border-4 border-background bg-primary/10 text-primary shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 z-10">
+                      <User className="w-4 h-4" />
+                    </div>
+                    <div className="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] p-4 rounded-lg border bg-card shadow-sm">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="font-semibold text-sm">{note.user.name}</span>
+                        <time className="text-xs text-muted-foreground">{format(new Date(note.createdAt), 'MMM d, h:mm a')}</time>
+                      </div>
+                      <p className="text-sm whitespace-pre-wrap">{note.note}</p>
+                      {note.followUpAt && (
+                        <div className="mt-3 pt-3 border-t flex items-center text-xs text-blue-600 dark:text-blue-400 font-medium">
+                          <CalendarIcon className="w-3 h-3 mr-1.5" />
+                          Follow up set for {format(new Date(note.followUpAt), 'PPP')}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+        </div>
+      </div>
+    </div>
+  );
+}

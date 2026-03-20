@@ -13,6 +13,27 @@ const create = async (req, res, next) => {
   }
 };
 
+const createFromWebhook = async (req, res, next) => {
+  try {
+    // For external forms (e.g. Hostinger landing pages)
+    const queryData = {
+      ...req.body,
+      leadSource: req.body.leadSource || 'website',
+      status: 'new', 
+    };
+    
+    const isDuplicate = await queryService.checkDuplicatePhone(queryData.phone);
+    if (isDuplicate) {
+       return res.status(409).json({ success: false, message: 'Lead already exists' });
+    }
+
+    const query = await queryService.createQuery(queryData);
+    res.status(201).json({ success: true, message: 'Lead captured successfully', queryId: query.id });
+  } catch (error) {
+    next(error);
+  }
+};
+
 const list = async (req, res, next) => {
   try {
     const canViewAll = req.user.permissions['query.view_all'];
@@ -93,8 +114,22 @@ const duplicateCheck = async (req, res, next) => {
   }
 };
 
+const addNote = async (req, res, next) => {
+  try {
+    const { note, followUpAt } = req.body;
+    if (!note || !note.trim()) {
+      return res.status(400).json({ success: false, message: 'Note content is required' });
+    }
+    const created = await queryService.addNote(req.params.id, req.user.id, note, followUpAt);
+    res.status(201).json({ success: true, message: 'Note added', data: created });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   create,
+  createFromWebhook,
   list,
   getById,
   update,
@@ -102,4 +137,5 @@ module.exports = {
   remove,
   changeStatus,
   duplicateCheck,
+  addNote,
 };

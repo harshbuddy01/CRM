@@ -178,6 +178,32 @@ const checkDuplicatePhone = async (phone) => {
   return !!existing;
 };
 
+const addNote = async (queryId, userId, note, followUpAt) => {
+  // Verify query exists
+  const query = await prisma.query.findUnique({ where: { id: queryId } });
+  if (!query || query.deletedAt) throw new NotFoundError('Query');
+
+  const created = await prisma.queryNote.create({
+    data: {
+      queryId,
+      userId,
+      note,
+      followUpAt: followUpAt ? new Date(followUpAt) : null,
+    },
+    include: { user: { select: { name: true } } },
+  });
+
+  // If a follow-up date was set, update the query's nextFollowupAt
+  if (followUpAt) {
+    await prisma.query.update({
+      where: { id: queryId },
+      data: { nextFollowupAt: new Date(followUpAt) },
+    });
+  }
+
+  return created;
+};
+
 const changeQueryStatus = async (id, status, userId, canViewAll, canEditAll) => {
   const existing = await getQueryById(id, userId, canViewAll);
   
@@ -202,4 +228,5 @@ module.exports = {
   deleteQuery,
   checkDuplicatePhone,
   changeQueryStatus,
+  addNote,
 };

@@ -8,8 +8,25 @@ const queryController = require('../controllers/query.controller');
 const queryValidator = require('../validators/query.validator');
 const { authenticate } = require('../middlewares/authenticate');
 const { can } = require('../middlewares/can');
+const config = require('../config');
 
-// ALL routes here are protected and require a valid JWT
+// Simple API key guard for public webhook routes
+const webhookApiKeyGuard = (req, res, next) => {
+  const apiKey = config.webhookApiKey;
+  // If no key is configured (dev mode), allow through
+  if (!apiKey) return next();
+  
+  const providedKey = req.headers['x-api-key'];
+  if (!providedKey || providedKey !== apiKey) {
+    return res.status(401).json({ success: false, message: 'Invalid or missing API key' });
+  }
+  next();
+};
+
+// Public Webhook for external landing pages
+router.post('/webhook/website', webhookApiKeyGuard, queryValidator.validateCreateQuery, queryController.createFromWebhook);
+
+// ALL routes from here below are protected and require a valid JWT
 router.use(authenticate);
 
 // List queries (can view own OR all, handled inside controller/service)
@@ -28,6 +45,13 @@ router.get('/duplicate-check', queryController.duplicateCheck);
 
 // Get query details
 router.get('/:id', queryController.getById);
+
+// Add note to a query
+router.post(
+  '/:id/notes',
+  can('query.edit_own'),
+  queryController.addNote
+);
 
 // Update query details
 router.put(
