@@ -3,7 +3,7 @@
 // ============================================================
 
 const prisma = require('../config/prisma');
-const { NotFoundError, ValidationError } = require('../utils/errors');
+const { NotFoundError, ValidationError } = require('../utils/AppError');
 
 // --- DESTINATIONS ---
 

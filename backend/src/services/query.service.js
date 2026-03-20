@@ -209,7 +209,7 @@ const deleteNote = async (queryId, noteId, userId) => {
     where: { id: noteId, queryId }
   });
   if (!note) {
-    const { NotFoundError } = require('../utils/errors');
+    const { NotFoundError, ValidationError } = require('../utils/AppError');
     throw new NotFoundError('Note');
   }
   
