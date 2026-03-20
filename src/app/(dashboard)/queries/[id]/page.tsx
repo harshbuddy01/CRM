@@ -8,26 +8,20 @@ import { useAuthStore } from '@/lib/auth-store';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { Calendar as CalendarIcon, Loader2, User, Phone, Mail, MapPin, IndianRupee, Users, ArrowLeft, Send, UserPlus } from 'lucide-react';
+import { Calendar as CalendarIcon, Phone, Mail, MapPin, IndianRupee, Users, Send, Loader2, User, Trash2, ArrowLeft, UserPlus, FileText, Plus, MessageCircle } from 'lucide-react';
 import { toast } from 'sonner';
+
+// ... (in QueryProposalsList add Dialog logic)import { toast } from 'sonner';
 import { Textarea } from '@/components/ui/textarea';
 import { format } from 'date-fns';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import Link from 'next/link';
 import { cn } from '@/lib/utils';
 
-// Mirroring the backend transition rules
-const TRANSITIONS: Record<string, string[]> = {
-  new:           ['followup', 'dnp', 'lost', 'invalid'],
-  followup:      ['followup', 'dnp', 'proposal_sent', 'lost', 'invalid'],
-  dnp:           ['followup', 'lost', 'invalid'],
-  proposal_sent: ['followup', 'ready_to_pay', 'lost', 'invalid'],
-  ready_to_pay:  ['confirmed', 'lost'],
-  confirmed:     [],
-  lost:          ['new'],
-  invalid:       ['new'],
-};
+import { TRANSITIONS } from '@/lib/constants';
 
 const formatStatus = (s: string) => s.replace('_', ' ').toUpperCase();
 
@@ -65,6 +59,7 @@ export default function QueryDetailPage() {
   const queryId = params.id as string;
   const { user } = useAuthStore();
   const queryClient = useQueryClient();
+  const [activeTab, setActiveTab] = useState('timeline');
 
   // --- Data Fetching ---
   const { data, isLoading, isError } = useQuery({
@@ -118,6 +113,17 @@ export default function QueryDetailPage() {
     }
   };
 
+  const handleDeleteNote = async (noteId: string) => {
+    if (!confirm('Are you sure you want to delete this note?')) return;
+    try {
+      await api.delete(`/queries/${queryId}/notes/${noteId}`);
+      queryClient.invalidateQueries({ queryKey: ['query', queryId] });
+      toast.success('Note deleted');
+    } catch (err: any) {
+      toast.error('Failed to delete note', { description: err.response?.data?.message });
+    }
+  };
+
   // --- Agent Assignment State ---
   const [isAssignOpen, setIsAssignOpen] = useState(false);
   const [selectedAgentId, setSelectedAgentId] = useState<string>('');
@@ -160,7 +166,10 @@ export default function QueryDetailPage() {
   }
 
   const query = data;
-  const allowedTransitions = TRANSITIONS[query.status] || [];
+  let allowedTransitions = TRANSITIONS[query.status] || [];
+  if (user?.role !== 'admin') {
+    allowedTransitions = allowedTransitions.filter((s) => s !== 'confirmed');
+  }
   const canEditAll = user?.permissions['query.edit_all'];
   const canEditStatus = user?.permissions['query.status_change'] && (canEditAll || query.assignedTo === user?.id);
 
@@ -193,7 +202,7 @@ export default function QueryDetailPage() {
         <div className="ml-auto">
           {canEditAll && (
             <Dialog open={isAssignOpen} onOpenChange={setIsAssignOpen}>
-              {/* @ts-ignore */}
+              {/* @ts-expect-error shadcn generic trigger issue */}
               <DialogTrigger asChild>
                 <Button variant="outline" className="gap-2">
                   <UserPlus className="w-4 h-4" />
@@ -350,7 +359,7 @@ export default function QueryDetailPage() {
                   <div className="flex items-center gap-2">
                     <p className="text-sm text-muted-foreground">Follow Up:</p>
                     <Popover>
-                      {/* @ts-ignore */}
+                      {/* @ts-expect-error shadcn generic trigger issue */}
                       <PopoverTrigger asChild>
                         <Button
                           variant="outline"
@@ -384,41 +393,212 @@ export default function QueryDetailPage() {
             </CardContent>
           </Card>
 
-          {/* Activity Timeline */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold tracking-tight">Activity Timeline</h3>
-            {query.notes.length === 0 ? (
-              <div className="text-center p-8 border border-dashed rounded-lg text-muted-foreground">
-                No activity logged yet.
-              </div>
-            ) : (
-              <div className="space-y-4 relative before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-border before:to-transparent">
-                {query.notes.map((note) => (
-                  <div key={note.id} className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
-                    <div className="flex items-center justify-center w-10 h-10 rounded-full border-4 border-background bg-primary/10 text-primary shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 z-10">
-                      <User className="w-4 h-4" />
-                    </div>
-                    <div className="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] p-4 rounded-lg border bg-card shadow-sm">
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="font-semibold text-sm">{note.user.name}</span>
-                        <time className="text-xs text-muted-foreground">{format(new Date(note.createdAt), 'MMM d, h:mm a')}</time>
-                      </div>
-                      <p className="text-sm whitespace-pre-wrap">{note.note}</p>
-                      {note.followUpAt && (
-                        <div className="mt-3 pt-3 border-t flex items-center text-xs text-blue-600 dark:text-blue-400 font-medium">
-                          <CalendarIcon className="w-3 h-3 mr-1.5" />
-                          Follow up set for {format(new Date(note.followUpAt), 'PPP')}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+          {/* Activity Timeline & Proposals */}
+          <Card>
+            <CardContent className="p-0">
+              <Tabs defaultValue="timeline" className="w-full" value={activeTab} onValueChange={setActiveTab}>
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="timeline">Timeline & Notes</TabsTrigger>
+                  <TabsTrigger value="proposals">Proposals</TabsTrigger>
+                </TabsList>
 
+                <TabsContent value="timeline" className="mt-6 p-4">
+                  <div className="space-y-4">
+                    {query.notes.length === 0 ? (
+                      <div className="text-center p-8 border border-dashed rounded-lg text-muted-foreground">
+                        No activity logged yet.
+                      </div>
+                    ) : (
+                      <div className="space-y-4 relative before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-border before:to-transparent">
+                        {query.notes.map((note) => (
+                          <div key={note.id} className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
+                            <div className="flex items-center justify-center w-10 h-10 rounded-full border-4 border-background bg-primary/10 text-primary shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 z-10">
+                              <User className="w-4 h-4" />
+                            </div>
+                            <div className="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] p-4 rounded-lg border bg-card shadow-sm">
+                              <div className="flex items-center justify-between mb-1">
+                                <div>
+                                  <span className="font-semibold text-sm">{note.user.name}</span>
+                                  <span className="text-xs text-muted-foreground ml-2">{format(new Date(note.createdAt), 'MMM d, h:mm a')}</span>
+                                </div>
+                                {(note.user.name === user?.name || user?.role === 'admin') && (
+                                  <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-destructive" onClick={() => handleDeleteNote(note.id)}>
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                )}
+                              </div>
+                              <p className="text-sm whitespace-pre-wrap">{note.note}</p>
+                              {note.followUpAt && (
+                                <div className="mt-3 pt-3 border-t flex items-center text-xs text-blue-600 dark:text-blue-400 font-medium">
+                                  <CalendarIcon className="w-3 h-3 mr-1.5" />
+                                  Follow up set for {format(new Date(note.followUpAt), 'PPP')}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="proposals" className="mt-6 p-4">
+                  <div className="flex justify-between items-center mb-6">
+                    <h3 className="text-lg font-semibold">Proposals</h3>
+                    <Link href={`/queries/${params.id}/proposals/new`}>
+                      <Button>
+                        <Plus className="w-4 h-4 mr-2" /> Build Proposal
+                      </Button>
+                    </Link>
+                  </div>
+
+                  <QueryProposalsList queryId={params.id as string} />
+                </TabsContent>
+              </Tabs>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>
   );
 }
+
+function QueryProposalsList({ queryId }: { queryId: string }) {
+  const [waModalOpenId, setWaModalOpenId] = useState<string | null>(null);
+
+  const { data: proposals, isLoading } = useQuery({
+    queryKey: ['proposals', queryId],
+    queryFn: async () => {
+      const res = await api.get(`/queries/${queryId}/proposals`);
+      return res.data.data;
+    }
+  });
+
+  const sendWhatsapp = useMutation({
+    mutationFn: async (proposalId: string) => {
+      await api.post(`/proposals/${proposalId}/send-whatsapp`);
+    },
+    onSuccess: () => {
+      toast.success('WhatsApp dispatched successfully');
+      setWaModalOpenId(null);
+    },
+    onError: (err: any) => {
+      toast.error(err.response?.data?.message || 'Failed to send WhatsApp');
+    }
+  });
+
+  const sendEmail = useMutation({
+    mutationFn: async (proposalId: string) => {
+      await api.post(`/proposals/${proposalId}/send-email`);
+    },
+    onSuccess: () => toast.success('Email dispatched successfully'),
+    onError: (err: any) => toast.error(err.response?.data?.message || 'Failed to send email')
+  });
+
+  const handleWaModalOpen = async (proposalId: string) => {
+    setWaModalOpenId(proposalId);
+    // Background log 'whatsapp_opened'
+    try {
+      await api.post(`/proposals/${proposalId}/log/whatsapp_opened`);
+    } catch(err) {
+      // ignore
+    }
+  };
+
+  if (isLoading) return <div className="py-8 flex justify-center"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>;
+
+  if (!proposals || proposals.length === 0) {
+    return (
+      <div className="text-center py-12 border-2 border-dashed rounded-lg">
+        <FileText className="w-12 h-12 text-muted-foreground mx-auto mb-4 opacity-50" />
+        <h3 className="text-lg font-medium">No Proposals Yet</h3>
+        <p className="text-muted-foreground mb-4">You haven&apos;t built any proposals for this query.</p>
+        <Link href={`/queries/${queryId}/proposals/new`}>
+          <Button variant="outline"><Plus className="w-4 h-4 mr-2" /> Build the First Proposal</Button>
+        </Link>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      {proposals.map((p: any) => (
+        <div key={p.id} className="p-4 border rounded-lg hover:border-primary transition-colors flex justify-between items-center group">
+          <div className="flex items-center gap-4">
+            <div className="hidden sm:flex w-12 h-12 bg-primary/10 text-primary rounded-full items-center justify-center font-bold">
+              v{p.version}
+            </div>
+            <div>
+              <h4 className="font-semibold text-lg flex items-center gap-2">
+                Version {p.version}
+                <span className="text-xs bg-muted px-2 py-1 rounded-full text-muted-foreground font-normal">
+                  {new Date(p.createdAt).toLocaleDateString('en-GB')}
+                </span>
+              </h4>
+              <p className="text-muted-foreground text-sm mt-1">
+                Selling Price: <span className="font-medium text-foreground inline-flex items-center"><IndianRupee className="w-3 h-3 mr-0.5" />{Number(p.sellingPrice).toLocaleString()}</span> • 
+                Created by {p.user?.name || 'System'}
+              </p>
+            </div>
+          </div>
+          <div className="flex gap-2 items-center">
+            
+            <a href={`http://localhost:3001/api/v1/proposals/${p.id}/pdf`} target="_blank" rel="noopener noreferrer">
+              <Button variant="ghost" size="sm">PDF</Button>
+            </a>
+
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="text-blue-600 border-blue-200 hover:bg-blue-50"
+              onClick={() => sendEmail.mutate(p.id)}
+              disabled={sendEmail.isPending}
+            >
+              <Mail className="w-4 h-4 mr-2" /> Email
+            </Button>
+
+            <Dialog open={waModalOpenId === p.id} onOpenChange={(open) => !open && setWaModalOpenId(null)}>
+              {/* @ts-expect-error shadcn generic trigger issue */}
+              <DialogTrigger asChild>
+                <Button 
+                  variant="default" 
+                  size="sm" 
+                  className="bg-emerald-600 hover:bg-emerald-700"
+                  onClick={() => handleWaModalOpen(p.id)}
+                >
+                  <MessageCircle className="w-4 h-4 mr-2" /> WhatsApp
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Send via WhatsApp</DialogTitle>
+                  <DialogDescription>
+                    Dispatch a pre-approved Interakt template with the attached Proposal PDF link directly to the customer.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="bg-muted p-4 rounded-md text-sm border font-mono">
+                  <p>COMPANY_NAME</p>
+                  <p>Hi {'{Customer Name}'},</p>
+                  <p>Please find your proposal attached.</p>
+                </div>
+                <div className="flex justify-end gap-3 mt-4">
+                  <Button variant="ghost" onClick={() => setWaModalOpenId(null)}>Cancel</Button>
+                  <Button 
+                    className="bg-emerald-600 hover:bg-emerald-700"
+                    onClick={() => sendWhatsapp.mutate(p.id)}
+                    disabled={sendWhatsapp.isPending}
+                  >
+                    {sendWhatsapp.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                    Confirm & Send
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+

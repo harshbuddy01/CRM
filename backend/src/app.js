@@ -68,6 +68,8 @@ const queryRoutes = require('./routes/query.routes');
 const userRoutes = require('./routes/user.routes');
 const notificationRoutes = require('./routes/notification.routes');
 const reportRoutes = require('./routes/report.routes');
+const masterRoutes = require('./routes/master.routes');
+const proposalRoutes = require('./routes/proposal.routes');
 
 // Rate Limiters
 const generalLimiter = rateLimit({
@@ -100,6 +102,8 @@ app.use('/v1/queries', queryRoutes);
 app.use('/v1/users', userRoutes);
 app.use('/v1/notifications', notificationRoutes);
 app.use('/v1/reports', reportRoutes);
+app.use('/v1/masters', masterRoutes);
+app.use('/v1/proposals', proposalRoutes);
 
 // ========================
 // 404 HANDLER

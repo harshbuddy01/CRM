@@ -5,6 +5,7 @@
 const express = require('express');
 const router = express.Router();
 const queryController = require('../controllers/query.controller');
+const proposalController = require('../controllers/proposal.controller');
 const queryValidator = require('../validators/query.validator');
 const { authenticate } = require('../middlewares/authenticate');
 const { can } = require('../middlewares/can');
@@ -51,6 +52,25 @@ router.post(
   '/:id/notes',
   can('query.edit_own'),
   queryController.addNote
+);
+
+// Delete note
+router.delete(
+  '/:id/notes/:noteId',
+  can('query.edit_own'),
+  queryController.deleteNote
+);
+
+// --- Proposals ---
+router.post(
+  '/:id/proposals',
+  can('query.edit_own'),
+  proposalController.createProposal
+);
+
+router.get(
+  '/:id/proposals',
+  proposalController.getProposalsByQuery
 );
 
 // Update query details

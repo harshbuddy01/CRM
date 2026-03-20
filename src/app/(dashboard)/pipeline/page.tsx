@@ -8,6 +8,8 @@ import { Loader2, Calendar } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { useRouter } from 'next/navigation';
+import { TRANSITIONS } from '@/lib/constants';
+import { useAuthStore } from '@/lib/auth-store';
 
 const PIPELINE_COLUMNS = [
   { id: 'new', title: 'New Leads', color: 'bg-blue-500' },
@@ -35,6 +37,7 @@ type BoardData = {
 };
 
 export default function PipelinePage() {
+  const { user } = useAuthStore();
   const router = useRouter();
   const queryClient = useQueryClient();
   const [boardData, setBoardData] = useState<BoardData>({});
@@ -70,17 +73,6 @@ export default function PipelinePage() {
     }
   }, [data]);
 
-  // Status Check Helper
-  const TRANSITIONS: Record<string, string[]> = {
-    new:           ['followup', 'dnp', 'lost', 'invalid'],
-    followup:      ['followup', 'dnp', 'proposal_sent', 'lost', 'invalid'],
-    dnp:           ['followup', 'lost', 'invalid'],
-    proposal_sent: ['followup', 'ready_to_pay', 'lost', 'invalid'],
-    ready_to_pay:  ['confirmed', 'lost'],
-    confirmed:     [],
-    lost:          ['new'],
-    invalid:       ['new'],
-  };
 
   const statusMutation = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: string }) => {
@@ -111,9 +103,13 @@ export default function PipelinePage() {
     const targetStatus = destination.droppableId;
     
     if (sourceStatus !== targetStatus) {
-      const allowed = TRANSITIONS[sourceStatus] || [];
+      let allowed = TRANSITIONS[sourceStatus] || [];
+      if (user?.role !== 'admin') {
+        allowed = allowed.filter(s => s !== 'confirmed');
+      }
+
       if (!allowed.includes(targetStatus)) {
-        toast.error('Invalid Move', { description: `Cannot move lead from ${sourceStatus.replace('_', ' ')} to ${targetStatus.replace('_', ' ')} directly.` });
+        toast.error('Invalid Move', { description: `Cannot move lead from ${sourceStatus.replace('_', ' ')} to ${targetStatus.replace('_', ' ')} directly or lack permission.` });
         return;
       }
     }

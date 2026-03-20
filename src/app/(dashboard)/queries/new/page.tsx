@@ -25,7 +25,11 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { Loader2 } from 'lucide-react';
+import { Loader2, CalendarIcon } from 'lucide-react';
+import { format } from 'date-fns';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { cn } from '@/lib/utils';
 
 const formSchema = z.object({
   name: z.string().min(2, 'Name is required'),
@@ -33,6 +37,8 @@ const formSchema = z.object({
   email: z.string().email('Valid email is required').or(z.literal('')),
   destination: z.string().optional(),
   budget: z.string().optional(),
+  travelDateFrom: z.date().optional(),
+  travelDateTo: z.date().optional(),
   adults: z.coerce.number().min(1, 'At least 1 adult'),
   children: z.coerce.number().min(0),
   leadSource: z.string().min(1, 'Lead source is required'),
@@ -54,6 +60,8 @@ export default function NewQueryPage() {
       email: '',
       destination: '',
       budget: '',
+      travelDateFrom: undefined,
+      travelDateTo: undefined,
       adults: 1,
       children: 0,
       leadSource: 'website',
@@ -94,6 +102,8 @@ export default function NewQueryPage() {
       await api.post('/queries', {
         ...values,
         budget: values.budget ? parseFloat(values.budget) : null,
+        travelDateFrom: values.travelDateFrom ? values.travelDateFrom.toISOString() : null,
+        travelDateTo: values.travelDateTo ? values.travelDateTo.toISOString() : null,
       });
       toast.success('Lead Created', { description: 'The new query has been added.' });
       router.push('/queries');
@@ -200,6 +210,56 @@ export default function NewQueryPage() {
                         <Input type="number" placeholder="50000" {...field} />
                       </FormControl>
                       <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="travelDateFrom"
+                  render={({ field }: { field: any }) => (
+                    <FormItem className="flex flex-col mt-2">
+                       <FormLabel>Travel From</FormLabel>
+                       <Popover>
+                         <PopoverTrigger asChild>
+                           <FormControl>
+                             <Button variant="outline" className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
+                               {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
+                               <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                             </Button>
+                           </FormControl>
+                         </PopoverTrigger>
+                         <PopoverContent className="w-auto p-0" align="start">
+                           <Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus />
+                         </PopoverContent>
+                       </Popover>
+                       <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="travelDateTo"
+                  render={({ field }: { field: any }) => (
+                    <FormItem className="flex flex-col mt-2">
+                       <FormLabel>Travel To</FormLabel>
+                       <Popover>
+                         <PopoverTrigger asChild>
+                           <FormControl>
+                             <Button variant="outline" className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
+                               {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
+                               <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                             </Button>
+                           </FormControl>
+                         </PopoverTrigger>
+                         <PopoverContent className="w-auto p-0" align="start">
+                           <Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus />
+                         </PopoverContent>
+                       </Popover>
+                       <FormMessage />
                     </FormItem>
                   )}
                 />

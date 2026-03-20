@@ -75,7 +75,7 @@ export function Topbar() {
         
         {/* Notification Bell */}
         <Popover>
-          {/* @ts-ignore */}
+          {/* @ts-expect-error shadcn issue */}
           <PopoverTrigger asChild>
             <Button variant="ghost" size="icon" className="relative rounded-full">
               <Bell className="w-5 h-5" />

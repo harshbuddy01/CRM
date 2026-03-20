@@ -204,6 +204,18 @@ const addNote = async (queryId, userId, note, followUpAt) => {
   return created;
 };
 
+const deleteNote = async (queryId, noteId, userId) => {
+  const note = await prisma.queryNote.findFirst({
+    where: { id: noteId, queryId }
+  });
+  if (!note) {
+    const { NotFoundError } = require('../utils/errors');
+    throw new NotFoundError('Note');
+  }
+  
+  await prisma.queryNote.delete({ where: { id: noteId } });
+};
+
 const changeQueryStatus = async (id, status, userId, canViewAll, canEditAll) => {
   const existing = await getQueryById(id, userId, canViewAll);
   
@@ -229,4 +241,5 @@ module.exports = {
   checkDuplicatePhone,
   changeQueryStatus,
   addNote,
+  deleteNote,
 };
