@@ -40,6 +40,7 @@ router.put(
 router.patch(
   '/:id/status', 
   can('query.status_change'), 
+  queryValidator.validateStatusChange,
   queryController.changeStatus
 );
 

@@ -3,6 +3,7 @@
 // ============================================================
 
 const { ValidationError } = require('../utils/AppError');
+const { validateTransition } = require('../utils/statusTransitions');
 
 const validateCreateQuery = (req, res, next) => {
   const { name, phone, leadSource } = req.body;
@@ -24,7 +25,14 @@ const validateAssignQuery = (req, res, next) => {
   next();
 };
 
+const validateStatusChange = (req, res, next) => {
+  const { status } = req.body;
+  if (!status) throw new ValidationError('Status is required');
+  next();
+};
+
 module.exports = {
   validateCreateQuery,
   validateAssignQuery,
+  validateStatusChange,
 };

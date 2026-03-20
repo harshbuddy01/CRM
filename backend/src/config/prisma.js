@@ -31,13 +31,8 @@ const extendedPrisma = prisma.$extends({
       async $allOperations({ model, operation, args, query }) {
         if (softDeleteModels.includes(model)) {
           // Add deletedAt filter for reads
-          if (operation === 'findUnique' || operation === 'findFirst' || operation === 'findMany') {
+          if (operation === 'findFirst' || operation === 'findMany') {
             args.where = { ...args.where, deletedAt: null };
-            if (operation === 'findUnique') {
-              // findUnique cannot take compound where clauses easily if it breaks uniqueness
-              // Prisma recommends using findFirst instead when blending with logical ANDs
-              return prisma[model].findFirst(args);
-            }
           }
           // Convert deletes to update(deletedAt)
           if (operation === 'delete') {
