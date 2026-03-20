@@ -35,7 +35,12 @@ const generatePdfFromHtml = async (htmlContent) => {
     }
 
     browser = await puppeteer.launch({
-      args: isProduction ? chromium.args : puppeteer.defaultArgs(),
+      args: isProduction ? [
+        ...chromium.args,
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+      ] : puppeteer.defaultArgs(),
       defaultViewport: chromium.defaultViewport,
       executablePath: executablePath || undefined,
       headless: isProduction ? chromium.headless : true,
