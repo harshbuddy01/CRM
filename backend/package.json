@@ -20,6 +20,7 @@
   "dependencies": {
     "@prisma/client": "^5.22.0",
     "@sendgrid/mail": "^8.1.6",
+    "@sparticuz/chromium": "^131.0.1",
     "axios": "^1.13.6",
     "bcryptjs": "^3.0.3",
     "bullmq": "^5.71.0",
@@ -37,7 +38,7 @@
     "node-cron": "^4.2.1",
     "nodemailer": "^8.0.3",
     "prisma": "^5.22.0",
-    "puppeteer": "^24.40.0",
+    "puppeteer-core": "^23.11.1",
     "razorpay": "^2.9.6",
     "zod": "^4.3.6"
   },

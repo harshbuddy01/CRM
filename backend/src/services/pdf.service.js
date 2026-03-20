@@ -2,9 +2,9 @@
 // TravelCRM — PDF Generation Service
 // ============================================================
 
-const puppeteer = require('puppeteer');
+const puppeteer = require('puppeteer-core');
+const chromium = require('@sparticuz/chromium');
 const config = require('../config');
-const logger = require('../utils/logger');
 
 /**
  * Generates a PDF buffer from HTML content.
@@ -13,26 +13,70 @@ const logger = require('../utils/logger');
 const generatePdfFromHtml = async (htmlContent) => {
   let browser = null;
   try {
+    // Determine path based on environment
+    const isProduction = config.nodeEnv === 'production';
+    console.log(`[PDF] Mode: ${isProduction ? 'Production' : 'Local'}`);
+    
+    let executablePath;
+    
+    if (isProduction) {
+      console.log('[PDF] Attempting to resolve Chromium path via @sparticuz/chromium...');
+      executablePath = await chromium.executablePath();
+      
+      // Fallback for Railway/Linux environments if @sparticuz fails
+      if (!executablePath) {
+        const commonPaths = [
+          '/usr/bin/google-chrome',
+          '/usr/bin/google-chrome-stable',
+          '/usr/bin/chromium',
+          '/usr/bin/chromium-browser',
+          '/nix/store/*/bin/google-chrome' // Common for Nixpacks
+        ];
+        console.log('[PDF] @sparticuz returned NULL. Probing common Linux paths...');
+        const fs = require('fs');
+        for (const path of commonPaths) {
+          if (fs.existsSync(path)) {
+            executablePath = path;
+            console.log(`[PDF] Found fallback path: ${path}`);
+            break;
+          }
+        }
+      }
+      console.log(`[PDF] Final Executable Path: ${executablePath || 'NOT FOUND'}`);
+    } else {
+      executablePath =
+        process.platform === 'darwin'
+          ? '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
+          : '/usr/bin/google-chrome';
+    }
+
+    if (isProduction && !executablePath) {
+      console.warn('[PDF] WARNING: Chromium executable path is NULL in production. Attempting standard puppeteer launch...');
+    }
+
     browser = await puppeteer.launch({
-      args: [
+      args: isProduction ? [
+        ...chromium.args,
         '--no-sandbox',
         '--disable-setuid-sandbox',
         '--disable-dev-shm-usage',
         '--disable-gpu',
         '--no-first-run',
-        '--no-zygote',
-        '--single-process',
-      ],
-      headless: true,
+        // NOTE: --single-process was removed in Chromium 113 — do NOT add it back
+        // It causes an immediate crash on Chromium 131+
+      ] : [],
+      defaultViewport: chromium.defaultViewport,
+      executablePath: executablePath || undefined,
+      headless: isProduction ? chromium.headless : true,
       ignoreHTTPSErrors: true,
     });
 
-    logger.debug('[PDF] Browser launched successfully');
+    console.log('[PDF] Browser launched successfully');
     const page = await browser.newPage();
     
     // Set HTML content and wait for network/fonts to finish loading
     await page.setContent(htmlContent, { waitUntil: 'networkidle0', timeout: 30000 });
-    logger.debug('[PDF] Page content set');
+    console.log('[PDF] Page content set');
 
     // Generate PDF buffer
     const pdfBuffer = await page.pdf({
@@ -45,7 +89,7 @@ const generatePdfFromHtml = async (htmlContent) => {
         left: '20px',
       },
     });
-    logger.debug(`[PDF] PDF Buffer generated: ${pdfBuffer.length} bytes`);
+    console.log(`[PDF] PDF Buffer generated: ${pdfBuffer.length} bytes`);
 
     return pdfBuffer;
 
