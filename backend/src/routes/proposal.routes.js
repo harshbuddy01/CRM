@@ -15,6 +15,7 @@ router.use(authenticate);
 // or we can structure it here if we mount this file under /v1/proposals. 
 // We will build GET /v1/proposals/:id here:
 router.get('/:id', proposalController.getProposalById);
+router.get('/', can('proposal.view_all'), proposalController.listAllProposals);
 
 // Download PDF
 router.get('/:id/pdf', proposalController.downloadPdf);

@@ -90,8 +90,20 @@ const getProposalById = async (id) => {
   return proposal;
 };
 
+const listAllProposals = async () => {
+  return await prisma.proposal.findMany({
+    where: { deletedAt: null },
+    include: {
+      query: { select: { queryCode: true, name: true, destination: true } },
+      user: { select: { name: true } }
+    },
+    orderBy: { createdAt: 'desc' }
+  });
+};
+
 module.exports = {
   createProposal,
   getProposalsByQuery,
   getProposalById,
+  listAllProposals,
 };

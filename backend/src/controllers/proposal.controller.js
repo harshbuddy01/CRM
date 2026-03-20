@@ -202,6 +202,15 @@ const logEvent = async (req, res, next) => {
   }
 };
 
+const listAllProposals = async (req, res, next) => {
+  try {
+    const proposals = await proposalService.listAllProposals();
+    res.json({ success: true, data: proposals });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   createProposal,
   getProposalsByQuery,
@@ -210,4 +219,5 @@ module.exports = {
   sendWhatsapp,
   sendEmail,
   logEvent,
+  listAllProposals,
 };
