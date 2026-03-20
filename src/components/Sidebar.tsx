@@ -25,12 +25,12 @@ export function Sidebar() {
     { href: '/', label: 'Overview', icon: LayoutDashboard, exact: true },
     { href: '/pipeline', label: 'Pipeline', icon: Columns, show: true },
     { href: '/queries', label: 'Leads List', icon: Target, show: true },
-    { href: '/tours', label: 'Tours List', icon: Map, show: user?.role === 'admin' || user?.permissions['tour.view_all'] || user?.permissions['tour.view_assigned'] },
-    { href: '/tours/ops', label: 'Operations', icon: MapPin, show: user?.role === 'admin' || user?.role === 'ops' || user?.permissions['tour.view_all'] },
-    { href: '/tours/field', label: 'Field Agent', icon: Navigation, show: user?.role === 'admin' || user?.role === 'ops' || user?.permissions['tour.view_assigned'] },
+    { href: '/tours', label: 'Tours List', icon: Map, show: user?.permissions['tour.view_all'] || user?.permissions['tour.view_assigned'] },
+    { href: '/tours/ops', label: 'Operations', icon: MapPin, show: user?.permissions['tour.view_all'] },
+    { href: '/tours/field', label: 'Field Agent', icon: Navigation, show: user?.permissions['tour.view_assigned'] },
     { href: '/proposals', label: 'Proposals', icon: FileText, show: true },
     { href: '/payments', label: 'Payment Ledger', icon: CreditCard, show: user?.role === 'admin' || user?.permissions['payment.view_all'] || user?.permissions['payment.view_assigned'] },
-    { href: '/masters/destinations', label: 'Masters', icon: Database, show: user?.role === 'admin' },
+    { href: '/masters/destinations', label: 'Masters', icon: Database, show: user?.permissions['master.manage_destinations'] || user?.permissions['master.manage_hotels'] },
     { href: '/users', label: 'Team', icon: Users, show: user?.permissions['users.view'] },
   ];
 

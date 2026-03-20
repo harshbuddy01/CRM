@@ -100,14 +100,14 @@ const generateRazorpayLink = async ({ queryId, tourId, amount, description }) =>
   }
 };
 
-const handleWebhook = async (body, signature) => {
+const handleWebhook = async (body, rawBody, signature) => {
   if (!config.razorpay.webhookSecret) {
     throw new BusinessError('Webhook secret not configured');
   }
 
   const expectedSignature = crypto
     .createHmac('sha256', config.razorpay.webhookSecret)
-    .update(JSON.stringify(body))
+    .update(rawBody)
     .digest('hex');
 
   if (expectedSignature !== signature) {

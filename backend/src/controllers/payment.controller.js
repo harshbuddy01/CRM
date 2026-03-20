@@ -61,7 +61,7 @@ const razorpayLink = async (req, res, next) => {
 const webhook = async (req, res, next) => {
   try {
     const signature = req.headers['x-razorpay-signature'];
-    await paymentService.handleWebhook(req.body, signature);
+    await paymentService.handleWebhook(req.body, req.rawBody, signature);
     res.status(200).json({ status: 'ok' });
   } catch (error) {
     next(error);

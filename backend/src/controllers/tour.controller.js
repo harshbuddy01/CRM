@@ -50,6 +50,15 @@ const cancel = async (req, res, next) => {
   }
 };
 
+const refundEstimate = async (req, res, next) => {
+  try {
+    const estimate = await tourService.estimateRefund(req.params.id);
+    res.json({ success: true, data: estimate });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   list,
   getById,

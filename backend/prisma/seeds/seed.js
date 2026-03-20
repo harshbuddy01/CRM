@@ -40,6 +40,8 @@ const permissions = [
   { key: 'tour.edit_own', label: 'Edit own tours', module: 'tours' },
   { key: 'tour.delete', label: 'Delete tours', module: 'tours' },
   { key: 'tour.status_change', label: 'Change tour status', module: 'tours' },
+  { key: 'tour.cancel', label: 'Cancel tour', module: 'tours' },
+  { key: 'tour.edit_ops', label: 'Edit ops details', module: 'tours' },
   { key: 'payment.view_all', label: 'View all payments', module: 'payments' },
   { key: 'payment.view_assigned', label: 'View assigned payments', module: 'payments' },
   { key: 'payment.create', label: 'Create payment', module: 'payments' },
