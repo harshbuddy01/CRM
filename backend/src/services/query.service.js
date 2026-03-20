@@ -224,7 +224,10 @@ const deleteNote = async (queryId, noteId, userId) => {
     throw new NotFoundError('Note');
   }
   
-  await prisma.queryNote.delete({ where: { id: noteId } });
+  await prisma.queryNote.update({
+    where: { id: noteId },
+    data: { deletedAt: new Date() }
+  });
 };
 
 const changeQueryStatus = async (id, status, userId, canViewAll, canEditAll) => {

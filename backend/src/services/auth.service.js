@@ -53,7 +53,7 @@ const register = async ({ name, email, password, roleId, createdBy, mobileOnly =
 };
 
 const login = async (email, password) => {
-  console.log('[AUTH] Login attempt for:', email);
+
   const user = await prisma.user.findUnique({
     where: { email },
     include: { role: true },

@@ -46,7 +46,7 @@ const getTourDetails = async (id) => {
   const tour = await prisma.tour.findUnique({
     where: { id },
     include: {
-      query: true,
+      query: { select: { id: true, name: true, phone: true, email: true, destination: true } },
       proposal: {
         include: { days: { include: { destination: true, hotel: true } } }
       },
