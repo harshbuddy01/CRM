@@ -12,14 +12,14 @@ router.use(authenticate);
 
 // --- Destinations ---
 router.get('/destinations', masterController.getDestinations);
-router.post('/destinations', can('master.manage'), masterController.createDestination);
-router.put('/destinations/:id', can('master.manage'), masterController.updateDestination);
-router.delete('/destinations/:id', can('master.manage'), masterController.deleteDestination);
+router.post('/destinations', can('master.manage_destinations'), masterController.createDestination);
+router.put('/destinations/:id', can('master.manage_destinations'), masterController.updateDestination);
+router.delete('/destinations/:id', can('master.manage_destinations'), masterController.deleteDestination);
 
 // --- Hotels ---
 router.get('/hotels', masterController.getHotels);
-router.post('/hotels', can('master.manage'), masterController.createHotel);
-router.put('/hotels/:id', can('master.manage'), masterController.updateHotel);
-router.delete('/hotels/:id', can('master.manage'), masterController.deleteHotel);
+router.post('/hotels', can('master.manage_hotels'), masterController.createHotel);
+router.put('/hotels/:id', can('master.manage_hotels'), masterController.updateHotel);
+router.delete('/hotels/:id', can('master.manage_hotels'), masterController.deleteHotel);
 
 module.exports = router;
