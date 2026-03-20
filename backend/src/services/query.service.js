@@ -221,15 +221,13 @@ const addNote = async (queryId, userId, note, followUpAt) => {
 };
 
 const deleteNote = async (queryId, noteId, userId) => {
-  const note = await prisma.queryNote.findFirst({
-    where: { id: noteId, queryId }
-  });
-  if (!note) {
-    throw new NotFoundError('Note');
-  }
-  
-  await prisma.queryNote.update({
-    where: { id: noteId },
+  // Use updateMany to be idempotent (if already deleted or not found, it just does nothing instead of 404)
+  await prisma.queryNote.updateMany({
+    where: { 
+      id: noteId, 
+      queryId,
+      deletedAt: null // Only update if not already deleted
+    },
     data: { deletedAt: new Date() }
   });
 };
