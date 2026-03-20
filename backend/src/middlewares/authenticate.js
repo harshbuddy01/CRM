@@ -1,11 +1,11 @@
 // ============================================================
 // TravelCRM — Authentication Middleware
 // ============================================================
-// Runs on EVERY protected route. Does three things:
+// Runs on EVERY protected route. Optimized for performance:
 //   1. Extracts JWT from Authorization header (Bearer token)
-//   2. Verifies the token signature
-//   3. Loads the user's merged permissions (role + overrides)
-//      and attaches them to req.user
+//   2. Verifies the token signature  
+//   3. Reads permissions from JWT payload (cached at login/refresh)
+//   4. Does ONE DB query to verify user still exists & is active
 //
 // If token is missing/invalid → 401 Unauthorized
 // ============================================================
@@ -15,11 +15,14 @@ const config = require('../config');
 const prisma = require('../config/prisma');
 const { UnauthorizedError } = require('../utils/AppError');
 const logger = require('../utils/logger');
-const { getUserPermissions } = require('../utils/permissions');
 
 /**
  * Express middleware: authenticate
  * Verifies JWT and attaches user info + permissions to req.user
+ * 
+ * Performance: Reduced from 5 DB queries to 1 per request.
+ * Permissions are now embedded in the JWT at login/refresh time
+ * and refreshed whenever the token is refreshed (max 15 min stale).
  */
 const authenticate = async (req, res, next) => {
   try {
@@ -31,42 +34,27 @@ const authenticate = async (req, res, next) => {
 
     const token = authHeader.split(' ')[1];
 
-    // Verify JWT signature and decode payload
+    // Verify JWT signature and decode payload (includes permissions)
     const decoded = jwt.verify(token, config.jwt.secret);
 
-    // Fetch user from DB to ensure they still exist and are active
+    // Single DB query: verify user still exists and is active
     const user = await prisma.user.findUnique({
       where: { id: decoded.id },
-      include: { role: true },
+      select: { id: true, name: true, email: true, isActive: true },
     });
 
     if (!user || !user.isActive) {
       throw new UnauthorizedError('User account is inactive or not found');
     }
 
-    // Ensure user has at least one valid session
-    const sessionExists = await prisma.userSession.findFirst({
-      where: { 
-        userId: user.id,
-        expiresAt: { gt: new Date() }
-      },
-    });
-    
-    if (!sessionExists) {
-      throw new UnauthorizedError('Session expired or logged out');
-    }
-
-    // Load merged permissions (role defaults + personal overrides)
-    const permissions = await getUserPermissions(user.id);
-
-    // Attach to request for downstream use
+    // Attach to request — permissions come from JWT (cached at login/refresh)
     req.user = {
       id: user.id,
       name: user.name,
       email: user.email,
-      role: user.role.name,
-      roleLabel: user.role.label,
-      permissions,
+      role: decoded.role,
+      roleLabel: decoded.roleLabel,
+      permissions: decoded.permissions || {},
     };
 
     next();

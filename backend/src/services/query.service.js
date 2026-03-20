@@ -16,6 +16,8 @@ const generateQueryCode = async () => {
   return `QRY-${year}-${String(count + 1).padStart(3, '0')}`;
 };
 
+const MAX_CODE_RETRIES = 3;
+
 const createQuery = async (data) => {
   // Simple duplicate check by phone number
   const existing = await prisma.query.findFirst({
@@ -31,17 +33,27 @@ const createQuery = async (data) => {
     if (!agent) throw new BusinessError('Assigned user is invalid or inactive');
   }
 
-  const queryCode = await generateQueryCode();
-
-  return await prisma.query.create({
-    data: {
-      ...data,
-      queryCode,
-      // If travel dates are sent as strings, convert them:
-      travelDateFrom: data.travelDateFrom ? new Date(data.travelDateFrom) : null,
-      travelDateTo: data.travelDateTo ? new Date(data.travelDateTo) : null,
-    },
-  });
+  // Retry loop to handle race condition on queryCode unique constraint
+  for (let attempt = 1; attempt <= MAX_CODE_RETRIES; attempt++) {
+    try {
+      const queryCode = await generateQueryCode();
+      return await prisma.query.create({
+        data: {
+          ...data,
+          queryCode,
+          travelDateFrom: data.travelDateFrom ? new Date(data.travelDateFrom) : null,
+          travelDateTo: data.travelDateTo ? new Date(data.travelDateTo) : null,
+        },
+      });
+    } catch (error) {
+      // Prisma unique constraint violation code = P2002
+      if (error.code === 'P2002' && error.meta?.target?.includes('query_code') && attempt < MAX_CODE_RETRIES) {
+        logger.warn(`[Query] queryCode collision on attempt ${attempt}, retrying...`);
+        continue;
+      }
+      throw error;
+    }
+  }
 };
 
 const listQueries = async ({ 
@@ -209,7 +221,6 @@ const deleteNote = async (queryId, noteId, userId) => {
     where: { id: noteId, queryId }
   });
   if (!note) {
-    const { NotFoundError, ValidationError } = require('../utils/AppError');
     throw new NotFoundError('Note');
   }
   

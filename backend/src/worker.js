@@ -46,24 +46,23 @@ const emailWorker = new Worker('email-sending', async job => {
     
     await prisma.integrationLog.create({
       data: {
-        queryId,
-        provider: 'sendgrid',
-        type: 'email_sent',
+        type: 'email',
+        direction: 'outbound',
         status: 'success',
-        requestPayload: { to, subject },
-        responsePayload: { message: 'Email delivered safely.' }
+        payload: { provider: 'sendgrid', to, subject },
+        relatedId: queryId,
       }
     });
   } catch (error) {
     console.error('[Email Worker Error]', error);
     await prisma.integrationLog.create({
       data: {
-        queryId,
-        provider: 'sendgrid',
-        type: 'email_failed',
-        status: 'error',
-        requestPayload: { to, subject },
-        responsePayload: { error: error.message }
+        type: 'email',
+        direction: 'outbound',
+        status: 'failed',
+        payload: { provider: 'sendgrid', to, subject },
+        errorMessage: error.message,
+        relatedId: queryId,
       }
     });
     throw error;
@@ -87,34 +86,38 @@ Please find your proposal attached.
     
     await prisma.integrationLog.create({
       data: {
-        queryId,
-        provider: 'interakt',
-        type: 'whatsapp_sent',
+        type: 'whatsapp',
+        direction: 'outbound',
         status: 'success',
-        requestPayload: { phone, templateName, body: fakeMessageBody },
-        responsePayload: { message: 'WhatsApp message queued and accepted by provider.' }
+        payload: { provider: 'interakt', phone, templateName, body: fakeMessageBody },
+        relatedId: queryId,
       }
     });
   } catch (error) {
     console.error('[WhatsApp Worker Error]', error);
     await prisma.integrationLog.create({
       data: {
-        queryId,
-        provider: 'interakt',
-        type: 'whatsapp_failed',
-        status: 'error',
-        requestPayload: { phone, templateName },
-        responsePayload: { error: error.message }
+        type: 'whatsapp',
+        direction: 'outbound',
+        status: 'failed',
+        payload: { provider: 'interakt', phone, templateName },
+        errorMessage: error.message,
+        relatedId: queryId,
       }
     });
     throw error;
   }
 }, { connection });
 
-// Graceful Shutdown
-process.on('SIGINT', async () => {
+// Graceful Shutdown — handle both SIGINT (Ctrl+C) and SIGTERM (Railway/Docker)
+const gracefulShutdown = async (signal) => {
+  console.log(`\n🛑 Received ${signal}. Shutting down workers gracefully...`);
   await pdfWorker.close();
   await emailWorker.close();
   await whatsappWorker.close();
+  console.log('✅ All workers closed. Exiting.');
   process.exit(0);
-});
+};
+
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));

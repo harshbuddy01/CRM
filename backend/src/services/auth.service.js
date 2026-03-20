@@ -9,10 +9,10 @@ const config = require('../config');
 const { BusinessError, UnauthorizedError, NotFoundError } = require('../utils/AppError');
 const { getUserPermissions } = require('../utils/permissions');
 
-const generateTokens = (user) => {
-  const payload = { id: user.id };
+const generateTokens = (user, { role, roleLabel, permissions }) => {
+  const payload = { id: user.id, role, roleLabel, permissions };
   const accessToken = jwt.sign(payload, config.jwt.secret, { expiresIn: config.jwt.expiresIn });
-  const refreshToken = jwt.sign(payload, config.jwt.refreshSecret, { expiresIn: config.jwt.refreshExpiresIn });
+  const refreshToken = jwt.sign({ id: user.id }, config.jwt.refreshSecret, { expiresIn: config.jwt.refreshExpiresIn });
   return { accessToken, refreshToken };
 };
 
@@ -68,8 +68,8 @@ const login = async (email, password) => {
     throw new UnauthorizedError('Invalid credentials');
   }
 
-  const tokens = generateTokens(user);
   const permissions = await getUserPermissions(user.id);
+  const tokens = generateTokens(user, { role: user.role.name, roleLabel: user.role.label, permissions });
 
   // Create session
   const refreshTokenHash = await bcrypt.hash(tokens.refreshToken, 10);
@@ -124,7 +124,9 @@ const refreshToken = async (token) => {
     }
 
     // Rotate tokens
-    const tokens = generateTokens(user);
+    // Reload permissions at refresh time so permission changes take effect
+    const permissions = await getUserPermissions(user.id);
+    const tokens = generateTokens(user, { role: user.role.name, roleLabel: user.role.label, permissions });
     const newHash = await bcrypt.hash(tokens.refreshToken, 10);
     const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
 

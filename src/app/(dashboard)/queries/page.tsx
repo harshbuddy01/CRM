@@ -119,6 +119,7 @@ export default function QueriesPage() {
               <SelectItem value="all">All Statuses</SelectItem>
               <SelectItem value="new">New</SelectItem>
               <SelectItem value="followup">Follow Up</SelectItem>
+              <SelectItem value="dnp">Did Not Pick Up</SelectItem>
               <SelectItem value="proposal_sent">Proposal Sent</SelectItem>
               <SelectItem value="ready_to_pay">Ready To Pay</SelectItem>
               <SelectItem value="confirmed">Confirmed</SelectItem>

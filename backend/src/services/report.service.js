@@ -21,17 +21,25 @@ const getDashboardKPIs = async (userId, canViewAll) => {
   });
 
   // Confirmed Sales this month
-  const confirmedQueries = await prisma.query.findMany({
+  const confirmedSalesCount = await prisma.query.count({
     where: {
       ...whereScope,
       status: 'confirmed',
       updatedAt: { gte: startOfMonth },
     },
-    select: { budget: true }
   });
 
-  const confirmedSalesCount = confirmedQueries.length;
-  const revenueThisMonth = confirmedQueries.reduce((sum, q) => sum + (q.budget || 0), 0);
+  // Revenue this month — from actual verified payments, not budget estimates
+  const revenueAgg = await prisma.payment.aggregate({
+    _sum: { amount: true },
+    where: {
+      status: 'verified',
+      paymentDate: { gte: startOfMonth },
+      deletedAt: null,
+      ...(canViewAll ? {} : { query: { assignedTo: userId } }),
+    },
+  });
+  const revenueThisMonth = Number(revenueAgg._sum.amount || 0);
 
   // New Leads this month
   const newLeadsMonth = await prisma.query.count({

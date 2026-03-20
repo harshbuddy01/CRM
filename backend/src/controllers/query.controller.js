@@ -88,24 +88,24 @@ const remove = async (req, res, next) => {
   }
 };
 
-  const changeStatus = async (req, res, next) => {
-    try {
-      const { status } = req.body;
-      if (!status) return res.status(400).json({ success: false, message: 'Status is required' });
-  
-      if (status === 'confirmed' && req.user.role !== 'admin') {
-        const { ForbiddenError } = require('../utils/AppError');
-        throw new ForbiddenError('Only Administrators can confirm a booking.');
-      }
-  
-      const canViewAll = req.user.permissions['query.view_all'];
-      const canEditAll = req.user.permissions['query.edit_all'];
-      const query = await queryService.changeQueryStatus(req.params.id, status, req.user.id, canViewAll, canEditAll);
-      res.json({ success: true, message: `Query status updated to ${status}`, data: query });
-    } catch (error) {
-      next(error);
+const changeStatus = async (req, res, next) => {
+  try {
+    const { status } = req.body;
+    if (!status) return res.status(400).json({ success: false, message: 'Status is required' });
+
+    if (status === 'confirmed' && req.user.role !== 'admin') {
+      const { ForbiddenError } = require('../utils/AppError');
+      throw new ForbiddenError('Only Administrators can confirm a booking.');
     }
-  };
+
+    const canViewAll = req.user.permissions['query.view_all'];
+    const canEditAll = req.user.permissions['query.edit_all'];
+    const query = await queryService.changeQueryStatus(req.params.id, status, req.user.id, canViewAll, canEditAll);
+    res.json({ success: true, message: `Query status updated to ${status}`, data: query });
+  } catch (error) {
+    next(error);
+  }
+};
 
 const duplicateCheck = async (req, res, next) => {
   try {

@@ -1,7 +1,6 @@
 'use client';
 
 import { useAuthStore } from '@/lib/auth-store';
-import { useRouter, usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { Sidebar } from '@/components/Sidebar';
 import { Topbar } from '@/components/Topbar';
@@ -11,28 +10,21 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { user, accessToken } = useAuthStore();
-  const router = useRouter();
-  const pathname = usePathname();
+  const { user } = useAuthStore();
   const [isMounted, setIsMounted] = useState(false);
 
+  // Wait for Zustand hydration before rendering to avoid SSR/client mismatch
   useEffect(() => {
     setIsMounted(true);
-    // Protect routes
-    if (!accessToken && !pathname.startsWith('/login')) {
-      router.replace('/login');
-    }
-  }, [accessToken, pathname, router]);
+  }, []);
 
-  // Prevent hydration mismatch edge cases with Zustand + Next.js
+  // Prevent hydration mismatch — show nothing until Zustand has hydrated.
+  // Route protection is handled entirely by middleware.ts (server-side).
   if (!isMounted) return null;
 
-  // If not logged in and on login route, just render children directly (no layout).
-  // Otherwise, return null to avoid flashing protected content before useEffect redirect fires.
-  if (!user || !accessToken) {
-    if (pathname.startsWith('/login')) return <>{children}</>;
-    return null;
-  }
+  // If user is not in Zustand store (e.g. after logout), render nothing.
+  // Middleware will redirect to /login on the next navigation.
+  if (!user) return null;
 
   return (
     <div className="flex min-h-screen bg-background text-foreground">

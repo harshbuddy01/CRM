@@ -42,6 +42,9 @@ const getProposalById = async (req, res, next) => {
   }
 };
 
+// TODO: Consider moving PDF generation to BullMQ worker for better scalability.
+//       This would change the flow to async: API returns a job ID, frontend polls for result.
+//       For now, synchronous generation is kept for simpler UX (instant download).
 const downloadPdf = async (req, res, next) => {
   try {
     const proposal = await proposalService.getProposalById(req.params.id);

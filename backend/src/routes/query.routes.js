@@ -11,11 +11,21 @@ const { authenticate } = require('../middlewares/authenticate');
 const { can } = require('../middlewares/can');
 const config = require('../config');
 
+const logger = require('../utils/logger');
+
 // Simple API key guard for public webhook routes
 const webhookApiKeyGuard = (req, res, next) => {
   const apiKey = config.webhookApiKey;
-  // If no key is configured (dev mode), allow through
-  if (!apiKey) return next();
+  
+  // If no key is configured, warn and decide based on environment
+  if (!apiKey) {
+    if (config.nodeEnv === 'production') {
+      logger.error('[Webhook] WEBHOOK_API_KEY is not set — rejecting request in production');
+      return res.status(500).json({ success: false, message: 'Webhook is not configured' });
+    }
+    logger.warn('[Webhook] WEBHOOK_API_KEY is not set — allowing request in development mode');
+    return next();
+  }
   
   const providedKey = req.headers['x-api-key'];
   if (!providedKey || providedKey !== apiKey) {

@@ -43,6 +43,8 @@ api.interceptors.response.use(
           useAuthStore.setState({ accessToken });
           if (typeof window !== 'undefined') {
             localStorage.setItem('refreshToken', newRefresh);
+            // Sync cookie so Next.js middleware stays aware of the valid token
+            document.cookie = `accessToken=${accessToken}; path=/; secure; samesite=strict`;
           }
 
           // Retry the original request with new token
