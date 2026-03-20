@@ -29,16 +29,39 @@ const generatePdfFromHtml = async (htmlContent) => {
           '/usr/bin/google-chrome',
           '/usr/bin/google-chrome-stable',
           '/usr/bin/chromium',
-          '/usr/bin/chromium-browser',
-          '/nix/store/*/bin/google-chrome' // Common for Nixpacks
+          '/usr/bin/chromium-browser'
         ];
         console.log('[PDF] @sparticuz returned NULL. Probing common Linux paths...');
-        const fs = require('fs');
-        for (const path of commonPaths) {
-          if (fs.existsSync(path)) {
-            executablePath = path;
-            console.log(`[PDF] Found fallback path: ${path}`);
+        
+        for (const p of commonPaths) {
+          if (fs.existsSync(p)) {
+            executablePath = p;
+            console.log(`[PDF] Found fallback path: ${p}`);
             break;
+          }
+        }
+
+        // Nix store lookup (Railway/Nixpacks)
+        if (!executablePath && fs.existsSync('/nix/store')) {
+          console.log('[PDF] Probing /nix/store for Google Chrome...');
+          try {
+            const entries = fs.readdirSync('/nix/store');
+            for (const entry of entries) {
+              const fullPath = path.join('/nix/store', entry, 'bin', 'google-chrome');
+              const stablePath = path.join('/nix/store', entry, 'bin', 'google-chrome-stable');
+              
+              if (fs.existsSync(fullPath)) {
+                executablePath = fullPath;
+                break;
+              }
+              if (fs.existsSync(stablePath)) {
+                executablePath = stablePath;
+                break;
+              }
+            }
+            if (executablePath) console.log(`[PDF] Found Nix store path: ${executablePath}`);
+          } catch (e) {
+            console.error('[PDF] Nix store scan failed:', e.message);
           }
         }
       }
@@ -51,7 +74,12 @@ const generatePdfFromHtml = async (htmlContent) => {
     }
 
     if (isProduction && !executablePath) {
-      console.warn('[PDF] WARNING: Chromium executable path is NULL in production. Attempting standard puppeteer launch...');
+      throw new Error(
+        'CRITICAL: Chromium executablePath not found in production. ' +
+        'puppeteer-core requires an explicit path. Ensure @sparticuz/chromium ' +
+        'is working or a system-level Chrome is installed. ' +
+        `(Tried: @sparticuz, common Linux paths, and /nix/store scan)`
+      );
     }
 
     browser = await puppeteer.launch({
