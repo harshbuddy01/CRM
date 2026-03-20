@@ -23,4 +23,7 @@ router.get('/:id/pdf', proposalController.downloadPdf);
 router.post('/:id/send-whatsapp', proposalController.sendWhatsapp);
 router.post('/:id/send-email', proposalController.sendEmail);
 
+// Logging events (like whatsapp_opened)
+router.post('/:id/log/:event', proposalController.logEvent);
+
 module.exports = router;

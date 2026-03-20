@@ -6,9 +6,15 @@ require('dotenv').config();
 const { Worker } = require('bullmq');
 const config = require('./config');
 const prisma = require('./config/prisma');
+const sgMail = require('@sendgrid/mail');
 
 console.log('👷 BullMQ Worker service initialized.');
 console.log(`📡 Connecting to Redis at ${config.redisUrl.replace(/:[^:]*@/, ':***@')}`);
+
+// Initialize SendGrid
+if (config.sendgrid.apiKey) {
+  sgMail.setApiKey(config.sendgrid.apiKey);
+}
 
 const connection = { url: config.redisUrl };
 
@@ -41,8 +47,8 @@ const emailWorker = new Worker('email-sending', async job => {
   console.log(`[Email] Sending to ${to}`);
   
   try {
-    // Mock SendGrid Integration
-    // sgMail.send({ to, from: config.emailFrom, subject, html: htmlContent });
+    // SendGrid Integration
+    await sgMail.send({ to, from: config.email.from, subject, html: htmlContent });
     
     await prisma.integrationLog.create({
       data: {

@@ -465,6 +465,7 @@ export default function QueryDetailPage() {
 
 function QueryProposalsList({ queryId }: { queryId: string }) {
   const [waModalOpenId, setWaModalOpenId] = useState<string | null>(null);
+  const [manualWaLink, setManualWaLink] = useState<string | null>(null);
 
   const { data: proposals, isLoading } = useQuery({
     queryKey: ['proposals', queryId],
@@ -476,11 +477,16 @@ function QueryProposalsList({ queryId }: { queryId: string }) {
 
   const sendWhatsapp = useMutation({
     mutationFn: async (proposalId: string) => {
-      await api.post(`/proposals/${proposalId}/send-whatsapp`);
+      const res = await api.post(`/proposals/${proposalId}/send-whatsapp`);
+      return res.data;
     },
-    onSuccess: () => {
-      toast.success('WhatsApp dispatched successfully');
-      setWaModalOpenId(null);
+    onSuccess: (data) => {
+      if (data.mode === 'manual' && data.waLink) {
+        setManualWaLink(data.waLink);
+      } else {
+        toast.success('WhatsApp dispatched successfully');
+        setWaModalOpenId(null);
+      }
     },
     onError: (err: any) => {
       toast.error(err.response?.data?.message || 'Failed to send WhatsApp');
@@ -543,7 +549,7 @@ function QueryProposalsList({ queryId }: { queryId: string }) {
           </div>
           <div className="flex gap-2 items-center">
             
-            <a href={`http://localhost:3001/api/v1/proposals/${p.id}/pdf`} target="_blank" rel="noopener noreferrer">
+            <a href={`${process.env.NEXT_PUBLIC_API_URL}/proposals/${p.id}/pdf`} target="_blank" rel="noopener noreferrer">
               <Button variant="ghost" size="sm">PDF</Button>
             </a>
 
@@ -557,7 +563,12 @@ function QueryProposalsList({ queryId }: { queryId: string }) {
               <Mail className="w-4 h-4 mr-2" /> Email
             </Button>
 
-            <Dialog open={waModalOpenId === p.id} onOpenChange={(open) => !open && setWaModalOpenId(null)}>
+            <Dialog open={waModalOpenId === p.id} onOpenChange={(open) => {
+              if (!open) {
+                setWaModalOpenId(null);
+                setManualWaLink(null);
+              }
+            }}>
               {/* @ts-expect-error shadcn generic trigger issue */}
               <DialogTrigger asChild>
                 <Button 
@@ -572,26 +583,44 @@ function QueryProposalsList({ queryId }: { queryId: string }) {
               <DialogContent>
                 <DialogHeader>
                   <DialogTitle>Send via WhatsApp</DialogTitle>
-                  <DialogDescription>
-                    Dispatch a pre-approved Interakt template with the attached Proposal PDF link directly to the customer.
-                  </DialogDescription>
                 </DialogHeader>
-                <div className="bg-muted p-4 rounded-md text-sm border font-mono">
-                  <p>COMPANY_NAME</p>
-                  <p>Hi {'{Customer Name}'},</p>
-                  <p>Please find your proposal attached.</p>
-                </div>
-                <div className="flex justify-end gap-3 mt-4">
-                  <Button variant="ghost" onClick={() => setWaModalOpenId(null)}>Cancel</Button>
-                  <Button 
-                    className="bg-emerald-600 hover:bg-emerald-700"
-                    onClick={() => sendWhatsapp.mutate(p.id)}
-                    disabled={sendWhatsapp.isPending}
-                  >
-                    {sendWhatsapp.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                    Confirm & Send
-                  </Button>
-                </div>
+                {manualWaLink ? (
+                  <div className="flex flex-col items-center justify-center py-6 gap-4">
+                    <p className="text-muted-foreground text-center">Your WhatsApp link is ready.</p>
+                    <Button 
+                      className="bg-emerald-600 hover:bg-emerald-700 w-full"
+                      onClick={() => {
+                        window.open(manualWaLink, '_blank');
+                        setWaModalOpenId(null);
+                        setManualWaLink(null);
+                      }}
+                    >
+                      Open WhatsApp
+                    </Button>
+                  </div>
+                ) : (
+                  <>
+                    <DialogDescription>
+                      Dispatch a pre-approved Interakt template with the attached Proposal PDF link directly to the customer.
+                    </DialogDescription>
+                    <div className="bg-muted p-4 rounded-md text-sm border font-mono">
+                      <p>COMPANY_NAME</p>
+                      <p>Hi {'{Customer Name}'},</p>
+                      <p>Please find your proposal attached.</p>
+                    </div>
+                    <div className="flex justify-end gap-3 mt-4">
+                      <Button variant="ghost" onClick={() => setWaModalOpenId(null)}>Cancel</Button>
+                      <Button 
+                        className="bg-emerald-600 hover:bg-emerald-700"
+                        onClick={() => sendWhatsapp.mutate(p.id)}
+                        disabled={sendWhatsapp.isPending}
+                      >
+                        {sendWhatsapp.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                        Confirm & Send
+                      </Button>
+                    </div>
+                  </>
+                )}
               </DialogContent>
             </Dialog>
 

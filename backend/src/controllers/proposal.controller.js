@@ -115,6 +115,13 @@ const sendWhatsapp = async (req, res, next) => {
 
     // Enqueue Job
     const phone = proposal.query.phone;
+
+    if (config.whatsapp.mode === 'manual') {
+      const pdfUrl = `${req.protocol}://${req.get('host')}/api/v1/proposals/${proposal.id}/pdf`;
+      const msg = encodeURIComponent(`Hi ${proposal.query.name}, your proposal: ${pdfUrl}`);
+      return res.json({ mode: 'manual', waLink: `https://wa.me/91${phone}?text=${msg}` });
+    }
+
     const components = [{ type: 'body', parameters: [{ type: 'text', text: proposal.query.name }] }];
     await queueService.enqueueWhatsappJob(proposal.queryId, phone, 'proposal_ready', components);
 
@@ -151,6 +158,27 @@ const sendEmail = async (req, res, next) => {
   }
 };
 
+const logEvent = async (req, res, next) => {
+  try {
+    const { id, event } = req.params;
+    const proposal = await proposalService.getProposalById(id);
+    
+    await prisma.integrationLog.create({
+      data: {
+        type: 'tracking',
+        direction: 'inbound',
+        status: 'success',
+        payload: { event },
+        relatedId: proposal.queryId,
+      }
+    });
+
+    res.json({ success: true, message: `Event logged: ${event}` });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   createProposal,
   getProposalsByQuery,
@@ -158,4 +186,5 @@ module.exports = {
   downloadPdf,
   sendWhatsapp,
   sendEmail,
+  logEvent,
 };
