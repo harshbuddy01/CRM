@@ -6,13 +6,22 @@ export function middleware(request: NextRequest) {
   const isAuth = !!token;
   const isLoginPage = request.nextUrl.pathname === '/login';
 
-  if (!isAuth && !isLoginPage) {
-    return NextResponse.redirect(new URL('/login', request.url));
+  const response = isAuth && isLoginPage
+    ? NextResponse.redirect(new URL('/', request.url))
+    : !isAuth && !isLoginPage
+    ? NextResponse.redirect(new URL('/login', request.url))
+    : NextResponse.next();
+
+  // Add Vary header to every response to prevent CDN cache poisoning
+  // This tells the CDN to distinguish between RSC (data) and HTML (standard) requests
+  response.headers.set('Vary', 'RSC, Next-Router-State-Tree, Next-Router-Prefetch, Accept');
+  
+  // Disable aggressive caching for RSC requests to the root page
+  if (request.headers.get('RSC')) {
+    response.headers.set('Cache-Control', 'no-store, max-age=0, must-revalidate');
   }
-  if (isAuth && isLoginPage) {
-    return NextResponse.redirect(new URL('/', request.url));
-  }
-  return NextResponse.next();
+
+  return response;
 }
 
 export const config = {
