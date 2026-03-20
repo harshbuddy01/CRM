@@ -8,6 +8,9 @@ const proposalController = require('../controllers/proposal.controller');
 const { authenticate } = require('../middlewares/authenticate');
 const { can } = require('../middlewares/can');
 
+// Download PDF (Public — customer needs to open via WhatsApp/Email)
+router.get('/:id/pdf', proposalController.downloadPdf);
+
 router.use(authenticate);
 
 // We need a route for GET /v1/proposals/:id
@@ -16,9 +19,6 @@ router.use(authenticate);
 // We will build GET /v1/proposals/:id here:
 router.get('/:id', proposalController.getProposalById);
 router.get('/', can('proposal.view_assigned'), proposalController.listAllProposals);
-
-// Download PDF
-router.get('/:id/pdf', proposalController.downloadPdf);
 
 // Dispatch Notifications (with Idempotency Queue)
 router.post('/:id/send-whatsapp', proposalController.sendWhatsapp);
