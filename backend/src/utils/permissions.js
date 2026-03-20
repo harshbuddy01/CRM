@@ -1,25 +1,53 @@
-const prisma = require('../config/prisma');
+// ============================================================
+// TravelCRM — Permission Resolver
+// ============================================================
+// Uses Prisma ORM queries instead of raw SQL to avoid
+// compatibility issues with Prisma $extends.
+// ============================================================
+
+const { PrismaClient } = require('@prisma/client');
+
+// Use a plain PrismaClient for raw-style lookups (no $extends interference)
+let rawPrisma;
+if (process.env.NODE_ENV === 'production') {
+  rawPrisma = new PrismaClient();
+} else {
+  if (!global.__rawPrisma) {
+    global.__rawPrisma = new PrismaClient();
+  }
+  rawPrisma = global.__rawPrisma;
+}
 
 async function getUserPermissions(userId) {
-  const rolePerms = await prisma.$queryRaw`
-    SELECT p.key, rp.granted
-    FROM role_permissions rp
-    JOIN permissions p ON p.id = rp.permission_id
-    JOIN users u ON u.role_id = rp.role_id
-    WHERE u.id = ${userId}::uuid
-  `;
+  // Get user's role
+  const user = await rawPrisma.user.findUnique({
+    where: { id: userId },
+    select: { roleId: true },
+  });
+
+  if (!user) return {};
+
+  // Get role-based permissions
+  const rolePerms = await rawPrisma.rolePermission.findMany({
+    where: { roleId: user.roleId },
+    include: { permission: { select: { key: true } } },
+  });
 
   const perms = {};
-  for (const row of rolePerms) { perms[row.key] = row.granted; }
+  for (const rp of rolePerms) {
+    perms[rp.permission.key] = rp.granted;
+  }
 
-  const overrides = await prisma.$queryRaw`
-    SELECT p.key, upo.granted
-    FROM user_permission_overrides upo
-    JOIN permissions p ON p.id = upo.permission_id
-    WHERE upo.user_id = ${userId}::uuid
-  `;
+  // Get user-specific overrides
+  const overrides = await rawPrisma.userPermissionOverride.findMany({
+    where: { userId },
+    include: { permission: { select: { key: true } } },
+  });
 
-  for (const override of overrides) { perms[override.key] = override.granted; }
+  for (const override of overrides) {
+    perms[override.permission.key] = override.granted;
+  }
+
   return perms;
 }
 
