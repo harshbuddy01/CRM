@@ -14,14 +14,15 @@ const generatePdfFromHtml = async (htmlContent) => {
   let browser = null;
   try {
     // Determine path based on environment
-    const isLocal = config.nodeEnv === 'development' || !process.env.RAILWAY_ENVIRONMENT;
+    const isProduction = config.nodeEnv === 'production';
     
-    // For local dev on Mac/Windows, you need to point puppeteer-core to a local Chrome installation.
-    // Railway/Production uses the @sparticuz/chromium binary.
-    let executablePath = await chromium.executablePath();
+    let executablePath;
     
-    if (isLocal) {
-      // Fallback local paths for Mac and Linux. Adjust as needed for Windows.
+    if (isProduction) {
+      // Production uses the @sparticuz/chromium binary
+      executablePath = await chromium.executablePath();
+    } else {
+      // Local development paths
       executablePath =
         process.platform === 'darwin'
           ? '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
@@ -29,10 +30,10 @@ const generatePdfFromHtml = async (htmlContent) => {
     }
 
     browser = await puppeteer.launch({
-      args: isLocal ? puppeteer.defaultArgs() : chromium.args,
+      args: isProduction ? chromium.args : puppeteer.defaultArgs(),
       defaultViewport: chromium.defaultViewport,
       executablePath,
-      headless: chromium.headless,
+      headless: isProduction ? chromium.headless : true,
       ignoreHTTPSErrors: true,
     });
 
