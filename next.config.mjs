@@ -8,6 +8,7 @@ const nextConfig = {
     // TypeScript errors are now resolved — enforcing strict type safety in production builds
     ignoreBuildErrors: false,
   },
+  output: 'standalone',
 };
 
 export default nextConfig;
