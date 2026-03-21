@@ -186,7 +186,7 @@ function MasterForm({ category, editItem, onClose, onSaved }: { category: typeof
   const { data: destinations = [] } = useQuery({
     queryKey: ['destinations-dropdown'],
     queryFn: () => api.get('/masters-v2/destinations').then(r => r.data.data),
-    enabled: ['activities', 'transfers', 'day-itinerary-templates'].includes(category.id),
+    enabled: ['hotels', 'activities', 'transfers', 'day-itinerary-templates'].includes(category.id),
   });
 
   const set = (key: string, val: any) => setForm(f => ({ ...f, [key]: val }));
@@ -202,16 +202,26 @@ function MasterForm({ category, editItem, onClose, onSaved }: { category: typeof
     e.preventDefault();
     setSaving(true);
     try {
-      const fd = new FormData();
-      const skipKeys = ['id', 'createdAt', 'updatedAt', 'deletedAt', 'photoUrl', 'iconUrl', 'destination'];
-      Object.entries(form).forEach(([k, v]) => { 
-        if (skipKeys.includes(k) || (typeof v === 'object' && v !== null && !(v instanceof File))) return;
-        if (v !== null && v !== undefined && v !== '') fd.append(k, String(v)); 
-      });
-      if (photoFile) fd.append('photo', photoFile);
-      const url = editItem ? `/masters-v2/${category.id}/${editItem.id}` : `/masters-v2/${category.id}`;
-      const method = editItem ? 'patch' : 'post';
-      await (api as any)[method](url, fd, { headers: { 'Content-Type': 'multipart/form-data' } });
+      const isV1 = ['destinations', 'hotels'].includes(category.id);
+      const url = editItem ? (isV1 ? `/masters/${category.id}/${editItem.id}` : `/masters-v2/${category.id}/${editItem.id}`) : (isV1 ? `/masters/${category.id}` : `/masters-v2/${category.id}`);
+      const method = editItem ? (isV1 ? 'put' : 'patch') : 'post';
+
+      if (isV1) {
+        const payload = { ...form };
+        delete payload.id; delete payload.createdAt; delete payload.updatedAt; delete payload.deletedAt; delete payload.destination;
+        if (payload.basePrice) payload.basePrice = Number(payload.basePrice);
+        if (typeof payload.isActive === 'string') payload.isActive = payload.isActive === 'true';
+        await (api as any)[method](url, payload);
+      } else {
+        const fd = new FormData();
+        const skipKeys = ['id', 'createdAt', 'updatedAt', 'deletedAt', 'photoUrl', 'iconUrl', 'destination'];
+        Object.entries(form).forEach(([k, v]) => { 
+          if (skipKeys.includes(k) || (typeof v === 'object' && v !== null && !(v instanceof File))) return;
+          if (v !== null && v !== undefined && v !== '') fd.append(k, String(v)); 
+        });
+        if (photoFile) fd.append('photo', photoFile);
+        await (api as any)[method](url, fd, { headers: { 'Content-Type': 'multipart/form-data' } });
+      }
       toast.success(editItem ? 'Updated!' : 'Added!');
       onSaved();
       onClose();
@@ -231,6 +241,21 @@ function MasterForm({ category, editItem, onClose, onSaved }: { category: typeof
         <button type="button" onClick={onClose}><X className="w-4 h-4 text-muted-foreground" /></button>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+        {category.id === 'destinations' && (<>
+          <Field label="Destination Name *"><Input placeholder="e.g. Goa, Paris" value={form.name || ''} onChange={e => set('name', e.target.value)} required /></Field>
+          <Field label="Country"><Input placeholder="e.g. India" value={form.country || ''} onChange={e => set('country', e.target.value)} /></Field>
+          <StatusField value={form.isActive} onChange={v => set('isActive', v)} />
+          <Field label="Description" className="md:col-span-2"><textarea className="w-full min-h-[80px] px-3 py-2 border rounded-md bg-background text-sm resize-none" placeholder="Brief description..." value={form.description || ''} onChange={e => set('description', e.target.value)} /></Field>
+        </>)}
+
+        {category.id === 'hotels' && (<>
+          <Field label="Hotel Name *"><Input placeholder="e.g. Taj Mahal Palace" value={form.name || ''} onChange={e => set('name', e.target.value)} required /></Field>
+          <Field label="Destination"><DestinationSelect destinations={destinations} value={form.destinationId || ''} onChange={v => set('destinationId', v)} /></Field>
+          <Field label="Category"><Input placeholder="e.g. 5 Star, Budget" value={form.category || ''} onChange={e => set('category', e.target.value)} /></Field>
+          <Field label="Base Price (₹)"><Input type="number" placeholder="0" value={form.basePrice || ''} onChange={e => set('basePrice', e.target.value)} /></Field>
+          <StatusField value={form.isActive} onChange={v => set('isActive', v)} />
+        </>)}
 
         {category.id === 'suppliers' && (<>
           <Field label="Company Name *"><Input placeholder="e.g. Raj Travels Pvt Ltd" value={form.companyName || ''} onChange={e => set('companyName', e.target.value)} required /></Field>
@@ -327,6 +352,8 @@ function MasterTable({ category, items, onView, onEdit, onDelete, canManage }: {
         <thead className="bg-muted/40">
           <tr className="border-b text-muted-foreground text-xs uppercase tracking-wide">
             <th className="text-left py-3 px-3 font-medium">{category.id === 'day-itinerary-templates' ? 'Title' : (category.id === 'suppliers' ? 'Company Name' : (category.id === 'transfers' ? 'Vehicle Type' : 'Name'))}</th>
+            {category.id === 'destinations' && <th className="text-left py-3 px-3 font-medium">Country</th>}
+            {category.id === 'hotels' && <><th className="text-left py-3 px-3 font-medium">Destination</th><th className="text-left py-3 px-3 font-medium">Category</th><th className="text-left py-3 px-3 font-medium">Base Price</th></>}
             {category.id === 'suppliers' && <><th className="text-left py-3 px-3 font-medium">Category</th><th className="text-left py-3 px-3 font-medium">City</th><th className="text-left py-3 px-3 font-medium">Phone</th></>}
             {category.id === 'activities' && <><th className="text-left py-3 px-3 font-medium">Destination</th><th className="text-left py-3 px-3 font-medium">Price/Person</th></>}
             {category.id === 'transfers' && <><th className="text-left py-3 px-3 font-medium">Destination</th><th className="text-left py-3 px-3 font-medium">Price</th><th className="text-left py-3 px-3 font-medium">Photo</th></>}
@@ -345,6 +372,8 @@ function MasterTable({ category, items, onView, onEdit, onDelete, canManage }: {
                 {item.companyName && category.id !== 'suppliers' && <span className="text-xs text-muted-foreground block">{item.companyName}</span>}
                 {item.category && category.id !== 'suppliers' && <span className="text-xs bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded-full mt-0.5 inline-block">{item.category}</span>}
               </td>
+              {category.id === 'destinations' && <td className="py-3 px-3 text-muted-foreground text-xs">{item.country || '—'}</td>}
+              {category.id === 'hotels' && (<><td className="py-3 px-3 text-muted-foreground text-xs">{item.destination?.name || '—'}</td><td className="py-3 px-3 text-muted-foreground text-xs">{item.category || '—'}</td><td className="py-3 px-3 text-muted-foreground text-xs font-medium">₹{Number(item.basePrice || 0).toLocaleString('en-IN')}</td></>)}
               {category.id === 'suppliers' && (<><td className="py-3 px-3 text-muted-foreground capitalize text-xs">{item.category || '—'}</td><td className="py-3 px-3 text-muted-foreground text-xs">{item.city || '—'}</td><td className="py-3 px-3 text-muted-foreground text-xs">{item.phone || '—'}</td></>)}
               {category.id === 'activities' && (<><td className="py-3 px-3 text-muted-foreground text-xs">{item.destination?.name || '—'}</td><td className="py-3 px-3 text-muted-foreground text-xs font-medium">₹{Number(item.pricePerPerson || 0).toLocaleString('en-IN')}</td></>)}
               {category.id === 'transfers' && (<><td className="py-3 px-3 text-muted-foreground text-xs">{item.destination?.name || '—'}</td><td className="py-3 px-3 text-muted-foreground text-xs font-medium">₹{Number(item.price || 0).toLocaleString('en-IN')}</td><td className="py-3 px-3">{item.photoUrl ? <img src={item.photoUrl} alt={item.name} className="w-14 h-9 object-cover rounded" /> : <span className="text-muted-foreground text-xs">—</span>}</td></>)}
