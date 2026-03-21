@@ -44,17 +44,24 @@ export function Sidebar() {
     { href: '/clients', label: 'Clients', icon: Contact, show: true },
     { href: '/agents', label: 'B2B Agents', icon: Briefcase, show: true },
     { href: '/masters-v2', label: 'Masters', icon: Database, show: user?.permissions['master.manage_destinations'] || user?.permissions['master.manage_hotels'] },
-    // Sprint 8 — Website CMS
-    { href: '/cms/pages', label: 'Website CMS', icon: Globe, show: user?.role === 'admin' || user?.permissions['master.manage_destinations'] },
-    // Sprint 8 — Finance
-    { href: '/finance/expenses', label: 'Finance', icon: DollarSign, show: user?.role === 'admin' || user?.permissions['payment.view_all'] },
-    // Sprint 8 — Branches
-    { href: '/branches', label: 'Branches', icon: Building2, show: user?.permissions['users.manage'] },
-    // Sprint 8 — Integrations
-    { href: '/integrations/sheets', label: 'Integrations', icon: Sheet, show: user?.permissions['users.manage'] },
-    { href: '/users', label: 'Team', icon: Users, show: user?.permissions['users.manage'] },
-    { href: '/settings', label: 'Settings', icon: Settings, show: user?.role === 'admin' },
+    // Sprint 8 & Admin
+    { href: '/cms/pages', label: 'Website CMS', icon: Globe, show: user?.role === 'admin' || user?.permissions['master.manage_destinations'], isSetting: true },
+    { href: '/finance/expenses', label: 'Finance', icon: DollarSign, show: user?.role === 'admin' || user?.permissions['payment.view_all'], isSetting: true },
+    { href: '/branches', label: 'Branches', icon: Building2, show: user?.permissions['users.manage'], isSetting: true },
+    { href: '/integrations/sheets', label: 'Integrations', icon: Sheet, show: user?.permissions['users.manage'], isSetting: true },
+    { href: '/users', label: 'Team', icon: Users, show: user?.permissions['users.manage'], isSetting: true },
+    { href: '/settings', label: 'Settings', icon: Settings, show: user?.role === 'admin', isSetting: true },
   ];
+
+  const renderLink = (link: any) => {
+    if (link.show === false) return null;
+    const isActive = link.exact ? pathname === link.href : pathname.startsWith(link.href);
+    return (
+      <Link key={link.href} href={link.href} className={cn("flex items-center gap-3 px-3 py-2 rounded-md transition-colors text-sm font-medium", isActive ? "bg-primary text-primary-foreground" : "hover:bg-muted text-muted-foreground hover:text-foreground")}>
+        <link.icon className="w-4 h-4" />{link.label}
+      </Link>
+    );
+  };
 
   return (
     <aside className="w-64 border-r bg-muted/20 hidden md:flex flex-col h-screen fixed">
@@ -62,29 +69,15 @@ export function Sidebar() {
         TravelCRM ✈️
       </div>
       <nav className="flex-1 overflow-y-auto px-4 py-6 space-y-1">
-        {links.map((link) => {
-          if (link.show === false) return null;
-          
-          const isActive = link.exact 
-            ? pathname === link.href 
-            : pathname.startsWith(link.href);
-
-          return (
-            <Link
-              key={link.href}
-              href={link.href}
-              className={cn(
-                "flex items-center gap-3 px-3 py-2 rounded-md transition-colors text-sm font-medium",
-                isActive 
-                  ? "bg-primary text-primary-foreground" 
-                  : "hover:bg-muted text-muted-foreground hover:text-foreground"
-              )}
-            >
-              <link.icon className="w-4 h-4" />
-              {link.label}
-            </Link>
-          );
-        })}
+        {links.filter(l => !l.isSetting).map(renderLink)}
+        
+        {links.some(l => l.isSetting && l.show !== false) && (
+          <div className="pt-6 pb-2">
+            <p className="px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Administration</p>
+          </div>
+        )}
+        
+        {links.filter(l => l.isSetting).map(renderLink)}
       </nav>
       <div className="p-4 border-t">
         <Link

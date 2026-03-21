@@ -1,8 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
+import { toast } from 'sonner';
 import {
   Table,
   TableBody,
@@ -14,7 +15,7 @@ import {
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Loader2, Search, Briefcase, Phone, Mail, Building2, User } from 'lucide-react';
+import { Loader2, Search, Briefcase, Phone, Mail, Building2, User, Trash2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 export default function AgentsPage() {
@@ -22,6 +23,22 @@ export default function AgentsPage() {
   const [search, setSearch] = useState('');
   const [tempSearch, setTempSearch] = useState('');
   const router = useRouter();
+  const qc = useQueryClient();
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => api.delete(`/agents/${id}`),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['agents'] });
+      toast.success('Agent deleted successfully');
+    }
+  });
+
+  const handleDelete = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (confirm('Are you sure you want to delete this agent?')) {
+      deleteMutation.mutate(id);
+    }
+  };
 
   const { data, isLoading, isError, error, isPlaceholderData } = useQuery({
     queryKey: ['agents', page, search],
@@ -142,6 +159,14 @@ export default function AgentsPage() {
                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${a.isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
                          {a.isActive ? 'Active' : 'Inactive'}
                        </span>
+                       <Button 
+                         variant="ghost" 
+                         size="icon" 
+                         className="h-7 w-7 ml-2 text-red-500 hover:text-red-600 hover:bg-red-50" 
+                         onClick={(e) => handleDelete(a.id, e)}
+                       >
+                          <Trash2 className="w-4 h-4" />
+                       </Button>
                     </TableCell>
                   </TableRow>
                 ))

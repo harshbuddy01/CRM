@@ -7,7 +7,7 @@ import { toast } from 'sonner';
 import {
   Building2, Map, Car, Bed, Utensils, Palette, CalendarDays,
   Plus, Edit2, Trash2, Loader2, Search, X, Upload, ChevronRight,
-  Check, ImageIcon
+  Check, ImageIcon, Eye
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -86,6 +86,7 @@ function MasterPanel({ category }: { category: typeof CATEGORIES[0] }) {
   const [search, setSearch] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [editItem, setEditItem] = useState<any>(null);
+  const [viewItem, setViewItem] = useState<any>(null);
 
   const { data, isLoading } = useQuery({
     queryKey: ['masters-v2', category.id, search],
@@ -131,9 +132,42 @@ function MasterPanel({ category }: { category: typeof CATEGORIES[0] }) {
           {!search && canManage && <Button variant="outline" size="sm" className="mt-3" onClick={() => { setEditItem(null); setShowForm(true); }}><Plus className="w-4 h-4 mr-1" /> Add First</Button>}
         </div>
       ) : (
-        <MasterTable category={category} items={items} onEdit={startEdit} onDelete={(id) => { if (confirm('Delete this record?')) deleteMutation.mutate(id); }} canManage={canManage} />
+        <MasterTable category={category} items={items} onView={setViewItem} onEdit={startEdit} onDelete={(id) => { if (confirm('Delete this record?')) deleteMutation.mutate(id); }} canManage={canManage} />
       )}
       {data && <p className="text-xs text-muted-foreground text-right">{data.total} total records</p>}
+
+      {viewItem && (
+        <div className="fixed inset-0 z-50 bg-black/50 flex flex-col items-center justify-center p-4">
+           <div className="bg-background rounded-xl shadow-xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]">
+              <div className="flex items-center justify-between p-4 border-b">
+                 <h2 className="font-semibold">{category.label} Details</h2>
+                 <button onClick={() => setViewItem(null)}><X className="w-5 h-5 text-muted-foreground hover:text-foreground" /></button>
+              </div>
+              <div className="p-5 overflow-y-auto space-y-4 text-sm">
+                 {Object.entries(viewItem)
+                   .filter(([k, v]) => !['id', 'deletedAt'].includes(k) && typeof v !== 'object')
+                   .map(([k, v]) => (
+                     <div key={k} className="flex flex-col pb-2 border-b last:border-0 border-muted">
+                        <span className="text-xs font-medium text-muted-foreground uppercase">{k.replace(/([A-Z])/g, ' $1')}</span>
+                        <span className="mt-1 font-medium">{String(v || '—')}</span>
+                     </div>
+                 ))}
+                 {viewItem.destination && (
+                     <div className="flex flex-col pb-2 border-b last:border-0 border-muted">
+                        <span className="text-xs font-medium text-muted-foreground uppercase">Destination</span>
+                        <span className="mt-1 font-medium">{viewItem.destination?.name}</span>
+                     </div>
+                 )}
+                 {(viewItem.photoUrl || viewItem.iconUrl) && (
+                     <div className="flex flex-col">
+                        <span className="text-xs font-medium text-muted-foreground uppercase mb-2">Photo</span>
+                        <img src={viewItem.photoUrl || viewItem.iconUrl} className="w-32 h-20 object-cover rounded shadow-sm border" alt="Preview" />
+                     </div>
+                 )}
+              </div>
+           </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -165,7 +199,11 @@ function MasterForm({ category, editItem, onClose, onSaved }: { category: typeof
     setSaving(true);
     try {
       const fd = new FormData();
-      Object.entries(form).forEach(([k, v]) => { if (v !== null && v !== undefined && v !== '') fd.append(k, String(v)); });
+      const skipKeys = ['id', 'createdAt', 'updatedAt', 'deletedAt', 'photoUrl', 'iconUrl', 'destination'];
+      Object.entries(form).forEach(([k, v]) => { 
+        if (skipKeys.includes(k) || (typeof v === 'object' && v !== null && !(v instanceof File))) return;
+        if (v !== null && v !== undefined && v !== '') fd.append(k, String(v)); 
+      });
       if (photoFile) fd.append('photo', photoFile);
       const url = editItem ? `/masters-v2/${category.id}/${editItem.id}` : `/masters-v2/${category.id}`;
       const method = editItem ? 'patch' : 'post';
@@ -278,7 +316,7 @@ function MasterForm({ category, editItem, onClose, onSaved }: { category: typeof
   );
 }
 
-function MasterTable({ category, items, onEdit, onDelete, canManage }: { category: typeof CATEGORIES[0]; items: any[]; onEdit: (item: any) => void; onDelete: (id: string) => void; canManage: boolean; }) {
+function MasterTable({ category, items, onView, onEdit, onDelete, canManage }: { category: typeof CATEGORIES[0]; items: any[]; onView: (item: any) => void; onEdit: (item: any) => void; onDelete: (id: string) => void; canManage: boolean; }) {
   return (
     <div className="overflow-x-auto rounded-lg border">
       <table className="w-full text-sm">
@@ -292,7 +330,7 @@ function MasterTable({ category, items, onEdit, onDelete, canManage }: { categor
             {category.id === 'package-themes' && <th className="text-left py-3 px-3 font-medium">Icon</th>}
             {category.id === 'day-itinerary-templates' && <><th className="text-left py-3 px-3 font-medium">Destination</th><th className="text-left py-3 px-3 font-medium">Cost</th><th className="text-left py-3 px-3 font-medium">Meals</th></>}
             <th className="text-left py-3 px-3 font-medium">Status</th>
-            {canManage && <th className="text-right py-3 px-3 font-medium">Actions</th>}
+            <th className="text-right py-3 px-3 font-medium">Actions</th>
           </tr>
         </thead>
         <tbody>
@@ -314,14 +352,13 @@ function MasterTable({ category, items, onEdit, onDelete, canManage }: { categor
                   {item.isActive !== false ? 'Active' : 'Inactive'}
                 </span>
               </td>
-              {canManage && (
                 <td className="py-3 px-3 text-right">
                   <div className="flex justify-end gap-1">
-                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onEdit(item)}><Edit2 className="w-3.5 h-3.5 text-primary" /></Button>
-                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onDelete(item.id)}><Trash2 className="w-3.5 h-3.5 text-red-500" /></Button>
+                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onView(item)}><Eye className="w-3.5 h-3.5 text-blue-500" /></Button>
+                    {canManage && <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onEdit(item)}><Edit2 className="w-3.5 h-3.5 text-primary" /></Button>}
+                    {canManage && <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onDelete(item.id)}><Trash2 className="w-3.5 h-3.5 text-red-500" /></Button>}
                   </div>
                 </td>
-              )}
             </tr>
           ))}
         </tbody>
