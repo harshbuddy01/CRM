@@ -19,7 +19,11 @@ import {
   Settings,
   Contact,
   Briefcase,
-  LogOut
+  LogOut,
+  Globe,
+  DollarSign,
+  Building2,
+  Sheet
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -40,6 +44,14 @@ export function Sidebar() {
     { href: '/clients', label: 'Clients', icon: Contact, show: true },
     { href: '/agents', label: 'B2B Agents', icon: Briefcase, show: true },
     { href: '/masters-v2', label: 'Masters', icon: Database, show: user?.permissions['master.manage_destinations'] || user?.permissions['master.manage_hotels'] },
+    // Sprint 8 — Website CMS
+    { href: '/cms/pages', label: 'Website CMS', icon: Globe, show: user?.role === 'admin' || user?.permissions['master.manage_destinations'] },
+    // Sprint 8 — Finance
+    { href: '/finance/expenses', label: 'Finance', icon: DollarSign, show: user?.role === 'admin' || user?.permissions['payment.view_all'] },
+    // Sprint 8 — Branches
+    { href: '/branches', label: 'Branches', icon: Building2, show: user?.permissions['users.manage'] },
+    // Sprint 8 — Integrations
+    { href: '/integrations/sheets', label: 'Integrations', icon: Sheet, show: user?.permissions['users.manage'] },
     { href: '/users', label: 'Team', icon: Users, show: user?.permissions['users.manage'] },
     { href: '/settings', label: 'Settings', icon: Settings, show: user?.role === 'admin' },
   ];

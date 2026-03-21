@@ -1,0 +1,34 @@
+// ============================================================
+// TravelCRM — Finance Routes (Sprint 8)
+// ============================================================
+
+const express = require('express');
+const router = express.Router();
+const finance = require('../controllers/finance.controller');
+const { authenticate } = require('../middlewares/authenticate');
+const { can } = require('../middlewares/can');
+
+router.use(authenticate);
+
+// ─── Expenses ────────────────────────────────────────────────
+router.get('/expenses', can('payment.view_all'), finance.listExpenses);
+router.post('/expenses', can('payment.view_all'), finance.createExpense);
+router.put('/expenses/:id', can('payment.view_all'), finance.updateExpense);
+router.delete('/expenses/:id', can('payment.view_all'), finance.deleteExpense);
+
+// ─── Invoices ────────────────────────────────────────────────
+router.get('/invoices', can('payment.view_all'), finance.listInvoices);
+router.get('/invoices/:id', can('payment.view_all'), finance.getInvoice);
+router.post('/invoices', can('payment.view_all'), finance.createInvoice);
+router.put('/invoices/:id', can('payment.view_all'), finance.updateInvoice);
+router.delete('/invoices/:id', can('payment.view_all'), finance.deleteInvoice);
+
+// ─── Vendor Payments ─────────────────────────────────────────
+router.get('/vendor-payments', can('payment.view_all'), finance.listVendorPayments);
+router.post('/vendor-payments', can('payment.view_all'), finance.createVendorPayment);
+router.delete('/vendor-payments/:id', can('payment.view_all'), finance.deleteVendorPayment);
+
+// ─── P&L ─────────────────────────────────────────────────────
+router.get('/pnl', can('payment.view_all'), finance.getPnlSummary);
+
+module.exports = router;

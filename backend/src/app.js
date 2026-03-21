@@ -153,6 +153,10 @@ apiRouter.use('/status-settings', require('./routes/status-setting.routes'));
 apiRouter.use('/clients', require('./routes/client.routes'));
 apiRouter.use('/agents', require('./routes/agent.routes'));
 apiRouter.use('/masters-v2', require('./routes/master-v2.routes'));
+apiRouter.use('/cms', require('./routes/cms.routes'));
+apiRouter.use('/finance', require('./routes/finance.routes'));
+apiRouter.use('/branches', require('./routes/branch.routes'));
+apiRouter.use('/integrations', require('./routes/sheet-sync.routes'));
 
 // Mount the router under both prefixes
 app.use('/v1', apiRouter);
