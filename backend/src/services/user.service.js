@@ -218,6 +218,15 @@ const deleteUser = async (userId, adminId) => {
   return await prisma.user.delete({ where: { id: userId } });
 };
 
+/**
+ * Remove a permission override (revert to role default)
+ */
+const removePermissionOverride = async (userId, permissionId) => {
+  await prisma.userPermissionOverride.deleteMany({
+    where: { userId, permissionId },
+  });
+};
+
 module.exports = {
   listActiveAgents,
   listAllUsers,
