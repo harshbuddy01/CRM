@@ -495,6 +495,7 @@ model EmailTemplate {
   bodyRichText String   @map("body_rich_text") @db.Text
   isActive     Boolean  @default(true) @map("is_active")
   createdAt    DateTime @default(now()) @map("created_at")
+  emailLogs    EmailLog[]
 
   @@map("email_templates")
 }
