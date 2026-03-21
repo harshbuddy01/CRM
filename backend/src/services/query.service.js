@@ -10,10 +10,24 @@ const { validateTransition } = require('../utils/statusTransitions');
 // Auto-generate query code (e.g., QRY-2024-001)
 const generateQueryCode = async () => {
   const year = new Date().getFullYear();
-  const count = await prisma.query.count({
+  const latestQuery = await prisma.query.findFirst({
     where: { queryCode: { startsWith: `QRY-${year}-` } },
+    orderBy: { queryCode: 'desc' },
   });
-  return `QRY-${year}-${String(count + 1).padStart(3, '0')}`;
+
+  if (!latestQuery) return `QRY-${year}-001`;
+
+  // Extract the number part from "QRY-2026-005"
+  const parts = latestQuery.queryCode.split('-');
+  const lastNumber = parseInt(parts[2], 10);
+  
+  if (isNaN(lastNumber)) {
+    // Fallback if the code format was somehow mangled
+    const count = await prisma.query.count({ where: { queryCode: { startsWith: `QRY-${year}-` } } });
+    return `QRY-${year}-${String(count + 1).padStart(3, '0')}`;
+  }
+
+  return `QRY-${year}-${String(lastNumber + 1).padStart(3, '0')}`;
 };
 
 const MAX_CODE_RETRIES = 3;
