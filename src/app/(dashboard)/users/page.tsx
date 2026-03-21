@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { useAuthStore } from '@/lib/auth-store';
-import { UserPlus, Shield, Edit2, CheckCircle, XCircle, ChevronDown, ChevronUp } from 'lucide-react';
+import { UserPlus, Shield, Edit2, CheckCircle, XCircle, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface User {
@@ -38,6 +38,7 @@ export default function UsersPage() {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [editingUserId, setEditingUserId] = useState<string | null>(null);
   const [expandedPermissions, setExpandedPermissions] = useState<string | null>(null);
+  const [offboardingUser, setOffboardingUser] = useState<User | null>(null);
 
   // Fetch users
   const { data: usersData, isLoading } = useQuery({
@@ -71,6 +72,17 @@ export default function UsersPage() {
       toast.success('User updated');
     },
     onError: (err: any) => toast.error(err.response?.data?.message || 'Failed to update user'),
+  });
+
+  // Delete user mutation
+  const deleteMutation = useMutation({
+    mutationFn: ({ id, reassignToId }: { id: string; reassignToId: string }) => api.delete(`/users/${id}`, { data: { reassignToId } }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-users'] });
+      setOffboardingUser(null);
+      toast.success('User deactivated and workload re-assigned');
+    },
+    onError: (err: any) => toast.error(err.response?.data?.message || 'Failed to deactivate user'),
   });
 
   return (
@@ -166,6 +178,15 @@ export default function UsersPage() {
                         >
                           {u.isActive ? 'Deactivate' : 'Activate'}
                         </button>
+                        {currentUser?.id !== u.id && (
+                          <button
+                            onClick={() => setOffboardingUser(u)}
+                            className="p-1 hover:bg-red-50 rounded text-red-500"
+                            title="Deactivate User & Reassign Work"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -196,6 +217,17 @@ export default function UsersPage() {
             </tbody>
           </table>
         </div>
+      )}
+
+      {/* Offboarding Modal */}
+      {offboardingUser && (
+        <OffboardingModal
+          user={offboardingUser}
+          usersList={usersData?.filter((u: User) => u.isActive && u.id !== offboardingUser.id) || []}
+          onClose={() => setOffboardingUser(null)}
+          onConfirm={(reassignToId) => deleteMutation.mutate({ id: offboardingUser.id, reassignToId })}
+          isPending={deleteMutation.isPending}
+        />
       )}
     </div>
   );
@@ -441,6 +473,94 @@ function PermissionsPanel({ userId, userName }: { userId: string; userName: stri
           </div>
         </div>
       ))}
+    </div>
+  );
+}
+
+// ─── Offboarding Modal ───────────────────────────────────────
+function OffboardingModal({ user, usersList, onClose, onConfirm, isPending }: {
+  user: User; usersList: User[]; onClose: () => void; onConfirm: (reassignToId: string) => void; isPending: boolean;
+}) {
+  const [reassignTo, setReassignTo] = useState('');
+  const [confirmed, setConfirmed] = useState(false);
+
+  const { data: stats, isLoading } = useQuery({
+    queryKey: ['user-offboard-stats', user.id],
+    queryFn: () => api.get(`/users/${user.id}/offboard-stats`).then(r => r.data.data),
+  });
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+      <div className="bg-card w-full max-w-md rounded-xl shadow-lg border overflow-hidden">
+        <div className="p-5 border-b bg-muted/30">
+          <h3 className="font-semibold text-lg flex items-center gap-2">
+            <Trash2 className="w-5 h-5 text-red-500" /> Remove Teammate
+          </h3>
+          <p className="text-sm text-muted-foreground mt-1">
+            Offboarding <strong className="text-foreground">{user.name}</strong>
+          </p>
+        </div>
+        
+        <div className="p-5 space-y-5">
+          {isLoading ? (
+            <div className="h-20 bg-muted/40 animate-pulse rounded-lg" />
+          ) : (
+            <div className="flex gap-4">
+              <div className="flex-1 bg-blue-50/50 border border-blue-100 p-3 rounded-lg text-center">
+                <span className="block text-2xl font-bold text-blue-700">{stats?.activeLeads || 0}</span>
+                <span className="text-xs text-blue-600/80 font-medium uppercase tracking-wide">Active Leads</span>
+              </div>
+              <div className="flex-1 bg-amber-50/50 border border-amber-100 p-3 rounded-lg text-center">
+                <span className="block text-2xl font-bold text-amber-700">{stats?.activeTours || 0}</span>
+                <span className="text-xs text-amber-600/80 font-medium uppercase tracking-wide">Active Tours</span>
+              </div>
+            </div>
+          )}
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Reassign active work to:</label>
+            <select
+              className="w-full h-10 px-3 border rounded-md text-sm bg-background focus:ring-2 focus:ring-primary/20"
+              value={reassignTo}
+              onChange={(e) => setReassignTo(e.target.value)}
+            >
+              <option value="">-- Select Team Member --</option>
+              {usersList.map((u) => (
+                <option key={u.id} value={u.id}>{u.name} ({u.role.label})</option>
+              ))}
+            </select>
+          </div>
+
+          <label className="flex items-start gap-3 p-3 border rounded-lg bg-red-50/30 cursor-pointer hover:bg-red-50/50 transition-colors">
+            <input
+              type="checkbox"
+              className="mt-1"
+              checked={confirmed}
+              onChange={(e) => setConfirmed(e.target.checked)}
+            />
+            <span className="text-sm text-muted-foreground leading-tight">
+              I understand that this action will transfer all active work to the selected user and immediately deactivate <strong>{user.name}</strong>'s account.
+            </span>
+          </label>
+        </div>
+
+        <div className="p-4 border-t bg-muted/20 flex justify-end gap-3">
+          <button
+            onClick={onClose}
+            className="px-4 py-2 text-sm font-medium hover:bg-muted rounded-md transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={() => onConfirm(reassignTo)}
+            disabled={!reassignTo || !confirmed || isPending}
+            className="px-4 py-2 text-sm font-medium bg-red-500 text-white rounded-md hover:bg-red-600 disabled:opacity-50 transition-colors flex items-center gap-2"
+          >
+            {isPending && <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
+            Remove & Reassign
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

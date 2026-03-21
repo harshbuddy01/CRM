@@ -18,6 +18,7 @@ router.get('/', can('users.manage'), userController.listAllUsers);
 router.post('/', can('users.manage'), userController.createUser);
 router.put('/:id', can('users.manage'), userController.updateUser);
 router.delete('/:id', can('users.manage'), userController.deleteUser);
+router.get('/:id/offboard-stats', can('users.manage'), userController.getUserOffboardStats);
 
 // Roles
 router.get('/roles', can('users.manage'), userController.listRoles);

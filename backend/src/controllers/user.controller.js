@@ -122,8 +122,18 @@ const removePermissionOverride = async (req, res, next) => {
 
 const deleteUser = async (req, res, next) => {
   try {
-    await userService.deleteUser(req.params.id, req.user.id);
-    res.json({ success: true, message: 'User deleted and leads re-assigned' });
+    const { reassignToId } = req.body;
+    await userService.deleteUser(req.params.id, req.user.id, reassignToId);
+    res.json({ success: true, message: 'User deactivated and workload re-assigned' });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const getUserOffboardStats = async (req, res, next) => {
+  try {
+    const stats = await userService.getUserOffboardStats(req.params.id);
+    res.json({ success: true, data: stats });
   } catch (error) {
     next(error);
   }
@@ -135,6 +145,7 @@ module.exports = {
   createUser,
   updateUser,
   deleteUser,
+  getUserOffboardStats,
   listRoles,
   getUserPermissions,
   setPermissionOverride,

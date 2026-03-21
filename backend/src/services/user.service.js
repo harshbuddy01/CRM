@@ -192,30 +192,48 @@ const setPermissionOverride = async (userId, permissionId, granted, reason, setB
 };
 
 /**
- * Delete a user and re-assign their leads/tasks to the admin
+ * Get user statistics for offboarding (active leads, active tours)
  */
-const deleteUser = async (userId, adminId) => {
-  const user = await prisma.user.findUnique({ 
-    where: { id: userId },
-    include: { assignedQueries: { where: { status: { notIn: ['lost', 'invalid', 'confirmed'] } } } }
-  });
+const getUserOffboardStats = async (userId) => {
+  const [activeLeads, activeTours] = await Promise.all([
+    prisma.query.count({
+      where: { assignedToId: userId, status: { notIn: ['lost', 'invalid', 'confirmed'] } }
+    }),
+    prisma.tour.count({
+      where: { opsAssignedToId: userId, status: { notIn: ['completed', 'cancelled'] } }
+    })
+  ]);
+  
+  return { activeLeads, activeTours };
+};
+
+/**
+ * Deactivate a user and re-assign their leads/tours to another user
+ */
+const deleteUser = async (userId, adminId, reassignToId) => {
+  const user = await prisma.user.findUnique({ where: { id: userId } });
   if (!user) throw new NotFoundError('User');
   if (user.id === adminId) throw new BusinessError('You cannot delete yourself');
+  
+  const targetId = reassignToId || adminId;
 
-  // Re-assign all active queries to the admin performing the deletion
-  if (user.assignedQueries.length > 0) {
-    await prisma.query.updateMany({
-      where: { assignedToId: userId, status: { notIn: ['lost', 'invalid', 'confirmed'] } },
-      data: { assignedToId: adminId }
-    });
-  }
+  // Re-assign all active queries
+  await prisma.query.updateMany({
+    where: { assignedToId: userId, status: { notIn: ['lost', 'invalid', 'confirmed'] } },
+    data: { assignedToId: targetId }
+  });
 
-  // Delete everything related to user or just soft-delete? 
-  // User model doesn't have soft delete yet, but user requested deletion.
-  // Note: user requested "ask me before deleting all should be coming to me".
-  // Re-assignment handles "coming to me".
+  // Re-assign all active tours
+  await prisma.tour.updateMany({
+    where: { opsAssignedToId: userId, status: { notIn: ['completed', 'cancelled'] } },
+    data: { opsAssignedToId: targetId }
+  });
 
-  return await prisma.user.delete({ where: { id: userId } });
+  // Soft deactivate user
+  return await prisma.user.update({
+    where: { id: userId },
+    data: { isActive: false }
+  });
 };
 
 /**
@@ -233,6 +251,7 @@ module.exports = {
   createUser,
   updateUser,
   deleteUser,
+  getUserOffboardStats,
   listRoles,
   getUserPermissions,
   setPermissionOverride,

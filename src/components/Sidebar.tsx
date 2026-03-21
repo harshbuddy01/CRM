@@ -18,7 +18,8 @@ import {
   BarChart3,
   Settings,
   Contact,
-  Briefcase
+  Briefcase,
+  LogOut
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -89,6 +90,13 @@ export function Sidebar() {
             <span className="text-[10px] opacity-70">{user?.roleLabel || ''}</span>
           </div>
         </Link>
+        <button
+          onClick={() => useAuthStore.getState().logout()}
+          className="flex items-center gap-3 px-3 py-2 rounded-md transition-colors text-sm font-medium mt-1 w-full text-red-500 hover:bg-red-50"
+        >
+          <LogOut className="w-4 h-4" />
+          <span>Logout</span>
+        </button>
       </div>
     </aside>
   );
