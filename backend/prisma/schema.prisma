@@ -526,8 +526,8 @@ model OrgSetting {
 
 model Supplier {
   id            String  @id @default(uuid())
-  name          String
-  type          String /// 'vehicle','hotel','activity','flight'
+  companyName   String? @map("company_name")
+  category      String?
   contactPerson String? @map("contact_person")
   email         String?
   phone         String?
@@ -544,6 +544,7 @@ model Activity {
   name           String
   destinationId  String  @map("destination_id")
   pricePerPerson Decimal @map("price_per_person") @db.Decimal(10, 2)
+  photoUrl       String? @map("photo_url")
   description    String? @db.Text
   isActive       Boolean @default(true) @map("is_active")
   deletedAt      DateTime? @map("deleted_at")
@@ -558,6 +559,7 @@ model Transfer {
   vehicleType   String  @map("vehicle_type")
   destinationId String  @map("destination_id")
   price         Decimal @db.Decimal(10, 2)
+  photoUrl      String? @map("photo_url")
   description   String?
   isActive      Boolean @default(true) @map("is_active")
   deletedAt     DateTime? @map("deleted_at")
@@ -590,6 +592,7 @@ model PackageTheme {
   id       String  @id @default(uuid())
   name     String /// e.g. Adventure, Honeymoon
   isActive Boolean @default(true) @map("is_active")
+  iconUrl  String? @map("icon_url")
   deletedAt DateTime? @map("deleted_at")
 
   @@map("package_themes")
