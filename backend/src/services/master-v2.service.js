@@ -33,7 +33,13 @@ const getMasters = async (modelName, queryFilters = {}) => {
   const { search, page = 1, limit = 100 } = queryFilters;
   const skip = (page - 1) * parseInt(limit);
   const hasSoftDelete = SOFT_DELETE_MODELS.includes(modelName);
-  const orderField = modelName === 'dayItineraryTemplate' ? 'title' : 'name';
+  
+  const fieldMapping = {
+    dayItineraryTemplate: 'title',
+    supplier: 'companyName',
+    transfer: 'vehicleType',
+  };
+  const orderField = fieldMapping[modelName] || 'name';
   const where = {};
   if (hasSoftDelete) where.deletedAt = null;
   if (search) {
