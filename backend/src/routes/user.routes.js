@@ -13,6 +13,9 @@ router.use(authenticate);
 // Only managers/admins who can edit/assign queries should see the full agent list
 router.get('/agents', can('query.edit_all'), userController.getActiveAgents);
 
+// Roles
+router.get('/roles', can('users.manage'), userController.listRoles);
+
 // Admin-only user management routes
 router.get('/', can('users.manage'), userController.listAllUsers);
 router.post('/', can('users.manage'), userController.createUser);
@@ -20,8 +23,6 @@ router.put('/:id', can('users.manage'), userController.updateUser);
 router.delete('/:id', can('users.manage'), userController.deleteUser);
 router.get('/:id/offboard-stats', can('users.manage'), userController.getUserOffboardStats);
 
-// Roles
-router.get('/roles', can('users.manage'), userController.listRoles);
 
 // Permission overrides
 router.get('/:id/permissions', can('users.manage'), userController.getUserPermissions);
