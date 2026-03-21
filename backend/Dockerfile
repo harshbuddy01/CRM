@@ -15,4 +15,4 @@ RUN npx prisma generate
 COPY . .
 EXPOSE 8080
  
-CMD ["sh", "-c", "npx prisma migrate deploy && node src/index.js & node src/worker.js & wait"]
+CMD ["sh", "-c", "npx prisma db push --accept-data-loss && node src/index.js & node src/worker.js & wait"]
