@@ -23,6 +23,15 @@ import { TRANSITIONS } from '@/lib/constants';
 import { PaymentEntryModal } from '@/components/PaymentEntryModal';
 import { EmailComposeModal } from '@/components/EmailComposeModal';
 import { ProposalEmailComposeModal } from '@/components/ProposalEmailComposeModal';
+import { MailsTab } from '@/components/query-tabs/MailsTab';
+import { FollowupsTab } from '@/components/query-tabs/FollowupsTab';
+import { SupplierCommTab } from '@/components/query-tabs/SupplierCommTab';
+import { PostSalesTab } from '@/components/query-tabs/PostSalesTab';
+import { VoucherTab } from '@/components/query-tabs/VoucherTab';
+import { DocsTab } from '@/components/query-tabs/DocsTab';
+import { InvoiceTab } from '@/components/query-tabs/InvoiceTab';
+import { BillingTab } from '@/components/query-tabs/BillingTab';
+import { HistoryTab } from '@/components/query-tabs/HistoryTab';
 
 const formatStatus = (s: string) => s.replace('_', ' ').toUpperCase();
 
@@ -60,7 +69,7 @@ export default function QueryDetailPage() {
   const queryId = params.id as string;
   const { user } = useAuthStore();
   const queryClient = useQueryClient();
-  const [activeTab, setActiveTab] = useState('timeline');
+  const [activeTab, setActiveTab] = useState('proposals');
 
   // --- Data Fetching ---
   const { data, isLoading, isError } = useQuery({
@@ -419,86 +428,77 @@ export default function QueryDetailPage() {
             </CardContent>
           </Card>
 
-          {/* Activity Timeline & Proposals */}
+           {/* 10-Tab CRM Workflow */}
           <Card>
             <CardContent className="p-0">
-              <Tabs defaultValue="timeline" className="w-full flex flex-col" value={activeTab} onValueChange={setActiveTab}>
-                <TabsList className="flex w-full justify-start gap-8 bg-transparent border-b rounded-none h-12 px-6">
-                  <TabsTrigger 
-                    value="timeline" 
-                    className="flex-none bg-transparent border-none shadow-none px-0 h-full rounded-none data-active:bg-transparent data-active:shadow-none data-active:border-b-2 data-active:border-primary transition-none"
-                  >
-                    Timeline & Notes
-                  </TabsTrigger>
-                  <TabsTrigger 
-                    value="proposals" 
-                    className="flex-none bg-transparent border-none shadow-none px-0 h-full rounded-none data-active:bg-transparent data-active:shadow-none data-active:border-b-2 data-active:border-primary transition-none"
-                  >
-                    Proposals
-                  </TabsTrigger>
-                  <TabsTrigger 
-                    value="payments" 
-                    className="flex-none bg-transparent border-none shadow-none px-0 h-full rounded-none data-active:bg-transparent data-active:shadow-none data-active:border-b-2 data-active:border-primary transition-none"
-                  >
-                    Payments
-                  </TabsTrigger>
+              <Tabs defaultValue="proposals" className="w-full flex flex-col" value={activeTab} onValueChange={setActiveTab}>
+                <TabsList className="flex w-full justify-start gap-1 bg-transparent border-b rounded-none h-12 px-4 overflow-x-auto">
+                  {[
+                    { value: 'proposals', label: 'Proposals' },
+                    { value: 'mails', label: 'Mails' },
+                    { value: 'followups', label: 'Followups' },
+                    { value: 'supp-comm', label: 'Supp. Comm.' },
+                    { value: 'post-sales', label: 'Post Sales' },
+                    { value: 'voucher', label: 'Voucher' },
+                    { value: 'docs', label: 'Docs' },
+                    { value: 'invoice', label: 'Invoice' },
+                    { value: 'billing', label: 'Billing' },
+                    { value: 'history', label: 'History' },
+                  ].map((tab) => (
+                    <TabsTrigger
+                      key={tab.value}
+                      value={tab.value}
+                      className="flex-none bg-transparent border-none shadow-none px-3 h-full rounded-none text-xs sm:text-sm data-active:bg-transparent data-active:shadow-none data-active:border-b-2 data-active:border-primary transition-none whitespace-nowrap"
+                    >
+                      {tab.label}
+                    </TabsTrigger>
+                  ))}
                 </TabsList>
 
-                <TabsContent value="timeline" className="mt-6 p-4">
-                  <div className="space-y-4">
-                    {query.notes.length === 0 ? (
-                      <div className="text-center p-8 border border-dashed rounded-lg text-muted-foreground">
-                        No activity logged yet.
-                      </div>
-                    ) : (
-                      <div className="space-y-4 relative before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-border before:to-transparent">
-                        {query.notes.map((note) => (
-                          <div key={note.id} className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
-                            <div className="flex items-center justify-center w-10 h-10 rounded-full border-4 border-background bg-primary/10 text-primary shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 z-10">
-                              <User className="w-4 h-4" />
-                            </div>
-                            <div className="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] p-4 rounded-lg border bg-card shadow-sm">
-                              <div className="flex items-center justify-between mb-1">
-                                <div>
-                                  <span className="font-semibold text-sm">{note.user.name}</span>
-                                  <span className="text-xs text-muted-foreground ml-2">{format(new Date(note.createdAt), 'MMM d, h:mm a')}</span>
-                                </div>
-                                {(note.user.name === user?.name || user?.role === 'admin') && (
-                                  <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-destructive" onClick={() => handleDeleteNote(note.id)}>
-                                    <Trash2 className="h-4 w-4" />
-                                  </Button>
-                                )}
-                              </div>
-                              <p className="text-sm whitespace-pre-wrap">{note.note}</p>
-                              {note.followUpAt && (
-                                <div className="mt-3 pt-3 border-t flex items-center text-xs text-blue-600 dark:text-blue-400 font-medium">
-                                  <CalendarIcon className="w-3 h-3 mr-1.5" />
-                                  Follow up set for {format(new Date(note.followUpAt), 'PPP')}
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </TabsContent>
-
-                <TabsContent value="proposals" className="mt-6 p-4">
+                <TabsContent value="proposals" className="mt-4 p-4">
                   <div className="flex justify-between items-center mb-6">
                     <h3 className="text-lg font-semibold">Proposals</h3>
                     <Link href={`/queries/${params.id}/proposals/new`}>
-                      <Button>
-                        <Plus className="w-4 h-4 mr-2" /> Build Proposal
-                      </Button>
+                      <Button><Plus className="w-4 h-4 mr-2" /> Build Proposal</Button>
                     </Link>
                   </div>
-
                   <QueryProposalsList queryId={params.id as string} queryCode={data?.queryCode || ''} customerName={data?.name || ''} customerEmail={data?.email || ''} />
                 </TabsContent>
 
-                <TabsContent value="payments" className="mt-6 p-4">
-                  <QueryPaymentsSection queryId={params.id as string} />
+                <TabsContent value="mails" className="mt-4 p-4">
+                  <MailsTab queryId={queryId} queryEmail={query.email} />
+                </TabsContent>
+
+                <TabsContent value="followups" className="mt-4 p-4">
+                  <FollowupsTab queryId={queryId} />
+                </TabsContent>
+
+                <TabsContent value="supp-comm" className="mt-4 p-4">
+                  <SupplierCommTab queryId={queryId} />
+                </TabsContent>
+
+                <TabsContent value="post-sales" className="mt-4 p-4">
+                  <PostSalesTab queryId={queryId} />
+                </TabsContent>
+
+                <TabsContent value="voucher" className="mt-4 p-4">
+                  <VoucherTab queryId={queryId} />
+                </TabsContent>
+
+                <TabsContent value="docs" className="mt-4 p-4">
+                  <DocsTab queryId={queryId} />
+                </TabsContent>
+
+                <TabsContent value="invoice" className="mt-4 p-4">
+                  <InvoiceTab queryId={queryId} />
+                </TabsContent>
+
+                <TabsContent value="billing" className="mt-4 p-4">
+                  <BillingTab queryId={queryId} />
+                </TabsContent>
+
+                <TabsContent value="history" className="mt-4 p-4">
+                  <HistoryTab queryId={queryId} />
                 </TabsContent>
               </Tabs>
             </CardContent>

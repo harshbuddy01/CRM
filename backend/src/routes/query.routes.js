@@ -128,4 +128,57 @@ router.post(
   queryController.sendEmail
 );
 
+// Billing Summary (Sprint 10)
+router.get('/:id/billing-summary', async (req, res, next) => {
+  try {
+    const prisma = require('../config/prisma');
+    const queryId = req.params.id;
+
+    // Get the latest proposal selling price
+    const proposal = await prisma.proposal.findFirst({
+      where: { queryId, deletedAt: null },
+      orderBy: { version: 'desc' },
+      select: { sellingPrice: true, totalCost: true },
+    });
+
+    // Customer payments
+    const customerPayments = await prisma.payment.findMany({
+      where: { queryId, deletedAt: null },
+      include: { user: { select: { id: true, name: true } } },
+      orderBy: { paymentDate: 'desc' },
+    });
+
+    const totalAmount = Number(proposal?.sellingPrice || 0);
+    const totalReceived = customerPayments
+      .filter(p => p.status === 'verified' || p.status === 'banked')
+      .reduce((sum, p) => sum + Number(p.amount), 0);
+    const totalPending = totalAmount - totalReceived;
+
+    // Supplier side — from BookingServices
+    const bookingServices = await prisma.bookingService.findMany({ where: { queryId } });
+    const supplierAmount = bookingServices.reduce((sum, bs) => sum + Number(bs.totalCost), 0);
+    const supplierReceived = bookingServices.reduce((sum, bs) => sum + Number(bs.supplierAmountPaid), 0);
+    const supplierPending = supplierAmount - supplierReceived;
+
+    const grossProfit = totalAmount - supplierAmount;
+
+    // Check if invoice exists
+    const invoice = await prisma.invoice.findFirst({
+      where: { queryId },
+      orderBy: { createdAt: 'desc' },
+      select: { id: true, invoiceNumber: true, status: true, totalAmount: true },
+    });
+
+    res.json({
+      success: true,
+      data: {
+        customer: { totalAmount, totalReceived, totalPending, grossProfit },
+        supplier: { supplierAmount, supplierReceived, supplierPending },
+        payments: customerPayments,
+        invoice,
+      },
+    });
+  } catch (err) { next(err); }
+});
+
 module.exports = router;

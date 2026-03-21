@@ -129,6 +129,9 @@ model User {
   expenses               Expense[]          @relation("ExpenseRecordedBy")
   invoices               Invoice[]          @relation("InvoiceCreatedBy")
   vendorPayments         VendorPayment[]    @relation("VendorPaymentRecordedBy")
+  bookingServices        BookingService[]   @relation("BookingServiceCreatedBy")
+  vouchers               Voucher[]          @relation("VoucherCreatedBy")
+  uploadedDocuments      QueryDocument[]    @relation("DocumentUploadedBy")
 
   @@index([roleId])
   @@index([isActive])
@@ -185,9 +188,12 @@ model Query {
   b2bAgent     B2BAgent?   @relation(fields: [b2bAgentId], references: [id])
   notes        QueryNote[]
   proposals    Proposal[]
-  tours        Tour[]
-  payments     Payment[]
-  emailLogs    EmailLog[]
+  tours           Tour[]
+  payments        Payment[]
+  emailLogs       EmailLog[]
+  bookingServices BookingService[]
+  vouchers        Voucher[]
+  documents       QueryDocument[]
 
   @@index([phone]) // Duplicate check
   @@index([assignedTo]) // My leads filter
@@ -209,6 +215,7 @@ model QueryNote {
   queryId    String    @map("query_id")
   userId     String    @map("user_id")
   note       String
+  noteType   String    @default("note") @map("note_type") /// 'note', 'followup', 'call_log'
   followUpAt DateTime? @map("follow_up_at")
   deletedAt  DateTime? @map("deleted_at")
   createdAt  DateTime  @default(now()) @map("created_at")
@@ -301,6 +308,7 @@ model ProposalDay {
   proposal    Proposal     @relation(fields: [proposalId], references: [id], onDelete: Cascade)
   destination Destination? @relation(fields: [destinationId], references: [id])
   hotel       Hotel?       @relation(fields: [hotelId], references: [id])
+  bookingServices BookingService[]
 
   @@index([proposalId])
   @@map("proposal_days")
@@ -543,6 +551,8 @@ model Supplier {
   isActive      Boolean @default(true) @map("is_active")
   deletedAt     DateTime? @map("deleted_at")
 
+  bookingServices BookingService[]
+
   @@map("suppliers")
 }
 
@@ -622,14 +632,15 @@ model DayItineraryTemplate {
 }
 
 model EmailLog {
-  id         String   @id @default(uuid())
-  queryId    String   @map("query_id")
-  templateId String?  @map("template_id")
-  subject    String
-  body       String   @db.Text
-  sentBy     String?  @map("sent_by")
-  sentAt     DateTime @default(now()) @map("sent_at")
-  status     String   @default("sent") /// 'sent', 'failed'
+  id                String   @id @default(uuid())
+  queryId           String   @map("query_id")
+  templateId        String?  @map("template_id")
+  subject           String
+  body              String   @db.Text
+  sentBy            String?  @map("sent_by")
+  sentAt            DateTime @default(now()) @map("sent_at")
+  status            String   @default("sent") /// 'sent', 'failed'
+  communicationType String   @default("customer") @map("communication_type") /// 'customer', 'supplier'
 
   query    Query          @relation(fields: [queryId], references: [id])
   template EmailTemplate? @relation(fields: [templateId], references: [id])
@@ -859,4 +870,96 @@ model Branch {
   users User[] @relation("UserBranch")
 
   @@map("branches")
+}
+
+// ============================================================
+// 16. SPRINT 10 — POST SALES, VOUCHERS, DOCUMENTS
+// ============================================================
+
+/// Booking services auto-generated from confirmed proposals
+model BookingService {
+  id                   String    @id @default(uuid())
+  queryId              String    @map("query_id")
+  proposalDayId        String?   @map("proposal_day_id")
+  serviceType          String    @map("service_type") /// 'hotel', 'transport'
+  serviceName          String    @map("service_name")
+  supplierId           String?   @map("supplier_id")
+  supplierName         String?   @map("supplier_name")
+  supplierEmail        String?   @map("supplier_email")
+  checkIn              DateTime? @map("check_in") @db.Date
+  checkOut             DateTime? @map("check_out") @db.Date
+  serviceDate          DateTime? @map("service_date") @db.Date
+  ratePerUnit          Decimal   @default(0) @map("rate_per_unit") @db.Decimal(12, 2)
+  units                Int       @default(1)
+  totalCost            Decimal   @default(0) @map("total_cost") @db.Decimal(12, 2)
+  supplierAmountPaid   Decimal   @default(0) @map("supplier_amount_paid") @db.Decimal(12, 2)
+  supplierAmountPending Decimal  @default(0) @map("supplier_amount_pending") @db.Decimal(12, 2)
+  mailStatus           String    @default("not_sent") @map("mail_status") /// 'not_sent', 'sent', 'read'
+  mailSentAt           DateTime? @map("mail_sent_at")
+  paymentStatus        String    @default("pending") @map("payment_status") /// 'pending', 'partial', 'paid'
+  confirmationNumber   String?   @map("confirmation_number")
+  notes                String?   @db.Text
+  createdBy            String    @map("created_by")
+  createdAt            DateTime  @default(now()) @map("created_at")
+  updatedAt            DateTime  @updatedAt @map("updated_at")
+
+  query       Query        @relation(fields: [queryId], references: [id], onDelete: Cascade)
+  proposalDay ProposalDay? @relation(fields: [proposalDayId], references: [id])
+  supplier    Supplier?    @relation(fields: [supplierId], references: [id])
+  creator     User         @relation("BookingServiceCreatedBy", fields: [createdBy], references: [id])
+  vouchers    Voucher[]
+
+  @@index([queryId])
+  @@index([serviceType])
+  @@map("booking_services")
+}
+
+/// Customer and supplier vouchers
+model Voucher {
+  id                 String    @id @default(uuid())
+  queryId            String    @map("query_id")
+  bookingServiceId   String?   @map("booking_service_id")
+  voucherType        String    @map("voucher_type") /// 'customer', 'supplier'
+  voucherNumber      String    @unique @map("voucher_number") /// e.g. VCH-2026-001
+  confirmationNumber String?   @map("confirmation_number")
+  supplierName       String?   @map("supplier_name")
+  hotelName          String?   @map("hotel_name")
+  destination        String?
+  leadPaxName        String?   @map("lead_pax_name")
+  paxDetails         String?   @map("pax_details") /// '2 Adults, 1 Child'
+  checkIn            DateTime? @map("check_in") @db.Date
+  checkOut           DateTime? @map("check_out") @db.Date
+  roomType           String?   @map("room_type")
+  mealPlan           String?   @map("meal_plan")
+  greetingMessage    String?   @map("greeting_message") @db.Text
+  pdfUrl             String?   @map("pdf_url")
+  status             String    @default("draft") /// 'draft', 'sent'
+  createdBy          String    @map("created_by")
+  createdAt          DateTime  @default(now()) @map("created_at")
+
+  query          Query           @relation(fields: [queryId], references: [id], onDelete: Cascade)
+  bookingService BookingService? @relation(fields: [bookingServiceId], references: [id])
+  creator        User            @relation("VoucherCreatedBy", fields: [createdBy], references: [id])
+
+  @@index([queryId])
+  @@map("vouchers")
+}
+
+/// File uploads per query
+model QueryDocument {
+  id         String   @id @default(uuid())
+  queryId    String   @map("query_id")
+  fileName   String   @map("file_name")
+  fileUrl    String   @map("file_url")
+  fileType   String   @map("file_type") /// 'PDF', 'JPG', 'PNG', 'DOCX' etc.
+  fileSize   Int      @map("file_size") /// in KB
+  uploadedBy String   @map("uploaded_by")
+  label      String?  /// e.g. 'Passport - Sagar Mukherjee'
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  query    Query @relation(fields: [queryId], references: [id], onDelete: Cascade)
+  uploader User  @relation("DocumentUploadedBy", fields: [uploadedBy], references: [id])
+
+  @@index([queryId])
+  @@map("query_documents")
 }
