@@ -160,6 +160,12 @@ const sendWhatsapp = async (req, res, next) => {
 
 const sendEmail = async (req, res, next) => {
   try {
+    const sgMail = require('@sendgrid/mail');
+    if (!config.sendgrid.apiKey) {
+      return res.status(500).json({ success: false, message: 'SendGrid API Key is not configured on the server.' });
+    }
+    sgMail.setApiKey(config.sendgrid.apiKey);
+
     const canViewAll = req.user.permissions['query.view_all'];
     const proposal = await proposalService.getProposalById(req.params.id, req.user.id, canViewAll);
     const now = new Date();
@@ -169,19 +175,112 @@ const sendEmail = async (req, res, next) => {
       return res.status(429).json({ success: false, message: 'Please wait 30 seconds before sending again' });
     }
 
-    if (!proposal.query.email) {
-      return res.status(400).json({ success: false, message: 'No email found on this query.' });
+    const { to, cc, subject, body } = req.body;
+    const finalTo = to || proposal.query.email;
+    if (!finalTo) {
+      return res.status(400).json({ success: false, message: 'No recipient email provided.' });
     }
 
-    // Update lastSentAt immediately
+    // Generate Proposal PDF Buffer
+    const proposalHtmlContent = `
+      <html>
+        <head>
+          <style>
+            body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #333; line-height: 1.6; padding: 40px; }
+            h1 { color: #1e3a8a; }
+            table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+            th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
+            th { background-color: #f8fafc; color: #475569; }
+          </style>
+        </head>
+        <body>
+          <h1>Proposal for ${proposal.query.name}</h1>
+          <p><strong>Query ID:</strong> ${proposal.query.queryCode}</p>
+          <p><strong>Selling Price:</strong> ₹${Number(proposal.sellingPrice).toLocaleString()}</p>
+          <h2>Itinerary (${proposal.days.length} Days)</h2>
+          <table>
+            <tr>
+              <th>Day</th>
+              <th>Destination</th>
+              <th>Hotel</th>
+              <th>Meals</th>
+              <th>Transport</th>
+              <th>Activities</th>
+            </tr>
+            ${proposal.days.map(d => `
+              <tr>
+                <td>Day ${d.dayNumber}</td>
+                <td>${d.destination?.name || '-'}</td>
+                <td>${d.hotel?.name || '-'}</td>
+                <td>${d.mealsIncluded || '-'}</td>
+                <td>${d.transport || '-'}</td>
+                <td>${d.activities || '-'}</td>
+              </tr>
+            `).join('')}
+          </table>
+        </body>
+      </html>
+    `;
+    const generatedPdfBuffer = await pdfService.generatePdfFromHtml(proposalHtmlContent);
+    const pdfBuffer = Buffer.from(generatedPdfBuffer);
+
+    // Prepare Attachments
+    const attachments = [
+      {
+        content: pdfBuffer.toString('base64'),
+        filename: `Proposal-v${proposal.version}-${proposal.query.queryCode}.pdf`,
+        type: 'application/pdf',
+        disposition: 'attachment'
+      }
+    ];
+
+    if (req.file) {
+      attachments.push({
+        content: req.file.buffer.toString('base64'),
+        filename: req.file.originalname,
+        type: req.file.mimetype,
+        disposition: 'attachment'
+      });
+    }
+
+    const finalSubject = subject || 'Your Travel Proposal is Ready!';
+    const htmlContent = body || `<p>Hi ${proposal.query.name}, your travel proposal is ready.</p>`;
+
+    // Prepare SendGrid Message
+    const msg = {
+      to: finalTo,
+      from: config.email.from,
+      subject: finalSubject,
+      html: htmlContent,
+      attachments
+    };
+    
+    if (cc) {
+      msg.cc = cc.split(',').map(e => e.trim()).filter(Boolean);
+    }
+
+    // Send Email Synchronously
+    await sgMail.send(msg);
+
+    // Update lastSentAt
     await prisma.proposal.update({ where: { id: proposal.id }, data: { lastSentAt: now } });
+    
+    // Log Activity
+    await prisma.integrationLog.create({
+      data: {
+        type: 'email',
+        direction: 'outbound',
+        status: 'success',
+        payload: { provider: 'sendgrid', to: finalTo, subject: finalSubject, withCustomAttachment: !!req.file },
+        relatedId: proposal.queryId,
+      }
+    });
 
-    // Enqueue Job
-    const htmlContent = `<p>Hi ${proposal.query.name}, your proposal is ready.</p>`;
-    await queueService.enqueueEmailJob(proposal.queryId, proposal.query.email, 'Your Travel Proposal is Ready!', htmlContent);
-
-    res.json({ success: true, message: 'Email notification queued securely.' });
+    res.json({ success: true, message: 'Email sent successfully with proposal attached.' });
   } catch (error) {
+    if (error.response && error.response.body) {
+      console.error('SendGrid Error:', error.response.body);
+    }
     next(error);
   }
 };

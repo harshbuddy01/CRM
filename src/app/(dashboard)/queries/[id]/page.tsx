@@ -22,6 +22,7 @@ import { cn } from '@/lib/utils';
 import { TRANSITIONS } from '@/lib/constants';
 import { PaymentEntryModal } from '@/components/PaymentEntryModal';
 import { EmailComposeModal } from '@/components/EmailComposeModal';
+import { ProposalEmailComposeModal } from '@/components/ProposalEmailComposeModal';
 
 const formatStatus = (s: string) => s.replace('_', ' ').toUpperCase();
 
@@ -493,7 +494,7 @@ export default function QueryDetailPage() {
                     </Link>
                   </div>
 
-                  <QueryProposalsList queryId={params.id as string} queryCode={data?.queryCode || ''} />
+                  <QueryProposalsList queryId={params.id as string} queryCode={data?.queryCode || ''} customerName={data?.name || ''} customerEmail={data?.email || ''} />
                 </TabsContent>
 
                 <TabsContent value="payments" className="mt-6 p-4">
@@ -517,8 +518,9 @@ export default function QueryDetailPage() {
   );
 }
 
-function QueryProposalsList({ queryId, queryCode }: { queryId: string, queryCode: string }) {
+function QueryProposalsList({ queryId, queryCode, customerName, customerEmail }: { queryId: string, queryCode: string, customerName: string, customerEmail: string }) {
   const [waModalOpenId, setWaModalOpenId] = useState<string | null>(null);
+  const [emailModalOpenId, setEmailModalOpenId] = useState<string | null>(null);
   const [manualWaLink, setManualWaLink] = useState<string | null>(null);
 
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
@@ -570,14 +572,6 @@ function QueryProposalsList({ queryId, queryCode }: { queryId: string, queryCode
     onError: (err: any) => {
       toast.error(err.response?.data?.message || 'Failed to send WhatsApp');
     }
-  });
-
-  const sendEmail = useMutation({
-    mutationFn: async (proposalId: string) => {
-      await api.post(`/proposals/${proposalId}/send-email`);
-    },
-    onSuccess: () => toast.success('Email dispatched successfully'),
-    onError: (err: any) => toast.error(err.response?.data?.message || 'Failed to send email')
   });
 
   const handleWaModalOpen = async (proposalId: string) => {
@@ -642,8 +636,7 @@ function QueryProposalsList({ queryId, queryCode }: { queryId: string, queryCode
               variant="outline" 
               size="sm" 
               className="text-blue-600 border-blue-200 hover:bg-blue-50"
-              onClick={() => sendEmail.mutate(p.id)}
-              disabled={sendEmail.isPending}
+              onClick={() => setEmailModalOpenId(p.id)}
             >
               <Mail className="w-4 h-4 mr-2" /> Email
             </Button>
@@ -732,6 +725,16 @@ function QueryProposalsList({ queryId, queryCode }: { queryId: string, queryCode
           </div>
         </div>
       ))}
+      
+      {emailModalOpenId && (
+        <ProposalEmailComposeModal 
+          isOpen={true}
+          onClose={() => setEmailModalOpenId(null)}
+          proposalId={emailModalOpenId}
+          customerName={customerName}
+          customerEmail={customerEmail}
+        />
+      )}
     </div>
   );
 }
