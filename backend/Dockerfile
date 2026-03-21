@@ -1,11 +1,9 @@
 # ============================================================
-# TravelCRM — Backend Dockerfile (Railway PDF Specialist)
-# ============================================================
-# This environment includes all necessary system libraries 
-# for headless Chromium / Puppeteer to run reliably.
+# TravelCRM — Backend Dockerfile (Enhanced Reliability)
 # ============================================================
 
-FROM node:20-slim
+# Using full node:20 for better dependency compatibility than slim
+FROM node:20
 
 # Install system dependencies for Chromium / Puppeteer
 RUN apt-get update && apt-get install -y \
@@ -35,18 +33,19 @@ WORKDIR /app
 # Copy package management files
 COPY package*.json ./
 
-# Install dependencies (including puppeteer-core & @sparticuz/chromium)
+# Install ALL dependencies (including dev deps if needed for builds)
 RUN npm install
 
-# Copy Prisma schema and generate client
-COPY prisma ./prisma/
-RUN npx prisma generate
-
-# Copy the rest of the application source code
+# Copy all source files before generate/migrate
 COPY . .
 
-# Expose the API port (Railway takes care of mapping to PORT env var)
+# Generate Prisma Client
+RUN npx prisma generate
+
+# Expose the API port
 EXPOSE 3001
 
-# Start script launches both the API and the Background Worker via concurrently
+# Add a startup check script or just run nodemon/node directly
+# We use npm start which invokes concurrently defined in package.json
+# Ensure logs are piped correctly
 CMD ["npm", "start"]
