@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import { useAuthStore } from '@/lib/auth-store';
 import { 
   LayoutDashboard, 
+  User,
   Users, 
   Map, 
   FileText, 
@@ -66,8 +67,22 @@ export function Sidebar() {
           );
         })}
       </nav>
-      <div className="p-4 border-t text-xs text-muted-foreground">
-        Role: <span className="font-semibold text-foreground">{user?.roleLabel || 'Loading...'}</span>
+      <div className="p-4 border-t">
+        <Link
+          href="/profile"
+          className={cn(
+            "flex items-center gap-3 px-3 py-2 rounded-md transition-colors text-sm font-medium",
+            pathname === '/profile'
+              ? "bg-primary text-primary-foreground"
+              : "hover:bg-muted text-muted-foreground hover:text-foreground"
+          )}
+        >
+          <User className="w-4 h-4" />
+          <div className="flex flex-col">
+            <span className="text-xs">{user?.name || 'Profile'}</span>
+            <span className="text-[10px] opacity-70">{user?.roleLabel || ''}</span>
+          </div>
+        </Link>
       </div>
     </aside>
   );

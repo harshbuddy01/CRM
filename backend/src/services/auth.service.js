@@ -183,10 +183,94 @@ const logout = async (userId, refreshTokenStr) => {
   }
 };
 
+/**
+ * Forgot Password — Generate a reset link.
+ * The token is a JWT signed with (JWT_SECRET + passwordHash).
+ * This makes the token single-use: once the password is changed,
+ * the old hash changes and the token becomes invalid.
+ */
+const forgotPassword = async (email) => {
+  const user = await prisma.user.findUnique({ where: { email } });
+
+  // Always return success to prevent email enumeration
+  if (!user || !user.isActive) {
+    return { message: 'If an account exists with that email, a reset link has been sent.' };
+  }
+
+  // Sign with secret + passwordHash so it becomes invalid after use
+  const resetSecret = config.jwt.secret + user.passwordHash;
+  const resetToken = jwt.sign({ id: user.id, purpose: 'password_reset' }, resetSecret, { expiresIn: '15m' });
+
+  const resetUrl = `${config.frontendUrl}/reset-password?token=${resetToken}&id=${user.id}`;
+
+  // If SendGrid/email is configured, send the email
+  const sgApiKey = config.sendgrid?.apiKey;
+  if (sgApiKey) {
+    try {
+      const sgMail = require('@sendgrid/mail');
+      sgMail.setApiKey(sgApiKey);
+      await sgMail.send({
+        to: email,
+        from: config.email.from,
+        subject: 'TravelCRM — Reset Your Password',
+        html: `
+          <h2>Password Reset Request</h2>
+          <p>Hi ${user.name},</p>
+          <p>Click the link below to reset your password. This link expires in 15 minutes.</p>
+          <p><a href="${resetUrl}" style="padding:12px 24px;background:#6366f1;color:white;border-radius:6px;text-decoration:none;font-weight:bold;">Reset Password</a></p>
+          <p>If you didn't request this, you can safely ignore this email.</p>
+          <p style="color:#999;font-size:12px;">Link: ${resetUrl}</p>
+        `,
+      });
+    } catch (err) {
+      // Log but don't fail — user shouldn't know if email sending failed
+      const logger = require('../utils/logger');
+      logger.error('[Auth] Failed to send reset email:', err.message);
+    }
+  } else {
+    // No email provider — log the link to console for development
+    const logger = require('../utils/logger');
+    logger.info(`[Auth] Password reset link (no email provider configured):`);
+    logger.info(`[Auth] ${resetUrl}`);
+  }
+
+  return { message: 'If an account exists with that email, a reset link has been sent.' };
+};
+
+/**
+ * Reset Password — Verify token and set new password.
+ */
+const resetPassword = async (userId, token, newPassword) => {
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (!user) throw new BusinessError('Invalid or expired reset link');
+
+  // Verify with the same secret used to sign
+  const resetSecret = config.jwt.secret + user.passwordHash;
+  try {
+    const decoded = jwt.verify(token, resetSecret);
+    if (decoded.purpose !== 'password_reset' || decoded.id !== userId) {
+      throw new BusinessError('Invalid or expired reset link');
+    }
+  } catch (err) {
+    throw new BusinessError('Invalid or expired reset link');
+  }
+
+  // Hash and update
+  const passwordHash = await bcrypt.hash(newPassword, 10);
+  await prisma.user.update({ where: { id: userId }, data: { passwordHash } });
+
+  // Invalidate all sessions (force re-login)
+  await prisma.userSession.deleteMany({ where: { userId } });
+
+  return { message: 'Password has been reset successfully. Please log in with your new password.' };
+};
+
 module.exports = {
   register,
   login,
   refreshToken,
   changePassword,
-  logout
+  logout,
+  forgotPassword,
+  resetPassword,
 };
