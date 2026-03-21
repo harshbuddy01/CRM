@@ -1,18 +1,38 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { Card, CardContent } from '@/components/ui/card';
 import { Loader2, IndianRupee, TrendingUp, CreditCard } from 'lucide-react';
 import { format } from 'date-fns';
 
+import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
+
 export function BillingTab({ queryId }: { queryId: string }) {
+  const queryClient = useQueryClient();
+
   const { data, isLoading } = useQuery({
     queryKey: ['billing-summary', queryId],
     queryFn: async () => {
       const res = await api.get(`/queries/${queryId}/billing-summary`);
       return res.data.data;
     },
+  });
+
+  const generateInvoiceMutation = useMutation({
+    mutationFn: async () => {
+      const res = await api.post('/finance/invoices', { queryId });
+      return res.data;
+    },
+    onSuccess: () => {
+      toast.success('Invoice generated successfully');
+      queryClient.invalidateQueries({ queryKey: ['invoices', queryId] });
+      queryClient.invalidateQueries({ queryKey: ['billing-summary', queryId] });
+    },
+    onError: (err: any) => {
+      toast.error('Failed to generate invoice', { description: err.response?.data?.message || err.message });
+    }
   });
 
   if (isLoading) return <div className="flex justify-center p-8"><Loader2 className="w-6 h-6 animate-spin" /></div>;
@@ -92,7 +112,18 @@ export function BillingTab({ queryId }: { queryId: string }) {
             }`}>{invoice.status}</span>
           </CardContent></Card>
         ) : (
-          <Card><CardContent className="p-6 text-center text-muted-foreground">No invoice generated yet.</CardContent></Card>
+          <Card>
+            <CardContent className="p-6 text-center space-y-4">
+              <p className="text-muted-foreground">No invoice generated yet.</p>
+              <Button 
+                onClick={() => generateInvoiceMutation.mutate()}
+                disabled={generateInvoiceMutation.isPending}
+              >
+                {generateInvoiceMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                Generate Invoice
+              </Button>
+            </CardContent>
+          </Card>
         )}
       </div>
     </div>

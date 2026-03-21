@@ -15,8 +15,10 @@ import { Label } from '@/components/ui/label';
 import { useAuthStore } from '@/lib/auth-store';
 
 const CATEGORIES = [
+  { id: 'destinations', label: 'Destinations', icon: Map, color: 'bg-indigo-50 border-indigo-200 text-indigo-700', activeColor: 'bg-indigo-600 border-indigo-600 text-white', desc: 'Goa, Manali, Bali' },
+  { id: 'hotels', label: 'Hotels', icon: Building2, color: 'bg-rose-50 border-rose-200 text-rose-700', activeColor: 'bg-rose-600 border-rose-600 text-white', desc: 'Hotels per destination' },
   { id: 'suppliers', label: 'Suppliers', icon: Building2, color: 'bg-blue-50 border-blue-200 text-blue-700', activeColor: 'bg-blue-600 border-blue-600 text-white', desc: 'Vendors, DMCs, transport providers' },
-  { id: 'activities', label: 'Activities', icon: Map, color: 'bg-green-50 border-green-200 text-green-700', activeColor: 'bg-green-600 border-green-600 text-white', desc: 'Sightseeing, trekking, experiences' },
+  { id: 'activities', label: 'Activities', icon: Palette, color: 'bg-green-50 border-green-200 text-green-700', activeColor: 'bg-green-600 border-green-600 text-white', desc: 'Sightseeing, trekking, experiences' },
   { id: 'transfers', label: 'Transfers', icon: Car, color: 'bg-orange-50 border-orange-200 text-orange-700', activeColor: 'bg-orange-600 border-orange-600 text-white', desc: 'Vehicles, cabs, transport types' },
   { id: 'room-types', label: 'Room Types', icon: Bed, color: 'bg-purple-50 border-purple-200 text-purple-700', activeColor: 'bg-purple-600 border-purple-600 text-white', desc: 'Single, double, suite categories' },
   { id: 'meal-plans', label: 'Meal Plans', icon: Utensils, color: 'bg-yellow-50 border-yellow-200 text-yellow-700', activeColor: 'bg-yellow-600 border-yellow-600 text-white', desc: 'BB, HB, FB, All Inclusive' },
@@ -88,15 +90,17 @@ function MasterPanel({ category }: { category: typeof CATEGORIES[0] }) {
   const [editItem, setEditItem] = useState<any>(null);
   const [viewItem, setViewItem] = useState<any>(null);
 
+  const basePath = ['destinations', 'hotels'].includes(category.id) ? '/masters' : '/masters-v2';
+
   const { data, isLoading } = useQuery({
-    queryKey: ['masters-v2', category.id, search],
-    queryFn: () => api.get(`/masters-v2/${category.id}`, { params: search ? { search } : {} }).then(r => r.data.data),
+    queryKey: [basePath, category.id, search],
+    queryFn: () => api.get(`${basePath}/${category.id}`, { params: search ? { search } : {} }).then(r => r.data?.data || r.data),
   });
 
-  const invalidate = () => qc.invalidateQueries({ queryKey: ['masters-v2', category.id] });
+  const invalidate = () => qc.invalidateQueries({ queryKey: [basePath, category.id] });
 
   const deleteMutation = useMutation({
-    mutationFn: (id: string) => api.delete(`/masters-v2/${category.id}/${id}`),
+    mutationFn: (id: string) => api.delete(`${basePath}/${category.id}/${id}`),
     onSuccess: () => { toast.success('Deleted'); invalidate(); },
     onError: () => toast.error('Failed to delete'),
   });
