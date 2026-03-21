@@ -4,13 +4,18 @@ import type { NextRequest } from 'next/server';
 export function middleware(request: NextRequest) {
   const token = request.cookies.get('accessToken')?.value;
   const isAuth = !!token;
-  const isLoginPage = request.nextUrl.pathname === '/login';
+  const path = request.nextUrl.pathname;
 
-  const response = isAuth && isLoginPage
-    ? NextResponse.redirect(new URL('/', request.url))
-    : !isAuth && !isLoginPage
-    ? NextResponse.redirect(new URL('/login', request.url))
-    : NextResponse.next();
+  const publicPaths = ['/login', '/forgot-password', '/reset-password'];
+  const isPublicPage = publicPaths.some(p => path.startsWith(p));
+
+  let response = NextResponse.next();
+
+  if (isAuth && isPublicPage) {
+    response = NextResponse.redirect(new URL('/', request.url));
+  } else if (!isAuth && !isPublicPage) {
+    response = NextResponse.redirect(new URL('/login', request.url));
+  }
 
   // Add Vary header to every response to prevent CDN cache poisoning
   // This tells the CDN to distinguish between RSC (data) and HTML (standard) requests

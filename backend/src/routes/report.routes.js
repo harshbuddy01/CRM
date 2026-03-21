@@ -21,6 +21,6 @@ router.get('/tours', can('query.view_all'), reportController.getTours);
 router.get('/marketing', can('query.view_all'), reportController.getMarketing);
 
 // CSV Export — Admin only
-router.get('/:type/csv', can('query.view_all'), reportController.exportCsv);
+router.get('/:type/csv', can('report.export'), reportController.exportCsv);
 
 module.exports = router;

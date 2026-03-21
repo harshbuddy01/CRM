@@ -4,7 +4,8 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { Download, Wallet, Clock, CheckCircle } from 'lucide-react';
+import { Download, Wallet, CreditCard, Banknote, AlertCircle, CheckCircle, Clock } from 'lucide-react';
+import { toast } from 'sonner';
 
 const MODE_COLORS: Record<string, string> = {
   upi: '#6366f1', neft: '#8b5cf6', card: '#3b82f6', cash: '#10b981', cheque: '#f59e0b',
@@ -21,11 +22,24 @@ export default function CollectionsReportPage() {
       api.get('/reports/collections', { params: { dateFrom, dateTo } }).then(r => r.data.data),
   });
 
-  const handleExportCsv = () => {
+  const handleExportCsv = async () => {
     const params = new URLSearchParams();
     if (dateFrom) params.set('dateFrom', dateFrom);
     if (dateTo) params.set('dateTo', dateTo);
-    window.open(`${api.defaults.baseURL}/reports/collections/csv?${params.toString()}`, '_blank');
+    try {
+      const res = await api.get('/reports/collections/csv', { params, responseType: 'blob' });
+      const url = URL.createObjectURL(new Blob([res.data], { type: 'text/csv' }));
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `collections-report-${params.get('startDate') || 'all'}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Failed to export CSV', error);
+      toast.error('Failed to export report');
+    }
   };
 
   return (

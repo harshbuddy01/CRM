@@ -6,7 +6,8 @@ import { api } from '@/lib/api';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
 } from 'recharts';
-import { Download, DollarSign, TrendingUp, ShoppingCart } from 'lucide-react';
+import { Download, DollarSign, TrendingUp, Award, ShoppingCart } from 'lucide-react';
+import { toast } from 'sonner';
 
 const COLORS = ['#6366f1', '#8b5cf6', '#a78bfa', '#c4b5fd', '#818cf8', '#4f46e5'];
 
@@ -20,11 +21,24 @@ export default function SalesReportPage() {
       api.get('/reports/sales', { params: { dateFrom, dateTo } }).then(r => r.data.data),
   });
 
-  const handleExportCsv = () => {
+  const handleExportCsv = async () => {
     const params = new URLSearchParams();
     if (dateFrom) params.set('dateFrom', dateFrom);
     if (dateTo) params.set('dateTo', dateTo);
-    window.open(`${api.defaults.baseURL}/reports/sales/csv?${params.toString()}`, '_blank');
+    try {
+      const res = await api.get('/reports/sales/csv', { params, responseType: 'blob' });
+      const url = URL.createObjectURL(new Blob([res.data], { type: 'text/csv' }));
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `sales-report-${params.get('startDate') || 'all'}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Failed to export CSV', error);
+      toast.error('Failed to export report');
+    }
   };
 
   return (

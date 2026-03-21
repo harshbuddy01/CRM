@@ -4,7 +4,8 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { Download, Plane, Calendar, AlertTriangle } from 'lucide-react';
+import { Download, Map, Calendar, PlaneTakeoff, CheckCircle, Plane, AlertTriangle } from 'lucide-react';
+import { toast } from 'sonner';
 import { format } from 'date-fns';
 
 const STATUS_COLORS: Record<string, string> = {
@@ -21,11 +22,24 @@ export default function ToursReportPage() {
       api.get('/reports/tours', { params: { dateFrom, dateTo } }).then(r => r.data.data),
   });
 
-  const handleExportCsv = () => {
+  const handleExportCsv = async () => {
     const params = new URLSearchParams();
     if (dateFrom) params.set('dateFrom', dateFrom);
     if (dateTo) params.set('dateTo', dateTo);
-    window.open(`${api.defaults.baseURL}/reports/tours/csv?${params.toString()}`, '_blank');
+    try {
+      const res = await api.get('/reports/tours/csv', { params, responseType: 'blob' });
+      const url = URL.createObjectURL(new Blob([res.data], { type: 'text/csv' }));
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `tours-report-${params.get('startDate') || 'all'}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Failed to export CSV', error);
+      toast.error('Failed to export report');
+    }
   };
 
   return (

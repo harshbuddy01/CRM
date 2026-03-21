@@ -8,6 +8,7 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 } from 'recharts';
 import { Download, Megaphone, TrendingUp, Globe } from 'lucide-react';
+import { toast } from 'sonner';
 
 const SOURCE_COLORS: Record<string, string> = {
   website: '#6366f1', whatsapp: '#22c55e', facebook: '#3b82f6',
@@ -26,11 +27,24 @@ export default function MarketingReportPage() {
       api.get('/reports/marketing', { params: { dateFrom, dateTo } }).then(r => r.data.data),
   });
 
-  const handleExportCsv = () => {
+  const handleExportCsv = async () => {
     const params = new URLSearchParams();
     if (dateFrom) params.set('dateFrom', dateFrom);
     if (dateTo) params.set('dateTo', dateTo);
-    window.open(`${api.defaults.baseURL}/reports/marketing/csv?${params.toString()}`, '_blank');
+    try {
+      const res = await api.get('/reports/marketing/csv', { params, responseType: 'blob' });
+      const url = URL.createObjectURL(new Blob([res.data], { type: 'text/csv' }));
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `marketing-report-${params.get('startDate') || 'all'}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Failed to export CSV', error);
+      toast.error('Failed to export report');
+    }
   };
 
   return (

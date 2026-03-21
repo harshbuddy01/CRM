@@ -34,7 +34,7 @@ export function Sidebar() {
     { href: '/payments', label: 'Payment Ledger', icon: CreditCard, show: user?.role === 'admin' || user?.permissions['payment.view_all'] || user?.permissions['payment.view_assigned'] },
     { href: '/reports/lead-funnel', label: 'Reports', icon: BarChart3, show: user?.permissions['query.view_all'] },
     { href: '/masters/destinations', label: 'Masters', icon: Database, show: user?.permissions['master.manage_destinations'] || user?.permissions['master.manage_hotels'] },
-    { href: '/users', label: 'Team', icon: Users, show: user?.permissions['user.manage'] },
+    { href: '/users', label: 'Team', icon: Users, show: user?.permissions['users.manage'] },
   ];
 
   return (

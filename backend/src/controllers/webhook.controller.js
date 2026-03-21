@@ -56,12 +56,22 @@ const createFromWhatsapp = async (req, res, next) => {
 
     if (existing) {
       // Append as a note instead of creating duplicate
+      const adminUserId = await getSystemUserId();
+      const noteUserId = existing.assignedTo || adminUserId || null;
+
+      // Only provide userId if we actually found one, since schema might require it 
+      // or if it's optional, we can just pass what we have
+      const noteData = {
+        queryId: existing.id,
+        note: `[WhatsApp] ${notes || 'New message received'}`,
+      };
+      
+      if (noteUserId) {
+        noteData.userId = noteUserId;
+      }
+
       await prisma.queryNote.create({
-        data: {
-          queryId: existing.id,
-          userId: existing.assignedTo || (await getSystemUserId()),
-          note: `[WhatsApp] ${notes || 'New message received'}`,
-        }
+        data: noteData
       });
 
       return res.json({ success: true, message: 'Existing lead updated with note', queryId: existing.id });
@@ -117,6 +127,11 @@ const createFromFacebook = async (req, res, next) => {
 
     // Facebook sends a verification challenge on subscription setup
     if (req.query['hub.mode'] === 'subscribe' && req.query['hub.verify_token']) {
+      const expectedToken = process.env.FACEBOOK_WEBHOOK_VERIFY_TOKEN;
+      if (expectedToken && req.query['hub.verify_token'] !== expectedToken) {
+        logger.warn('[Webhook] Facebook verification failed — invalid token');
+        return res.status(403).json({ success: false, message: 'Invalid verify token' });
+      }
       return res.send(req.query['hub.challenge']);
     }
 
