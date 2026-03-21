@@ -24,7 +24,7 @@ router.get('/:id', proposalController.getProposalById);
 router.get('/', can('proposal.view_assigned'), proposalController.listAllProposals);
 
 const multer = require('multer');
-const upload = require('../middlewares/upload') || multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
 
 // Dispatch Notifications (with Idempotency Queue or Sync for custom emails)
 router.post('/:id/send-whatsapp', proposalController.sendWhatsapp);
