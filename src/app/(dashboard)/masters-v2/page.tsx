@@ -100,14 +100,44 @@ function MasterManagementTable({ config }: { config: any }) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.name) return;
+    if (!formData.name && config.id !== 'transfers') return;
     
-    // Filter payload based on what the model actually accepts
-    const payload: any = { name: formData.name };
-    if (config.id === 'suppliers') {
-      payload.city = formData.city;
-      payload.category = formData.category;
-      payload.type = formData.category.toLowerCase() || 'hotel'; // Default or map properly
+    let payload: any = {};
+    
+    switch (config.id) {
+      case 'suppliers':
+        payload = {
+          name: formData.name,
+          city: formData.city,
+          type: formData.category?.toLowerCase() || 'hotel',
+          isActive: true
+        };
+        break;
+      case 'activities':
+        payload = {
+          name: formData.name,
+          destinationId: formData.city, // Assuming city dropdown provides destinationId
+          pricePerPerson: Number(formData.price) || 0,
+          description: formData.description,
+          isActive: true
+        };
+        break;
+      case 'transfers':
+        payload = {
+          vehicleType: formData.name, // For transfers, name field is used for vehicle type in the UI
+          destinationId: formData.city,
+          price: Number(formData.price) || 0,
+          description: formData.description,
+          isActive: true
+        };
+        break;
+      default:
+        // RoomType, MealPlan, PackageTheme
+        payload = {
+          name: formData.name,
+          price: formData.price ? Number(formData.price) : undefined,
+          isActive: true
+        };
     }
     
     mutation.mutate(payload);
