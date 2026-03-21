@@ -204,16 +204,24 @@ export default function QueryDetailPage() {
             {(() => {
               const s = statusSettings?.find((st: any) => st.code === query.status);
               const label = s ? s.label : formatStatus(query.status);
-              const color = s ? s.colorHex : '#94a3b8';
+              
+              const statusStyles: Record<string, string> = {
+                new: 'linear-gradient(135deg, #6B7280, #4B5563)',
+                followup: 'linear-gradient(135deg, #667eea, #764ba2)',
+                dnp: 'linear-gradient(135deg, #f093fb, #f5576c)',
+                proposal_sent: 'linear-gradient(135deg, #4facfe, #00f2fe)',
+                ready_to_pay: 'linear-gradient(135deg, #43e97b, #38f9d7)',
+                confirmed: 'linear-gradient(135deg, #11998e, #38ef7d)',
+                lost: 'linear-gradient(135deg, #ee0979, #ff6a00)',
+                invalid: 'linear-gradient(135deg, #f7971e, #ffd200)',
+              };
+              
+              const bg = statusStyles[query.status] || (s ? `linear-gradient(135deg, ${s.colorHex}, ${s.colorHex}dd)` : 'linear-gradient(135deg, #6B7280, #4B5563)');
 
               return (
                 <span 
-                  className="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border shadow-sm"
-                  style={{ 
-                    backgroundColor: `${color}10`, 
-                    color: color,
-                    borderColor: `${color}40`
-                  }}
+                  className="px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider text-white shadow-md border border-white/20"
+                  style={{ background: bg }}
                 >
                   {label}
                 </span>
