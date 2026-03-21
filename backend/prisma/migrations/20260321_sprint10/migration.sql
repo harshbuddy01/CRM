@@ -5,6 +5,9 @@ ALTER TABLE "query_notes" ADD COLUMN "note_type" TEXT NOT NULL DEFAULT 'note';
 
 -- AlterTable: Add communicationType to email_logs
 ALTER TABLE "email_logs" ADD COLUMN "communication_type" TEXT NOT NULL DEFAULT 'customer';
+ALTER TABLE "email_logs" ADD COLUMN "to" TEXT;
+ALTER TABLE "email_logs" ADD COLUMN "cc" TEXT;
+ALTER TABLE "email_logs" ADD COLUMN "error_msg" TEXT;
 
 -- CreateTable: booking_services
 CREATE TABLE "booking_services" (

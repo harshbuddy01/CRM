@@ -15,8 +15,8 @@ export function MailsTab({ queryId, queryEmail }: { queryId: string; queryEmail?
   const { data: emails, isLoading } = useQuery({
     queryKey: ['email-logs', queryId],
     queryFn: async () => {
-      const res = await api.get(`/queries/${queryId}`);
-      return (res.data.data.emailLogs || []).filter((e: any) => e.communicationType !== 'supplier');
+      const res = await api.get(`/queries/${queryId}/email-logs`);
+      return (res.data.data || []).filter((e: any) => e.communicationType !== 'supplier');
     },
   });
 

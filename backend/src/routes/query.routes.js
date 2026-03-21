@@ -128,6 +128,32 @@ router.post(
   queryController.sendEmail
 );
 
+// Get Email Logs for Query (Sprint 9/10 Bugfix)
+router.get('/:id/email-logs', can('query.view'), async (req, res, next) => {
+  try {
+    const prisma = require('../config/prisma');
+    const logs = await prisma.emailLog.findMany({
+      where: { queryId: req.params.id },
+      include: { sentByUser: { select: { id: true, name: true } } },
+      orderBy: { sentAt: 'desc' }
+    });
+    res.json({ success: true, data: logs });
+  } catch (err) { next(err); }
+});
+
+// Get History/Activity Logs for Query (Sprint 9/10 Bugfix)
+router.get('/:id/history', can('query.view'), async (req, res, next) => {
+  try {
+    const prisma = require('../config/prisma');
+    const history = await prisma.activityLog.findMany({
+      where: { entityType: 'query', entityId: req.params.id },
+      include: { user: { select: { id: true, name: true } } },
+      orderBy: { createdAt: 'desc' }
+    });
+    res.json({ success: true, data: history });
+  } catch (err) { next(err); }
+});
+
 // Billing Summary (Sprint 10)
 router.get('/:id/billing-summary', async (req, res, next) => {
   try {

@@ -194,9 +194,13 @@ const logout = async (userId, refreshTokenStr) => {
 const forgotPassword = async (email) => {
   const user = await prisma.user.findUnique({ where: { email } });
 
-  // Always return success to prevent email enumeration
-  if (!user || !user.isActive) {
-    return { message: 'If an account exists with that email, a reset link has been sent.' };
+  // Return proper flags for the UI to show correct screens
+  if (!user) {
+    return { notFound: true };
+  }
+  
+  if (!user.isActive) {
+    return { accountInactive: true };
   }
 
   // Sign with secret + passwordHash so it becomes invalid after use
@@ -224,19 +228,19 @@ const forgotPassword = async (email) => {
           <p style="color:#999;font-size:12px;">Link: ${resetUrl}</p>
         `,
       });
+      return { success: true };
     } catch (err) {
-      // Log but don't fail — user shouldn't know if email sending failed
       const logger = require('../utils/logger');
       logger.error('[Auth] Failed to send reset email:', err.message);
+      return { sendError: true };
     }
   } else {
-    // No email provider — log the link to console for development
+    // No email provider — return the link for development
     const logger = require('../utils/logger');
     logger.info(`[Auth] Password reset link (no email provider configured):`);
     logger.info(`[Auth] ${resetUrl}`);
+    return { noEmailProvider: true, resetUrl };
   }
-
-  return { message: 'If an account exists with that email, a reset link has been sent.' };
 };
 
 /**

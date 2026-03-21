@@ -10,8 +10,8 @@ export function HistoryTab({ queryId }: { queryId: string }) {
   const { data: logs, isLoading } = useQuery({
     queryKey: ['history', queryId],
     queryFn: async () => {
-      const res = await api.get(`/queries/${queryId}`);
-      return res.data.data.activityLogs || [];
+      const res = await api.get(`/queries/${queryId}/history`);
+      return res.data.data || [];
     },
   });
 

@@ -43,6 +43,7 @@ const listAllUsers = async (req, res, next) => {
       mobileOnly: user.mobileOnly,
       activeLeadCount: user._count.assignedQueries,
       createdAt: user.createdAt,
+      updatedAt: user.updatedAt,
     }));
 
     res.json({ success: true, data });
@@ -53,14 +54,37 @@ const listAllUsers = async (req, res, next) => {
 
 const createUser = async (req, res, next) => {
   try {
-    const { name, email, password, roleId, maxLeads, mobileOnly } = req.body;
+    const { name, email, password, roleId, maxLeads, mobileOnly, sendCredentials } = req.body;
 
     if (!name || !email || !password || !roleId) {
       return res.status(400).json({ success: false, message: 'Name, email, password, and roleId are required' });
     }
 
     const user = await userService.createUser({ name, email, password, roleId, maxLeads, mobileOnly });
-    res.status(201).json({ success: true, message: 'User created', data: user });
+
+    if (sendCredentials) {
+      const queueService = require('../services/queue.service');
+      const config = require('../config');
+      const loginUrl = `${config.frontendUrl || 'https://travelcrm.railway.app'}/login`;
+      
+      const htmlBody = `
+        <div style="font-family: sans-serif; padding: 20px; max-width: 600px;">
+          <h2 style="color: #4f46e5;">Welcome to TravelCRM!</h2>
+          <p>Hi ${name},</p>
+          <p>Your account has been created successfully by the administrator. Below are your login credentials:</p>
+          <div style="background: #f3f4f6; padding: 15px; border-radius: 8px; margin: 20px 0;">
+            <p style="margin: 5px 0;"><strong>URL:</strong> <a href="${loginUrl}">${loginUrl}</a></p>
+            <p style="margin: 5px 0;"><strong>Email:</strong> ${email}</p>
+            <p style="margin: 5px 0;"><strong>Password:</strong> <code>${password}</code></p>
+          </div>
+          <p>Please log in and keep these credentials safe.</p>
+        </div>
+      `;
+      
+      await queueService.enqueueEmailJob(null, email, 'Welcome to TravelCRM - Your Login Details', htmlBody);
+    }
+
+    res.status(201).json({ success: true, message: 'User created' + (sendCredentials ? ' and email sent' : ''), data: user });
   } catch (error) {
     next(error);
   }

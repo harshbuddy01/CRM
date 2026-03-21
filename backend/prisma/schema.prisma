@@ -635,11 +635,14 @@ model EmailLog {
   id                String   @id @default(uuid())
   queryId           String   @map("query_id")
   templateId        String?  @map("template_id")
+  to                String?
+  cc                String?
   subject           String
   body              String   @db.Text
   sentBy            String?  @map("sent_by")
   sentAt            DateTime @default(now()) @map("sent_at")
   status            String   @default("sent") /// 'sent', 'failed'
+  errorMessage      String?  @map("error_msg")
   communicationType String   @default("customer") @map("communication_type") /// 'customer', 'supplier'
 
   query    Query          @relation(fields: [queryId], references: [id])

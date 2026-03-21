@@ -10,8 +10,8 @@ export function SupplierCommTab({ queryId }: { queryId: string }) {
   const { data: emails, isLoading } = useQuery({
     queryKey: ['supplier-emails', queryId],
     queryFn: async () => {
-      const res = await api.get(`/queries/${queryId}`);
-      return (res.data.data.emailLogs || []).filter((e: any) => e.communicationType === 'supplier');
+      const res = await api.get(`/queries/${queryId}/email-logs`);
+      return (res.data.data || []).filter((e: any) => e.communicationType === 'supplier');
     },
   });
 

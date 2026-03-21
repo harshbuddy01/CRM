@@ -13,19 +13,26 @@ import Link from 'next/link';
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [isSent, setIsSent] = useState(false);
+  const [status, setStatus] = useState<'idle' | 'success' | 'not-found' | 'inactive' | 'no-provider'>('idle');
+  const [resetUrl, setResetUrl] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
     try {
-      await api.post('/auth/forgot-password', { email });
-      setIsSent(true);
-      toast.success('Reset link sent', { description: 'Check your email for the reset link.' });
+      const res = await api.post('/auth/forgot-password', { email });
+      const data = res.data;
+      if (data.notFound) setStatus('not-found');
+      else if (data.accountInactive) setStatus('inactive');
+      else if (data.noEmailProvider) {
+        setStatus('no-provider');
+        setResetUrl(data.resetUrl);
+      } else {
+        setStatus('success');
+      }
     } catch {
-      // Still show success to prevent email enumeration
-      setIsSent(true);
+      setStatus('success');
     } finally {
       setIsLoading(false);
     }
@@ -40,22 +47,29 @@ export default function ForgotPasswordPage() {
 
       <Card className="w-full max-w-md shadow-lg">
         <CardHeader className="space-y-2 text-center">
-          <CardTitle className="text-2xl font-bold tracking-tight">Reset Password</CardTitle>
+          <CardTitle className="text-2xl font-bold tracking-tight">
+            {status === 'idle' && 'Reset Password'}
+            {status === 'success' && 'Reset Link Sent'}
+            {status === 'not-found' && 'Account Not Found'}
+            {status === 'inactive' && 'Account Inactive'}
+            {status === 'no-provider' && 'Development Link'}
+          </CardTitle>
           <CardDescription>
-            {isSent
-              ? 'Check your email for the reset link'
-              : 'Enter your email address and we\'ll send you a reset link'
-            }
+            {status === 'idle' && 'Enter your email address and we\'ll send you a reset link'}
+            {status === 'success' && 'Check your email for the reset link'}
+            {status === 'not-found' && 'No matching account found'}
+            {status === 'inactive' && 'Your account is suspended'}
+            {status === 'no-provider' && 'Email provider not configured'}
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {isSent ? (
+          {status === 'success' && (
             <div className="space-y-4 text-center">
               <div className="mx-auto w-16 h-16 rounded-full bg-green-100 flex items-center justify-center">
                 <Mail className="w-8 h-8 text-green-600" />
               </div>
               <p className="text-sm text-muted-foreground">
-                If an account exists with <strong>{email}</strong>, you&apos;ll receive a password reset link shortly.
+                We sent a password reset link to <strong>{email}</strong>.
               </p>
               <p className="text-xs text-muted-foreground">
                 The link will expire in 15 minutes. Check your spam folder if you don&apos;t see it.
@@ -66,7 +80,58 @@ export default function ForgotPasswordPage() {
                 </Button>
               </Link>
             </div>
-          ) : (
+          )}
+
+          {status === 'not-found' && (
+            <div className="space-y-4 text-center">
+              <p className="text-sm text-muted-foreground">
+                We couldn&apos;t find an account associated with <strong>{email}</strong>.
+              </p>
+              <Button variant="default" className="w-full mt-4" onClick={() => setStatus('idle')}>
+                Try Another Email
+              </Button>
+              <Link href="/login">
+                <Button variant="outline" className="w-full mt-2">
+                  <ArrowLeft className="w-4 h-4 mr-2" /> Back to Login
+                </Button>
+              </Link>
+            </div>
+          )}
+
+          {status === 'inactive' && (
+            <div className="space-y-4 text-center">
+              <p className="text-sm font-medium text-destructive">
+                Your account has been deactivated.
+              </p>
+              <p className="text-xs text-muted-foreground">
+                You cannot reset your password. Please contact your system administrator to restore access.
+              </p>
+              <Link href="/login">
+                <Button variant="outline" className="w-full mt-4">
+                  <ArrowLeft className="w-4 h-4 mr-2" /> Back to Login
+                </Button>
+              </Link>
+            </div>
+          )}
+
+          {status === 'no-provider' && (
+            <div className="space-y-4 text-center">
+              <div className="p-4 bg-yellow-50 text-yellow-800 text-sm rounded-md border border-yellow-200">
+                <p className="font-semibold mb-2">Development Mode</p>
+                <p>No email provider is configured. Click the link below to reset your password directly:</p>
+              </div>
+              <a href={resetUrl}>
+                <Button className="w-full mt-2">Reset Password Now</Button>
+              </a>
+              <Link href="/login">
+                <Button variant="outline" className="w-full mt-2">
+                  <ArrowLeft className="w-4 h-4 mr-2" /> Back to Login
+                </Button>
+              </Link>
+            </div>
+          )}
+
+          {status === 'idle' && (
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="email">Email Address</Label>
