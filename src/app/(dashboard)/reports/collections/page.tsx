@@ -86,7 +86,7 @@ export default function CollectionsReportPage() {
                       <Cell key={idx} fill={MODE_COLORS[m.mode] || COLORS[idx % COLORS.length]} />
                     ))}
                   </Pie>
-                  <Tooltip formatter={(v: number) => `₹${v.toLocaleString()}`} />
+                  <Tooltip formatter={(v) => `₹${Number(v).toLocaleString()}`} />
                 </PieChart>
               </ResponsiveContainer>
             </div>
@@ -98,7 +98,7 @@ export default function CollectionsReportPage() {
                   <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                   <XAxis dataKey="status" className="text-xs" />
                   <YAxis className="text-xs" />
-                  <Tooltip formatter={(v: number) => `₹${v.toLocaleString()}`} />
+                  <Tooltip formatter={(v) => `₹${Number(v).toLocaleString()}`} />
                   <Bar dataKey="amount" fill="#6366f1" name="Amount" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
