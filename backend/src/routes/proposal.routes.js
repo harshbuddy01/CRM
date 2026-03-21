@@ -11,6 +11,9 @@ const { can } = require('../middlewares/can');
 // Download PDF (Public — customer needs to open via WhatsApp/Email)
 router.get('/:id/pdf', proposalController.downloadPdf);
 
+// Logging events (like whatsapp_opened - public for customer tracking)
+router.post('/:id/log/:event', proposalController.logEvent);
+
 router.use(authenticate);
 
 // We need a route for GET /v1/proposals/:id
@@ -23,8 +26,5 @@ router.get('/', can('proposal.view_assigned'), proposalController.listAllProposa
 // Dispatch Notifications (with Idempotency Queue)
 router.post('/:id/send-whatsapp', proposalController.sendWhatsapp);
 router.post('/:id/send-email', proposalController.sendEmail);
-
-// Logging events (like whatsapp_opened)
-router.post('/:id/log/:event', proposalController.logEvent);
 
 module.exports = router;

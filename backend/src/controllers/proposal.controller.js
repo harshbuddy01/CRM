@@ -40,7 +40,8 @@ const getProposalsByQuery = async (req, res, next) => {
 
 const getProposalById = async (req, res, next) => {
   try {
-    const proposal = await proposalService.getProposalById(req.params.id);
+    const canViewAll = req.user.permissions['query.view_all'];
+    const proposal = await proposalService.getProposalById(req.params.id, req.user.id, canViewAll);
     res.json({ success: true, data: proposal });
   } catch (error) {
     next(error);
@@ -112,7 +113,8 @@ const downloadPdf = async (req, res, next) => {
 
 const sendWhatsapp = async (req, res, next) => {
   try {
-    const proposal = await proposalService.getProposalById(req.params.id);
+    const canViewAll = req.user.permissions['query.view_all'];
+    const proposal = await proposalService.getProposalById(req.params.id, req.user.id, canViewAll);
     const now = new Date();
     
     // Idempotency Check
@@ -156,7 +158,8 @@ const sendWhatsapp = async (req, res, next) => {
 
 const sendEmail = async (req, res, next) => {
   try {
-    const proposal = await proposalService.getProposalById(req.params.id);
+    const canViewAll = req.user.permissions['query.view_all'];
+    const proposal = await proposalService.getProposalById(req.params.id, req.user.id, canViewAll);
     const now = new Date();
     
     // Idempotency Check

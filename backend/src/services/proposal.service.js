@@ -71,11 +71,11 @@ const getProposalsByQuery = async (queryId) => {
   });
 };
 
-const getProposalById = async (id) => {
+const getProposalById = async (id, userId = null, canViewAll = false) => {
   const proposal = await prisma.proposal.findUnique({
     where: { id },
     include: {
-      query: { select: { name: true, phone: true, email: true, adults: true, children: true, travelDateFrom: true, travelDateTo: true } },
+      query: { select: { assignedTo: true, name: true, phone: true, email: true, adults: true, children: true, travelDateFrom: true, travelDateTo: true } },
       days: {
         orderBy: { dayNumber: 'asc' },
         include: {
@@ -87,6 +87,14 @@ const getProposalById = async (id) => {
     }
   });
   if (!proposal || proposal.deletedAt) throw new NotFoundError('Proposal');
+
+  // If a specific userId is provided, enforce access control
+  if (userId && !canViewAll) {
+    if (proposal.query.assignedTo !== userId) {
+      throw new BusinessError('You do not have access to view or modify this proposal');
+    }
+  }
+
   return proposal;
 };
 
