@@ -17,12 +17,23 @@ const getMasters = async (modelName, queryFilters = {}) => {
     }
   }
 
+  // Dynamic sorting field selection
+  const sortFieldMapping = {
+    'transfer': 'vehicleType',
+    'supplier': 'name',
+    'activity': 'name',
+    'room-type': 'name',
+    'meal-plan': 'name',
+    'package-theme': 'name'
+  };
+  const orderByField = sortFieldMapping[modelName] || 'name';
+
   const [items, total] = await Promise.all([
     prisma[modelName].findMany({
       where,
       skip: parseInt(skip),
       take: parseInt(limit),
-      orderBy: { name: 'asc' },
+      orderBy: { [orderByField]: 'asc' },
     }),
     prisma[modelName].count({ where })
   ]);
@@ -48,26 +59,47 @@ const updateMaster = async (modelName, id, data) => {
  */
 const filterMasterData = (modelName, data) => {
   const { id, createdAt, updatedAt, deletedAt, ...rest } = data;
+  const { BadRequestError } = require('../utils/AppError');
   
-  // Specific model field whitelists if needed
   if (modelName === 'supplier') {
     const { name, type, contactPerson, email, phone, city, address, isActive } = rest;
-    return { name, type, contactPerson, email, phone, city, address, isActive: isActive ?? true };
+    if (!name) throw new BadRequestError('Supplier name is required');
+    return { name, type: type || 'hotel', contactPerson, email, phone, city, address, isActive: isActive ?? true };
   }
   
   if (modelName === 'activity') {
     const { name, destinationId, pricePerPerson, description, isActive } = rest;
-    return { name, destinationId, pricePerPerson, description, isActive: isActive ?? true };
+    if (!name || !destinationId || pricePerPerson === undefined) {
+      throw new BadRequestError('Activity name, destination, and price are required');
+    }
+    return { 
+      name, 
+      destinationId, 
+      pricePerPerson: Number(pricePerPerson), 
+      description, 
+      isActive: isActive ?? true 
+    };
   }
 
   if (modelName === 'transfer') {
     const { vehicleType, destinationId, price, description, isActive } = rest;
-    return { vehicleType, destinationId, price, description, isActive: isActive ?? true };
+    if (!vehicleType || !destinationId || price === undefined) {
+      throw new BadRequestError('Transfer vehicle type, destination, and price are required');
+    }
+    return { 
+      vehicleType, 
+      destinationId, 
+      price: Number(price), 
+      description, 
+      isActive: isActive ?? true 
+    };
   }
 
   // Generic for simple masters (RoomType, MealPlan, etc)
+  if (!rest.name) throw new BadRequestError(`${modelName} name is required`);
   return { 
     name: rest.name, 
+    price: rest.price ? Number(rest.price) : undefined,
     isActive: rest.isActive ?? true 
   };
 };

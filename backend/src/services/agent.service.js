@@ -1,5 +1,4 @@
-const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
+const prisma = require('../config/prisma');
 
 const getAllAgents = async (queryFilters = {}) => {
   const { search, page = 1, limit = 10 } = queryFilters;
@@ -11,6 +10,7 @@ const getAllAgents = async (queryFilters = {}) => {
       { companyName: { contains: search, mode: 'insensitive' } },
       { contactPerson: { contains: search, mode: 'insensitive' } },
       { email: { contains: search, mode: 'insensitive' } },
+      { mobile: { contains: search, mode: 'insensitive' } },
     ];
   }
 
@@ -51,14 +51,46 @@ const getAgentById = async (id) => {
 };
 
 const createAgent = async (data) => {
-  return await prisma.b2BAgent.create({ data });
+  const filteredData = filterAgentData(data);
+  return await prisma.b2BAgent.create({ data: filteredData });
 };
 
 const updateAgent = async (id, data) => {
+  const filteredData = filterAgentData(data);
   return await prisma.b2BAgent.update({
     where: { id },
-    data
+    data: filteredData
   });
+};
+
+const filterAgentData = (data) => {
+  const {
+    companyName,
+    gstNumber,
+    mobile,
+    mobile2,
+    email,
+    email2,
+    city,
+    address,
+    dob,
+    anniversary,
+    isActive
+  } = data;
+
+  return {
+    companyName,
+    gstNumber,
+    mobile,
+    mobile2,
+    email,
+    email2,
+    city,
+    address,
+    dob,
+    anniversary,
+    isActive: isActive ?? true
+  };
 };
 
 const deleteAgent = async (id) => {

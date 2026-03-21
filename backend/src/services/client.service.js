@@ -1,5 +1,4 @@
-const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
+const prisma = require('../config/prisma');
 
 const getAllClients = async (queryFilters = {}) => {
   const { search, page = 1, limit = 10 } = queryFilters;

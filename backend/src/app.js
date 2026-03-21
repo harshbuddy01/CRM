@@ -17,6 +17,8 @@ const { NotFoundError } = require('./utils/AppError');
 
 const app = express();
 
+app.set('trust proxy', 1);
+
 // ========================
 // GLOBAL MIDDLEWARES
 // ========================
