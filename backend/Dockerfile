@@ -46,4 +46,4 @@ RUN npx prisma generate
 EXPOSE 8080
 
 # Run migrations and start the server
-CMD ["sh", "-c", "npm run migrate && npm start"]
+CMD ["sh", "-c", "npm run migrate && exec npm start"]
