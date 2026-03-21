@@ -117,11 +117,6 @@ const getQueryById = async (id, userId, canViewAll) => {
         orderBy: { createdAt: 'desc' },
         include: { sender: { select: { name: true } } }
       },
-      activityLogs: {
-        orderBy: { createdAt: 'desc' },
-        include: { user: { select: { name: true } } },
-        take: 50
-      },
     },
   });
 
@@ -130,6 +125,17 @@ const getQueryById = async (id, userId, canViewAll) => {
   if (!canViewAll && query.assignedTo !== userId) {
     throw new BusinessError('You do not have access to view this query');
   }
+
+  // Fetch activity logs separately since they use a polymorphic relation (entityType/entityId) 
+  // and are not directly related to the Query model in Prisma.
+  const activityLogs = await prisma.activityLog.findMany({
+    where: { entityType: 'query', entityId: id },
+    orderBy: { createdAt: 'desc' },
+    include: { user: { select: { name: true } } },
+    take: 50
+  });
+
+  query.activityLogs = activityLogs;
 
   return query;
 };
