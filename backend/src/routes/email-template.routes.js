@@ -1,7 +1,7 @@
 const express = require('express');
 const emailTemplateController = require('../controllers/email-template.controller');
-const { authenticate } = require('../middleware/auth');
-const { can } = require('../middleware/rbac');
+const { authenticate } = require('../middlewares/authenticate');
+const { can } = require('../middlewares/can');
 
 const router = express.Router();
 
