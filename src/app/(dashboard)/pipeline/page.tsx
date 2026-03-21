@@ -11,14 +11,13 @@ import { useRouter } from 'next/navigation';
 import { TRANSITIONS } from '@/lib/constants';
 import { useAuthStore } from '@/lib/auth-store';
 
-const PIPELINE_COLUMNS = [
-  { id: 'new', title: 'New Leads', color: 'bg-blue-500' },
-  { id: 'followup', title: 'Follow Up', color: 'bg-amber-500' },
-  { id: 'proposal_sent', title: 'Proposal Sent', color: 'bg-purple-500' },
-  { id: 'ready_to_pay', title: 'Ready to Pay', color: 'bg-emerald-500' },
-  // Lost / Invalid / Confirmed are terminal and usually not shown on active kanban, 
-  // or shown separately. We will include 'confirmed' at the end.
-  { id: 'confirmed', title: 'Confirmed (Won)', color: 'bg-green-600' },
+// We will fetch pipeline columns dynamically from /status-settings
+// but we still export a default order fallback if API fails
+const FALLBACK_COLUMNS = [
+  { id: 'new', title: 'New Leads', color: '#3b82f6' },
+  { id: 'quoted', title: 'Quoted', color: '#8b5cf6' },
+  { id: 'negotiation', title: 'Negotiation', color: '#f59e0b' },
+  { id: 'confirmed', title: 'Confirmed', color: '#10b981' },
 ];
 
 type QueryData = {
@@ -52,21 +51,31 @@ export default function PipelinePage() {
     },
   });
 
+  const { data: statusSettings } = useQuery({
+    queryKey: ['status-settings'],
+    queryFn: async () => {
+      const res = await api.get('/status-settings');
+      return res.data.data;
+    }
+  });
+
+  const columns = statusSettings 
+    ? statusSettings
+        .filter((s:any) => s.isDashboardVisible)
+        .map((s:any) => ({ id: s.code, title: s.label, color: s.colorHex, isLocked: s.isLocked }))
+    : FALLBACK_COLUMNS;
+
   // Organize queries into columns when data arrives
   useEffect(() => {
-    if (data) {
-      const newBoard: BoardData = {
-        new: [],
-        followup: [],
-        proposal_sent: [],
-        ready_to_pay: [],
-        confirmed: [],
-      };
+    if (data && columns.length > 0) {
+      const newBoard: BoardData = {};
+      columns.forEach((c:any) => { newBoard[c.id] = []; });
 
+      // also catch ones that might not be visible but have queries (put in first col or hide? For now just initialize empty)
+      // Actually we must initialize all statuses that have queries to prevent crash
       data.forEach((q) => {
-        if (newBoard[q.status]) {
-          newBoard[q.status].push(q);
-        }
+        if (!newBoard[q.status]) newBoard[q.status] = [];
+        newBoard[q.status].push(q);
       });
 
       setBoardData(newBoard);
@@ -152,13 +161,13 @@ export default function PipelinePage() {
 
       <DragDropContext onDragStart={onDragStart} onDragEnd={onDragEnd}>
         <div className="flex gap-4 overflow-x-auto pb-4 flex-1 h-full min-h-0 snap-x">
-          {PIPELINE_COLUMNS.map((col) => (
+          {columns.map((col: any) => (
             <div key={col.id} className="flex-shrink-0 w-80 flex flex-col snap-start bg-muted/40 rounded-xl border">
               
               {/* Header */}
-              <div className="p-4 border-b bg-muted/30 flex items-center justify-between rounded-t-xl">
+              <div className="p-4 border-b bg-muted/30 flex items-center justify-between rounded-t-xl" style={{ borderTopColor: col.color, borderTopWidth: 4 }}>
                 <div className="flex items-center gap-2">
-                  <div className={`w-3 h-3 rounded-full ${col.color}`} />
+                  <div className="w-3 h-3 rounded-full shadow-sm" style={{ backgroundColor: col.color }} />
                   <h3 className="font-semibold text-sm">{col.title}</h3>
                 </div>
                 <div className="bg-background text-xs font-semibold px-2 py-0.5 rounded-md border text-muted-foreground shadow-sm">
@@ -167,7 +176,7 @@ export default function PipelinePage() {
               </div>
 
               {/* Droppable Area */}
-              <Droppable droppableId={col.id}>
+              <Droppable droppableId={col.id} isDropDisabled={col.isLocked}>
                 {(provided, snapshot) => (
                   <div
                     ref={provided.innerRef}

@@ -282,10 +282,79 @@ const changeQueryStatus = async (id, status, userId, canViewAll, canEditAll) => 
     });
   }
 
-  return await prisma.query.update({
+  const updated = await prisma.query.update({
     where: { id },
     data: { status },
   });
+
+  if (status === 'confirmed') {
+    const clientService = require('./client.service');
+    await clientService.ensureClientFromQuery(id);
+  }
+
+  return updated;
+};
+
+const sendEmail = async (id, userId, emailData, canViewAll) => {
+  const query = await getQueryById(id, userId, canViewAll);
+  if (!query.email) {
+    throw new BusinessError('Cannot send email: This query does not have an email address associated with it.');
+  }
+
+  let finalSubject = emailData.subject;
+  let finalBody = emailData.bodyRichText;
+
+  // If a template ID is provided, fetch it and use its content
+  if (emailData.templateId) {
+    const template = await prisma.emailTemplate.findUnique({ where: { id: emailData.templateId } });
+    if (!template) throw new NotFoundError('Email Template');
+    finalSubject = template.subject || finalSubject;
+    finalBody = template.bodyRichText || finalBody;
+  }
+
+  if (!finalSubject || !finalBody) {
+    throw new BusinessError('Subject and Body are required to send an email');
+  }
+
+  // 1. Variable Substitution
+  // We can expand these variables later based on requirements
+  const variables = {
+    '#{customerName}': query.name,
+    '#{queryId}': query.queryCode,
+  };
+
+  for (const [key, value] of Object.entries(variables)) {
+    const safeValue = value || '';
+    // Use regex to replace all occurrences
+    const regex = new RegExp(key.replace(/([.*+?^=!:${}()|\[\]\/\\])/g, "\\$1"), 'g');
+    finalSubject = finalSubject.replace(regex, safeValue);
+    finalBody = finalBody.replace(regex, safeValue);
+  }
+
+  // Auto-append company signature from OrgSettings
+  const orgSettingsService = require('./org-setting.service');
+  const signature = await orgSettingsService.getSettingByKey('emailSignature');
+  if (signature) {
+    // Keep it clean. Assume signature contains its own HTML formatting or just append after <br><br>
+    finalBody = `${finalBody}<br><br><div class="email-signature">${signature}</div>`;
+  }
+
+  // 2. Queue Email Job via BullMQ
+  const queueService = require('./queue.service');
+  await queueService.enqueueEmailJob(query.id, query.email, finalSubject, finalBody, emailData.cc);
+
+  // 3. Log Activity
+  await prisma.activityLog.create({
+    data: {
+      userId,
+      action: 'query.email_sent',
+      entityType: 'query',
+      entityId: query.id,
+      newValue: { subject: finalSubject, templateId: emailData.templateId },
+    }
+  });
+
+  return true;
 };
 
 module.exports = {
@@ -299,4 +368,5 @@ module.exports = {
   changeQueryStatus,
   addNote,
   deleteNote,
+  sendEmail,
 };

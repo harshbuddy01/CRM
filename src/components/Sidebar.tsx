@@ -15,7 +15,10 @@ import {
   Database,
   MapPin,
   Navigation,
-  BarChart3
+  BarChart3,
+  Settings,
+  Contact,
+  Briefcase
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -33,8 +36,11 @@ export function Sidebar() {
     { href: '/proposals', label: 'Proposals', icon: FileText, show: true },
     { href: '/payments', label: 'Payment Ledger', icon: CreditCard, show: user?.role === 'admin' || user?.permissions['payment.view_all'] || user?.permissions['payment.view_assigned'] },
     { href: '/reports/lead-funnel', label: 'Reports', icon: BarChart3, show: user?.permissions['query.view_all'] },
-    { href: '/masters/destinations', label: 'Masters', icon: Database, show: user?.permissions['master.manage_destinations'] || user?.permissions['master.manage_hotels'] },
+    { href: '/clients', label: 'Clients', icon: Contact, show: true },
+    { href: '/agents', label: 'B2B Agents', icon: Briefcase, show: true },
+    { href: '/masters-v2', label: 'Masters', icon: Database, show: user?.permissions['master.manage_destinations'] || user?.permissions['master.manage_hotels'] },
     { href: '/users', label: 'Team', icon: Users, show: user?.permissions['users.manage'] },
+    { href: '/settings', label: 'Settings', icon: Settings, show: user?.role === 'admin' },
   ];
 
   return (

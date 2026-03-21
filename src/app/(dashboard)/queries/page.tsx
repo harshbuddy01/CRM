@@ -60,6 +60,14 @@ export default function QueriesPage() {
     placeholderData: (previousData) => previousData, // keep old data while loading new page
   });
 
+  const { data: statusSettings } = useQuery({
+    queryKey: ['status-settings'],
+    queryFn: async () => {
+      const res = await api.get('/status-settings');
+      return res.data.data;
+    }
+  });
+
   const queries: QueryData[] = data?.data?.queries || [];
   const totalPages = data?.data?.totalPages || 1;
 
@@ -117,14 +125,9 @@ export default function QueriesPage() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Statuses</SelectItem>
-              <SelectItem value="new">New</SelectItem>
-              <SelectItem value="followup">Follow Up</SelectItem>
-              <SelectItem value="dnp">Did Not Pick Up</SelectItem>
-              <SelectItem value="proposal_sent">Proposal Sent</SelectItem>
-              <SelectItem value="ready_to_pay">Ready To Pay</SelectItem>
-              <SelectItem value="confirmed">Confirmed</SelectItem>
-              <SelectItem value="lost">Lost</SelectItem>
-              <SelectItem value="invalid">Invalid</SelectItem>
+              {statusSettings?.map((s: any) => (
+                <SelectItem key={s.code} value={s.code}>{s.label}</SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
@@ -172,14 +175,24 @@ export default function QueriesPage() {
                     <TableCell className="text-xs">{q.phone}</TableCell>
                     <TableCell>{q.destination || '—'}</TableCell>
                     <TableCell>
-                      <span className={`capitalize text-xs font-semibold px-2.5 py-1 rounded-full tracking-tight ${
-                        q.status === 'new' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' :
-                        q.status === 'confirmed' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' :
-                        q.status === 'lost' || q.status === 'invalid' ? 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400' :
-                        'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
-                      }`}>
-                        {q.status.replace('_', ' ')}
-                      </span>
+                      {(() => {
+                        const s = statusSettings?.find((st: any) => st.code === q.status);
+                        const label = s ? s.label : q.status.replace('_', ' ');
+                        const color = s ? s.colorHex : '#94a3b8';
+                        
+                        return (
+                          <span 
+                            className="capitalize text-[10px] font-bold px-2 py-0.5 rounded-full border shadow-sm"
+                            style={{ 
+                              backgroundColor: `${color}15`, 
+                              color: color,
+                              borderColor: `${color}30`
+                            }}
+                          >
+                            {label}
+                          </span>
+                        );
+                      })()}
                     </TableCell>
                     {user?.permissions['query.view_all'] && (
                       <TableCell className="text-sm">

@@ -21,6 +21,7 @@ import { cn } from '@/lib/utils';
 
 import { TRANSITIONS } from '@/lib/constants';
 import { PaymentEntryModal } from '@/components/PaymentEntryModal';
+import { EmailComposeModal } from '@/components/EmailComposeModal';
 
 const formatStatus = (s: string) => s.replace('_', ' ').toUpperCase();
 
@@ -123,9 +124,17 @@ export default function QueryDetailPage() {
     }
   };
 
-  // --- Agent Assignment State ---
   const [isAssignOpen, setIsAssignOpen] = useState(false);
   const [selectedAgentId, setSelectedAgentId] = useState<string>('');
+  const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
+
+  const { data: statusSettings } = useQuery({
+    queryKey: ['status-settings'],
+    queryFn: async () => {
+      const res = await api.get('/status-settings');
+      return res.data.data;
+    }
+  });
 
   const { data: agentsData, isLoading: agentsLoading } = useQuery({
     queryKey: ['active_agents'],
@@ -182,14 +191,24 @@ export default function QueryDetailPage() {
         <div>
           <div className="flex items-center gap-3">
             <h1 className="text-3xl font-bold tracking-tight">{query.name}</h1>
-            <span className={`px-3 py-1 rounded-full text-xs font-bold tracking-widest ${
-                query.status === 'new' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' :
-                query.status === 'confirmed' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' :
-                query.status === 'lost' || query.status === 'invalid' ? 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400' :
-                'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
-              }`}>
-              {formatStatus(query.status)}
-            </span>
+            {(() => {
+              const s = statusSettings?.find((st: any) => st.code === query.status);
+              const label = s ? s.label : formatStatus(query.status);
+              const color = s ? s.colorHex : '#94a3b8';
+
+              return (
+                <span 
+                  className="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border shadow-sm"
+                  style={{ 
+                    backgroundColor: `${color}10`, 
+                    color: color,
+                    borderColor: `${color}40`
+                  }}
+                >
+                  {label}
+                </span>
+              );
+            })()}
             <span className="text-muted-foreground text-sm font-medium">{query.queryCode}</span>
           </div>
           <p className="text-muted-foreground mt-1 text-sm">
@@ -198,7 +217,14 @@ export default function QueryDetailPage() {
         </div>
 
         {/* Action Buttons */}
-        <div className="ml-auto">
+        <div className="ml-auto flex gap-2">
+          {query.email && (
+            <Button variant="outline" className="gap-2" onClick={() => setIsEmailModalOpen(true)}>
+              <Mail className="w-4 h-4" />
+              Compose Email
+            </Button>
+          )}
+
           {canEditAll && (
             <Dialog open={isAssignOpen} onOpenChange={setIsAssignOpen}>
               {/* @ts-expect-error shadcn generic trigger issue */}
@@ -478,6 +504,15 @@ export default function QueryDetailPage() {
           </Card>
         </div>
       </div>
+
+      <EmailComposeModal 
+        isOpen={isEmailModalOpen}
+        onClose={() => setIsEmailModalOpen(false)}
+        queryId={query.id}
+        queryCode={query.queryCode}
+        customerName={query.name}
+        customerEmail={query.email || ''}
+      />
     </div>
   );
 }

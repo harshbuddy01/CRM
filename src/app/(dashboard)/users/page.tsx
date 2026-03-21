@@ -18,6 +18,10 @@ interface User {
   maxLeads: number;
   mobileOnly: boolean;
   activeLeadCount: number;
+  mobile: string | null;
+  mobile2: string | null;
+  department: string | null;
+  profilePhoto: string | null;
   createdAt: string;
 }
 
@@ -199,7 +203,15 @@ export default function UsersPage() {
 
 // ─── Create User Form ────────────────────────────────────────
 function CreateUserForm({ roles, onSubmit, isLoading }: { roles: Role[]; onSubmit: (data: any) => void; isLoading: boolean }) {
-  const [form, setForm] = useState({ name: '', email: '', password: '', roleId: '', maxLeads: 50 });
+  const [form, setForm] = useState({ 
+    name: '', 
+    email: '', 
+    password: '', 
+    roleId: '', 
+    maxLeads: 50,
+    mobile: '',
+    department: '',
+  });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -251,6 +263,18 @@ function CreateUserForm({ roles, onSubmit, isLoading }: { roles: Role[]; onSubmi
           onChange={(e) => setForm({ ...form, maxLeads: parseInt(e.target.value, 10) })}
           className="px-3 py-2 border rounded-md text-sm bg-background"
         />
+        <input
+          placeholder="Mobile Number"
+          value={form.mobile}
+          onChange={(e) => setForm({ ...form, mobile: e.target.value })}
+          className="px-3 py-2 border rounded-md text-sm bg-background"
+        />
+        <input
+          placeholder="Department (e.g. Sales, Ops)"
+          value={form.department}
+          onChange={(e) => setForm({ ...form, department: e.target.value })}
+          className="px-3 py-2 border rounded-md text-sm bg-background"
+        />
       </div>
       <button
         type="submit"
@@ -273,6 +297,8 @@ function EditUserForm({ user, roles, onSubmit, isLoading, onCancel }: {
     roleId: user.role.id,
     maxLeads: user.maxLeads,
     isOnLeave: user.isOnLeave,
+    mobile: user.mobile || '',
+    department: user.department || '',
     password: '',
   });
 
@@ -299,6 +325,10 @@ function EditUserForm({ user, roles, onSubmit, isLoading, onCancel }: {
           placeholder="Max Leads" className="px-3 py-2 border rounded-md text-sm bg-background" />
         <input type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })}
           placeholder="New Password (leave blank to keep)" className="px-3 py-2 border rounded-md text-sm bg-background" />
+        <input value={form.mobile} onChange={(e) => setForm({ ...form, mobile: e.target.value })}
+          placeholder="Mobile" className="px-3 py-2 border rounded-md text-sm bg-background" />
+        <input value={form.department} onChange={(e) => setForm({ ...form, department: e.target.value })}
+          placeholder="Department" className="px-3 py-2 border rounded-md text-sm bg-background" />
         <label className="flex items-center gap-2 text-sm">
           <input type="checkbox" checked={form.isOnLeave} onChange={(e) => setForm({ ...form, isOnLeave: e.target.checked })} />
           On Leave

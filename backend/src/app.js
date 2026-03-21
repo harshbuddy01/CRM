@@ -94,6 +94,7 @@ const masterRoutes = require('./routes/master.routes');
 const proposalRoutes = require('./routes/proposal.routes');
 const paymentRoutes = require('./routes/payment.routes');
 const tourRoutes = require('./routes/tour.routes');
+const emailTemplateRoutes = require('./routes/email-template.routes');
 
 // Rate Limiters
 const generalLimiter = rateLimit({
@@ -144,6 +145,12 @@ apiRouter.use('/masters', masterRoutes);
 apiRouter.use('/proposals', proposalRoutes);
 apiRouter.use('/payments', paymentRoutes);
 apiRouter.use('/tours', tourRoutes);
+apiRouter.use('/email-templates', emailTemplateRoutes);
+apiRouter.use('/settings', require('./routes/org-setting.routes'));
+apiRouter.use('/status-settings', require('./routes/status-setting.routes'));
+apiRouter.use('/clients', require('./routes/client.routes'));
+apiRouter.use('/agents', require('./routes/agent.routes'));
+apiRouter.use('/masters-v2', require('./routes/master-v2.routes'));
 
 // Mount the router under both prefixes
 app.use('/v1', apiRouter);

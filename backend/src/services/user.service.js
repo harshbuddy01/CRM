@@ -51,6 +51,10 @@ const listAllUsers = async () => {
       leaveUntil: true,
       maxLeads: true,
       mobileOnly: true,
+      mobile: true,
+      mobile2: true,
+      department: true,
+      profilePhoto: true,
       createdAt: true,
       _count: {
         select: {
@@ -84,6 +88,10 @@ const createUser = async (data) => {
       roleId: data.roleId,
       maxLeads: data.maxLeads || 50,
       mobileOnly: data.mobileOnly || false,
+      mobile: data.mobile,
+      mobile2: data.mobile2,
+      department: data.department,
+      profilePhoto: data.profilePhoto,
     },
     select: { id: true, name: true, email: true, role: { select: { name: true, label: true } } },
   });
@@ -105,6 +113,10 @@ const updateUser = async (userId, data) => {
   if (data.isOnLeave !== undefined) updateData.isOnLeave = data.isOnLeave;
   if (data.leaveUntil !== undefined) updateData.leaveUntil = data.leaveUntil ? new Date(data.leaveUntil) : null;
   if (data.mobileOnly !== undefined) updateData.mobileOnly = data.mobileOnly;
+  if (data.mobile !== undefined) updateData.mobile = data.mobile;
+  if (data.mobile2 !== undefined) updateData.mobile2 = data.mobile2;
+  if (data.department !== undefined) updateData.department = data.department;
+  if (data.profilePhoto !== undefined) updateData.profilePhoto = data.profilePhoto;
   if (data.password) updateData.passwordHash = await bcrypt.hash(data.password, 12);
 
   return await prisma.user.update({

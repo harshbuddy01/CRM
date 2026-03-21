@@ -53,12 +53,17 @@ let emailWorker = null;
 
 if (config.sendgrid.apiKey) {
   emailWorker = new Worker('email-sending', async job => {
-    const { queryId, to, subject, htmlContent } = job.data;
+    const { queryId, to, subject, htmlContent, cc } = job.data;
     console.log(`[Email] Sending to ${to}`);
   
   try {
     // SendGrid Integration
-    await sgMail.send({ to, from: config.email.from, subject, html: htmlContent });
+    const msg = { to, from: config.email.from, subject, html: htmlContent };
+    if (cc) {
+      // Split by comma if multiple CCs provided
+      msg.cc = cc.split(',').map(e => e.trim());
+    }
+    await sgMail.send(msg);
     
     await prisma.integrationLog.create({
       data: {

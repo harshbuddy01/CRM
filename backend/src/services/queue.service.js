@@ -43,8 +43,8 @@ const enqueuePdfJob = async (proposalId, queryId) => {
 /**
  * Email Sending Queue
  */
-const enqueueEmailJob = async (queryId, to, subject, htmlContent) => {
-  await emailQueue.add('send-email', { queryId, to, subject, htmlContent }, {
+const enqueueEmailJob = async (queryId, to, subject, htmlContent, cc = null) => {
+  await emailQueue.add('send-email', { queryId, to, subject, htmlContent, cc }, {
     attempts: 3,
     backoff: { type: 'exponential', delay: 5000 },
   });
