@@ -65,12 +65,31 @@ const getInvoice = (id) => prisma.invoice.findUnique({
 
 const createInvoice = async (data) => {
   data.invoiceNumber = await generateInvoiceNumber();
-  data.subtotal = parseFloat(data.subtotal);
-  data.taxPercent = parseFloat(data.taxPercent || 0);
-  data.taxAmount = parseFloat(data.taxAmount || 0);
-  data.totalAmount = parseFloat(data.totalAmount);
-  if (data.dueDate) data.dueDate = new Date(data.dueDate);
-  if (typeof data.items === 'string') data.items = JSON.parse(data.items);
+
+  if (data.queryId && !data.totalAmount) {
+    // Auto-generate from proposal
+    const proposal = await prisma.proposal.findFirst({
+      where: { queryId: data.queryId, deletedAt: null },
+      orderBy: { version: 'desc' },
+    });
+    if (!proposal) throw new Error('No proposal found to generate invoice from');
+
+    data.subtotal = Number(proposal.sellingPrice);
+    data.taxPercent = 0;
+    data.taxAmount = 0;
+    data.totalAmount = Number(proposal.sellingPrice);
+    data.dueDate = new Date();
+    data.dueDate.setDate(data.dueDate.getDate() + 7); // Default due in 7 days
+    data.items = [{ description: 'Tour Package', amount: data.subtotal, quantity: 1, unitPrice: data.subtotal }];
+  } else {
+    data.subtotal = parseFloat(data.subtotal);
+    data.taxPercent = parseFloat(data.taxPercent || 0);
+    data.taxAmount = parseFloat(data.taxAmount || 0);
+    data.totalAmount = parseFloat(data.totalAmount);
+    if (data.dueDate) data.dueDate = new Date(data.dueDate);
+    if (typeof data.items === 'string') data.items = JSON.parse(data.items);
+  }
+
   return prisma.invoice.create({ data });
 };
 
