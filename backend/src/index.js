@@ -10,13 +10,18 @@ const config = require('./config');
 const logger = require('./utils/logger');
 const { startCronJobs } = require('./cron');
 
-const server = app.listen(config.port, () => {
+console.log('--- STARTING TRAVEL-CRM BACKEND ---');
+console.log(`Port Configured: ${config.port}`);
+console.log(`Node Environment: ${config.nodeEnv}`);
+
+const server = app.listen(config.port, '0.0.0.0', () => {
+  console.log('✅ app.listen() callback triggered successfully.');
   logger.info(`🚀 TravelCRM API server running on port ${config.port}`);
-  logger.info(`📡 Environment: ${config.nodeEnv}`);
-  logger.info(`🌐 Frontend URL: ${config.frontendUrl}`);
   
   // Start scheduled tasks
+  console.log('⌛ Starting Cron Jobs...');
   startCronJobs();
+  console.log('✅ Cron Jobs initialized.');
 });
 
 // Graceful shutdown
