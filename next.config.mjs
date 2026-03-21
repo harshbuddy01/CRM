@@ -9,7 +9,6 @@ const nextConfig = {
     ignoreBuildErrors: false,
   },
   cleanDistDir: true,
-  output: 'standalone',
   async headers() {
     return [
       {
