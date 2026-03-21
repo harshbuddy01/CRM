@@ -3,11 +3,28 @@
 // ============================================================
 
 const { Queue } = require('bullmq');
+const { URL } = require('url');
 const config = require('../config');
 
-const connection = {
-  url: config.redisUrl,
-};
+// BullMQ v5 requires explicit host/port/password — not a url string.
+// Parse the Redis URL from Railway into individual connection params.
+function parseRedisUrl(redisUrl) {
+  try {
+    const url = new URL(redisUrl);
+    return {
+      host: url.hostname,
+      port: parseInt(url.port, 10) || 6379,
+      password: url.password || undefined,
+      username: url.username || undefined,
+      tls: url.protocol === 'rediss:' ? {} : undefined,
+    };
+  } catch (e) {
+    // Fallback to localhost if parsing fails
+    return { host: '127.0.0.1', port: 6379 };
+  }
+}
+
+const connection = parseRedisUrl(config.redisUrl);
 
 const pdfQueue = new Queue('pdf-generation', { connection });
 const emailQueue = new Queue('email-sending', { connection });

@@ -16,7 +16,14 @@ if (config.sendgrid.apiKey) {
   sgMail.setApiKey(config.sendgrid.apiKey);
 }
 
-const connection = { url: config.redisUrl };
+const { URL: NodeURL } = require("url");
+function parseRedisUrl(u) {
+  try {
+    const r = new NodeURL(u);
+    return { host: r.hostname, port: parseInt(r.port,10)||6379, password: r.password||undefined, tls: r.protocol==="rediss:"?{}:undefined };
+  } catch(e) { return { host: "127.0.0.1", port: 6379 }; }
+}
+const connection = parseRedisUrl(config.redisUrl);
 
 // --- PDF Worker ---
 const pdfWorker = new Worker('pdf-generation', async job => {
