@@ -61,27 +61,31 @@ if (brevoConfigured) {
     }
     await sendMail(msg);
     
-    await prisma.integrationLog.create({
-      data: {
-        type: 'email',
-        direction: 'outbound',
-        status: 'success',
-        payload: { provider: 'brevo_smtp', to, subject },
-        relatedId: queryId,
-      }
-    });
+    if (queryId) {
+      await prisma.integrationLog.create({
+        data: {
+          type: 'email',
+          direction: 'outbound',
+          status: 'success',
+          payload: { provider: 'brevo_smtp', to, subject },
+          relatedId: queryId,
+        }
+      });
+    }
   } catch (error) {
     console.error('[Email Worker Error]', error);
-    await prisma.integrationLog.create({
-      data: {
-        type: 'email',
-        direction: 'outbound',
-        status: 'failed',
-        payload: { provider: 'brevo_smtp', to, subject },
-        errorMessage: error.message,
-        relatedId: queryId,
-      }
-    });
+    if (queryId) {
+      await prisma.integrationLog.create({
+        data: {
+          type: 'email',
+          direction: 'outbound',
+          status: 'failed',
+          payload: { provider: 'brevo_smtp', to, subject },
+          errorMessage: error.message,
+          relatedId: queryId,
+        }
+      });
+    }
     throw error;
   }
 }, { connection });

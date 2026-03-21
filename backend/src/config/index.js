@@ -64,10 +64,6 @@ const config = {
     interaktApiKey: process.env.INTERAKT_API_KEY,
   },
   
-  sendgrid: {
-    apiKey: process.env.SENDGRID_API_KEY,
-  },
-
   // --- Operational Settings ---
   upload: {
     maxFileSize: parseInt(process.env.UPLOAD_MAX_SIZE, 10) || 5 * 1024 * 1024, // 5MB default

@@ -7,7 +7,7 @@
     "start": "node src/index.js & node src/worker.js & wait",
     "dev": "nodemon src/index.js",
     "worker": "node src/worker.js",
-    "migrate": "prisma db push --accept-data-loss",
+    "migrate": "prisma migrate deploy",
     "generate": "prisma generate"
   },
   "prisma": {
@@ -19,7 +19,7 @@
   "type": "commonjs",
   "dependencies": {
     "@prisma/client": "^5.22.0",
-    "@sendgrid/mail": "^8.1.6",
+
     "@sparticuz/chromium": "^131.0.1",
     "axios": "^1.13.6",
     "bcryptjs": "^3.0.3",

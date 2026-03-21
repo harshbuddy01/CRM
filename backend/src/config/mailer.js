@@ -2,7 +2,8 @@ const nodemailer = require('nodemailer');
 
 const transporter = nodemailer.createTransport({
   host: process.env.BREVO_SMTP_HOST,
-  port: process.env.BREVO_SMTP_PORT || 587,
+  port: parseInt(process.env.BREVO_SMTP_PORT, 10) || 587,
+  secure: false, // Port 587 uses STARTTLS, not SSL
   auth: {
     user: process.env.BREVO_SMTP_USER,
     pass: process.env.BREVO_SMTP_PASS,

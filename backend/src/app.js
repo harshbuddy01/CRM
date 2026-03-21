@@ -26,13 +26,18 @@ app.set('trust proxy', 1);
 // Security headers
 app.use(helmet());
 
-// CORS — allow frontend origin
+// CORS — allow only whitelisted frontend origins
 const allowedOrigins = [config.frontendUrl, 'https://lightpink-termite-550903.hostingersite.com', 'https://imagicaholidays.com', 'https://www.imagicaholidays.com'];
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Allow all origins dynamically to support custom domains pointing to the frontend
-      callback(null, true);
+      // Allow requests with no origin (server-to-server, mobile apps, curl)
+      // and requests from whitelisted origins
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error(`CORS: Origin ${origin} not allowed`));
+      }
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
