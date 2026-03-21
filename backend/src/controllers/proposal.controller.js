@@ -160,11 +160,11 @@ const sendWhatsapp = async (req, res, next) => {
 
 const sendEmail = async (req, res, next) => {
   try {
-    const sgMail = require('@sendgrid/mail');
-    if (!config.sendgrid.apiKey) {
-      return res.status(500).json({ success: false, message: 'SendGrid API Key is not configured on the server.' });
+    const { sendMail } = require('../config/mailer');
+    const brevoConfigured = process.env.BREVO_SMTP_USER && process.env.BREVO_SMTP_PASS;
+    if (!brevoConfigured) {
+      return res.status(500).json({ success: false, message: 'Brevo SMTP is not configured on the server.' });
     }
-    sgMail.setApiKey(config.sendgrid.apiKey);
 
     const canViewAll = req.user.permissions['query.view_all'];
     const proposal = await proposalService.getProposalById(req.params.id, req.user.id, canViewAll);
@@ -224,43 +224,40 @@ const sendEmail = async (req, res, next) => {
     const generatedPdfBuffer = await pdfService.generatePdfFromHtml(proposalHtmlContent);
     const pdfBuffer = Buffer.from(generatedPdfBuffer);
 
-    // Prepare Attachments
+    // Prepare Attachments for Nodemailer
     const attachments = [
       {
-        content: pdfBuffer.toString('base64'),
         filename: `Proposal-v${proposal.version}-${proposal.query.queryCode}.pdf`,
-        type: 'application/pdf',
-        disposition: 'attachment'
+        content: pdfBuffer,
+        contentType: 'application/pdf'
       }
     ];
 
     if (req.file) {
       attachments.push({
-        content: req.file.buffer.toString('base64'),
         filename: req.file.originalname,
-        type: req.file.mimetype,
-        disposition: 'attachment'
+        content: req.file.buffer,
+        contentType: req.file.mimetype
       });
     }
 
     const finalSubject = subject || 'Your Travel Proposal is Ready!';
     const htmlContent = body || `<p>Hi ${proposal.query.name}, your travel proposal is ready.</p>`;
 
-    // Prepare SendGrid Message
+    // Prepare Nodemailer Message
     const msg = {
       to: finalTo,
-      from: config.email.from,
       subject: finalSubject,
       html: htmlContent,
       attachments
     };
     
     if (cc) {
-      msg.cc = cc.split(',').map(e => e.trim()).filter(Boolean);
+      msg.cc = cc.split(',').map(e => e.trim()).filter(Boolean).join(',');
     }
 
     // Send Email Synchronously
-    await sgMail.send(msg);
+    await sendMail(msg);
 
     // Update lastSentAt
     await prisma.proposal.update({ where: { id: proposal.id }, data: { lastSentAt: now } });
@@ -271,7 +268,7 @@ const sendEmail = async (req, res, next) => {
         type: 'email',
         direction: 'outbound',
         status: 'success',
-        payload: { provider: 'sendgrid', to: finalTo, subject: finalSubject, withCustomAttachment: !!req.file },
+        payload: { provider: 'brevo_smtp', to: finalTo, subject: finalSubject, withCustomAttachment: !!req.file },
         relatedId: proposal.queryId,
       }
     });

@@ -6,15 +6,9 @@ require('dotenv').config();
 const { Worker } = require('bullmq');
 const config = require('./config');
 const prisma = require('./config/prisma');
-const sgMail = require('@sendgrid/mail');
 
 console.log('👷 BullMQ Worker service initialized.');
 console.log(`📡 Connecting to Redis at ${config.redisUrl.replace(/:[^:]*@/, ':***@')}`);
-
-// Initialize SendGrid
-if (config.sendgrid.apiKey) {
-  sgMail.setApiKey(config.sendgrid.apiKey);
-}
 
 const { URL: NodeURL } = require("url");
 function parseRedisUrl(u) {
@@ -51,26 +45,28 @@ const pdfWorker = new Worker('pdf-generation', async job => {
 // --- Email Worker ---
 let emailWorker = null;
 
-if (config.sendgrid.apiKey) {
+const brevoConfigured = process.env.BREVO_SMTP_USER && process.env.BREVO_SMTP_PASS;
+if (brevoConfigured) {
   emailWorker = new Worker('email-sending', async job => {
     const { queryId, to, subject, htmlContent, cc } = job.data;
     console.log(`[Email] Sending to ${to}`);
   
   try {
-    // SendGrid Integration
-    const msg = { to, from: config.email.from, subject, html: htmlContent };
+    // Nodemailer / Brevo Integration
+    const { sendMail } = require('./config/mailer');
+    const msg = { to, subject, html: htmlContent };
     if (cc) {
       // Split by comma if multiple CCs provided
-      msg.cc = cc.split(',').map(e => e.trim());
+      msg.cc = cc.split(',').map(e => e.trim()).filter(Boolean).join(',');
     }
-    await sgMail.send(msg);
+    await sendMail(msg);
     
     await prisma.integrationLog.create({
       data: {
         type: 'email',
         direction: 'outbound',
         status: 'success',
-        payload: { provider: 'sendgrid', to, subject },
+        payload: { provider: 'brevo_smtp', to, subject },
         relatedId: queryId,
       }
     });
@@ -81,7 +77,7 @@ if (config.sendgrid.apiKey) {
         type: 'email',
         direction: 'outbound',
         status: 'failed',
-        payload: { provider: 'sendgrid', to, subject },
+        payload: { provider: 'brevo_smtp', to, subject },
         errorMessage: error.message,
         relatedId: queryId,
       }
@@ -90,7 +86,7 @@ if (config.sendgrid.apiKey) {
   }
 }, { connection });
 } else {
-  console.warn('⚠️ SendGrid API Key missing — Email Worker NOT started.');
+  console.warn('⚠️ Brevo SMTP credentials missing — Email Worker NOT started.');
 }
 
 // --- WhatsApp Worker ---

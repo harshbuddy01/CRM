@@ -209,15 +209,13 @@ const forgotPassword = async (email) => {
 
   const resetUrl = `${config.frontendUrl}/reset-password?token=${resetToken}&id=${user.id}`;
 
-  // If SendGrid/email is configured, send the email
-  const sgApiKey = config.sendgrid?.apiKey;
-  if (sgApiKey) {
+  // If Nodemailer/Brevo is configured, send the email
+  const brevoConfigured = process.env.BREVO_SMTP_USER && process.env.BREVO_SMTP_PASS;
+  if (brevoConfigured) {
     try {
-      const sgMail = require('@sendgrid/mail');
-      sgMail.setApiKey(sgApiKey);
-      await sgMail.send({
+      const { sendMail } = require('../config/mailer');
+      await sendMail({
         to: email,
-        from: config.email.from,
         subject: 'TravelCRM — Reset Your Password',
         html: `
           <h2>Password Reset Request</h2>
