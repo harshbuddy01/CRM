@@ -23,7 +23,10 @@ if (process.env.NODE_ENV === 'production') {
 }
 
 // Global Soft Delete Extension (Prisma v5 recommended pattern)
-const softDeleteModels = ['Query', 'QueryNote', 'Proposal', 'Tour', 'Payment'];
+const softDeleteModels = [
+  'Query', 'QueryNote', 'Proposal', 'Tour', 'Payment',
+  'Supplier', 'Activity', 'Transfer', 'RoomType', 'MealPlan', 'PackageTheme', 'DayItineraryTemplate'
+];
 
 const extendedPrisma = prisma.$extends({
   query: {
