@@ -56,6 +56,7 @@ const listAllUsers = async () => {
       department: true,
       profilePhoto: true,
       createdAt: true,
+      updatedAt: true,
       _count: {
         select: {
           assignedQueries: {

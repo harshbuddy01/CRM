@@ -194,50 +194,71 @@ const logout = async (userId, refreshTokenStr) => {
 const forgotPassword = async (email) => {
   const user = await prisma.user.findUnique({ where: { email } });
 
-  // Return proper flags for the UI to show correct screens
+  // Case 1 — User not found: don't reveal if email exists
   if (!user) {
-    return { notFound: true };
+    return { message: 'If this email is registered, a reset link has been sent.', emailSent: false, noAccount: true };
   }
-  
+
+  // Case 2 — User is inactive
   if (!user.isActive) {
-    return { accountInactive: true };
+    return { message: 'Your account is inactive. Contact your administrator.', emailSent: false, accountInactive: true };
   }
 
   // Sign with secret + passwordHash so it becomes invalid after use
   const resetSecret = config.jwt.secret + user.passwordHash;
   const resetToken = jwt.sign({ id: user.id, purpose: 'password_reset' }, resetSecret, { expiresIn: '15m' });
-
   const resetUrl = `${config.frontendUrl}/reset-password?token=${resetToken}&id=${user.id}`;
 
-  // If Nodemailer/Brevo is configured, send the email
+  // Check if email provider is configured (Brevo SMTP)
   const brevoConfigured = process.env.BREVO_SMTP_USER && process.env.BREVO_SMTP_PASS;
-  if (brevoConfigured) {
-    try {
-      const { sendMail } = require('../config/mailer');
-      await sendMail({
-        to: email,
-        subject: 'TravelCRM — Reset Your Password',
-        html: `
-          <h2>Password Reset Request</h2>
-          <p>Hi ${user.name},</p>
-          <p>Click the link below to reset your password. This link expires in 15 minutes.</p>
-          <p><a href="${resetUrl}" style="padding:12px 24px;background:#6366f1;color:white;border-radius:6px;text-decoration:none;font-weight:bold;">Reset Password</a></p>
-          <p>If you didn't request this, you can safely ignore this email.</p>
-          <p style="color:#999;font-size:12px;">Link: ${resetUrl}</p>
-        `,
-      });
-      return { success: true };
-    } catch (err) {
-      const logger = require('../utils/logger');
-      logger.error('[Auth] Failed to send reset email:', err.message);
-      return { sendError: true };
-    }
-  } else {
-    // No email provider — return the link for development
+
+  // Case 3 — No email provider configured
+  if (!brevoConfigured) {
     const logger = require('../utils/logger');
     logger.info(`[Auth] Password reset link (no email provider configured):`);
     logger.info(`[Auth] ${resetUrl}`);
-    return { noEmailProvider: true, resetUrl };
+    return { message: 'Email service not configured. Contact your administrator.', emailSent: false, noEmailProvider: true };
+  }
+
+  // Try to send the email
+  try {
+    const { sendMail } = require('../config/mailer');
+    await sendMail({
+      to: email,
+      subject: 'TravelCRM — Reset Your Password',
+      html: `
+        <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff;">
+          <div style="background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%); padding: 32px 24px; text-align: center; border-radius: 8px 8px 0 0;">
+            <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: 700;">✈️ TravelCRM</h1>
+          </div>
+          <div style="padding: 32px 24px;">
+            <h2 style="color: #1f2937; margin: 0 0 16px 0; font-size: 20px;">Reset Your Password</h2>
+            <p style="color: #4b5563; font-size: 15px; line-height: 1.6; margin: 0 0 24px 0;">
+              Hi <strong>${user.name}</strong>,<br/>We received a request to reset your password. Click the button below to set a new password. This link expires in <strong>15 minutes</strong>.
+            </p>
+            <div style="text-align: center; margin: 0 0 24px 0;">
+              <a href="${resetUrl}" style="display: inline-block; background: #4f46e5; color: #ffffff; padding: 14px 36px; border-radius: 8px; text-decoration: none; font-size: 15px; font-weight: 600;">Reset Password</a>
+            </div>
+            <p style="color: #9ca3af; font-size: 13px; line-height: 1.5; margin: 0 0 16px 0; text-align: center;">
+              If you didn't request this, you can safely ignore this email.
+            </p>
+            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 16px;">
+              <p style="color: #64748b; font-size: 12px; margin: 0; word-break: break-all;">Direct link: ${resetUrl}</p>
+            </div>
+          </div>
+          <div style="background: #f8fafc; padding: 16px 24px; text-align: center; border-radius: 0 0 8px 8px; border-top: 1px solid #e2e8f0;">
+            <p style="color: #94a3b8; font-size: 12px; margin: 0;">${config.frontendUrl || 'TravelCRM'}</p>
+          </div>
+        </div>
+      `,
+    });
+    // Case 4 — Email sent successfully
+    return { message: 'Reset link sent. Check your inbox.', emailSent: true };
+  } catch (err) {
+    // Case 5 — Email failed to send
+    const logger = require('../utils/logger');
+    logger.error('[Auth] Failed to send reset email:', err.message);
+    return { message: 'Email could not be sent. Contact your administrator.', emailSent: false, emailFailed: true };
   }
 };
 

@@ -4,16 +4,58 @@ import { useState } from 'react';
 import { api } from '@/lib/api';
 import { useAuthStore } from '@/lib/auth-store';
 import { toast } from 'sonner';
-import { User, Lock, Eye, EyeOff, CheckCircle } from 'lucide-react';
+import { User, Lock, Eye, EyeOff, CheckCircle, Edit2, Save } from 'lucide-react';
 
 export default function ProfilePage() {
-  const { user } = useAuthStore();
+  const { user, setAuth, accessToken } = useAuthStore();
+
+  // ─── Edit Profile State ────────────────────────────────────
+  const [editName, setEditName] = useState(user?.name || '');
+  const [editEmail, setEditEmail] = useState(user?.email || '');
+  const [confirmCurrentPassword, setConfirmCurrentPassword] = useState('');
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
+
+  // ─── Change Password State ─────────────────────────────────
   const [oldPassword, setOldPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showOld, setShowOld] = useState(false);
   const [showNew, setShowNew] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+
+  const handleSaveProfile = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    // If email was changed, require current password
+    const emailChanged = editEmail.toLowerCase() !== (user?.email || '').toLowerCase();
+    if (emailChanged && !confirmCurrentPassword) {
+      toast.error('Current password is required to change your email');
+      return;
+    }
+
+    setIsSavingProfile(true);
+    try {
+      const payload: any = { name: editName, email: editEmail };
+      if (emailChanged) payload.currentPassword = confirmCurrentPassword;
+
+      await api.put(`/users/${user?.id}`, payload);
+
+      // Update local auth store with new name/email
+      if (user && accessToken) {
+        setAuth({ ...user, name: editName, email: editEmail.toLowerCase() }, accessToken);
+      }
+
+      toast.success('Profile updated successfully');
+      setIsEditingProfile(false);
+      setConfirmCurrentPassword('');
+    } catch (err) {
+      const error = err as { response?: { data?: { message?: string } } };
+      toast.error(error.response?.data?.message || 'Failed to update profile');
+    } finally {
+      setIsSavingProfile(false);
+    }
+  };
 
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -56,15 +98,94 @@ export default function ProfilePage() {
           <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
             <User className="w-8 h-8 text-primary" />
           </div>
-          <div>
+          <div className="flex-1">
             <h2 className="text-lg font-semibold">{user?.name || 'Loading...'}</h2>
             <p className="text-sm text-muted-foreground">{user?.email || ''}</p>
             <span className="inline-flex items-center px-2 py-0.5 mt-1 rounded-full text-xs font-medium bg-primary/10 text-primary">
               {user?.roleLabel || user?.role || 'User'}
             </span>
           </div>
+          {!isEditingProfile && (
+            <button
+              onClick={() => setIsEditingProfile(true)}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+            >
+              <Edit2 className="w-3.5 h-3.5" /> Edit
+            </button>
+          )}
         </div>
       </div>
+
+      {/* Edit Profile Card */}
+      {isEditingProfile && (
+        <div className="rounded-lg border bg-card p-6">
+          <div className="flex items-center gap-2 mb-4">
+            <Edit2 className="w-5 h-5 text-muted-foreground" />
+            <h3 className="font-semibold">Edit Profile</h3>
+          </div>
+
+          <form onSubmit={handleSaveProfile} className="space-y-4 max-w-md">
+            <div>
+              <label className="text-sm font-medium text-muted-foreground">Name</label>
+              <input
+                type="text"
+                value={editName}
+                onChange={(e) => setEditName(e.target.value)}
+                className="w-full mt-1 px-3 py-2 border rounded-md text-sm bg-background"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="text-sm font-medium text-muted-foreground">Email</label>
+              <input
+                type="email"
+                value={editEmail}
+                onChange={(e) => setEditEmail(e.target.value)}
+                className="w-full mt-1 px-3 py-2 border rounded-md text-sm bg-background"
+                required
+              />
+            </div>
+
+            {editEmail.toLowerCase() !== (user?.email || '').toLowerCase() && (
+              <div>
+                <label className="text-sm font-medium text-muted-foreground">Current Password <span className="text-red-500">*</span></label>
+                <p className="text-xs text-muted-foreground mb-1">Required to confirm email change</p>
+                <input
+                  type="password"
+                  value={confirmCurrentPassword}
+                  onChange={(e) => setConfirmCurrentPassword(e.target.value)}
+                  className="w-full px-3 py-2 border rounded-md text-sm bg-background"
+                  required
+                />
+              </div>
+            )}
+
+            <div className="flex gap-2">
+              <button
+                type="submit"
+                disabled={isSavingProfile}
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 text-sm font-medium disabled:opacity-50"
+              >
+                <Save className="w-3.5 h-3.5" />
+                {isSavingProfile ? 'Saving...' : 'Save Changes'}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsEditingProfile(false);
+                  setEditName(user?.name || '');
+                  setEditEmail(user?.email || '');
+                  setConfirmCurrentPassword('');
+                }}
+                className="px-4 py-2 rounded-md border text-sm hover:bg-muted"
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
 
       {/* Change Password Card */}
       <div className="rounded-lg border bg-card p-6">

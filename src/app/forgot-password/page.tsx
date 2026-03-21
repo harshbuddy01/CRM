@@ -7,14 +7,18 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
-import { PlaneTakeoff, ArrowLeft, Mail } from 'lucide-react';
+import { PlaneTakeoff, ArrowLeft, CheckCircle, Phone } from 'lucide-react';
 import Link from 'next/link';
+
+type ForgotResult =
+  | null
+  | { type: 'sent' }
+  | { type: 'contact_admin'; reason: 'inactive' | 'no_provider' | 'email_failed' };
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [status, setStatus] = useState<'idle' | 'success' | 'not-found' | 'inactive' | 'no-provider'>('idle');
-  const [resetUrl, setResetUrl] = useState('');
+  const [result, setResult] = useState<ForgotResult>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -22,20 +26,32 @@ export default function ForgotPasswordPage() {
 
     try {
       const res = await api.post('/auth/forgot-password', { email });
-      const data = res.data;
-      if (data.notFound) setStatus('not-found');
-      else if (data.accountInactive) setStatus('inactive');
-      else if (data.noEmailProvider) {
-        setStatus('no-provider');
-        setResetUrl(data.resetUrl);
+      const data = res.data.data;
+
+      if (data.emailSent) {
+        setResult({ type: 'sent' });
+      } else if (data.accountInactive) {
+        setResult({ type: 'contact_admin', reason: 'inactive' });
+      } else if (data.noEmailProvider) {
+        setResult({ type: 'contact_admin', reason: 'no_provider' });
+      } else if (data.emailFailed) {
+        setResult({ type: 'contact_admin', reason: 'email_failed' });
+      } else if (data.noAccount) {
+        // Don't reveal if email exists — show same as "sent"
+        setResult({ type: 'sent' });
       } else {
-        setStatus('success');
+        setResult({ type: 'sent' });
       }
     } catch {
-      setStatus('success');
+      setResult({ type: 'contact_admin', reason: 'email_failed' });
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleTryAgain = () => {
+    setResult(null);
+    setEmail('');
   };
 
   return (
@@ -48,31 +64,28 @@ export default function ForgotPasswordPage() {
       <Card className="w-full max-w-md shadow-lg">
         <CardHeader className="space-y-2 text-center">
           <CardTitle className="text-2xl font-bold tracking-tight">
-            {status === 'idle' && 'Reset Password'}
-            {status === 'success' && 'Reset Link Sent'}
-            {status === 'not-found' && 'Account Not Found'}
-            {status === 'inactive' && 'Account Inactive'}
-            {status === 'no-provider' && 'Development Link'}
+            {!result && 'Reset Password'}
+            {result?.type === 'sent' && 'Reset Link Sent'}
+            {result?.type === 'contact_admin' && 'Contact Your Administrator'}
           </CardTitle>
           <CardDescription>
-            {status === 'idle' && 'Enter your email address and we\'ll send you a reset link'}
-            {status === 'success' && 'Check your email for the reset link'}
-            {status === 'not-found' && 'No matching account found'}
-            {status === 'inactive' && 'Your account is suspended'}
-            {status === 'no-provider' && 'Email provider not configured'}
+            {!result && 'Enter your email address and we\'ll send you a reset link'}
+            {result?.type === 'sent' && 'Check your email for the reset link'}
+            {result?.type === 'contact_admin' && 'We were unable to process your request automatically'}
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {status === 'success' && (
+          {/* ── Screen: Reset Link Sent ── */}
+          {result?.type === 'sent' && (
             <div className="space-y-4 text-center">
               <div className="mx-auto w-16 h-16 rounded-full bg-green-100 flex items-center justify-center">
-                <Mail className="w-8 h-8 text-green-600" />
+                <CheckCircle className="w-8 h-8 text-green-600" />
               </div>
-              <p className="text-sm text-muted-foreground">
-                We sent a password reset link to <strong>{email}</strong>.
+              <p className="text-sm text-foreground font-medium">
+                Reset link sent. Check your inbox and spam folder.
               </p>
               <p className="text-xs text-muted-foreground">
-                The link will expire in 15 minutes. Check your spam folder if you don&apos;t see it.
+                Link expires in 15 minutes.
               </p>
               <Link href="/login">
                 <Button variant="outline" className="w-full mt-4">
@@ -82,56 +95,52 @@ export default function ForgotPasswordPage() {
             </div>
           )}
 
-          {status === 'not-found' && (
-            <div className="space-y-4 text-center">
-              <p className="text-sm text-muted-foreground">
-                We couldn&apos;t find an account associated with <strong>{email}</strong>.
-              </p>
-              <Button variant="default" className="w-full mt-4" onClick={() => setStatus('idle')}>
-                Try Another Email
-              </Button>
-              <Link href="/login">
-                <Button variant="outline" className="w-full mt-2">
-                  <ArrowLeft className="w-4 h-4 mr-2" /> Back to Login
-                </Button>
-              </Link>
-            </div>
-          )}
-
-          {status === 'inactive' && (
-            <div className="space-y-4 text-center">
-              <p className="text-sm font-medium text-destructive">
-                Your account has been deactivated.
-              </p>
-              <p className="text-xs text-muted-foreground">
-                You cannot reset your password. Please contact your system administrator to restore access.
-              </p>
-              <Link href="/login">
-                <Button variant="outline" className="w-full mt-4">
-                  <ArrowLeft className="w-4 h-4 mr-2" /> Back to Login
-                </Button>
-              </Link>
-            </div>
-          )}
-
-          {status === 'no-provider' && (
-            <div className="space-y-4 text-center">
-              <div className="p-4 bg-yellow-50 text-yellow-800 text-sm rounded-md border border-yellow-200">
-                <p className="font-semibold mb-2">Development Mode</p>
-                <p>No email provider is configured. Click the link below to reset your password directly:</p>
+          {/* ── Screen: Contact Administrator ── */}
+          {result?.type === 'contact_admin' && (
+            <div className="space-y-4">
+              <div className="flex justify-center">
+                <div className="w-16 h-16 rounded-full bg-amber-100 flex items-center justify-center">
+                  <Phone className="w-8 h-8 text-amber-600" />
+                </div>
               </div>
-              <a href={resetUrl}>
-                <Button className="w-full mt-2">Reset Password Now</Button>
-              </a>
-              <Link href="/login">
-                <Button variant="outline" className="w-full mt-2">
-                  <ArrowLeft className="w-4 h-4 mr-2" /> Back to Login
+              <div className="text-center">
+                {result.reason === 'inactive' && (
+                  <p className="text-sm text-foreground">
+                    Your account has been deactivated. Contact your administrator to reactivate it.
+                  </p>
+                )}
+                {result.reason === 'no_provider' && (
+                  <p className="text-sm text-foreground">
+                    Email service is not set up. Contact your administrator directly.
+                  </p>
+                )}
+                {result.reason === 'email_failed' && (
+                  <p className="text-sm text-foreground">
+                    We could not send the email. Contact your administrator directly.
+                  </p>
+                )}
+              </div>
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                <p className="text-xs font-semibold text-amber-800 mb-1">What to do</p>
+                <p className="text-xs text-amber-700">
+                  Contact your administrator and ask them to reset your password from the Team Management page.
+                </p>
+              </div>
+              <div className="flex gap-2">
+                <Button variant="outline" className="flex-1" onClick={handleTryAgain}>
+                  Try Again
                 </Button>
-              </Link>
+                <Link href="/login" className="flex-1">
+                  <Button variant="default" className="w-full">
+                    <ArrowLeft className="w-4 h-4 mr-2" /> Back to Login
+                  </Button>
+                </Link>
+              </div>
             </div>
           )}
 
-          {status === 'idle' && (
+          {/* ── Screen: Email Form (idle) ── */}
+          {!result && (
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="email">Email Address</Label>

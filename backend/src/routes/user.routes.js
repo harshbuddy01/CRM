@@ -19,6 +19,7 @@ router.get('/roles', can('users.manage'), userController.listRoles);
 // Admin-only user management routes
 router.get('/', can('users.manage'), userController.listAllUsers);
 router.post('/', can('users.manage'), userController.createUser);
+router.post('/:id/reset-password-send', can('users.manage'), userController.resetAndSendPassword);
 router.put('/:id', can('users.manage'), userController.updateUser);
 router.delete('/:id', can('users.manage'), userController.deleteUser);
 router.get('/:id/offboard-stats', can('users.manage'), userController.getUserOffboardStats);

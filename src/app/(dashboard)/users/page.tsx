@@ -4,8 +4,9 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { useAuthStore } from '@/lib/auth-store';
-import { UserPlus, Shield, Edit2, CheckCircle, XCircle, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
+import { UserPlus, Shield, Edit2, CheckCircle, XCircle, Trash2, ChevronDown, ChevronUp, KeyRound } from 'lucide-react';
 import { toast } from 'sonner';
+import { format } from 'date-fns';
 
 interface User {
   id: string;
@@ -23,6 +24,7 @@ interface User {
   department: string | null;
   profilePhoto: string | null;
   createdAt: string;
+  updatedAt: string;
 }
 
 interface Role {
@@ -115,23 +117,26 @@ export default function UsersPage() {
           <table className="w-full">
             <thead>
               <tr className="border-b text-left text-sm text-muted-foreground">
+                <th className="p-4 w-12">S.No</th>
                 <th className="p-4">Name</th>
                 <th className="p-4">Email</th>
                 <th className="p-4">Role</th>
                 <th className="p-4">Status</th>
                 <th className="p-4">Leads</th>
+                <th className="p-4">Last Updated</th>
                 <th className="p-4">Actions</th>
               </tr>
             </thead>
             <tbody>
-              {usersData?.map((u: User) => (
+              {usersData?.map((u: User, index: number) => (
                 <>
                   <tr key={u.id} className="border-b last:border-0 hover:bg-muted/50">
+                    <td className="p-4 text-sm text-muted-foreground">{index + 1}</td>
                     <td className="p-4 font-medium">{u.name}</td>
                     <td className="p-4 text-sm text-muted-foreground">{u.email}</td>
                     <td className="p-4">
                       <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary">
-                        {u.role.label}
+                        {u.role.label}{u.department ? ` · ${u.department}` : ''}
                       </span>
                     </td>
                     <td className="p-4">
@@ -152,6 +157,9 @@ export default function UsersPage() {
                     </td>
                     <td className="p-4">
                       <span className="text-sm">{u.activeLeadCount} / {u.maxLeads}</span>
+                    </td>
+                    <td className="p-4 text-sm text-muted-foreground">
+                      {u.updatedAt ? format(new Date(u.updatedAt), 'dd MMM yyyy') : '—'}
                     </td>
                     <td className="p-4">
                       <div className="flex items-center gap-2">
@@ -193,7 +201,7 @@ export default function UsersPage() {
                   {/* Inline Edit Row */}
                   {editingUserId === u.id && (
                     <tr key={`edit-${u.id}`} className="bg-muted/30">
-                      <td colSpan={6} className="p-4">
+                      <td colSpan={8} className="p-4">
                         <EditUserForm
                           user={u}
                           roles={roles || []}
@@ -207,7 +215,7 @@ export default function UsersPage() {
                   {/* Inline Permissions Row */}
                   {expandedPermissions === u.id && (
                     <tr key={`perm-${u.id}`} className="bg-muted/30">
-                      <td colSpan={6} className="p-4">
+                      <td colSpan={8} className="p-4">
                         <PermissionsPanel userId={u.id} userName={u.name} />
                       </td>
                     </tr>
@@ -243,6 +251,7 @@ function CreateUserForm({ roles, onSubmit, isLoading }: { roles: Role[]; onSubmi
     maxLeads: 50,
     mobile: '',
     department: '',
+    sendCredentials: true,
   });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -308,6 +317,15 @@ function CreateUserForm({ roles, onSubmit, isLoading }: { roles: Role[]; onSubmi
           className="px-3 py-2 border rounded-md text-sm bg-background"
         />
       </div>
+      <label className="flex items-center gap-2 text-sm cursor-pointer">
+        <input
+          type="checkbox"
+          checked={form.sendCredentials}
+          onChange={(e) => setForm({ ...form, sendCredentials: e.target.checked })}
+          className="rounded"
+        />
+        <span className="text-muted-foreground">Send login details to their email</span>
+      </label>
       <button
         type="submit"
         disabled={isLoading}
@@ -333,12 +351,25 @@ function EditUserForm({ user, roles, onSubmit, isLoading, onCancel }: {
     department: user.department || '',
     password: '',
   });
+  const [isResetting, setIsResetting] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const data: any = { ...form };
     if (!data.password) delete data.password;
     onSubmit(data);
+  };
+
+  const handleResetAndSend = async () => {
+    setIsResetting(true);
+    try {
+      await api.post(`/users/${user.id}/reset-password-send`);
+      toast.success(`New password generated and emailed to ${user.name}.`);
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Failed to reset password');
+    } finally {
+      setIsResetting(false);
+    }
   };
 
   return (
@@ -366,13 +397,24 @@ function EditUserForm({ user, roles, onSubmit, isLoading, onCancel }: {
           On Leave
         </label>
       </div>
-      <div className="flex gap-2">
+      <div className="flex gap-2 items-center">
         <button type="submit" disabled={isLoading}
           className="px-3 py-1.5 rounded-md bg-primary text-primary-foreground text-sm disabled:opacity-50">
           {isLoading ? 'Saving...' : 'Save'}
         </button>
         <button type="button" onClick={onCancel}
           className="px-3 py-1.5 rounded-md border text-sm hover:bg-muted">Cancel</button>
+        <div className="ml-auto">
+          <button
+            type="button"
+            onClick={handleResetAndSend}
+            disabled={isResetting}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-amber-100 text-amber-800 hover:bg-amber-200 text-sm font-medium disabled:opacity-50 transition-colors"
+          >
+            <KeyRound className="w-3.5 h-3.5" />
+            {isResetting ? 'Resetting...' : 'Reset & Send Password'}
+          </button>
+        </div>
       </div>
     </form>
   );
@@ -539,7 +581,7 @@ function OffboardingModal({ user, usersList, onClose, onConfirm, isPending }: {
               onChange={(e) => setConfirmed(e.target.checked)}
             />
             <span className="text-sm text-muted-foreground leading-tight">
-              I understand that this action will transfer all active work to the selected user and immediately deactivate <strong>{user.name}</strong>'s account.
+              I understand that this action will transfer all active work to the selected user and immediately deactivate <strong>{user.name}</strong>&apos;s account.
             </span>
           </label>
         </div>
