@@ -197,10 +197,10 @@ const setPermissionOverride = async (userId, permissionId, granted, reason, setB
 const getUserOffboardStats = async (userId) => {
   const [activeLeads, activeTours] = await Promise.all([
     prisma.query.count({
-      where: { assignedToId: userId, status: { notIn: ['lost', 'invalid', 'confirmed'] } }
+      where: { assignedTo: userId, status: { notIn: ['lost', 'invalid', 'confirmed'] } }
     }),
     prisma.tour.count({
-      where: { opsAssignedToId: userId, status: { notIn: ['completed', 'cancelled'] } }
+      where: { assignedOps: userId, status: { notIn: ['completed', 'cancelled'] } }
     })
   ]);
   
@@ -219,14 +219,14 @@ const deleteUser = async (userId, adminId, reassignToId) => {
 
   // Re-assign all active queries
   await prisma.query.updateMany({
-    where: { assignedToId: userId, status: { notIn: ['lost', 'invalid', 'confirmed'] } },
-    data: { assignedToId: targetId }
+    where: { assignedTo: userId, status: { notIn: ['lost', 'invalid', 'confirmed'] } },
+    data: { assignedTo: targetId }
   });
 
   // Re-assign all active tours
   await prisma.tour.updateMany({
-    where: { opsAssignedToId: userId, status: { notIn: ['completed', 'cancelled'] } },
-    data: { opsAssignedToId: targetId }
+    where: { assignedOps: userId, status: { notIn: ['completed', 'cancelled'] } },
+    data: { assignedOps: targetId }
   });
 
   // Soft deactivate user

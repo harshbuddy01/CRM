@@ -191,14 +191,8 @@ function MasterForm({ category, editItem, onClose, onSaved }: { category: typeof
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
         {category.id === 'suppliers' && (<>
-          <Field label="Contact Name *"><Input placeholder="e.g. Mr. Ramesh Kumar" value={form.name || ''} onChange={e => set('name', e.target.value)} required /></Field>
-          <Field label="Company Name"><Input placeholder="e.g. Raj Travels Pvt Ltd" value={form.companyName || ''} onChange={e => set('companyName', e.target.value)} /></Field>
-          <Field label="Type">
-            <select className="w-full h-10 px-3 border rounded-md bg-background text-sm" value={form.type || 'other'} onChange={e => set('type', e.target.value)}>
-              <option value="vehicle">Vehicle / Transport</option><option value="hotel">Hotel</option><option value="activity">Activity Provider</option><option value="flight">Flight / Air</option><option value="other">Other</option>
-            </select>
-          </Field>
-          <Field label="Category / Vehicle Type"><Input placeholder="e.g. Bolero, Cab, DMC, Budget" value={form.category || ''} onChange={e => set('category', e.target.value)} /></Field>
+          <Field label="Company Name *"><Input placeholder="e.g. Raj Travels Pvt Ltd" value={form.companyName || ''} onChange={e => set('companyName', e.target.value)} required /></Field>
+          <Field label="Category / Provider Type"><Input placeholder="e.g. Bolero, Cab, DMC, Budget" value={form.category || ''} onChange={e => set('category', e.target.value)} /></Field>
           <Field label="Mobile"><Input placeholder="+91 98765 43210" value={form.phone || ''} onChange={e => set('phone', e.target.value)} /></Field>
           <Field label="Email"><Input type="email" placeholder="supplier@email.com" value={form.email || ''} onChange={e => set('email', e.target.value)} /></Field>
           <Field label="City"><Input placeholder="e.g. Gangtok, Darjeeling" value={form.city || ''} onChange={e => set('city', e.target.value)} /></Field>
@@ -216,7 +210,7 @@ function MasterForm({ category, editItem, onClose, onSaved }: { category: typeof
         </>)}
 
         {category.id === 'transfers' && (<>
-          <Field label="Vehicle Name *"><Input placeholder="e.g. Bolero, Tempo Traveller 9-seater" value={form.name || ''} onChange={e => set('name', e.target.value)} required /></Field>
+          <Field label="Vehicle Name *"><Input placeholder="e.g. Bolero, Tempo Traveller 9-seater" value={form.name || form.vehicleType || ''} onChange={e => set('name', e.target.value)} required /></Field>
           <Field label="Destination"><DestinationSelect destinations={destinations} value={form.destinationId || ''} onChange={v => set('destinationId', v)} /></Field>
           <Field label="Price (₹)"><Input type="number" placeholder="0" value={form.price || ''} onChange={e => set('price', e.target.value)} /></Field>
           <StatusField value={form.isActive} onChange={v => set('isActive', v)} />
@@ -290,8 +284,8 @@ function MasterTable({ category, items, onEdit, onDelete, canManage }: { categor
       <table className="w-full text-sm">
         <thead className="bg-muted/40">
           <tr className="border-b text-muted-foreground text-xs uppercase tracking-wide">
-            <th className="text-left py-3 px-3 font-medium">{category.id === 'day-itinerary-templates' ? 'Title' : 'Name'}</th>
-            {category.id === 'suppliers' && <><th className="text-left py-3 px-3 font-medium">Type</th><th className="text-left py-3 px-3 font-medium">City</th><th className="text-left py-3 px-3 font-medium">Phone</th></>}
+            <th className="text-left py-3 px-3 font-medium">{category.id === 'day-itinerary-templates' ? 'Title' : (category.id === 'suppliers' ? 'Company Name' : (category.id === 'transfers' ? 'Vehicle Type' : 'Name'))}</th>
+            {category.id === 'suppliers' && <><th className="text-left py-3 px-3 font-medium">Category</th><th className="text-left py-3 px-3 font-medium">City</th><th className="text-left py-3 px-3 font-medium">Phone</th></>}
             {category.id === 'activities' && <><th className="text-left py-3 px-3 font-medium">Destination</th><th className="text-left py-3 px-3 font-medium">Price/Person</th></>}
             {category.id === 'transfers' && <><th className="text-left py-3 px-3 font-medium">Destination</th><th className="text-left py-3 px-3 font-medium">Price</th><th className="text-left py-3 px-3 font-medium">Photo</th></>}
             {category.id === 'meal-plans' && <th className="text-left py-3 px-3 font-medium">Price (₹)</th>}
@@ -305,11 +299,11 @@ function MasterTable({ category, items, onEdit, onDelete, canManage }: { categor
           {items.map((item, i) => (
             <tr key={item.id} className={`border-b last:border-0 hover:bg-muted/20 transition-colors ${i % 2 === 0 ? '' : 'bg-muted/10'}`}>
               <td className="py-3 px-3 font-medium">
-                {item.title || item.name}
-                {item.companyName && <span className="text-xs text-muted-foreground block">{item.companyName}</span>}
-                {item.category && <span className="text-xs bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded-full mt-0.5 inline-block">{item.category}</span>}
+                {item.title || item.companyName || item.vehicleType || item.name}
+                {item.companyName && category.id !== 'suppliers' && <span className="text-xs text-muted-foreground block">{item.companyName}</span>}
+                {item.category && category.id !== 'suppliers' && <span className="text-xs bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded-full mt-0.5 inline-block">{item.category}</span>}
               </td>
-              {category.id === 'suppliers' && (<><td className="py-3 px-3 text-muted-foreground capitalize text-xs">{item.type || '—'}</td><td className="py-3 px-3 text-muted-foreground text-xs">{item.city || '—'}</td><td className="py-3 px-3 text-muted-foreground text-xs">{item.phone || '—'}</td></>)}
+              {category.id === 'suppliers' && (<><td className="py-3 px-3 text-muted-foreground capitalize text-xs">{item.category || '—'}</td><td className="py-3 px-3 text-muted-foreground text-xs">{item.city || '—'}</td><td className="py-3 px-3 text-muted-foreground text-xs">{item.phone || '—'}</td></>)}
               {category.id === 'activities' && (<><td className="py-3 px-3 text-muted-foreground text-xs">{item.destination?.name || '—'}</td><td className="py-3 px-3 text-muted-foreground text-xs font-medium">₹{Number(item.pricePerPerson || 0).toLocaleString('en-IN')}</td></>)}
               {category.id === 'transfers' && (<><td className="py-3 px-3 text-muted-foreground text-xs">{item.destination?.name || '—'}</td><td className="py-3 px-3 text-muted-foreground text-xs font-medium">₹{Number(item.price || 0).toLocaleString('en-IN')}</td><td className="py-3 px-3">{item.photoUrl ? <img src={item.photoUrl} alt={item.name} className="w-14 h-9 object-cover rounded" /> : <span className="text-muted-foreground text-xs">—</span>}</td></>)}
               {category.id === 'meal-plans' && <td className="py-3 px-3 text-muted-foreground text-xs font-medium">₹{Number(item.price || 0).toLocaleString('en-IN')}</td>}

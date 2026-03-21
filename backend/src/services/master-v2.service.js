@@ -73,6 +73,10 @@ const createMaster = async (modelName, data, photoBuffer) => {
   if (d.isActive !== undefined) d.isActive = d.isActive === 'true' || d.isActive === true;
   Object.keys(d).forEach(k => { if (d[k] === '' || d[k] === undefined) d[k] = null; });
   delete d.id;
+  
+  if (modelName === 'supplier') { delete d.name; delete d.type; }
+  if (modelName === 'transfer') { d.vehicleType = d.vehicleType || d.name; delete d.name; }
+
   return await prisma[modelName].create({ data: d });
 };
 
@@ -88,6 +92,10 @@ const updateMaster = async (modelName, id, data, photoBuffer) => {
   if (d.isActive !== undefined) d.isActive = d.isActive === 'true' || d.isActive === true;
   delete d.deletedAt; delete d.id;
   Object.keys(d).forEach(k => { if (d[k] === '' || d[k] === undefined) d[k] = null; });
+
+  if (modelName === 'supplier') { delete d.name; delete d.type; }
+  if (modelName === 'transfer') { d.vehicleType = d.vehicleType || d.name; delete d.name; }
+
   return await prisma[modelName].update({ where: { id }, data: d });
 };
 
