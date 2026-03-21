@@ -114,7 +114,7 @@ const getQueryById = async (id, userId, canViewAll) => {
         include: { user: { select: { name: true } } } 
       },
       emailLogs: {
-        orderBy: { createdAt: 'desc' },
+        orderBy: { sentAt: 'desc' },
         include: { sender: { select: { name: true } } }
       },
     },
