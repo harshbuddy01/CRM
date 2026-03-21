@@ -101,7 +101,16 @@ function MasterManagementTable({ config }: { config: any }) {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.name) return;
-    mutation.mutate(formData);
+    
+    // Filter payload based on what the model actually accepts
+    const payload: any = { name: formData.name };
+    if (config.id === 'suppliers') {
+      payload.city = formData.city;
+      payload.category = formData.category;
+      payload.type = formData.category.toLowerCase() || 'hotel'; // Default or map properly
+    }
+    
+    mutation.mutate(payload);
   };
 
   const startEdit = (item: any) => {
