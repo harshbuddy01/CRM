@@ -33,9 +33,17 @@ const getBrowser = async () => {
     let executablePath;
 
     if (isProduction) {
-      executablePath = await chromium.executablePath();
+      // 1. Prioritize native Chromium installed via apt-get in Docker
+      if (fs.existsSync('/usr/bin/chromium')) {
+        executablePath = '/usr/bin/chromium';
+      } else if (fs.existsSync('/usr/bin/chromium-browser')) {
+        executablePath = '/usr/bin/chromium-browser';
+      } else {
+        // 2. Fallback to @sparticuz/chromium if native binary is missing
+        executablePath = await chromium.executablePath();
+      }
       
-      // Nix/Railway fallback
+      // 3. Nix/Railway specific fallback
       if (!executablePath && fs.existsSync('/nix/store')) {
         const entries = fs.readdirSync('/nix/store');
         for (const entry of entries) {
