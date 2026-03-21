@@ -17,7 +17,8 @@ const generateTokens = (user, { role, roleLabel, permissions }) => {
 };
 
 const register = async ({ name, email, password, roleId, createdBy, mobileOnly = false }) => {
-  const existingUser = await prisma.user.findUnique({ where: { email } });
+  const normalizedEmail = email.toLowerCase();
+  const existingUser = await prisma.user.findUnique({ where: { email: normalizedEmail } });
   if (existingUser) {
     throw new BusinessError('Email already in use');
   }
@@ -53,9 +54,10 @@ const register = async ({ name, email, password, roleId, createdBy, mobileOnly =
 };
 
 const login = async (email, password) => {
+  const normalizedEmail = email.toLowerCase();
 
   const user = await prisma.user.findUnique({
-    where: { email },
+    where: { email: normalizedEmail },
     include: { role: true },
   });
 

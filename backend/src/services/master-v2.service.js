@@ -1,119 +1,103 @@
+// ============================================================
+// TravelCRM — Master V2 Service (Sprint 7)
+// ============================================================
+
 const prisma = require('../config/prisma');
+const cloudinary = require('cloudinary').v2;
+const config = require('../config');
+
+cloudinary.config({
+  cloud_name: config.cloudinary.cloudName,
+  api_key:    config.cloudinary.apiKey,
+  api_secret: config.cloudinary.apiSecret,
+});
+
+const SOFT_DELETE_MODELS = [
+  'supplier','activity','transfer','roomType','mealPlan','packageTheme','dayItineraryTemplate',
+];
+
+const uploadToCloudinary = (buffer, folder = 'crm-masters') => {
+  return new Promise((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream(
+      { folder, resource_type: 'image', quality: 'auto', fetch_format: 'auto' },
+      (error, result) => {
+        if (error) return reject(error);
+        resolve(result.secure_url);
+      }
+    );
+    stream.end(buffer);
+  });
+};
 
 const getMasters = async (modelName, queryFilters = {}) => {
-  const { search, page = 1, limit = 50 } = queryFilters;
-  const skip = (page - 1) * limit;
-
-  const where = { deletedAt: null };
+  const { search, page = 1, limit = 100 } = queryFilters;
+  const skip = (page - 1) * parseInt(limit);
+  const hasSoftDelete = SOFT_DELETE_MODELS.includes(modelName);
+  const orderField = modelName === 'dayItineraryTemplate' ? 'title' : 'name';
+  const where = {};
+  if (hasSoftDelete) where.deletedAt = null;
   if (search) {
-    if (modelName === 'supplier') {
-      where.OR = [
-        { name: { contains: search, mode: 'insensitive' } },
-        { type: { contains: search, mode: 'insensitive' } },
-        { city: { contains: search, mode: 'insensitive' } },
-      ];
-    } else {
-      where.name = { contains: search, mode: 'insensitive' };
-    }
+    where.OR = [{ [orderField]: { contains: search, mode: 'insensitive' } }];
   }
 
-  // Dynamic sorting field selection
-  const sortFieldMapping = {
-    'transfer': 'vehicleType',
-    'supplier': 'name',
-    'activity': 'name',
-    'room-type': 'name',
-    'meal-plan': 'name',
-    'package-theme': 'name'
-  };
-  const orderByField = sortFieldMapping[modelName] || 'name';
+  const includeDestination = ['activity','transfer','dayItineraryTemplate'].includes(modelName);
 
   const [items, total] = await Promise.all([
     prisma[modelName].findMany({
       where,
       skip: parseInt(skip),
       take: parseInt(limit),
-      orderBy: { [orderByField]: 'asc' },
+      orderBy: { [orderField]: 'asc' },
+      include: includeDestination ? { destination: { select: { id: true, name: true } } } : undefined,
     }),
-    prisma[modelName].count({ where })
+    prisma[modelName].count({ where }),
   ]);
-
-  return { items, total, totalPages: Math.ceil(total / limit) };
+  return { items, total, page: parseInt(page), totalPages: Math.ceil(total / parseInt(limit)) };
 };
 
-const createMaster = async (modelName, data) => {
-  const filteredData = filterMasterData(modelName, data);
-  return await prisma[modelName].create({ data: filteredData });
+const createMaster = async (modelName, data, photoBuffer) => {
+  const d = { ...data };
+  if (photoBuffer) {
+    const url = await uploadToCloudinary(photoBuffer, `crm-masters/${modelName}s`);
+    if (modelName === 'packageTheme') d.iconUrl = url; else d.photoUrl = url;
+  }
+  if (d.pricePerPerson !== undefined) d.pricePerPerson = parseFloat(d.pricePerPerson) || 0;
+  if (d.price !== undefined) d.price = parseFloat(d.price) || 0;
+  if (d.dayCost !== undefined) d.dayCost = d.dayCost ? parseFloat(d.dayCost) : null;
+  if (d.isActive !== undefined) d.isActive = d.isActive === 'true' || d.isActive === true;
+  Object.keys(d).forEach(k => { if (d[k] === '' || d[k] === undefined) d[k] = null; });
+  delete d.id;
+  return await prisma[modelName].create({ data: d });
 };
 
-const updateMaster = async (modelName, id, data) => {
-  const filteredData = filterMasterData(modelName, data);
-  return await prisma[modelName].update({
-    where: { id },
-    data: filteredData
-  });
-};
-
-/**
- * Filter sensitive or unknown fields before passing to Prisma
- */
-const filterMasterData = (modelName, data) => {
-  const { id, createdAt, updatedAt, deletedAt, ...rest } = data;
-  const { BadRequestError } = require('../utils/AppError');
-  
-  if (modelName === 'supplier') {
-    const { name, type, contactPerson, email, phone, city, address, isActive } = rest;
-    if (!name) throw new BadRequestError('Supplier name is required');
-    return { name, type: type || 'hotel', contactPerson, email, phone, city, address, isActive: isActive ?? true };
+const updateMaster = async (modelName, id, data, photoBuffer) => {
+  const d = { ...data };
+  if (photoBuffer) {
+    const url = await uploadToCloudinary(photoBuffer, `crm-masters/${modelName}s`);
+    if (modelName === 'packageTheme') d.iconUrl = url; else d.photoUrl = url;
   }
-  
-  if (modelName === 'activity') {
-    const { name, destinationId, pricePerPerson, description, isActive } = rest;
-    if (!name || !destinationId || pricePerPerson === undefined) {
-      throw new BadRequestError('Activity name, destination, and price are required');
-    }
-    return { 
-      name, 
-      destinationId, 
-      pricePerPerson: Number(pricePerPerson), 
-      description, 
-      isActive: isActive ?? true 
-    };
-  }
-
-  if (modelName === 'transfer') {
-    const { vehicleType, destinationId, price, description, isActive } = rest;
-    if (!vehicleType || !destinationId || price === undefined) {
-      throw new BadRequestError('Transfer vehicle type, destination, and price are required');
-    }
-    return { 
-      vehicleType, 
-      destinationId, 
-      price: Number(price), 
-      description, 
-      isActive: isActive ?? true 
-    };
-  }
-
-  // Generic for simple masters (RoomType, MealPlan, etc)
-  if (!rest.name) throw new BadRequestError(`${modelName} name is required`);
-  return { 
-    name: rest.name, 
-    price: rest.price ? Number(rest.price) : undefined,
-    isActive: rest.isActive ?? true 
-  };
+  if (d.pricePerPerson !== undefined) d.pricePerPerson = parseFloat(d.pricePerPerson) || 0;
+  if (d.price !== undefined) d.price = parseFloat(d.price) || 0;
+  if (d.dayCost !== undefined) d.dayCost = d.dayCost ? parseFloat(d.dayCost) : null;
+  if (d.isActive !== undefined) d.isActive = d.isActive === 'true' || d.isActive === true;
+  delete d.deletedAt; delete d.id;
+  Object.keys(d).forEach(k => { if (d[k] === '' || d[k] === undefined) d[k] = null; });
+  return await prisma[modelName].update({ where: { id }, data: d });
 };
 
 const deleteMaster = async (modelName, id) => {
-  return await prisma[modelName].update({
-    where: { id },
-    data: { deletedAt: new Date() }
+  if (SOFT_DELETE_MODELS.includes(modelName)) {
+    return await prisma[modelName].update({ where: { id }, data: { deletedAt: new Date() } });
+  }
+  return await prisma[modelName].delete({ where: { id } });
+};
+
+const getDestinations = async () => {
+  return await prisma.destination.findMany({
+    where: { isActive: true },
+    select: { id: true, name: true },
+    orderBy: { name: 'asc' },
   });
 };
 
-module.exports = {
-  getMasters,
-  createMaster,
-  updateMaster,
-  deleteMaster,
-};
+module.exports = { getMasters, createMaster, updateMaster, deleteMaster, getDestinations, uploadToCloudinary };

@@ -120,11 +120,21 @@ const removePermissionOverride = async (req, res, next) => {
   }
 };
 
+const deleteUser = async (req, res, next) => {
+  try {
+    await userService.deleteUser(req.params.id, req.user.id);
+    res.json({ success: true, message: 'User deleted and leads re-assigned' });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   getActiveAgents,
   listAllUsers,
   createUser,
   updateUser,
+  deleteUser,
   listRoles,
   getUserPermissions,
   setPermissionOverride,

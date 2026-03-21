@@ -17,6 +17,7 @@ router.get('/agents', can('query.edit_all'), userController.getActiveAgents);
 router.get('/', can('users.manage'), userController.listAllUsers);
 router.post('/', can('users.manage'), userController.createUser);
 router.put('/:id', can('users.manage'), userController.updateUser);
+router.delete('/:id', can('users.manage'), userController.deleteUser);
 
 // Roles
 router.get('/roles', can('users.manage'), userController.listRoles);

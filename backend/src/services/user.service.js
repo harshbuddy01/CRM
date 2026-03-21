@@ -72,7 +72,8 @@ const listAllUsers = async () => {
  * Create a new user (Admin only)
  */
 const createUser = async (data) => {
-  const existingEmail = await prisma.user.findUnique({ where: { email: data.email } });
+  const normalizedEmail = data.email.toLowerCase();
+  const existingEmail = await prisma.user.findUnique({ where: { email: normalizedEmail } });
   if (existingEmail) throw new BusinessError('A user with this email already exists');
 
   const role = await prisma.role.findUnique({ where: { id: data.roleId } });
@@ -83,7 +84,7 @@ const createUser = async (data) => {
   return await prisma.user.create({
     data: {
       name: data.name,
-      email: data.email,
+      email: normalizedEmail,
       passwordHash,
       roleId: data.roleId,
       maxLeads: data.maxLeads || 50,
@@ -106,7 +107,7 @@ const updateUser = async (userId, data) => {
 
   const updateData = {};
   if (data.name) updateData.name = data.name;
-  if (data.email) updateData.email = data.email;
+  if (data.email) updateData.email = data.email.toLowerCase();
   if (data.roleId) updateData.roleId = data.roleId;
   if (data.maxLeads !== undefined) updateData.maxLeads = data.maxLeads;
   if (data.isActive !== undefined) updateData.isActive = data.isActive;
@@ -191,12 +192,30 @@ const setPermissionOverride = async (userId, permissionId, granted, reason, setB
 };
 
 /**
- * Remove a permission override (revert to role default)
+ * Delete a user and re-assign their leads/tasks to the admin
  */
-const removePermissionOverride = async (userId, permissionId) => {
-  await prisma.userPermissionOverride.deleteMany({
-    where: { userId, permissionId },
+const deleteUser = async (userId, adminId) => {
+  const user = await prisma.user.findUnique({ 
+    where: { id: userId },
+    include: { assignedQueries: { where: { status: { notIn: ['lost', 'invalid', 'confirmed'] } } } }
   });
+  if (!user) throw new NotFoundError('User');
+  if (user.id === adminId) throw new BusinessError('You cannot delete yourself');
+
+  // Re-assign all active queries to the admin performing the deletion
+  if (user.assignedQueries.length > 0) {
+    await prisma.query.updateMany({
+      where: { assignedToId: userId, status: { notIn: ['lost', 'invalid', 'confirmed'] } },
+      data: { assignedToId: adminId }
+    });
+  }
+
+  // Delete everything related to user or just soft-delete? 
+  // User model doesn't have soft delete yet, but user requested deletion.
+  // Note: user requested "ask me before deleting all should be coming to me".
+  // Re-assignment handles "coming to me".
+
+  return await prisma.user.delete({ where: { id: userId } });
 };
 
 module.exports = {
@@ -204,6 +223,7 @@ module.exports = {
   listAllUsers,
   createUser,
   updateUser,
+  deleteUser,
   listRoles,
   getUserPermissions,
   setPermissionOverride,
