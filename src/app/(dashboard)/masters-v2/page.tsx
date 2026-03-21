@@ -61,7 +61,13 @@ function MasterManagementTable({ config }: { config: any }) {
   const [search, setSearch] = useState('');
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [formData, setFormData] = useState({ name: '', city: '', category: '' });
+  const [formData, setFormData] = useState({ 
+    name: '', 
+    city: '', 
+    category: '', 
+    price: '', 
+    description: '' 
+  });
 
   const { data, isLoading } = useQuery({
     queryKey: ['masters', config.id, search],
@@ -84,7 +90,7 @@ function MasterManagementTable({ config }: { config: any }) {
       queryClient.invalidateQueries({ queryKey: ['masters', config.id] });
       setIsAdding(false);
       setEditingId(null);
-      setFormData({ name: '', city: '', category: '' });
+      setFormData({ name: '', city: '', category: '', price: '', description: '' });
       toast.success('Saved successfully');
     },
     onError: (err: any) => toast.error(err.response?.data?.message || 'Error saving')
@@ -145,7 +151,13 @@ function MasterManagementTable({ config }: { config: any }) {
 
   const startEdit = (item: any) => {
     setEditingId(item.id);
-    setFormData({ name: item.name, city: item.city || '', category: item.category || '' });
+    setFormData({ 
+      name: item.name || item.vehicleType || '', 
+      city: item.city || item.destinationId || '', 
+      category: item.type || '',
+      price: String(item.price || item.pricePerPerson || ''),
+      description: item.description || ''
+    });
     setIsAdding(true);
   };
 
@@ -156,7 +168,11 @@ function MasterManagementTable({ config }: { config: any }) {
           <CardTitle className="text-xl">{config.label}</CardTitle>
           <CardDescription>Manage your {config.label.toLowerCase()} catalog</CardDescription>
         </div>
-        <Button size="sm" onClick={() => { setIsAdding(true); setEditingId(null); setFormData({name:'', city:'', category:''}); }}>
+        <Button size="sm" onClick={() => { 
+          setIsAdding(true); 
+          setEditingId(null); 
+          setFormData({ name: '', city: '', category: '', price: '', description: '' }); 
+        }}>
           <PlusCircle className="w-4 h-4 mr-2" />
           Add New
         </Button>
