@@ -15,6 +15,7 @@ RUN apt-get update && apt-get install -y \
     libdrm2 \
     libxkbcommon0 \
     libxcomposite1 \
+    libxcomposite1 \
     libxdamage1 \
     libxext6 \
     libxfixes3 \
@@ -45,5 +46,7 @@ RUN npx prisma generate
 # Expose the API port
 EXPOSE 8080
 
-# Run migrations and start the server
-CMD ["sh", "-c", "npm run migrate && exec npm start"]
+# Add a startup check script or just run nodemon/node directly
+# We use npm start which invokes concurrently defined in package.json
+# Ensure logs are piped correctly
+CMD npx prisma migrate deploy && exec npm run start
