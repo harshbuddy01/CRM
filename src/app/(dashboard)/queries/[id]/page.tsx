@@ -298,22 +298,35 @@ export default function QueryDetailPage() {
 
       {/* Status Transition Bar */}
       {canEditStatus && allowedTransitions.length > 0 && (
-        <Card className="bg-primary/5 border-primary/20">
+        <Card className="border-0 shadow-md" style={{ background: 'linear-gradient(135deg, #667eea15 0%, #764ba215 100%)', borderLeft: '4px solid #667eea' }}>
           <CardContent className="p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
-            <p className="text-sm font-medium text-primary">Move this lead forward:</p>
+            <p className="text-sm font-semibold bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent">Move this lead forward:</p>
             <div className="flex flex-wrap gap-2">
-              {allowedTransitions.map((nextStatus) => (
-                <Button 
-                  key={nextStatus} 
-                  variant={nextStatus === 'lost' || nextStatus === 'invalid' ? 'destructive' : nextStatus === 'confirmed' ? 'default' : 'secondary'}
-                  size="sm"
-                  onClick={() => statusMutation.mutate(nextStatus)}
-                  disabled={statusMutation.isPending}
-                >
-                  {statusMutation.isPending ? <Loader2 className="w-3 h-3 mr-2 animate-spin" /> : null}
-                  Mark as {formatStatus(nextStatus)}
-                </Button>
-              ))}
+              {allowedTransitions.map((nextStatus) => {
+                const statusStyles: Record<string, string> = {
+                  new: 'linear-gradient(135deg, #6B7280, #4B5563)',
+                  followup: 'linear-gradient(135deg, #667eea, #764ba2)',
+                  dnp: 'linear-gradient(135deg, #f093fb, #f5576c)',
+                  proposal_sent: 'linear-gradient(135deg, #4facfe, #00f2fe)',
+                  ready_to_pay: 'linear-gradient(135deg, #43e97b, #38f9d7)',
+                  confirmed: 'linear-gradient(135deg, #11998e, #38ef7d)',
+                  lost: 'linear-gradient(135deg, #ee0979, #ff6a00)',
+                  invalid: 'linear-gradient(135deg, #f7971e, #ffd200)',
+                };
+                const bg = statusStyles[nextStatus] || 'linear-gradient(135deg, #667eea, #764ba2)';
+                return (
+                  <button
+                    key={nextStatus}
+                    onClick={() => statusMutation.mutate(nextStatus)}
+                    disabled={statusMutation.isPending}
+                    style={{ background: bg }}
+                    className="px-3 py-1.5 rounded-full text-white text-xs font-semibold shadow-md hover:opacity-90 hover:scale-105 transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+                  >
+                    {statusMutation.isPending && <Loader2 className="w-3 h-3 animate-spin" />}
+                    Mark as {formatStatus(nextStatus)}
+                  </button>
+                );
+              })}
             </div>
           </CardContent>
         </Card>
@@ -432,27 +445,35 @@ export default function QueryDetailPage() {
           <Card>
             <CardContent className="p-0">
               <Tabs defaultValue="proposals" className="w-full flex flex-col" value={activeTab} onValueChange={setActiveTab}>
-                <TabsList className="flex w-full justify-start gap-1 bg-transparent border-b rounded-none h-12 px-4 overflow-x-auto">
-                  {[
-                    { value: 'proposals', label: 'Proposals' },
-                    { value: 'mails', label: 'Mails' },
-                    { value: 'followups', label: 'Followups' },
-                    { value: 'supp-comm', label: 'Supp. Comm.' },
-                    { value: 'post-sales', label: 'Post Sales' },
-                    { value: 'voucher', label: 'Voucher' },
-                    { value: 'docs', label: 'Docs' },
-                    { value: 'invoice', label: 'Invoice' },
-                    { value: 'billing', label: 'Billing' },
-                    { value: 'history', label: 'History' },
-                  ].map((tab) => (
-                    <TabsTrigger
-                      key={tab.value}
-                      value={tab.value}
-                      className="flex-none bg-transparent border-none shadow-none px-3 h-full rounded-none text-xs sm:text-sm data-active:bg-transparent data-active:shadow-none data-active:border-b-2 data-active:border-primary transition-none whitespace-nowrap"
-                    >
-                      {tab.label}
-                    </TabsTrigger>
-                  ))}
+                <TabsList className="flex w-full justify-start gap-1 bg-transparent border-b rounded-none h-13 px-4 overflow-x-auto">
+                  {([
+                    { value: 'proposals', label: 'Proposals', gradient: 'linear-gradient(135deg, #667eea, #764ba2)' },
+                    { value: 'mails', label: 'Mails', gradient: 'linear-gradient(135deg, #4facfe, #00f2fe)' },
+                    { value: 'followups', label: 'Followups', gradient: 'linear-gradient(135deg, #f093fb, #f5576c)' },
+                    { value: 'supp-comm', label: 'Supp. Comm.', gradient: 'linear-gradient(135deg, #f7971e, #ffd200)' },
+                    { value: 'post-sales', label: 'Post Sales', gradient: 'linear-gradient(135deg, #11998e, #38ef7d)' },
+                    { value: 'voucher', label: 'Voucher', gradient: 'linear-gradient(135deg, #ee0979, #ff6a00)' },
+                    { value: 'docs', label: 'Docs', gradient: 'linear-gradient(135deg, #43e97b, #38f9d7)' },
+                    { value: 'invoice', label: 'Invoice', gradient: 'linear-gradient(135deg, #6a11cb, #2575fc)' },
+                    { value: 'billing', label: 'Billing', gradient: 'linear-gradient(135deg, #f7971e, #ffd200)' },
+                    { value: 'history', label: 'History', gradient: 'linear-gradient(135deg, #373b44, #4286f4)' },
+                  ] as const).map((tab) => {
+                    const isActive = activeTab === tab.value;
+                    return (
+                      <button
+                        key={tab.value}
+                        onClick={() => setActiveTab(tab.value)}
+                        style={isActive ? { background: tab.gradient } : {}}
+                        className={`flex-none px-3 py-1.5 my-2 rounded-full text-xs sm:text-sm font-medium whitespace-nowrap transition-all duration-200 ${
+                          isActive
+                            ? 'text-white shadow-md scale-105'
+                            : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                        }`}
+                      >
+                        {tab.label}
+                      </button>
+                    );
+                  })}
                 </TabsList>
 
                 <TabsContent value="proposals" className="mt-4 p-4">
