@@ -43,9 +43,7 @@ COPY . .
 RUN npx prisma generate
 
 # Expose the API port
-EXPOSE 3001
+EXPOSE 8080
 
-# Add a startup check script or just run nodemon/node directly
-# We use npm start which invokes concurrently defined in package.json
-# Ensure logs are piped correctly
-CMD ["npm", "start"]
+# Run migrations and start the server
+CMD ["sh", "-c", "npm run migrate && npm start"]
