@@ -22,6 +22,15 @@ const server = app.listen(config.port, '0.0.0.0', () => {
   console.log('⌛ Starting Cron Jobs...');
   startCronJobs();
   console.log('✅ Cron Jobs initialized.');
+
+  // Seed default statuses if none exist
+  try {
+    require('./services/status-setting.service').seedDefaultStatuses()
+      .then(() => console.log('✅ Status settings checked/seeded.'))
+      .catch(err => console.error('❌ Status seeding failed:', err));
+  } catch (e) {
+    console.error('❌ Could not load status service:', e);
+  }
 });
 
 // Graceful shutdown

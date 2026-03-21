@@ -122,6 +122,7 @@ model User {
   userSessions           UserSession[]
   requestedCancellations TourCancellation[] @relation("CancellationRequestedBy")
   processedCancellations TourCancellation[] @relation("CancellationProcessedBy")
+  emailLogs              EmailLog[]
 
   @@index([roleId])
   @@index([isActive])
@@ -180,6 +181,7 @@ model Query {
   proposals    Proposal[]
   tours        Tour[]
   payments     Payment[]
+  emailLogs    EmailLog[]
 
   @@index([phone]) // Duplicate check
   @@index([assignedTo]) // My leads filter
@@ -606,4 +608,22 @@ model DayItineraryTemplate {
   destination Destination @relation(fields: [destinationId], references: [id])
 
   @@map("day_itinerary_templates")
+}
+
+model EmailLog {
+  id         String   @id @default(uuid())
+  queryId    String   @map("query_id")
+  templateId String?  @map("template_id")
+  subject    String
+  body       String   @db.Text
+  sentBy     String?  @map("sent_by")
+  sentAt     DateTime @default(now()) @map("sent_at")
+  status     String   @default("sent") /// 'sent', 'failed'
+
+  query    Query          @relation(fields: [queryId], references: [id])
+  template EmailTemplate? @relation(fields: [templateId], references: [id])
+  sender   User?          @relation(fields: [sentBy], references: [id])
+
+  @@index([queryId])
+  @@map("email_logs")
 }

@@ -121,4 +121,11 @@ router.delete(
   queryController.remove
 );
 
+// Send Email
+router.post(
+  '/:id/send-email',
+  can('query.edit_own'),
+  queryController.sendEmail
+);
+
 module.exports = router;

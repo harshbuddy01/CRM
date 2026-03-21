@@ -142,6 +142,29 @@ const deleteNote = async (req, res, next) => {
   }
 };
 
+const sendEmail = async (req, res, next) => {
+  try {
+    const { templateId, subject, body, cc } = req.body;
+    const queryId = req.params.id;
+
+    // Use emailTemplateService to handle the logic
+    const emailTemplateService = require('../services/email-template.service');
+    // Note: We'll need to implement sendQueryEmail in the service to handle variable interpolation and SendGrid
+    const result = await emailTemplateService.sendQueryEmail({
+      queryId,
+      templateId,
+      subject,
+      body,
+      cc,
+      sentBy: req.user.id,
+    });
+
+    res.json({ success: true, message: 'Email queued for sending', data: result });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   create,
   createFromWebhook,
@@ -154,4 +177,5 @@ module.exports = {
   duplicateCheck,
   addNote,
   deleteNote,
+  sendEmail,
 };
