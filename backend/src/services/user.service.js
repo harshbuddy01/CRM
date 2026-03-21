@@ -81,19 +81,21 @@ const createUser = async (data) => {
 
   const passwordHash = await bcrypt.hash(data.password, 12);
 
+  const createData = {
+    name: data.name,
+    email: normalizedEmail,
+    passwordHash,
+    roleId: data.roleId,
+    maxLeads: data.maxLeads || 50,
+    mobileOnly: data.mobileOnly || false,
+  };
+  if (data.mobile) createData.mobile = data.mobile;
+  if (data.mobile2) createData.mobile2 = data.mobile2;
+  if (data.department) createData.department = data.department;
+  if (data.profilePhoto) createData.profilePhoto = data.profilePhoto;
+
   return await prisma.user.create({
-    data: {
-      name: data.name,
-      email: normalizedEmail,
-      passwordHash,
-      roleId: data.roleId,
-      maxLeads: data.maxLeads || 50,
-      mobileOnly: data.mobileOnly || false,
-      mobile: data.mobile,
-      mobile2: data.mobile2,
-      department: data.department,
-      profilePhoto: data.profilePhoto,
-    },
+    data: createData,
     select: { id: true, name: true, email: true, role: { select: { name: true, label: true } } },
   });
 };

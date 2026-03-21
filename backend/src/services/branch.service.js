@@ -2,8 +2,7 @@
 // TravelCRM — Branch Service (Sprint 8)
 // ============================================================
 
-const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
+const prisma = require('../config/prisma');
 
 const listBranches = () => prisma.branch.findMany({
   include: { users: { select: { id: true, name: true, email: true, isActive: true } } },

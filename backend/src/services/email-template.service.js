@@ -96,12 +96,13 @@ const sendQueryEmail = async ({ queryId, templateId, subject, body, cc, sentBy }
 
   // 4. Send via SendGrid (Queue it)
   const queueService = require('./queue.service');
-  await queueService.addEmailJob({
-    to: query.email,
-    cc,
-    subject: finalSubject,
-    html: finalBody,
-  });
+  await queueService.enqueueEmailJob(
+    queryId,
+    query.email,
+    finalSubject,
+    finalBody,
+    cc
+  );
 
   // 5. Log it
   return await prisma.emailLog.create({

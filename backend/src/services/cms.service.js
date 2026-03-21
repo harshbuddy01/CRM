@@ -2,8 +2,7 @@
 // TravelCRM — CMS Service (Sprint 8)
 // ============================================================
 
-const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
+const prisma = require('../config/prisma');
 const cloudinary = require('cloudinary').v2;
 
 // ─── Helpers ─────────────────────────────────────────────────

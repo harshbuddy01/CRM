@@ -2,8 +2,7 @@
 // TravelCRM — Finance Service (Sprint 8)
 // ============================================================
 
-const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
+const prisma = require('../config/prisma');
 
 // ─── Expenses ────────────────────────────────────────────────
 const listExpenses = async ({ category, from, to, page = 1, limit = 50 }) => {

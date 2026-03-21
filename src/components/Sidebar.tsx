@@ -48,7 +48,7 @@ export function Sidebar() {
     { href: '/cms/pages', label: 'Website CMS', icon: Globe, show: user?.role === 'admin' || user?.permissions['master.manage_destinations'], isSetting: true },
     { href: '/finance/expenses', label: 'Finance', icon: DollarSign, show: user?.role === 'admin' || user?.permissions['payment.view_all'], isSetting: true },
     { href: '/branches', label: 'Branches', icon: Building2, show: user?.permissions['users.manage'], isSetting: true },
-    { href: '/integrations/sheets', label: 'Integrations', icon: Sheet, show: user?.permissions['users.manage'], isSetting: true },
+    { href: '/integrations/sheets', label: 'Integrations (Coming Soon)', icon: Sheet, show: user?.permissions['users.manage'], isSetting: true },
     { href: '/users', label: 'Team', icon: Users, show: user?.permissions['users.manage'], isSetting: true },
     { href: '/settings', label: 'Settings', icon: Settings, show: user?.role === 'admin', isSetting: true },
   ];
@@ -96,7 +96,10 @@ export function Sidebar() {
           </div>
         </Link>
         <button
-          onClick={() => useAuthStore.getState().logout()}
+          onClick={() => {
+            useAuthStore.getState().logout();
+            window.location.href = '/login';
+          }}
           className="flex items-center gap-3 px-3 py-2 rounded-md transition-colors text-sm font-medium mt-1 w-full text-red-500 hover:bg-red-50"
         >
           <LogOut className="w-4 h-4" />

@@ -6,8 +6,7 @@
 // configuration CRUD and a manual sync placeholder.
 // ============================================================
 
-const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
+const prisma = require('../config/prisma');
 
 const listConfigs = () => prisma.sheetSyncConfig.findMany({ orderBy: { name: 'asc' } });
 
