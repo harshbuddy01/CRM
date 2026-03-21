@@ -177,7 +177,7 @@ export default function UsersPage() {
                         >
                           <Shield className="w-4 h-4" />
                         </button>
-                        {currentUser?.id !== u.id && u.role?.name !== 'Administrator' ? (
+                        {currentUser?.id !== u.id && u.role?.name !== 'admin' && u.email !== 'admin@travelcrm.com' ? (
                           <button
                             onClick={() => updateMutation.mutate({
                               id: u.id,
