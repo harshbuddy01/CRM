@@ -97,10 +97,12 @@ const downloadPdf = async (req, res, next) => {
     `;
 
     const pdfBuffer = await pdfService.generatePdfFromHtml(htmlContent);
+    const buffer = Buffer.from(pdfBuffer);
 
     res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Length', buffer.length);
     res.setHeader('Content-Disposition', `attachment; filename=Proposal-v${proposal.version}-${proposal.query.queryCode}.pdf`);
-    res.send(pdfBuffer);
+    res.end(buffer);
   } catch (error) {
     console.error('PDF Generation Controller Error:', error);
     res.status(500).json({

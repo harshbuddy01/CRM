@@ -40,7 +40,8 @@ export default function ProposalsDashboard() {
     mutationFn: async (proposal: any) => {
       setDownloadingId(proposal.id);
       const res = await api.get(`/proposals/${proposal.id}/pdf`, { responseType: 'blob' });
-      const url = window.URL.createObjectURL(new Blob([res.data]));
+      const blob = new Blob([res.data], { type: 'application/pdf' });
+      const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
       link.setAttribute('download', `Proposal-v${proposal.version}-${proposal.query?.queryCode}.pdf`);
@@ -52,7 +53,7 @@ export default function ProposalsDashboard() {
     onSuccess: () => setDownloadingId(null),
     onError: () => {
       setDownloadingId(null);
-      // Need toast import if not there, let me check
+      toast.error('Failed to download PDF');
     }
   });
 
