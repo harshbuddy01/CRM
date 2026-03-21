@@ -220,23 +220,26 @@ const deleteUser = async (userId, adminId, reassignToId) => {
   
   const targetId = reassignToId || adminId;
 
-  // Re-assign all active queries
-  await prisma.query.updateMany({
-    where: { assignedTo: userId, status: { notIn: ['lost', 'invalid', 'confirmed'] } },
-    data: { assignedTo: targetId }
-  });
+  // Execute reassignments and deactivation in a single transaction
+  return await prisma.$transaction([
+    // Re-assign all active queries
+    prisma.query.updateMany({
+      where: { assignedTo: userId, status: { notIn: ['lost', 'invalid', 'confirmed'] } },
+      data: { assignedTo: targetId }
+    }),
+    
+    // Re-assign all active tours
+    prisma.tour.updateMany({
+      where: { assignedOps: userId, status: { notIn: ['completed', 'cancelled'] } },
+      data: { assignedOps: targetId }
+    }),
 
-  // Re-assign all active tours
-  await prisma.tour.updateMany({
-    where: { assignedOps: userId, status: { notIn: ['completed', 'cancelled'] } },
-    data: { assignedOps: targetId }
-  });
-
-  // Soft deactivate user
-  return await prisma.user.update({
-    where: { id: userId },
-    data: { isActive: false }
-  });
+    // Soft deactivate user
+    prisma.user.update({
+      where: { id: userId },
+      data: { isActive: false }
+    })
+  ]);
 };
 
 /**
