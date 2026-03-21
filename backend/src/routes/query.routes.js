@@ -34,8 +34,16 @@ const webhookApiKeyGuard = (req, res, next) => {
   next();
 };
 
+const webhookController = require('../controllers/webhook.controller');
+
 // Public Webhook for external landing pages
 router.post('/webhook/website', webhookApiKeyGuard, queryValidator.validateCreateQuery, queryController.createFromWebhook);
+
+// Public Webhooks for external lead sources (WhatsApp, Facebook, Google)
+router.post('/webhook/whatsapp', webhookApiKeyGuard, webhookController.createFromWhatsapp);
+router.post('/webhook/facebook', webhookController.createFromFacebook); // Facebook verifies via GET challenge
+router.get('/webhook/facebook', webhookController.createFromFacebook);  // Facebook subscription verification
+router.post('/webhook/google', webhookApiKeyGuard, webhookController.createFromGoogle);
 
 // ALL routes from here below are protected and require a valid JWT
 router.use(authenticate);
