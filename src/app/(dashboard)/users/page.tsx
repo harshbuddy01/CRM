@@ -177,15 +177,21 @@ export default function UsersPage() {
                         >
                           <Shield className="w-4 h-4" />
                         </button>
-                        <button
-                          onClick={() => updateMutation.mutate({
-                            id: u.id,
-                            data: { isActive: !u.isActive }
-                          })}
-                          className={`text-xs px-2 py-1 rounded ${u.isActive ? 'bg-red-100 text-red-700 hover:bg-red-200' : 'bg-green-100 text-green-700 hover:bg-green-200'}`}
-                        >
-                          {u.isActive ? 'Deactivate' : 'Activate'}
-                        </button>
+                        {currentUser?.id !== u.id && u.role?.name !== 'Administrator' ? (
+                          <button
+                            onClick={() => updateMutation.mutate({
+                              id: u.id,
+                              data: { isActive: !u.isActive }
+                            })}
+                            className={`text-xs px-2 py-1 rounded ${u.isActive ? 'bg-red-100 text-red-700 hover:bg-red-200' : 'bg-green-100 text-green-700 hover:bg-green-200'}`}
+                          >
+                            {u.isActive ? 'Deactivate' : 'Activate'}
+                          </button>
+                        ) : (
+                          <span className={`text-xs px-2 py-1 rounded bg-gray-100 text-gray-400 cursor-not-allowed`} title="System Admins cannot be deactivated">
+                            {u.isActive ? 'Deactivate' : 'Activate'}
+                          </span>
+                        )}
                         {currentUser?.id !== u.id && (
                           <button
                             onClick={() => setOffboardingUser(u)}
