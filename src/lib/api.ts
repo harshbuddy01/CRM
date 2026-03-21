@@ -60,11 +60,11 @@ api.interceptors.response.use(
         } catch {
           // Refresh hit a 401 or failed, force logout
           logout();
-          if (typeof window !== 'undefined') window.location.href = '/login';
+          window.location.href = '/login';
         }
       } else {
         logout();
-        if (typeof window !== 'undefined') window.location.href = '/login';
+        window.location.href = '/login';
       }
     }
 
