@@ -4,7 +4,7 @@
   "description": "",
   "main": "src/index.js",
   "scripts": {
-    "start": "concurrently \"node src/index.js\" \"node src/worker.js\"",
+    "start": "node src/index.js & node src/worker.js & wait",
     "dev": "nodemon src/index.js",
     "worker": "node src/worker.js",
     "migrate": "prisma migrate deploy",
