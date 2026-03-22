@@ -109,10 +109,13 @@ const sendQueryEmail = async ({ queryId, templateId, subject, body, cc, sentBy }
     data: {
       queryId,
       templateId,
+      to: query.email,
+      cc: cc || null,
       subject: finalSubject,
       body: finalBody,
       sentBy,
-      status: 'queued',
+      status: 'sent',
+      communicationType: 'customer',
     },
   });
 };

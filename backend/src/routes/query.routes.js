@@ -134,7 +134,7 @@ router.get('/:id/email-logs', can('query.view'), async (req, res, next) => {
     const prisma = require('../config/prisma');
     const logs = await prisma.emailLog.findMany({
       where: { queryId: req.params.id },
-      include: { sentByUser: { select: { id: true, name: true } } },
+      include: { sender: { select: { id: true, name: true } } },
       orderBy: { sentAt: 'desc' }
     });
     res.json({ success: true, data: logs });
