@@ -86,29 +86,32 @@ export default function ProfilePage() {
   };
 
   return (
-    <div className="space-y-6 max-w-2xl">
+    <div className="space-y-6 max-w-2xl p-4 md:p-0 pb-24 md:pb-8">
       <div>
-        <h1 className="text-2xl font-bold">My Profile</h1>
-        <p className="text-muted-foreground">Manage your account settings</p>
+        <h1 className="text-xl md:text-3xl font-black tracking-tight text-slate-900 leading-none">My Profile</h1>
+        <p className="text-muted-foreground mt-2 text-sm font-medium">Manage your account settings</p>
       </div>
 
       {/* Profile Info Card */}
-      <div className="rounded-lg border bg-card p-6 space-y-4">
-        <div className="flex items-center gap-4">
-          <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
+      <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-md">
+        <div className="flex items-center gap-5">
+          <div className="w-16 h-16 rounded-2xl bg-primary/5 border border-primary/10 flex items-center justify-center shadow-inner">
             <User className="w-8 h-8 text-primary" />
           </div>
-          <div className="flex-1">
-            <h2 className="text-lg font-semibold">{user?.name || 'Loading...'}</h2>
-            <p className="text-sm text-muted-foreground">{user?.email || ''}</p>
-            <span className="inline-flex items-center px-2 py-0.5 mt-1 rounded-full text-xs font-medium bg-primary/10 text-primary">
+          <div className="flex-1 min-w-0">
+            <h2 className="text-lg font-black text-slate-900 leading-tight truncate">{user?.name || 'Loading...'}</h2>
+            <p className="text-xs font-bold text-muted-foreground mt-0.5 truncate">{user?.email || ''}</p>
+            <span 
+              className="inline-flex items-center px-2.5 py-1 mt-2 rounded-lg text-[10px] font-black uppercase tracking-widest bg-primary/5 text-primary border border-primary/10"
+              aria-label="Account role"
+            >
               {user?.roleLabel || user?.role || 'User'}
             </span>
           </div>
           {!isEditingProfile && (
             <button
               onClick={() => setIsEditingProfile(true)}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition-all border border-transparent shadow-xs active:scale-95"
             >
               <Edit2 className="w-3.5 h-3.5" /> Edit
             </button>

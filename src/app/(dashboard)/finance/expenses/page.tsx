@@ -8,6 +8,8 @@ import { Receipt, Plus, Trash2, Loader2, X, Check, DollarSign, Filter } from 'lu
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Card } from '@/components/ui/card';
+import { cn } from '@/lib/utils';
 
 const CATEGORIES = ['travel', 'office', 'salary', 'marketing', 'vendor', 'misc'];
 const CAT_COLORS: Record<string, string> = { travel: 'bg-blue-100 text-blue-700', office: 'bg-purple-100 text-purple-700', salary: 'bg-green-100 text-green-700', marketing: 'bg-orange-100 text-orange-700', vendor: 'bg-red-100 text-red-700', misc: 'bg-gray-100 text-gray-600' };
@@ -32,13 +34,15 @@ export default function ExpensesPage() {
   const totalAmt = (data?.items || []).reduce((s: number, e: any) => s + Number(e.amount), 0);
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between flex-wrap gap-3">
+    <div className="space-y-6 p-4 md:p-0 pb-24 md:pb-8">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold">Expenses</h1>
-          <p className="text-muted-foreground text-sm">Track all business expenses</p>
+          <h1 className="text-xl md:text-2xl font-bold tracking-tight">Expenses</h1>
+          <p className="text-muted-foreground text-xs md:text-sm">Track all business expenses</p>
         </div>
-        <Button onClick={() => setShowForm(true)}><Plus className="w-4 h-4 mr-2" /> Record Expense</Button>
+        <Button onClick={() => setShowForm(true)} className="w-full sm:w-auto rounded-xl font-bold h-11 sm:h-9 shadow-md transition-all active:scale-95">
+          <Plus className="w-4 h-4 mr-2" /> Record Expense
+        </Button>
       </div>
 
       {/* Summary Card */}
@@ -71,26 +75,89 @@ export default function ExpensesPage() {
       ) : !data?.items?.length ? (
         <div className="border-2 border-dashed rounded-xl py-16 text-center text-muted-foreground"><Receipt className="w-10 h-10 mx-auto mb-3 opacity-30" /><p>No expenses recorded</p></div>
       ) : (
-        <div className="border rounded-xl overflow-hidden">
+      <div className="space-y-4">
+        {/* Desktop Table */}
+        <div className="hidden md:block border rounded-xl overflow-hidden bg-card shadow-sm">
           <table className="w-full text-sm">
-            <thead className="bg-muted/50 text-xs uppercase text-muted-foreground"><tr>
-              <th className="px-4 py-3 text-left">Date</th><th className="px-4 py-3 text-left">Category</th>
-              <th className="px-4 py-3 text-left">Vendor</th><th className="px-4 py-3 text-left">Description</th>
-              <th className="px-4 py-3 text-right">Amount</th><th className="px-4 py-3 text-left">By</th><th className="px-4 py-3"></th>
-            </tr></thead>
-            <tbody className="divide-y">{data.items.map((e: any) => (
-              <tr key={e.id} className="hover:bg-muted/20">
-                <td className="px-4 py-3">{new Date(e.expenseDate).toLocaleDateString('en-IN')}</td>
-                <td className="px-4 py-3"><span className={`text-xs px-2 py-0.5 rounded-full ${CAT_COLORS[e.category] || 'bg-gray-100'}`}>{e.category}</span></td>
-                <td className="px-4 py-3">{e.vendor || '-'}</td>
-                <td className="px-4 py-3 max-w-[200px] truncate">{e.description || '-'}</td>
-                <td className="px-4 py-3 text-right font-semibold">₹{Number(e.amount).toLocaleString('en-IN')}</td>
-                <td className="px-4 py-3 text-muted-foreground">{e.user?.name}</td>
-                <td className="px-4 py-3"><button onClick={() => { if(confirm('Delete?')) deleteMut.mutate(e.id); }} className="text-red-500 hover:text-red-700"><Trash2 className="w-3.5 h-3.5" /></button></td>
+            <thead className="bg-muted/50 text-xs uppercase text-muted-foreground font-bold italic">
+              <tr>
+                <th className="px-4 py-3 text-left">Date</th>
+                <th className="px-4 py-3 text-left">Category</th>
+                <th className="px-4 py-3 text-left">Vendor</th>
+                <th className="px-4 py-3 text-left">Description</th>
+                <th className="px-4 py-3 text-right">Amount</th>
+                <th className="px-4 py-3 text-left">By</th>
+                <th className="px-4 py-3"></th>
               </tr>
-            ))}</tbody>
+            </thead>
+            <tbody className="divide-y">
+              {data.items.map((e: any) => (
+                <tr key={e.id} className="hover:bg-muted/20 transition-colors">
+                  <td className="px-4 py-3 font-medium">{new Date(e.expenseDate).toLocaleDateString('en-IN')}</td>
+                  <td className="px-4 py-3">
+                    <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full border shadow-sm ${CAT_COLORS[e.category] || 'bg-gray-100'}`}>
+                      {e.category}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 font-semibold text-slate-700">{e.vendor || '-'}</td>
+                  <td className="px-4 py-3 max-w-[200px] truncate text-slate-500">{e.description || '-'}</td>
+                  <td className="px-4 py-3 text-right font-black text-slate-900">₹{Number(e.amount).toLocaleString('en-IN')}</td>
+                  <td className="px-4 py-3 text-[10px] font-bold text-muted-foreground uppercase">{e.user?.name}</td>
+                  <td className="px-4 py-3">
+                    <button 
+                      onClick={() => { if(confirm('Delete?')) deleteMut.mutate(e.id); }} 
+                      className="text-red-400 hover:text-red-600 p-1 hover:bg-red-50 rounded-full transition-all"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
           </table>
         </div>
+
+        {/* Mobile Cards */}
+        <div className="md:hidden space-y-3">
+          {data.items.map((e: any) => (
+            <Card key={e.id} className="p-4 border-slate-200 shadow-sm active:scale-[0.98] transition-all">
+              <div className="flex justify-between items-start mb-3">
+                <div className="space-y-1">
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">
+                    {new Date(e.expenseDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
+                  </p>
+                  <h3 className="font-bold text-sm text-slate-900 leading-tight">{e.vendor || 'Unknown Vendor'}</h3>
+                </div>
+                <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded border ${CAT_COLORS[e.category] || 'bg-gray-100'}`}>
+                  {e.category}
+                </span>
+              </div>
+              
+              <div className="flex justify-between items-end pt-3 border-t">
+                <div className="space-y-0.5">
+                  <p className="text-[10px] text-slate-400 font-bold uppercase">Recorded By</p>
+                  <p className="text-xs font-semibold text-slate-600">{e.user?.name}</p>
+                </div>
+                <div className="text-right space-y-0.5">
+                  <p className="text-[10px] text-slate-400 font-bold uppercase">Amount</p>
+                  <p className="text-lg font-black text-red-600">₹{Number(e.amount).toLocaleString('en-IN')}</p>
+                </div>
+              </div>
+
+              <div className="mt-3 flex justify-end">
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="h-8 rounded-lg text-[10px] font-bold text-destructive hover:bg-destructive/10"
+                  onClick={() => { if(confirm('Delete?')) deleteMut.mutate(e.id); }}
+                >
+                  <Trash2 className="w-3 h-3 mr-1.5" /> Delete Record
+                </Button>
+              </div>
+            </Card>
+          ))}
+        </div>
+      </div>
       )}
     </div>
   );

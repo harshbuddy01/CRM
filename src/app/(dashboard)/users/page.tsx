@@ -1,12 +1,15 @@
 'use client';
 
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
+import { Button } from '@/components/ui/button';
 import { useAuthStore } from '@/lib/auth-store';
 import { UserPlus, Shield, Edit2, CheckCircle, XCircle, Trash2, ChevronDown, ChevronUp, KeyRound } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
+import { Card } from '@/components/ui/card';
+import { cn } from '@/lib/utils';
 
 interface User {
   id: string;
@@ -88,15 +91,15 @@ export default function UsersPage() {
   });
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="space-y-6 p-4 md:p-0 pb-24 md:pb-8">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold">Team Management</h1>
-          <p className="text-muted-foreground">Manage users, roles, and permission overrides</p>
+          <h1 className="text-xl md:text-2xl font-bold tracking-tight">Team Management</h1>
+          <p className="text-muted-foreground text-xs md:text-sm">Manage users, roles, and permission overrides</p>
         </div>
         <button
           onClick={() => setShowCreateForm(!showCreateForm)}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 text-sm font-medium"
+          className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-primary text-primary-foreground hover:bg-primary/90 text-sm font-bold rounded-xl w-full sm:w-auto h-11 sm:h-9 shadow-md transition-all active:scale-95"
         >
           <UserPlus className="w-4 h-4" /> Add User
         </button>
@@ -108,95 +111,81 @@ export default function UsersPage() {
       )}
 
       {/* Users Table */}
-      {isLoading ? (
-        <div className="space-y-4">
-          {[1, 2, 3].map(i => <div key={i} className="h-20 bg-muted/50 rounded-lg animate-pulse" />)}
-        </div>
-      ) : (
-        <div className="rounded-lg border bg-card">
-          <table className="w-full">
+      <div className="space-y-4">
+        {/* Desktop Table */}
+        <div className="hidden md:block rounded-xl border bg-card shadow-sm overflow-hidden">
+          <table className="w-full text-sm">
             <thead>
-              <tr className="border-b text-left text-sm text-muted-foreground">
-                <th className="p-4 w-12">S.No</th>
+              <tr className="border-b bg-slate-50/50 text-left text-xs font-black uppercase tracking-wider text-slate-400">
+                <th className="p-4 w-12 text-center italic">#</th>
                 <th className="p-4">Name</th>
                 <th className="p-4">Email</th>
                 <th className="p-4">Role</th>
                 <th className="p-4">Status</th>
                 <th className="p-4">Leads</th>
-                <th className="p-4">Last Updated</th>
-                <th className="p-4">Actions</th>
+                <th className="p-4">Updated</th>
+                <th className="p-4 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="divide-y divide-slate-100">
               {usersData?.map((u: User, index: number) => (
-                <>
-                  <tr key={u.id} className="border-b last:border-0 hover:bg-muted/50">
-                    <td className="p-4 text-sm text-muted-foreground">{index + 1}</td>
-                    <td className="p-4 font-medium">{u.name}</td>
-                    <td className="p-4 text-sm text-muted-foreground">{u.email}</td>
+                <React.Fragment key={u.id}>
+                  <tr className="hover:bg-slate-50/50 transition-colors group">
+                    <td className="p-4 text-center font-bold text-slate-300 italic">{index + 1}</td>
+                    <td className="p-4 font-black text-slate-900">{u.name}</td>
+                    <td className="p-4 font-medium text-slate-500">{u.email}</td>
                     <td className="p-4">
-                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary">
-                        {u.role.label}{u.department ? ` · ${u.department}` : ''}
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-blue-50 text-blue-700 border border-blue-100">
+                        {u.role?.label ?? 'User'}{u.department ? ` · ${u.department}` : ''}
                       </span>
                     </td>
                     <td className="p-4">
-                      <div className="flex items-center gap-1">
+                      <div className="flex items-center gap-1.5">
                         {u.isActive ? (
-                          <span className="inline-flex items-center gap-1 text-green-600 text-sm">
+                          <span className="inline-flex items-center gap-1 text-emerald-600 text-[10px] font-black uppercase">
                             <CheckCircle className="w-3 h-3" /> Active
                           </span>
                         ) : (
-                          <span className="inline-flex items-center gap-1 text-red-500 text-sm">
+                          <span className="inline-flex items-center gap-1 text-red-500 text-[10px] font-black uppercase">
                             <XCircle className="w-3 h-3" /> Inactive
                           </span>
                         )}
                         {u.isOnLeave && (
-                          <span className="ml-2 text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">On Leave</span>
+                          <span className="text-[9px] font-black uppercase bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full border border-amber-200">On Leave</span>
                         )}
                       </div>
                     </td>
                     <td className="p-4">
-                      <span className="text-sm">{u.activeLeadCount} / {u.maxLeads}</span>
+                      <div className="flex flex-col">
+                        <span className="font-black text-slate-900 leading-none">{u.activeLeadCount}</span>
+                        <span className="text-[10px] font-bold text-slate-400 uppercase leading-normal">/ {u.maxLeads}</span>
+                      </div>
                     </td>
-                    <td className="p-4 text-sm text-muted-foreground">
-                      {u.updatedAt ? format(new Date(u.updatedAt), 'dd MMM yyyy') : '—'}
+                    <td className="p-4 text-[10px] font-bold text-slate-400 uppercase">
+                      {u.updatedAt ? format(new Date(u.updatedAt), 'dd MMM yy') : '—'}
                     </td>
-                    <td className="p-4">
-                      <div className="flex items-center gap-2">
+                    <td className="p-4 text-right">
+                      <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                         <button
                           onClick={() => setEditingUserId(editingUserId === u.id ? null : u.id)}
-                          className="text-muted-foreground hover:text-foreground"
+                          className="p-1.5 text-slate-400 hover:text-primary hover:bg-primary/10 rounded-lg transition-all"
                           title="Edit User"
                         >
                           <Edit2 className="w-4 h-4" />
                         </button>
                         <button
                           onClick={() => setExpandedPermissions(expandedPermissions === u.id ? null : u.id)}
-                          className="text-muted-foreground hover:text-foreground"
+                          className="p-1.5 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-all"
                           title="Permissions"
                         >
                           <Shield className="w-4 h-4" />
                         </button>
-                        {currentUser?.id !== u.id && u.role?.name !== 'admin' && u.email !== 'admin@travelcrm.com' ? (
-                          <button
-                            onClick={() => updateMutation.mutate({
-                              id: u.id,
-                              data: { isActive: !u.isActive }
-                            })}
-                            className={`text-xs px-2 py-1 rounded ${u.isActive ? 'bg-red-100 text-red-700 hover:bg-red-200' : 'bg-green-100 text-green-700 hover:bg-green-200'}`}
-                          >
-                            {u.isActive ? 'Deactivate' : 'Activate'}
-                          </button>
-                        ) : (
-                          <span className={`text-xs px-2 py-1 rounded bg-gray-100 text-gray-400 cursor-not-allowed`} title="System Admins cannot be deactivated">
-                            {u.isActive ? 'Deactivate' : 'Activate'}
-                          </span>
-                        )}
-                        {currentUser?.id !== u.id && (
+                        {currentUser?.id !== u.id && u.role?.name !== 'admin' && (
                           <button
                             onClick={() => setOffboardingUser(u)}
-                            className="p-1 hover:bg-red-50 rounded text-red-500"
-                            title="Deactivate User & Reassign Work"
+                            className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
+                            title="Remove User"
+                            aria-label={`Delete user ${u.name}`}
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>
@@ -204,10 +193,10 @@ export default function UsersPage() {
                       </div>
                     </td>
                   </tr>
-                  {/* Inline Edit Row */}
+                  {/* Inline Edit & Permissions Row Content (Desktop) */}
                   {editingUserId === u.id && (
-                    <tr key={`edit-${u.id}`} className="bg-muted/30">
-                      <td colSpan={8} className="p-4">
+                    <tr className="bg-slate-50/50">
+                      <td colSpan={8} className="p-6 border-y border-slate-100 shadow-inner">
                         <EditUserForm
                           user={u}
                           roles={roles || []}
@@ -218,20 +207,115 @@ export default function UsersPage() {
                       </td>
                     </tr>
                   )}
-                  {/* Inline Permissions Row */}
                   {expandedPermissions === u.id && (
-                    <tr key={`perm-${u.id}`} className="bg-muted/30">
-                      <td colSpan={8} className="p-4">
+                    <tr className="bg-slate-50/50">
+                      <td colSpan={8} className="p-6 border-y border-slate-100 shadow-inner">
                         <PermissionsPanel userId={u.id} userName={u.name} />
                       </td>
                     </tr>
                   )}
-                </>
+                </React.Fragment>
               ))}
             </tbody>
           </table>
         </div>
-      )}
+
+        {/* Mobile Cards */}
+        <div className="md:hidden space-y-3">
+          {usersData?.map((u: User) => (
+            <Card key={u.id} className="p-4 border-slate-200 shadow-sm active:scale-[0.98] transition-all">
+              <div className="flex justify-between items-start mb-4">
+                <div className="space-y-1">
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">
+                    {u.role?.label ?? 'User'}{u.department ? ` · ${u.department}` : ''}
+                  </p>
+                  <h3 className="font-black text-base text-slate-900 leading-tight">{u.name}</h3>
+                  <p className="text-xs font-medium text-slate-500">{u.email}</p>
+                </div>
+                <div className="flex flex-col items-end gap-1.5">
+                  {u.isActive ? (
+                    <span className="inline-flex items-center gap-1 text-emerald-600 text-[9px] font-black uppercase border border-emerald-100 bg-emerald-50 px-1.5 py-0.5 rounded shadow-xs">
+                      <CheckCircle className="w-2.5 h-2.5" /> Active
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 text-red-500 text-[9px] font-black uppercase border border-red-100 bg-red-50 px-1.5 py-0.5 rounded shadow-xs">
+                      <XCircle className="w-2.5 h-2.5" /> Inactive
+                    </span>
+                  )}
+                  {u.isOnLeave && (
+                    <span className="text-[8px] font-black uppercase bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded border border-amber-200">Leave</span>
+                  )}
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4 py-3 border-y border-slate-100 my-4">
+                <div className="space-y-0.5">
+                  <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider text-center">In Hand Leads</p>
+                  <p className="text-lg font-black text-slate-900 text-center leading-none">{u.activeLeadCount}</p>
+                </div>
+                <div className="space-y-0.5 border-l border-slate-100 pl-4 text-center">
+                  <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">Cap Limit</p>
+                  <p className="text-lg font-black text-slate-900 leading-none">{u.maxLeads}</p>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap gap-2 pt-1">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className={cn(
+                    "flex-1 h-9 rounded-xl font-black text-[10px] uppercase shadow-sm tracking-wide transition-all",
+                    editingUserId === u.id ? "bg-primary text-white" : "text-slate-600"
+                  )}
+                  onClick={() => setEditingUserId(editingUserId === u.id ? null : u.id)}
+                >
+                  <Edit2 className="w-3 h-3 mr-1.5" /> {editingUserId === u.id ? 'Close Edit' : 'Edit Profile'}
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className={cn(
+                    "flex-1 h-9 rounded-xl font-black text-[10px] uppercase shadow-sm tracking-wide transition-all",
+                    expandedPermissions === u.id ? "bg-amber-100 border-amber-300 text-amber-800" : "text-slate-600"
+                  )}
+                  onClick={() => setExpandedPermissions(expandedPermissions === u.id ? null : u.id)}
+                >
+                  <Shield className="w-3 h-3 mr-1.5" /> Permissions
+                </Button>
+                {currentUser?.id !== u.id && u.role?.name !== 'admin' && (
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="h-9 w-9 rounded-xl text-red-500 hover:bg-red-50 p-0 shadow-xs"
+                    onClick={() => setOffboardingUser(u)}
+                    aria-label={`Delete user ${u.name}`}
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </Button>
+                )}
+              </div>
+
+              {/* Responsive Inline Panels (Mobile) */}
+              {editingUserId === u.id && (
+                <div className="mt-4 pt-4 border-t border-slate-100">
+                  <EditUserForm
+                    user={u}
+                    roles={roles || []}
+                    onSubmit={(data: any) => updateMutation.mutate({ id: u.id, data })}
+                    isLoading={updateMutation.isPending}
+                    onCancel={() => setEditingUserId(null)}
+                  />
+                </div>
+              )}
+              {expandedPermissions === u.id && (
+                <div className="mt-4 pt-4 border-t border-slate-100">
+                  <PermissionsPanel userId={u.id} userName={u.name} />
+                </div>
+              )}
+            </Card>
+          ))}
+        </div>
+      </div>
 
       {/* Offboarding Modal */}
       {offboardingUser && (

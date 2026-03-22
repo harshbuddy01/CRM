@@ -29,6 +29,7 @@ import {
   MapPin,
   Download
 } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import { format } from 'date-fns';
 
@@ -89,79 +90,45 @@ export default function ProposalsDashboard() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-4 md:p-0 pb-24 md:pb-8">
       <div className="flex justify-between items-start">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-slate-900">Proposals Dashboard</h1>
-          <p className="text-muted-foreground mt-1 text-sm">Track generated quotes and PDF statuses across leads.</p>
+          <h1 className="text-xl md:text-3xl font-black tracking-tight text-slate-900 leading-none">Proposals Dashboard</h1>
+          <p className="text-muted-foreground mt-2 text-xs md:text-sm font-medium">Track generated quotes and PDF statuses across leads.</p>
         </div>
       </div>
 
       {/* Summary Row */}
+      {/* Summary Row */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
-        <Card className="bg-white dark:bg-slate-900 border-slate-200">
-          <CardContent className="pt-4 md:pt-6 px-3 md:px-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-[10px] md:text-sm font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider">Total</p>
-                <h3 className="text-xl md:text-2xl font-black mt-0.5">{stats.total}</h3>
+        {[
+          { label: 'Total', value: stats.total, icon: FileText, color: 'blue', text: 'text-blue-600/70', bg: 'bg-blue-50', iconColor: 'text-blue-600' },
+          { label: 'Ready', value: stats.ready, icon: CheckCircle2, color: 'emerald', text: 'text-emerald-600/70', bg: 'bg-emerald-50', iconColor: 'text-emerald-600' },
+          { label: 'Sent', value: stats.sent, icon: Send, color: 'purple', text: 'text-purple-600/70', bg: 'bg-purple-50', iconColor: 'text-purple-600' },
+          { label: 'Wait', value: stats.pending, icon: Clock, color: 'amber', text: 'text-amber-600/70', bg: 'bg-amber-50', iconColor: 'text-amber-600' },
+        ].map((item) => (
+          <Card key={item.label} className="bg-white border-slate-200 shadow-sm rounded-2xl overflow-hidden">
+            <CardContent className="p-4 md:p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className={cn("text-[10px] md:text-xs font-black uppercase tracking-widest", item.text)}>{item.label}</p>
+                  <h3 className="text-lg md:text-2xl font-black mt-1 text-slate-900">{item.value}</h3>
+                </div>
+                <div className={cn("p-2 rounded-xl shadow-sm", item.bg, item.iconColor)}>
+                  <item.icon className="w-4 h-4 md:w-5 md:h-5" />
+                </div>
               </div>
-              <div className="p-1.5 md:p-2 bg-blue-50 dark:bg-blue-900/30 rounded-lg text-blue-600">
-                <FileText className="w-4 h-4 md:w-5 md:h-5" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-white dark:bg-slate-900 border-slate-200">
-          <CardContent className="pt-4 md:pt-6 px-3 md:px-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-[10px] md:text-sm font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">Ready</p>
-                <h3 className="text-xl md:text-2xl font-black mt-0.5">{stats.ready}</h3>
-              </div>
-              <div className="p-1.5 md:p-2 bg-emerald-50 dark:bg-emerald-900/30 rounded-lg text-emerald-600">
-                <CheckCircle2 className="w-4 h-4 md:w-5 md:h-5" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-white dark:bg-slate-900 border-slate-200">
-          <CardContent className="pt-4 md:pt-6 px-3 md:px-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-[10px] md:text-sm font-bold text-purple-600 dark:text-purple-400 uppercase tracking-wider">Sent</p>
-                <h3 className="text-xl md:text-2xl font-black mt-0.5">{stats.sent}</h3>
-              </div>
-              <div className="p-1.5 md:p-2 bg-purple-50 dark:bg-purple-900/30 rounded-lg text-purple-600">
-                <Send className="w-4 h-4 md:w-5 md:h-5" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-white dark:bg-slate-900 border-slate-200">
-          <CardContent className="pt-4 md:pt-6 px-3 md:px-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-[10px] md:text-sm font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider">Wait</p>
-                <h3 className="text-xl md:text-2xl font-black mt-0.5">{stats.pending}</h3>
-              </div>
-              <div className="p-1.5 md:p-2 bg-amber-50 dark:bg-amber-900/30 rounded-lg text-amber-600">
-                <Clock className="w-4 h-4 md:w-5 md:h-5" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        ))}
       </div>
 
-      <div className="flex items-center gap-4 bg-card p-4 rounded-lg border shadow-sm">
-        <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+      <div className="flex items-center gap-4 bg-card p-4 rounded-2xl border border-slate-200 shadow-sm">
+        <div className="relative flex-1 max-w-lg">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
           <Input 
             placeholder="Search proposals..." 
-            className="pl-8 h-10 md:h-9"
+            className="pl-10 h-10 rounded-xl border-slate-200 focus:ring-primary/20"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -258,16 +225,16 @@ export default function ProposalsDashboard() {
             {/* Mobile Card View */}
             <div className="md:hidden space-y-3 pb-8">
               {filteredProposals.map((p: any) => (
-                <Card key={p.id} className="p-4 border-slate-200 shadow-sm active:scale-[0.98] transition-transform">
-                  <div className="flex justify-between items-start mb-3">
-                    <div className="space-y-0.5">
+                <Card key={p.id} className="p-5 border-slate-200 shadow-md rounded-2xl active:scale-[0.98] transition-all overflow-hidden">
+                  <div className="flex justify-between items-start mb-4">
+                    <div className="space-y-1">
                       <div className="flex items-center gap-2">
-                        <span className="text-[10px] font-black text-primary bg-primary/5 px-1.5 py-0.5 rounded border border-primary/10">V{p.version}</span>
-                        <span className="text-[10px] font-bold text-slate-400 tracking-widest uppercase">{p.query?.queryCode}</span>
+                        <span className="text-[9px] font-black text-primary bg-primary/5 px-2 py-0.5 rounded-lg border border-primary/20 shadow-xs uppercase tracking-tighter">Ver {p.version}</span>
+                        <span className="text-[9px] font-black text-slate-400 tracking-widest uppercase">{p.query?.queryCode}</span>
                       </div>
-                      <h3 className="font-bold text-base text-slate-900">{p.query?.name}</h3>
+                      <h3 className="font-black text-lg text-slate-900 leading-tight">{p.query?.name}</h3>
                     </div>
-                    <span className={`px-2 py-0.5 rounded text-[9px] font-black tracking-wider uppercase border ${
+                    <span className={`px-2.5 py-1 rounded-lg text-[9px] font-black tracking-widest uppercase border shadow-sm ${
                       p.pdfStatus === 'ready' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
                       p.pdfStatus === 'pending' ? 'bg-amber-50 text-amber-600 border-amber-100' :
                       'bg-red-50 text-red-600 border-red-100'
@@ -276,32 +243,33 @@ export default function ProposalsDashboard() {
                     </span>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-3 mb-4 text-xs">
-                    <div className="space-y-1">
+                  <div className="grid grid-cols-2 gap-4 mb-5 text-xs bg-slate-50 p-3 rounded-xl border border-slate-100">
+                    <div className="space-y-0.5">
+                      <p className="text-[9px] text-slate-400 font-black uppercase tracking-widest leading-none mb-1">Selling Price</p>
                       <p className="font-black text-slate-900 text-sm">
                         {p.sellingPrice && isFinite(Number(p.sellingPrice))
                           ? `₹${Number(p.sellingPrice).toLocaleString('en-IN')}`
                           : '—'}
                       </p>
                     </div>
-                    <div className="space-y-1">
-                      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tight">Destination</p>
-                      <p className="font-bold text-slate-700 truncate">{p.query?.destination || '—'}</p>
+                    <div className="space-y-0.5 text-right">
+                      <p className="text-[9px] text-slate-400 font-black uppercase tracking-widest leading-none mb-1">Destination</p>
+                      <p className="font-black text-slate-700 truncate">{p.query?.destination || '—'}</p>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2 pt-3 border-t">
+                  <div className="flex items-center gap-3">
                     <Button 
-                      className="flex-1 bg-primary text-white font-bold h-10 rounded-xl"
+                      className="flex-1 bg-primary text-white font-black h-11 rounded-xl shadow-lg shadow-primary/10 transition-all active:scale-95"
                       onClick={() => downloadPdf.mutate(p)}
                       disabled={downloadingId === p.id}
                     >
                       {downloadingId === p.id ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Download className="w-4 h-4 mr-2" />}
-                      Download PDF
+                      GET PDF
                     </Button>
                     <Link href={`/queries/${p.queryId}`}>
-                      <Button variant="outline" size="icon" className="h-10 w-10 border-slate-200 text-slate-400 hover:text-primary rounded-xl">
-                        <Eye className="w-4 h-4" />
+                      <Button variant="outline" size="icon" className="h-11 w-11 border-slate-200 text-slate-400 hover:text-primary rounded-xl shadow-sm">
+                        <Eye className="w-5 h-5" />
                       </Button>
                     </Link>
                   </div>

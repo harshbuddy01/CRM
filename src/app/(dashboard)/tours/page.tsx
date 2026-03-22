@@ -33,11 +33,11 @@ export default function ToursListPage() {
   );
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-4 md:p-0 pb-24 md:pb-8">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-100">Tours Management</h1>
-          <p className="text-muted-foreground mt-1 text-sm">Monitor and manage all active, upcoming, and completed tours.</p>
+          <h1 className="text-xl md:text-3xl font-black tracking-tight text-slate-900 leading-none">Tours Management</h1>
+          <p className="text-muted-foreground mt-2 text-xs md:text-sm font-medium">Monitor and manage all active, upcoming, and completed tours.</p>
         </div>
       </div>
 
@@ -83,52 +83,55 @@ export default function ToursListPage() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredTours.map((tour: any) => (
-            <Card key={tour.id} className="hover:border-primary/50 transition-colors group">
+            <Card key={tour.id} className="border-slate-200 shadow-md hover:shadow-lg transition-all group overflow-hidden rounded-2xl active:scale-[0.98]">
               <CardHeader className="pb-4">
                 <div className="flex justify-between items-start">
-                  <div>
-                    <CardTitle className="text-lg flex items-center gap-2">
-                      {tour.tourCode}
-                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase ${
-                        tour.status === 'running' ? 'bg-blue-100 text-blue-700' :
-                        tour.status === 'upcoming' ? 'bg-amber-100 text-amber-700' :
-                        tour.status === 'completed' ? 'bg-emerald-100 text-emerald-700' :
-                        'bg-red-100 text-red-700'
-                      }`}>
-                        {tour.status}
-                      </span>
+                  <div className="space-y-1">
+                    <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest leading-none mb-1">{tour.tourCode}</p>
+                    <CardTitle className="text-lg font-black text-slate-900 leading-tight">
+                      {tour.query?.name ?? 'Unnamed Tour'}
                     </CardTitle>
-                    <CardDescription className="font-medium text-foreground mt-1">
-                      {tour.query?.name}
-                    </CardDescription>
                   </div>
+                  <span className={`px-2.5 py-1 rounded-lg text-[9px] font-black tracking-widest uppercase border shadow-sm ${
+                    tour.status === 'running' ? 'bg-blue-50 text-blue-600 border-blue-100' :
+                    tour.status === 'upcoming' ? 'bg-amber-50 text-amber-600 border-amber-100' :
+                    tour.status === 'completed' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
+                    'bg-red-50 text-red-600 border-red-100'
+                  }`}>
+                    {tour.status}
+                  </span>
                 </div>
               </CardHeader>
-              <CardContent>
-                <div className="space-y-3 text-sm">
-                  <div className="flex items-center text-muted-foreground">
-                    <MapPin className="w-4 h-4 mr-2" />
-                    {tour.query?.destination || 'Destination TBD'}
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-2 gap-3 p-3 bg-slate-50 rounded-xl border border-slate-100">
+                  <div className="space-y-0.5">
+                    <p className="text-[9px] text-slate-400 font-black uppercase tracking-widest">Destination</p>
+                    <p className="font-black text-slate-700 text-xs truncate">{tour.query?.destination ?? '—'}</p>
                   </div>
-                  <div className="flex items-center text-muted-foreground">
-                    <CalendarIcon className="w-4 h-4 mr-2" />
-                    {format(new Date(tour.startDate), 'MMM d, yyyy')} - {format(new Date(tour.endDate), 'MMM d, yyyy')}
+                  <div className="space-y-0.5 text-right">
+                    <p className="text-[9px] text-slate-400 font-black uppercase tracking-widest">Guests</p>
+                    <p className="font-black text-slate-700 text-xs">{tour.passengerCount}</p>
                   </div>
-                  <div className="flex items-center text-muted-foreground">
-                    <Users className="w-4 h-4 mr-2" />
-                    {tour.passengerCount} Passengers
+                </div>
+
+                <div className="space-y-2 text-xs">
+                  <div className="flex items-center font-bold text-slate-500">
+                    <CalendarIcon className="w-3.5 h-3.5 mr-2 text-slate-400" />
+                    {tour.startDate && !isNaN(new Date(tour.startDate).getTime()) ? format(new Date(tour.startDate), 'MMM d') : '—'} - {tour.endDate && !isNaN(new Date(tour.endDate).getTime()) ? format(new Date(tour.endDate), 'MMM d, yyyy') : '—'}
                   </div>
                   {tour.assignedOpsUser && (
-                    <div className="mt-4 pt-4 border-t flex justify-between items-center text-xs">
-                      <span className="text-muted-foreground">Ops: <span className="font-medium text-foreground">{tour.assignedOpsUser.name}</span></span>
+                    <div className="flex items-center font-bold text-slate-500">
+                      <Users className="w-3.5 h-3.5 mr-2 text-slate-400" />
+                      Ops: <span className="text-slate-900 ml-1">{tour.assignedOpsUser.name}</span>
                     </div>
                   )}
-                  <Link href={`/tours/${tour.id}`} className="block mt-4">
-                    <Button variant="secondary" className="w-full group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
-                      View Tour Details <ArrowRight className="w-4 h-4 ml-2" />
-                    </Button>
-                  </Link>
                 </div>
+
+                <Link href={`/tours/${tour.id}`} className="block">
+                  <Button className="w-full h-11 rounded-xl font-bold bg-primary shadow-lg shadow-primary/10 active:scale-95 transition-all">
+                    View Details <ArrowRight className="w-4 h-4 ml-2" />
+                  </Button>
+                </Link>
               </CardContent>
             </Card>
           ))}

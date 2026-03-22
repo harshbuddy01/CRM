@@ -78,17 +78,17 @@ export default function QueriesPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-4 md:p-0 pb-24 md:pb-8">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Leads Pipeline</h1>
-          <p className="text-muted-foreground mt-1 text-sm">
+          <h1 className="text-xl md:text-3xl font-black tracking-tight text-slate-900 leading-none">Leads Pipeline</h1>
+          <p className="text-muted-foreground mt-2 text-xs md:text-sm font-medium">
             Manage your incoming trip requests and queries.
           </p>
         </div>
         {user?.permissions['query.create'] && (
-          <Link href="/queries/new">
-            <Button>
+          <Link href="/queries/new" className="w-full sm:w-auto">
+            <Button className="w-full h-11 sm:h-9 rounded-xl font-bold bg-primary shadow-lg shadow-primary/20 transition-all active:scale-95">
               <PlusCircle className="w-4 h-4 mr-2" />
               New Lead
             </Button>
@@ -97,19 +97,19 @@ export default function QueriesPage() {
       </div>
 
       {/* Filters Bar */}
-      <div className="flex flex-col sm:flex-row gap-4 items-center justify-between bg-card p-4 rounded-md border shadow-sm">
-        <form onSubmit={handleSearch} className="flex-1 w-full flex items-center gap-2 max-w-sm">
+      <div className="flex flex-col sm:flex-row gap-4 items-center justify-between bg-card p-4 rounded-2xl border border-slate-200 shadow-sm">
+        <form onSubmit={handleSearch} className="flex-1 w-full flex items-center gap-2 max-w-lg">
           <div className="relative w-full">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
             <Input
               type="search"
               placeholder="Search leads..."
-              className="pl-8"
+              className="pl-10 h-10 rounded-xl border-slate-200 focus:ring-primary/20"
               value={tempSearch}
               onChange={(e) => setTempSearch(e.target.value)}
             />
           </div>
-          <Button type="submit" variant="secondary">Search</Button>
+          <Button type="submit" variant="secondary" className="rounded-xl font-bold h-10 px-6">Search</Button>
         </form>
 
         <div className="flex items-center gap-2 w-full sm:w-auto">
@@ -120,13 +120,13 @@ export default function QueriesPage() {
               setPage(1);
             }}
           >
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="All Statuses" />
+            <SelectTrigger className="w-full sm:w-[200px] h-10 rounded-xl border-slate-200 font-bold text-xs uppercase tracking-wider">
+              <SelectValue placeholder="Status: All" />
             </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Statuses</SelectItem>
+            <SelectContent className="rounded-xl">
+              <SelectItem value="all" className="text-xs font-bold uppercase tracking-wider">All Statuses</SelectItem>
               {statusSettings?.map((s: any) => (
-                <SelectItem key={s.code} value={s.code}>{s.label}</SelectItem>
+                <SelectItem key={s.code} value={s.code} className="text-xs font-bold uppercase tracking-wider">{s.label}</SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -232,7 +232,7 @@ export default function QueriesPage() {
               {queries.map((q) => (
                 <Card 
                   key={q.id} 
-                  className="p-4 active:scale-[0.98] transition-transform cursor-pointer border-slate-200 shadow-sm"
+                  className="p-5 active:scale-[0.98] transition-all cursor-pointer border-slate-200 shadow-md hover:shadow-lg rounded-2xl"
                   onClick={() => router.push(`/queries/${q.id}`)}
                   tabIndex={0}
                   role="button"
@@ -243,10 +243,11 @@ export default function QueriesPage() {
                     }
                   }}
                 >
-                  <div className="flex justify-between items-start mb-3">
-                    <div className="space-y-0.5">
-                      <p className="text-[10px] font-bold text-muted-foreground tracking-widest uppercase">{q.queryCode}</p>
-                      <h3 className="font-bold text-base text-slate-900">{q.name}</h3>
+                  <div className="flex justify-between items-start mb-4">
+                    <div className="space-y-1">
+                      <p className="text-[10px] font-black text-slate-400 tracking-widest uppercase leading-none">{q.queryCode}</p>
+                      <h3 className="font-black text-lg text-slate-900 leading-tight">{q.name}</h3>
+                      <p className="text-xs font-bold text-slate-400">{q.phone}</p>
                     </div>
                     {(() => {
                       const s = statusSettings?.find((st: any) => st.code === q.status);
@@ -254,8 +255,8 @@ export default function QueriesPage() {
                       const color = s ? s.colorHex : '#94a3b8';
                       return (
                         <span 
-                          className="text-[9px] font-black uppercase px-2 py-1 rounded-md border"
-                          style={{ backgroundColor: `${color}10`, color: color, borderColor: `${color}40` }}
+                          className="text-[9px] font-black uppercase px-2.5 py-1 rounded-lg border shadow-sm"
+                          style={{ backgroundColor: `${color}15`, color: color, borderColor: `${color}40`, boxShadow: `0 2px 4px ${color}10` }}
                         >
                           {label}
                         </span>
@@ -263,28 +264,33 @@ export default function QueriesPage() {
                     })()}
                   </div>
                   
-                  <div className="grid grid-cols-2 gap-y-3 gap-x-2 text-xs border-t pt-3">
-                    <div className="space-y-1">
-                      <p className="text-[10px] text-muted-foreground font-semibold uppercase">Destination</p>
-                      <p className="font-medium text-slate-700 truncate">{q.destination || '—'}</p>
+                  <div className="grid grid-cols-2 gap-4 text-xs bg-slate-50/80 p-3 rounded-xl border border-slate-100">
+                    <div className="space-y-0.5">
+                      <p className="text-[9px] text-slate-400 font-black uppercase tracking-widest">Destination</p>
+                      <p className="font-black text-slate-700 truncate">{q.destination || '—'}</p>
                     </div>
-                    <div className="space-y-1">
-                      <p className="text-[10px] text-muted-foreground font-semibold uppercase">Phone</p>
-                      <p className="font-medium text-slate-700 truncate">{q.phone}</p>
-                    </div>
-                    {user?.permissions['query.view_all'] && (
-                      <div className="space-y-1">
-                        <p className="text-[10px] text-muted-foreground font-semibold uppercase">Assigned To</p>
-                        <p className="font-medium text-slate-700 truncate">{q.assignedUser?.name || 'Unassigned'}</p>
+                    {user?.permissions['query.view_all'] ? (
+                      <div className="space-y-0.5 text-right">
+                        <p className="text-[9px] text-slate-400 font-black uppercase tracking-widest">Assigned</p>
+                        <p className="font-black text-slate-700 truncate">{q.assignedUser?.name || 'Open'}</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-0.5 text-right">
+                        <p className="text-[9px] text-slate-400 font-black uppercase tracking-widest">Created</p>
+                        <p className="font-black text-slate-700">
+                          {new Date(q.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                        </p>
                       </div>
                     )}
-                    <div className="space-y-1 text-right">
-                      <p className="text-[10px] text-muted-foreground font-semibold uppercase">Created</p>
-                      <p className="font-medium text-slate-700">
-                        {new Date(q.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: '2-digit' })}
+                  </div>
+
+                  {user?.permissions['query.view_all'] && (
+                    <div className="mt-3 flex justify-end">
+                      <p className="text-[9px] font-black uppercase text-slate-300 tracking-widest">
+                        Created {new Date(q.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: '2-digit' })}
                       </p>
                     </div>
-                  </div>
+                  )}
                 </Card>
               ))}
             </div>

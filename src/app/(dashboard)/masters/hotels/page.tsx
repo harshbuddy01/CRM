@@ -14,7 +14,10 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { toast } from 'sonner';
-import { Plus, Edit2, Trash2, MapPin, Building2, IndianRupee } from 'lucide-react';
+import { Plus, Edit2, Trash2, MapPin, Building2, IndianRupee, Loader2 } from 'lucide-react';
+import { Card } from '@/components/ui/card';
+import { cn } from '@/lib/utils';
+import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 
 const hotelSchema = z.object({
@@ -26,6 +29,7 @@ const hotelSchema = z.object({
 });
 
 export default function HotelsPage() {
+  const pathname = usePathname();
   const queryClient = useQueryClient();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -112,11 +116,11 @@ export default function HotelsPage() {
   };
 
   return (
-    <div className="p-8 space-y-8 max-w-6xl mx-auto">
-      <div className="flex justify-between items-center">
+    <div className="p-4 md:p-8 space-y-6 md:space-y-8 max-w-6xl mx-auto pb-24 md:pb-8">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Master Data</h1>
-          <p className="text-muted-foreground">Manage your destinations and hotels inventory</p>
+          <h1 className="text-xl md:text-3xl font-bold tracking-tight">Master Data</h1>
+          <p className="text-muted-foreground text-xs md:text-sm">Manage your destinations and hotels inventory</p>
         </div>
         <Dialog open={isDialogOpen} onOpenChange={(open) => !open ? handleCloseDialog() : setIsDialogOpen(true)}>
           {/* @ts-ignore - Trigger interface typing override */}
@@ -223,62 +227,123 @@ export default function HotelsPage() {
         </Dialog>
       </div>
 
-      <div className="flex gap-4 border-b">
-        <Link href="/masters/destinations" className="flex items-center gap-2 px-4 py-2 text-muted-foreground hover:text-foreground">
+      <div className="flex bg-slate-100 dark:bg-slate-900 p-1 rounded-lg overflow-x-auto no-scrollbar">
+        <Link href="/masters/destinations" className={cn(
+          "flex items-center gap-2 px-4 py-1.5 text-xs font-bold rounded-md transition-all whitespace-nowrap",
+          pathname === '/masters/destinations' ? "bg-white dark:bg-slate-800 shadow-sm text-primary" : "text-slate-500 hover:text-slate-700"
+        )}>
           <MapPin className="w-4 h-4" /> Destinations
         </Link>
-        <Link href="/masters/hotels" className="flex items-center gap-2 px-4 py-2 border-b-2 border-primary text-primary font-medium">
+        <Link href="/masters/hotels" className={cn(
+          "flex items-center gap-2 px-4 py-1.5 text-xs font-bold rounded-md transition-all whitespace-nowrap",
+          pathname === '/masters/hotels' ? "bg-white dark:bg-slate-800 shadow-sm text-primary" : "text-slate-500 hover:text-slate-700"
+        )}>
           <Building2 className="w-4 h-4" /> Hotels
         </Link>
       </div>
 
-      <div className="border rounded-lg bg-card shadow-sm">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Destination</TableHead>
-              <TableHead>Hotel Name</TableHead>
-              <TableHead>Category</TableHead>
-              <TableHead>Base Rate</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {isLoading ? (
-              <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">Loading hotels...</TableCell></TableRow>
-            ) : hotels.length === 0 ? (
-              <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">No hotels found. Add one to get started.</TableCell></TableRow>
-            ) : (
-              hotels.map((hotel: any) => (
-                <TableRow key={hotel.id}>
-                  <TableCell className="font-medium">{hotel.destination?.name || '-'}</TableCell>
-                  <TableCell className="font-medium">{hotel.name}</TableCell>
-                  <TableCell>{hotel.category || '-'}</TableCell>
-                  <TableCell className="flex items-center text-muted-foreground">
-                    <IndianRupee className="w-3 h-3 mr-1" />
-                    {hotel.basePrice || '0'}
-                  </TableCell>
-                  <TableCell>
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${hotel.isActive ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-stone-100 text-stone-700'}`}>
-                      {hotel.isActive ? 'Active' : 'Inactive'}
-                    </span>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <Button variant="ghost" size="icon" onClick={() => handleOpenEdit(hotel)}>
-                      <Edit2 className="w-4 h-4" />
-                    </Button>
-                    <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive hover:bg-destructive/10" onClick={() => {
-                      if (confirm('Are you sure you want to delete this hotel?')) deleteMutation.mutate(hotel.id);
-                    }}>
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
+      <div className="space-y-4">
+        {/* Desktop Table */}
+        <div className="hidden md:block border rounded-lg bg-card shadow-sm overflow-hidden">
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-slate-50/50">
+                <TableHead className="font-bold">Destination</TableHead>
+                <TableHead className="font-bold">Hotel Name</TableHead>
+                <TableHead className="font-bold">Category</TableHead>
+                <TableHead className="font-bold">Base Rate</TableHead>
+                <TableHead className="font-bold">Status</TableHead>
+                <TableHead className="text-right font-bold">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {isLoading ? (
+                <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground"><Loader2 className="w-6 h-6 animate-spin mx-auto" /></TableCell></TableRow>
+              ) : hotels.length === 0 ? (
+                <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">No hotels found. Add one to get started.</TableCell></TableRow>
+              ) : (
+                hotels.map((hotel: any) => (
+                  <TableRow key={hotel.id} className="hover:bg-slate-50/50 transition-colors">
+                    <TableCell className="font-medium">{hotel.destination?.name || '-'}</TableCell>
+                    <TableCell className="font-bold text-slate-900">{hotel.name}</TableCell>
+                    <TableCell className="text-xs">{hotel.category || '-'}</TableCell>
+                    <TableCell>
+                      <div className="flex items-center font-bold text-slate-700">
+                        <IndianRupee className="w-3 h-3 mr-1" />
+                        {(Number(hotel.basePrice) || 0).toLocaleString('en-IN')}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider border shadow-sm ${hotel.isActive ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 'bg-slate-50 text-slate-500 border-slate-100'}`}>
+                        {hotel.isActive ? 'Active' : 'Inactive'}
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-1">
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-primary" onClick={() => handleOpenEdit(hotel)}>
+                          <Edit2 className="w-3.5 h-3.5" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10" onClick={() => {
+                          if (confirm('Are you sure you want to delete this hotel?')) deleteMutation.mutate(hotel.id);
+                        }}>
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
+
+        {/* Mobile Cards */}
+        <div className="md:hidden space-y-3">
+          {isLoading ? (
+            <div className="py-12 flex justify-center"><Loader2 className="w-8 h-8 animate-spin text-muted-foreground" /></div>
+          ) : hotels.length === 0 ? (
+            <Card className="p-8 text-center text-muted-foreground border-dashed">No hotels found.</Card>
+          ) : (
+            hotels.map((hotel: any) => (
+              <Card key={hotel.id} className="p-4 border-slate-200 shadow-sm active:scale-[0.98] transition-transform">
+                <div className="flex justify-between items-start mb-3">
+                  <div className="space-y-0.5">
+                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">{hotel.destination?.name || 'No Destination'}</p>
+                    <h3 className="font-bold text-base text-slate-900">{hotel.name}</h3>
+                  </div>
+                  <span className={`px-2 py-0.5 rounded text-[9px] font-black tracking-wider uppercase border ${hotel.isActive ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-slate-50 text-slate-500 border-slate-100'}`}>
+                    {hotel.isActive ? 'Active' : 'Inactive'}
+                  </span>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-3 mb-4 text-xs pt-3 border-t">
+                  <div className="space-y-0.5">
+                    <p className="text-[10px] text-slate-400 font-bold uppercase">Base Rate</p>
+                    <p className="font-black text-slate-900 flex items-center">
+                      <IndianRupee className="w-3 h-3 mr-0.5" />
+                      {(Number(hotel.basePrice) || 0).toLocaleString('en-IN')}
+                    </p>
+                  </div>
+                  <div className="space-y-0.5">
+                    <p className="text-[10px] text-slate-400 font-bold uppercase">Category</p>
+                    <p className="font-bold text-slate-700">{hotel.category || '—'}</p>
+                  </div>
+                </div>
+
+                <div className="flex gap-2 pt-1">
+                  <Button variant="outline" className="flex-1 h-9 rounded-xl font-bold text-xs" onClick={() => handleOpenEdit(hotel)}>
+                    <Edit2 className="w-3.5 h-3.5 mr-2" /> Edit
+                  </Button>
+                  <Button variant="ghost" className="h-9 rounded-xl font-bold text-xs text-destructive hover:bg-destructive/10" onClick={() => {
+                    if (confirm('Are you sure you want to delete this hotel?')) deleteMutation.mutate(hotel.id);
+                  }}>
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </Button>
+                </div>
+              </Card>
+            ))
+          )}
+        </div>
       </div>
     </div>
   );
