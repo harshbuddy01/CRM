@@ -39,32 +39,44 @@ api.interceptors.response.use(
 
       if (refreshToken) {
         try {
+          // Deduplicate: all parallel 401'd requests share one refresh call
           if (!refreshPromise) {
             refreshPromise = axios.post(`${API_URL}/auth/refresh`, { refreshToken })
+              .then((res) => {
+                const { accessToken, refreshToken: newRefresh } = res.data.data;
+                
+                useAuthStore.setState({ accessToken });
+                if (typeof window !== 'undefined') {
+                  localStorage.setItem('refreshToken', newRefresh);
+                  document.cookie = `accessToken=${accessToken}; path=/; secure; samesite=strict`;
+                }
+                return accessToken;
+              })
+              .catch((refreshError) => {
+                // Refresh failed — force logout once
+                logout();
+                if (typeof window !== 'undefined') {
+                  window.location.href = '/login';
+                }
+                throw refreshError;
+              })
               .finally(() => { refreshPromise = null; });
           }
           
-          const res = await refreshPromise;
-          const { accessToken, refreshToken: newRefresh } = res.data.data;
-          
-          useAuthStore.setState({ accessToken });
-          if (typeof window !== 'undefined') {
-            localStorage.setItem('refreshToken', newRefresh);
-            // Sync cookie so Next.js middleware stays aware of the valid token
-            document.cookie = `accessToken=${accessToken}; path=/; secure; samesite=strict`;
-          }
+          const newToken = await refreshPromise;
 
           // Retry the original request with new token
-          originalRequest.headers.Authorization = `Bearer ${accessToken}`;
+          originalRequest.headers.Authorization = `Bearer ${newToken}`;
           return api(originalRequest);
         } catch {
-          // Refresh hit a 401 or failed, force logout
-          logout();
-          window.location.href = '/login';
+          // Refresh already handled logout above
+          return Promise.reject(error);
         }
       } else {
         logout();
-        window.location.href = '/login';
+        if (typeof window !== 'undefined') {
+          window.location.href = '/login';
+        }
       }
     }
 
