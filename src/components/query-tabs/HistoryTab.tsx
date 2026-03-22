@@ -69,6 +69,8 @@ function formatAction(action: string): string {
     'integration.email.failed': 'Email Delivery Failed',
     'integration.whatsapp.success': 'WhatsApp Dispatched',
     'integration.whatsapp.failed': 'WhatsApp Failed',
+    'integration.razorpay.success': 'Online Payment Received',
+    'integration.razorpay.failed': 'Online Payment Failed',
   };
   return map[action] || action.replace(/\./g, ' ').replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
 }

@@ -3,11 +3,14 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { Card, CardContent } from '@/components/ui/card';
-import { Loader2, IndianRupee, TrendingUp, CreditCard } from 'lucide-react';
+import { Loader2, IndianRupee, TrendingUp, CreditCard, Copy, ExternalLink, Send } from 'lucide-react';
 import { format } from 'date-fns';
-
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
+import { useState } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 export function BillingTab({ queryId }: { queryId: string }) {
   const queryClient = useQueryClient();
@@ -35,6 +38,34 @@ export function BillingTab({ queryId }: { queryId: string }) {
     }
   });
 
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const [paymentAmount, setPaymentAmount] = useState('');
+  const [paymentDesc, setPaymentDesc] = useState('Booking Payment');
+  const [generatedLink, setGeneratedLink] = useState('');
+
+  const requestPaymentMutation = useMutation({
+    mutationFn: async () => {
+      const res = await api.post('/payments/razorpay-link', {
+        queryId,
+        amount: Number(paymentAmount),
+        description: paymentDesc
+      });
+      return res.data;
+    },
+    onSuccess: (data) => {
+      toast.success('Payment link generated!');
+      setGeneratedLink(data.linkUrl);
+    },
+    onError: (err: any) => {
+      toast.error('Failed to generate payment link', { description: err.response?.data?.message || err.message });
+    }
+  });
+
+  const handleCopyLink = () => {
+    navigator.clipboard.writeText(generatedLink);
+    toast.success('Link copied to clipboard');
+  };
+
   if (isLoading) return <div className="flex justify-center p-8"><Loader2 className="w-6 h-6 animate-spin" /></div>;
   if (!data) return <Card><CardContent className="p-8 text-center text-muted-foreground">Unable to load billing data.</CardContent></Card>;
 
@@ -52,7 +83,79 @@ export function BillingTab({ queryId }: { queryId: string }) {
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="font-semibold text-lg mb-3">Customer Side</h3>
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="font-semibold text-lg">Customer Side</h3>
+          <Dialog open={isPaymentModalOpen} onOpenChange={(open) => {
+            setIsPaymentModalOpen(open);
+            if (open) {
+              setPaymentAmount(String(customer.totalPending));
+              setGeneratedLink('');
+            }
+          }}>
+            <DialogTrigger
+              render={
+                <Button size="sm" variant="outline" className="gap-2 border-primary text-primary hover:bg-primary/5">
+                  <Send className="w-4 h-4" /> Request Payment
+                </Button>
+              }
+            />
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Generate Payment Request</DialogTitle>
+              </DialogHeader>
+              {!generatedLink ? (
+                <div className="space-y-4 py-4">
+                  <div className="space-y-2">
+                    <Label>Request Amount (₹)</Label>
+                    <Input 
+                      type="number" 
+                      placeholder="Enter amount" 
+                      value={paymentAmount} 
+                      onChange={(e) => setPaymentAmount(e.target.value)} 
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Description</Label>
+                    <Input 
+                      placeholder="e.g. Advance Payment for Bali Trip" 
+                      value={paymentDesc} 
+                      onChange={(e) => setPaymentDesc(e.target.value)} 
+                    />
+                  </div>
+                  <Button 
+                    className="w-full" 
+                    disabled={requestPaymentMutation.isPending || !paymentAmount}
+                    onClick={() => requestPaymentMutation.mutate()}
+                  >
+                    {requestPaymentMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                    Generate Razorpay Link
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-4 py-4">
+                  <div className="p-4 bg-muted rounded-lg border text-center break-all text-sm font-mono">
+                    {generatedLink}
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <Button variant="outline" className="gap-2" onClick={handleCopyLink}>
+                      <Copy className="w-4 h-4" /> Copy Link
+                    </Button>
+                    <Button 
+                      render={
+                        <a href={generatedLink} target="_blank" rel="noreferrer" className="gap-2 bg-primary text-primary-foreground inline-flex items-center justify-center rounded-lg px-2.5 h-8 text-sm font-medium">
+                          <ExternalLink className="w-4 h-4" /> Open Link
+                        </a>
+                      }
+                    />
+                  </div>
+                  <p className="text-xs text-center text-muted-foreground mt-2">
+                    Note: Customer will also receive SMS/Email notifications from Razorpay automatically.
+                  </p>
+                </div>
+              )}
+            </DialogContent>
+          </Dialog>
+        </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <KpiCard label="Total Amount" value={customer.totalAmount} />
           <KpiCard label="Received" value={customer.totalReceived} color="text-green-600" />
@@ -129,3 +232,5 @@ export function BillingTab({ queryId }: { queryId: string }) {
     </div>
   );
 }
+
+
