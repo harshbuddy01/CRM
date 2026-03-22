@@ -38,6 +38,7 @@ const createProposal = async (queryId, userId, data) => {
           destinationId: day.destinationId || null,
           hotelId: day.hotelId || null,
           activities: day.activities || '',
+          description: day.description || null,
           mealsIncluded: day.mealsIncluded || 'BB',
           transport: day.transport || '',
           dayCost: Number(day.dayCost) || 0,
@@ -57,6 +58,17 @@ const createProposal = async (queryId, userId, data) => {
 
   // Enqueue async PDF Generation to avoid blocking the API Response (Railway memory fix setup)
   await queueService.enqueuePdfJob(proposal.id, queryId);
+
+  // Trace Proposal Building to the specific user
+  await prisma.activityLog.create({
+    data: {
+      entityType: 'query', 
+      entityId: queryId, 
+      action: 'proposal.created',
+      userId: userId, 
+      newValue: { version, amount: sellingPrice }
+    }
+  });
 
   return proposal;
 };

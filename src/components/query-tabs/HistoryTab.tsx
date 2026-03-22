@@ -65,6 +65,10 @@ function formatAction(action: string): string {
     'proposal.sent': 'Proposal Sent',
     'tour.created': 'Tour Created',
     'note.created': 'Note Added',
+    'integration.email.success': 'Email Sent Successfully',
+    'integration.email.failed': 'Email Delivery Failed',
+    'integration.whatsapp.success': 'WhatsApp Dispatched',
+    'integration.whatsapp.failed': 'WhatsApp Failed',
   };
   return map[action] || action.replace(/\./g, ' ').replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
 }

@@ -166,15 +166,40 @@ export default function SettingsPage() {
         <p className="text-muted-foreground mt-2">Manage your company profile, signatures, and third-party API configurations.</p>
       </div>
 
-      <Tabs defaultValue="general" className="w-full">
-        <TabsList className="flex flex-wrap h-auto w-full sm:w-auto mb-8 bg-muted/50 p-1">
-          <TabsTrigger value="general" className="flex-1"><Building className="w-4 h-4 mr-2" /> General</TabsTrigger>
-          <TabsTrigger value="email" className="flex-1"><Mail className="w-4 h-4 mr-2" /> Signature</TabsTrigger>
-          <TabsTrigger value="apis" className="flex-1"><Webhook className="w-4 h-4 mr-2" /> API Config</TabsTrigger>
-          <TabsTrigger value="statuses" className="flex-1"><GitMerge className="w-4 h-4 mr-2" /> Pipeline Statuses</TabsTrigger>
-        </TabsList>
+      <Tabs defaultValue="general" className="flex flex-col md:flex-row gap-8 w-full">
+        {/* Vertical Sidebar Navigation */}
+        <div className="md:w-64 shrink-0">
+          <TabsList className="flex flex-col h-auto w-full bg-transparent p-0 space-y-1">
+            <TabsTrigger 
+              value="general" 
+              className="justify-start px-4 py-2.5 w-full data-[state=active]:bg-indigo-50 data-[state=active]:text-indigo-700 data-[state=active]:shadow-none hover:bg-muted/50 transition-colors rounded-lg"
+            >
+              <Building className="w-4 h-4 mr-3" /> General Details
+            </TabsTrigger>
+            <TabsTrigger 
+              value="email" 
+              className="justify-start px-4 py-2.5 w-full data-[state=active]:bg-indigo-50 data-[state=active]:text-indigo-700 data-[state=active]:shadow-none hover:bg-muted/50 transition-colors rounded-lg"
+            >
+              <Mail className="w-4 h-4 mr-3" /> Email Signature
+            </TabsTrigger>
+            <TabsTrigger 
+              value="apis" 
+              className="justify-start px-4 py-2.5 w-full data-[state=active]:bg-indigo-50 data-[state=active]:text-indigo-700 data-[state=active]:shadow-none hover:bg-muted/50 transition-colors rounded-lg"
+            >
+              <Webhook className="w-4 h-4 mr-3" /> Integrations & API
+            </TabsTrigger>
+            <TabsTrigger 
+              value="statuses" 
+              className="justify-start px-4 py-2.5 w-full data-[state=active]:bg-indigo-50 data-[state=active]:text-indigo-700 data-[state=active]:shadow-none hover:bg-muted/50 transition-colors rounded-lg"
+            >
+              <GitMerge className="w-4 h-4 mr-3" /> Pipeline Statuses
+            </TabsTrigger>
+          </TabsList>
+        </div>
 
-        <TabsContent value="general" className="space-y-6">
+        {/* Content Area */}
+        <div className="flex-1 max-w-4xl space-y-6">
+          <TabsContent value="general" className="mt-0 outline-none">
           <Card>
             <CardHeader>
               <CardTitle>Company Details</CardTitle>
@@ -237,7 +262,7 @@ export default function SettingsPage() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="email" className="space-y-6">
+        <TabsContent value="email" className="mt-0 outline-none">
           <Card>
             <CardHeader>
               <CardTitle>Global Email Signature</CardTitle>
@@ -259,7 +284,7 @@ export default function SettingsPage() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="apis" className="space-y-6">
+        <TabsContent value="apis" className="mt-0 space-y-6 outline-none">
           <Card className="border-amber-200 bg-amber-50/30">
             <CardHeader>
               <CardTitle className="flex items-center text-amber-800">
@@ -331,21 +356,21 @@ export default function SettingsPage() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="statuses" className="space-y-6">
+        <TabsContent value="statuses" className="mt-0 outline-none">
           <StatusSettingsTab />
         </TabsContent>
+          <div className="flex justify-end pt-6 border-t mt-8">
+            <Button 
+              onClick={handleSave} 
+              disabled={updateMutation.isPending}
+              className="bg-indigo-600 hover:bg-indigo-700 px-8 py-2.5 shadow-sm transition-all"
+            >
+              {updateMutation.isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
+              Save All Settings
+            </Button>
+          </div>
+        </div>
       </Tabs>
-
-      <div className="flex justify-end pt-4">
-        <Button 
-          onClick={handleSave} 
-          disabled={updateMutation.isPending}
-          className="bg-indigo-600 px-8"
-        >
-          {updateMutation.isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
-          Save All Settings
-        </Button>
-      </div>
     </div>
   );
 }

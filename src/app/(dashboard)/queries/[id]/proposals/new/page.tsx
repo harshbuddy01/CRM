@@ -16,6 +16,7 @@ interface ProposalDay {
   destinationId: string;
   hotelId: string;
   activities: string;
+  description: string;
   mealsIncluded: string;
   transport: string;
   dayCost: number;
@@ -27,7 +28,7 @@ export default function ProposalBuilderPage({ params }: { params: { id: string }
   const queryClient = useQueryClient();
 
   const [days, setDays] = useState<ProposalDay[]>([
-    { dayNumber: 1, destinationId: '', hotelId: '', activities: '', mealsIncluded: 'BB', transport: '', dayCost: 0 }
+    { dayNumber: 1, destinationId: '', hotelId: '', activities: '', description: '', mealsIncluded: 'BB', transport: '', dayCost: 0 }
   ]);
   const [markupPct, setMarkupPct] = useState<number>(0);
 
@@ -67,6 +68,7 @@ export default function ProposalBuilderPage({ params }: { params: { id: string }
       destinationId: '',
       hotelId: '',
       activities: '',
+      description: '',
       mealsIncluded: 'BB',
       transport: '',
       dayCost: 0
@@ -175,8 +177,17 @@ export default function ProposalBuilderPage({ params }: { params: { id: string }
                       <Input placeholder="e.g. Private Airport Transfer" value={day.transport} onChange={(e) => updateDay(index, 'transport', e.target.value)} />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-sm font-medium">Activities</label>
+                      <label className="text-sm font-medium">Activities Overview</label>
                       <Input placeholder="e.g. City Tour, Scuba Diving" value={day.activities} onChange={(e) => updateDay(index, 'activities', e.target.value)} />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Detailed ITINERARY Description</label>
+                      <textarea 
+                        className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                        placeholder="Type out the full day-by-day itinerary plan to print on the PDF proposal..."
+                        value={day.description || ''}
+                        onChange={(e) => updateDay(index, 'description', e.target.value)}
+                      />
                     </div>
                     <div className="space-y-2">
                       <label className="text-sm font-medium">Net Cost (Day {day.dayNumber})</label>

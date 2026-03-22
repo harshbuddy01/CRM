@@ -141,15 +141,36 @@ router.get('/:id/email-logs', can('query.view'), async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
-// Get History/Activity Logs for Query (Sprint 9/10 Bugfix)
+// Get History/Activity Logs & Integration Logs for Query (Unified Timeline)
 router.get('/:id/history', can('query.view'), async (req, res, next) => {
   try {
     const prisma = require('../config/prisma');
-    const history = await prisma.activityLog.findMany({
-      where: { entityType: 'query', entityId: req.params.id },
-      include: { user: { select: { id: true, name: true } } },
-      orderBy: { createdAt: 'desc' }
-    });
+    const [activityLogs, integrationLogs] = await Promise.all([
+      prisma.activityLog.findMany({
+        where: { entityType: 'query', entityId: req.params.id },
+        include: { user: { select: { id: true, name: true } } }
+      }),
+      prisma.integrationLog.findMany({
+        where: { relatedId: req.params.id }
+      })
+    ]);
+
+    // Map IntegrationLogs to look like ActivityLogs for the frontend
+    const mappedIntegrations = integrationLogs.map(log => ({
+      id: log.id,
+      entityType: 'integration',
+      entityId: log.relatedId,
+      action: `integration.${log.type}.${log.status}`,
+      newValue: log.payload,
+      createdAt: log.createdAt,
+      user: { name: 'System' }
+    }));
+
+    // Merge and Sort by descending created date
+    const history = [...activityLogs, ...mappedIntegrations].sort((a, b) => 
+      new Date(b.createdAt) - new Date(a.createdAt)
+    );
+
     res.json({ success: true, data: history });
   } catch (err) { next(err); }
 });

@@ -301,6 +301,7 @@ model ProposalDay {
   destinationId String?  @map("destination_id")
   hotelId       String?  @map("hotel_id")
   activities    String?
+  description   String?  @db.Text
   mealsIncluded String?  @map("meals_included") /// 'BB','HB','FB','AI'
   transport     String?
   dayCost       Decimal? @map("day_cost") @db.Decimal(10, 2)

@@ -8,8 +8,9 @@ import { useAuthStore } from '@/lib/auth-store';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { Calendar as CalendarIcon, Phone, Mail, MapPin, IndianRupee, Users, Send, Loader2, User, Trash2, ArrowLeft, UserPlus, FileText, Plus, MessageCircle, CreditCard } from 'lucide-react';
+import { Calendar as CalendarIcon, Phone, Mail, MapPin, IndianRupee, Users, Send, Loader2, User, Trash2, ArrowLeft, UserPlus, FileText, Plus, MessageCircle, CreditCard, Edit } from 'lucide-react';
 import { toast } from 'sonner';
+import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { format } from 'date-fns';
 import { Calendar } from '@/components/ui/calendar';
@@ -137,6 +138,24 @@ export default function QueryDetailPage() {
   const [isAssignOpen, setIsAssignOpen] = useState(false);
   const [selectedAgentId, setSelectedAgentId] = useState<string>('');
   const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
+
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [editForm, setEditForm] = useState({ name: '', email: '', phone: '' });
+
+  const editMutation = useMutation({
+    mutationFn: async (payload: any) => {
+      await api.patch(`/queries/${queryId}`, payload);
+    },
+    onSuccess: () => {
+      toast.success('Lead updated successfully');
+      setIsEditOpen(false);
+      queryClient.invalidateQueries({ queryKey: ['query', queryId] });
+      queryClient.invalidateQueries({ queryKey: ['queries'] });
+    },
+    onError: (err: any) => {
+      toast.error('Failed to update lead', { description: err.response?.data?.message });
+    }
+  });
 
   const { data: statusSettings } = useQuery({
     queryKey: ['status-settings'],
@@ -345,8 +364,44 @@ export default function QueryDetailPage() {
         {/* Left Column: Customer Details */}
         <div className="lg:col-span-1 space-y-6">
           <Card>
-            <CardHeader>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-lg">Lead Details</CardTitle>
+              {canEditAll && (
+                <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+                  {/* @ts-expect-error shadcn generic trigger issue */}
+                  <DialogTrigger asChild>
+                    <Button variant="outline" size="sm" className="h-8" onClick={() => setEditForm({ name: query.name, email: query.email || '', phone: query.phone })}>
+                      <Edit className="w-3.5 h-3.5 mr-2" /> Edit
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Edit Lead Details</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">Customer Name</label>
+                        <Input value={editForm.name} onChange={e => setEditForm({...editForm, name: e.target.value})} />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">Email Address</label>
+                        <Input value={editForm.email} onChange={e => setEditForm({...editForm, email: e.target.value})} />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">Phone Number</label>
+                        <Input value={editForm.phone} onChange={e => setEditForm({...editForm, phone: e.target.value})} />
+                      </div>
+                    </div>
+                    <div className="flex justify-end gap-3 pt-4 border-t">
+                      <Button variant="ghost" onClick={() => setIsEditOpen(false)}>Cancel</Button>
+                      <Button disabled={editMutation.isPending} onClick={() => editMutation.mutate(editForm)}>
+                        {editMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                        Save Changes
+                      </Button>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              )}
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center gap-3 text-sm">
@@ -667,7 +722,7 @@ function QueryProposalsList({ queryId, queryCode, customerName, customerEmail }:
               className="text-blue-600 border-blue-200 hover:bg-blue-50"
               onClick={() => setEmailModalOpenId(p.id)}
             >
-              <Mail className="w-4 h-4 mr-2" /> Email
+              <Mail className="w-4 h-4 mr-2" /> {p.lastSentAt ? 'Resend Email' : 'Email'}
             </Button>
 
             <Dialog open={waModalOpenId === p.id} onOpenChange={(open) => {
@@ -684,7 +739,7 @@ function QueryProposalsList({ queryId, queryCode, customerName, customerEmail }:
                   className="bg-emerald-600 hover:bg-emerald-700"
                   onClick={() => handleWaModalOpen(p.id)}
                 >
-                  <MessageCircle className="w-4 h-4 mr-2" /> WhatsApp
+                  <MessageCircle className="w-4 h-4 mr-2" /> {p.lastSentAt ? 'Resend WA' : 'WhatsApp'}
                 </Button>
               </DialogTrigger>
               <DialogContent>
