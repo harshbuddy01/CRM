@@ -12,6 +12,113 @@ const config = require('../config');
 const ALLOWED_EVENTS = ['viewed', 'whatsapp_opened', 'email_opened', 'downloaded'];
 const MAX_EVENT_LENGTH = 50;
 
+const ICONS = {
+  destination: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1e3a8a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 4px;"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>`,
+  hotel: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1e3a8a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 4px;"><path d="M10 22v-5a2 2 0 0 1 4 0v5"/><path d="M2 22h20"/><path d="M4 22V4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v18"/><path d="M9 7h1"/><path d="M9 11h1"/><path d="M14 7h1"/><path d="M14 11h1"/></svg>`,
+  meals: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1e3a8a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 4px;"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2v0a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/></svg>`,
+  transport: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1e3a8a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 4px;"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/></svg>`,
+  activity: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1e3a8a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 4px;"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>`,
+};
+
+const generateProposalHtml = (proposal) => {
+  return `
+    <html>
+      <head>
+        <style>
+          @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+          body { font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif; color: #1e293b; line-height: 1.5; padding: 0; margin: 0; background-color: #f1f5f9; }
+          .container { max-width: 800px; margin: 0 auto; background: white; min-height: 100vh; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); padding: 40px; }
+          .header { border-bottom: 2px solid #e2e8f0; padding-bottom: 20px; margin-bottom: 30px; display: flex; justify-content: space-between; align-items: flex-end; }
+          .header h1 { color: #1e3a8a; margin: 0; font-size: 28px; font-weight: 700; }
+          .header-meta { text-align: right; font-size: 14px; color: #64748b; }
+          .price-tag { background: #eff6ff; color: #1e40af; padding: 12px 20px; border-radius: 8px; display: inline-block; margin: 20px 0; font-weight: 600; font-size: 18px; border: 1px solid #bfdbfe; }
+          .day-card { background: white; border: 1px solid #e2e8f0; border-radius: 12px; margin-bottom: 24px; overflow: hidden; }
+          .day-header { background: #f8fafc; padding: 16px 20px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; }
+          .day-header h3 { margin: 0; font-size: 18px; color: #1e3a8a; font-weight: 600; }
+          .day-body { padding: 20px; }
+          .day-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+          .item { display: flex; align-items: flex-start; font-size: 14px; }
+          .item-icon { margin-top: 2px; flex-shrink: 0; }
+          .item-content { margin-left: 2px; }
+          .item-label { color: #64748b; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; margin-bottom: 2px; }
+          .description { background: #fdfdfd; border-top: 1px dashed #e2e8f0; padding: 16px 20px; font-size: 14px; color: #334155; line-height: 1.6; }
+          .footer { margin-top: 40px; text-align: center; font-size: 12px; color: #94a3b8; border-top: 1px solid #e2e8f0; padding-top: 20px; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <div>
+              <h1>${proposal.query.name}</h1>
+              <div style="margin-top: 4px; color: #64748b;">Exclusive Holiday Proposal</div>
+            </div>
+            <div class="header-meta">
+              <div>Ref: ${proposal.query.queryCode}</div>
+              <div>Version: ${proposal.version}</div>
+            </div>
+          </div>
+
+          <div class="price-tag">
+            Total Package Price: ₹${Number(proposal.sellingPrice).toLocaleString()}
+          </div>
+
+          <h2 style="font-size: 20px; margin: 30px 0 20px 0; color: #1e293b;">Itinerary Overview (${proposal.days.length} Days)</h2>
+
+          ${proposal.days.map(d => `
+            <div class="day-card">
+              <div class="day-header">
+                <h3>Day ${d.dayNumber}: ${d.destination?.name || 'Destination'}</h3>
+              </div>
+              <div class="day-body">
+                <div class="day-grid">
+                  <div class="item">
+                    <div class="item-icon">${ICONS.hotel}</div>
+                    <div class="item-content">
+                      <div class="item-label">Accommodation</div>
+                      <div>${d.hotel?.name || 'Self Arrangement'}</div>
+                    </div>
+                  </div>
+                  <div class="item">
+                    <div class="item-icon">${ICONS.meals}</div>
+                    <div class="item-content">
+                      <div class="item-label">Meals</div>
+                      <div>${d.mealsIncluded || 'No Meals'}</div>
+                    </div>
+                  </div>
+                  <div class="item">
+                    <div class="item-icon">${ICONS.transport}</div>
+                    <div class="item-content">
+                      <div class="item-label">Transport</div>
+                      <div>${d.transport || 'Internal Transfers'}</div>
+                    </div>
+                  </div>
+                  <div class="item">
+                    <div class="item-icon">${ICONS.activity}</div>
+                    <div class="item-content">
+                      <div class="item-label">Sightseeing</div>
+                      <div>${d.activities || 'At Leisure'}</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              ${d.description ? `
+                <div class="description">
+                  <div class="item-label" style="margin-bottom: 8px;">Detailed Itinerary</div>
+                  ${d.description.replace(/\n/g, '<br/>')}
+                </div>
+              ` : ''}
+            </div>
+          `).join('')}
+
+          <div class="footer">
+            Generated with TravelCRM • Thank you for choosing us!
+          </div>
+        </div>
+      </body>
+    </html>
+  `;
+};
+
 const createProposal = async (req, res, next) => {
   try {
     const queryId = req.params.id; // query id
@@ -55,47 +162,8 @@ const downloadPdf = async (req, res, next) => {
   try {
     const proposal = await proposalService.getProposalById(req.params.id);
     
-    // Quick, clean proposal HTML template
-    const htmlContent = `
-      <html>
-        <head>
-          <style>
-            body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #333; line-height: 1.6; padding: 40px; }
-            h1 { color: #1e3a8a; }
-            table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-            th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
-            th { background-color: #f8fafc; color: #475569; }
-          </style>
-        </head>
-        <body>
-          <h1>Proposal for ${proposal.query.name}</h1>
-          <p><strong>Query ID:</strong> ${proposal.query.queryCode}</p>
-          <p><strong>Selling Price:</strong> ₹${Number(proposal.sellingPrice).toLocaleString()}</p>
-          <h2>Itinerary (${proposal.days.length} Days)</h2>
-          <table>
-            <tr>
-              <th>Day</th>
-              <th>Destination</th>
-              <th>Hotel</th>
-              <th>Meals</th>
-              <th>Transport</th>
-              <th>Activities</th>
-            </tr>
-            ${proposal.days.map(d => `
-              <tr>
-                <td>Day ${d.dayNumber}</td>
-                <td>${d.destination?.name || '-'}</td>
-                <td>${d.hotel?.name || '-'}</td>
-                <td>${d.mealsIncluded || '-'}</td>
-                <td>${d.transport || '-'}</td>
-                <td>${d.activities || '-'}</td>
-              </tr>
-              ${d.description ? `<tr><td colspan="6" style="background: #f8fafc; padding: 12px; font-style: italic; color: #475569;"><strong>Day ${d.dayNumber} Itinerary:</strong><br/>${d.description.replace(/\n/g, '<br/>')}</td></tr>` : ''}
-            `).join('')}
-          </table>
-        </body>
-      </html>
-    `;
+    // Use the premium HTML generator
+    const htmlContent = generateProposalHtml(proposal);
 
     const pdfBuffer = await pdfService.generatePdfFromHtml(htmlContent);
     const buffer = Buffer.from(pdfBuffer);
@@ -182,47 +250,8 @@ const sendEmail = async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'No recipient email provided.' });
     }
 
-    // Generate Proposal PDF Buffer
-    const proposalHtmlContent = `
-      <html>
-        <head>
-          <style>
-            body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #333; line-height: 1.6; padding: 40px; }
-            h1 { color: #1e3a8a; }
-            table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-            th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
-            th { background-color: #f8fafc; color: #475569; }
-          </style>
-        </head>
-        <body>
-          <h1>Proposal for ${proposal.query.name}</h1>
-          <p><strong>Query ID:</strong> ${proposal.query.queryCode}</p>
-          <p><strong>Selling Price:</strong> ₹${Number(proposal.sellingPrice).toLocaleString()}</p>
-          <h2>Itinerary (${proposal.days.length} Days)</h2>
-          <table>
-            <tr>
-              <th>Day</th>
-              <th>Destination</th>
-              <th>Hotel</th>
-              <th>Meals</th>
-              <th>Transport</th>
-              <th>Activities</th>
-            </tr>
-            ${proposal.days.map(d => `
-              <tr>
-                <td>Day ${d.dayNumber}</td>
-                <td>${d.destination?.name || '-'}</td>
-                <td>${d.hotel?.name || '-'}</td>
-                <td>${d.mealsIncluded || '-'}</td>
-                <td>${d.transport || '-'}</td>
-                <td>${d.activities || '-'}</td>
-              </tr>
-              ${d.description ? `<tr><td colspan="6" style="background: #f8fafc; padding: 12px; font-style: italic; color: #475569;"><strong>Day ${d.dayNumber} Itinerary:</strong><br/>${d.description.replace(/\n/g, '<br/>')}</td></tr>` : ''}
-            `).join('')}
-          </table>
-        </body>
-      </html>
-    `;
+    // Use the premium HTML generator
+    const proposalHtmlContent = generateProposalHtml(proposal);
     const generatedPdfBuffer = await pdfService.generatePdfFromHtml(proposalHtmlContent);
     const pdfBuffer = Buffer.from(generatedPdfBuffer);
 
