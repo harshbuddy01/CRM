@@ -211,54 +211,56 @@ export default function QueryDetailPage() {
   const canEditStatus = user?.permissions['query.status_change'] && (canEditAll || query.assignedTo === user?.id);
 
   return (
-    <div className="space-y-6 pb-10">
+    <div className="space-y-6 pb-20 md:pb-10">
       {/* Header */}
-      <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" onClick={() => router.push('/queries')}>
-          <ArrowLeft className="w-5 h-5" />
-        </Button>
-        <div>
-          <div className="flex items-center gap-3">
-            <h1 className="text-3xl font-bold tracking-tight">{query.name}</h1>
-            {(() => {
-              const s = statusSettings?.find((st: any) => st.code === query.status);
-              const label = s ? s.label : formatStatus(query.status);
-              
-              const statusStyles: Record<string, string> = {
-                new: 'linear-gradient(135deg, #6B7280, #4B5563)',
-                followup: 'linear-gradient(135deg, #667eea, #764ba2)',
-                dnp: 'linear-gradient(135deg, #f093fb, #f5576c)',
-                proposal_sent: 'linear-gradient(135deg, #4facfe, #00f2fe)',
-                ready_to_pay: 'linear-gradient(135deg, #43e97b, #38f9d7)',
-                confirmed: 'linear-gradient(135deg, #11998e, #38ef7d)',
-                lost: 'linear-gradient(135deg, #ee0979, #ff6a00)',
-                invalid: 'linear-gradient(135deg, #f7971e, #ffd200)',
-              };
-              
-              const bg = statusStyles[query.status] || (s ? `linear-gradient(135deg, ${s.colorHex}, ${s.colorHex}dd)` : 'linear-gradient(135deg, #6B7280, #4B5563)');
+      <div className="flex flex-col md:flex-row md:items-center gap-4">
+        <div className="flex items-center gap-3">
+          <Button variant="ghost" size="icon" className="shrink-0" onClick={() => router.push('/queries')}>
+            <ArrowLeft className="w-5 h-5" />
+          </Button>
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <h1 className="text-xl md:text-3xl font-black tracking-tight text-slate-900 truncate max-w-[200px] md:max-w-none">{query.name}</h1>
+              {(() => {
+                const s = statusSettings?.find((st: any) => st.code === query.status);
+                const label = s ? s.label : formatStatus(query.status);
+                
+                const statusStyles: Record<string, string> = {
+                  new: 'linear-gradient(135deg, #6B7280, #4B5563)',
+                  followup: 'linear-gradient(135deg, #667eea, #764ba2)',
+                  dnp: 'linear-gradient(135deg, #f093fb, #f5576c)',
+                  proposal_sent: 'linear-gradient(135deg, #4facfe, #00f2fe)',
+                  ready_to_pay: 'linear-gradient(135deg, #43e97b, #38f9d7)',
+                  confirmed: 'linear-gradient(135deg, #11998e, #38ef7d)',
+                  lost: 'linear-gradient(135deg, #ee0979, #ff6a00)',
+                  invalid: 'linear-gradient(135deg, #f7971e, #ffd200)',
+                };
+                
+                const bg = statusStyles[query.status] || (s ? `linear-gradient(135deg, ${s.colorHex}, ${s.colorHex}dd)` : 'linear-gradient(135deg, #6B7280, #4B5563)');
 
-              return (
-                <span 
-                  className="px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider text-white shadow-md border border-white/20"
-                  style={{ background: bg }}
-                >
-                  {label}
-                </span>
-              );
-            })()}
-            <span className="text-muted-foreground text-sm font-medium">{query.queryCode}</span>
+                return (
+                  <span 
+                    className="px-2.5 py-0.5 rounded-full text-[9px] md:text-[11px] font-black uppercase tracking-wider text-white shadow-sm border border-white/20"
+                    style={{ background: bg }}
+                  >
+                    {label}
+                  </span>
+                );
+              })()}
+              <span className="text-slate-400 text-xs font-bold tracking-tighter uppercase">{query.queryCode}</span>
+            </div>
+            <p className="text-muted-foreground mt-0.5 text-[10px] md:text-sm font-medium">
+              Created {format(new Date(query.createdAt), 'MMM d, p')} • {query.assignedUser?.name || 'Unassigned'}
+            </p>
           </div>
-          <p className="text-muted-foreground mt-1 text-sm">
-            Created on {format(new Date(query.createdAt), 'PPpp')} • Assigned to {query.assignedUser?.name || 'Unassigned'}
-          </p>
         </div>
 
         {/* Action Buttons */}
-        <div className="ml-auto flex gap-2">
+        <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1 md:pb-0 md:ml-auto shrink-0">
           {query.email && (
-            <Button variant="outline" className="gap-2" onClick={() => setIsEmailModalOpen(true)}>
-              <Mail className="w-4 h-4" />
-              Compose Email
+            <Button variant="outline" size="sm" className="gap-2 shrink-0 rounded-xl font-bold h-9 bg-white shadow-sm" onClick={() => setIsEmailModalOpen(true)}>
+              <Mail className="w-3.5 h-3.5 text-primary" />
+              Email
             </Button>
           )}
 
@@ -266,8 +268,8 @@ export default function QueryDetailPage() {
             <Dialog open={isAssignOpen} onOpenChange={setIsAssignOpen}>
               {/* @ts-expect-error shadcn generic trigger issue */}
               <DialogTrigger asChild>
-                <Button variant="outline" className="gap-2">
-                  <UserPlus className="w-4 h-4" />
+                <Button variant="outline" size="sm" className="gap-2 shrink-0 rounded-xl font-bold h-9 bg-white shadow-sm">
+                  <UserPlus className="w-3.5 h-3.5 text-primary" />
                   Assign
                 </Button>
               </DialogTrigger>

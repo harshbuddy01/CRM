@@ -10,7 +10,21 @@ const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 
 export const metadata: Metadata = {
   title: "TravelCRM",
-  description: "Travel CRM System",
+  description: "Premium Travel CRM & Lead Management System",
+  manifest: "/manifest.json",
+  themeColor: "#1e3a8a",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "TravelCRM",
+  },
+  viewport: {
+    width: "device-width",
+    initialScale: 1,
+    maximumScale: 1,
+    userScalable: false,
+    viewportFit: "cover",
+  },
 };
 
 export default function RootLayout({

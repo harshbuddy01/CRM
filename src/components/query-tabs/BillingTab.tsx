@@ -66,6 +66,21 @@ export function BillingTab({ queryId }: { queryId: string }) {
     toast.success('Link copied to clipboard');
   };
 
+  const recordManualPaymentMutation = useMutation({
+    mutationFn: async (payload: any) => {
+      const res = await api.post('/payments', payload);
+      return res.data;
+    },
+    onSuccess: () => {
+      toast.success('Manual payment recorded successfully');
+      queryClient.invalidateQueries({ queryKey: ['billing-summary', queryId] });
+      queryClient.invalidateQueries({ queryKey: ['payments', queryId] });
+    },
+    onError: (err: any) => {
+      toast.error('Failed to record payment', { description: err.response?.data?.message || err.message });
+    }
+  });
+
   if (isLoading) return <div className="flex justify-center p-8"><Loader2 className="w-6 h-6 animate-spin" /></div>;
   if (!data) return <Card><CardContent className="p-8 text-center text-muted-foreground">Unable to load billing data.</CardContent></Card>;
 
@@ -155,7 +170,61 @@ export function BillingTab({ queryId }: { queryId: string }) {
               )}
             </DialogContent>
           </Dialog>
+
+          <Dialog>
+            <DialogTrigger render={<Button size="sm" variant="outline" className="gap-2 border-emerald-600 text-emerald-600 hover:bg-emerald-50">
+              <CreditCard className="w-4 h-4" /> Record Manual Payment
+            </Button>} />
+            <DialogContent className="sm:max-w-[425px]">
+              <DialogHeader><DialogTitle>Record Manual Payment</DialogTitle></DialogHeader>
+              <form onSubmit={(e) => {
+                e.preventDefault();
+                const formData = new FormData(e.currentTarget);
+                recordManualPaymentMutation.mutate({
+                  amount: Number(formData.get('amount')),
+                  mode: formData.get('mode') as string,
+                  paymentDate: formData.get('date') as string,
+                  referenceUtr: formData.get('reference') as string,
+                  notes: formData.get('notes') as string,
+                  queryId
+                });
+              }} className="space-y-4 py-4">
+                <div className="space-y-2">
+                  <Label>Amount (₹)</Label>
+                  <Input name="amount" type="number" defaultValue={customer.totalPending} required />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Mode</Label>
+                    <select name="mode" className="flex h-8 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring">
+                      <option value="upi">UPI/QR</option>
+                      <option value="cash">Cash</option>
+                      <option value="neft">NEFT/Bank</option>
+                      <option value="cheque">Cheque</option>
+                    </select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Date</Label>
+                    <Input name="date" type="date" defaultValue={new Date().toISOString().split('T')[0]} required />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label>Reference/UTR (Optional)</Label>
+                  <Input name="reference" placeholder="Transaction ID" />
+                </div>
+                <div className="space-y-2">
+                  <Label>Internal Notes</Label>
+                  <Input name="notes" placeholder="e.g. Received at office" />
+                </div>
+                <Button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-700" disabled={recordManualPaymentMutation.isPending}>
+                  {recordManualPaymentMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                  Save Payment Record
+                </Button>
+              </form>
+            </DialogContent>
+          </Dialog>
         </div>
+
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <KpiCard label="Total Amount" value={customer.totalAmount} />
           <KpiCard label="Received" value={customer.totalReceived} color="text-green-600" />

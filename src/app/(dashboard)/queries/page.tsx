@@ -81,7 +81,7 @@ export default function QueriesPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Leads Pipeline</h1>
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Leads Pipeline</h1>
           <p className="text-muted-foreground mt-1 text-sm">
             Manage your incoming trip requests and queries.
           </p>
@@ -133,93 +133,144 @@ export default function QueriesPage() {
         </div>
       </div>
 
-      <Card className="rounded-md border shadow-sm">
+      <div className="space-y-4">
         {isLoading && !queries.length ? (
-          <div className="p-12 flex items-center justify-center">
+          <div className="p-12 flex items-center justify-center bg-card rounded-md border shadow-sm">
             <Loader2 className="w-8 h-8 animate-spin text-muted-foreground opacity-50" />
           </div>
+        ) : isError ? (
+          <div className="p-12 text-center text-red-500 bg-card rounded-md border shadow-sm">
+            {error instanceof Error ? error.message : 'Failed to load queries'}
+          </div>
+        ) : queries.length === 0 ? (
+          <div className="p-16 text-center text-muted-foreground bg-card rounded-md border shadow-sm flex flex-col items-center justify-center space-y-2">
+            <Search className="w-8 h-8 opacity-20" />
+            <p>No leads found matching your filters.</p>
+          </div>
         ) : (
-          <Table>
-            <TableHeader>
-              <TableRow className="bg-muted/50">
-                <TableHead className="font-semibold">Lead ID</TableHead>
-                <TableHead className="font-semibold">Customer</TableHead>
-                <TableHead className="font-semibold">Contact</TableHead>
-                <TableHead className="font-semibold">Destination</TableHead>
-                <TableHead className="font-semibold">Status</TableHead>
-                {user?.permissions['query.view_all'] && <TableHead className="font-semibold">Assigned To</TableHead>}
-                <TableHead className="font-semibold text-right">Created</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isError ? (
-                <TableRow>
-                  <TableCell colSpan={user?.permissions['query.view_all'] ? 7 : 6} className="text-center h-24 text-red-500">
-                    {error instanceof Error ? error.message : 'Failed to load queries'}
-                  </TableCell>
-                </TableRow>
-              ) : queries.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={user?.permissions['query.view_all'] ? 7 : 6} className="text-center h-32 text-muted-foreground">
-                    <div className="flex flex-col items-center justify-center space-y-2">
-                      <Search className="w-8 h-8 opacity-20" />
-                      <p>No leads found matching your filters.</p>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ) : (
-                queries.map((q) => (
-                  <TableRow key={q.id} className="cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => router.push(`/queries/${q.id}`)}>
-                    <TableCell className="font-medium text-xs text-muted-foreground">{q.queryCode}</TableCell>
-                    <TableCell className="font-medium">{q.name}</TableCell>
-                    <TableCell className="text-xs">{q.phone}</TableCell>
-                    <TableCell>{q.destination || '—'}</TableCell>
-                    <TableCell>
-                      {(() => {
-                        const s = statusSettings?.find((st: any) => st.code === q.status);
-                        const label = s ? s.label : q.status.replace('_', ' ');
-                        const color = s ? s.colorHex : '#94a3b8';
-                        
-                        return (
-                          <span 
-                            className="capitalize text-[10px] font-bold px-2 py-0.5 rounded-full border shadow-sm"
-                            style={{ 
-                              backgroundColor: `${color}15`, 
-                              color: color,
-                              borderColor: `${color}30`
-                            }}
-                          >
-                            {label}
-                          </span>
-                        );
-                      })()}
-                    </TableCell>
-                    {user?.permissions['query.view_all'] && (
-                      <TableCell className="text-sm">
-                        {q.assignedUser?.name ? (
-                          <div className="flex items-center gap-2">
-                            <div className="w-2 h-2 rounded-full bg-green-500" />
-                            {q.assignedUser.name}
-                          </div>
-                        ) : (
-                          <span className="text-muted-foreground italic text-xs">Unassigned</span>
-                        )}
-                      </TableCell>
-                    )}
-                    <TableCell className="text-sm text-muted-foreground text-xs text-right whitespace-nowrap">
-                      {new Date(q.createdAt).toLocaleDateString(undefined, {
-                        year: 'numeric',
-                        month: 'short',
-                        day: 'numeric'
-                      })}
-                    </TableCell>
+          <>
+            {/* Desktop Table View */}
+            <Card className="hidden md:block rounded-md border shadow-sm overflow-hidden text-sm">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-muted/50">
+                    <TableHead className="font-semibold">Lead ID</TableHead>
+                    <TableHead className="font-semibold">Customer</TableHead>
+                    <TableHead className="font-semibold">Contact</TableHead>
+                    <TableHead className="font-semibold">Destination</TableHead>
+                    <TableHead className="font-semibold">Status</TableHead>
+                    {user?.permissions['query.view_all'] && <TableHead className="font-semibold">Assigned</TableHead>}
+                    <TableHead className="font-semibold text-right">Created</TableHead>
                   </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
+                </TableHeader>
+                <TableBody>
+                  {queries.map((q) => (
+                    <TableRow key={q.id} className="cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => router.push(`/queries/${q.id}`)}>
+                      <TableCell className="font-medium text-xs text-muted-foreground">{q.queryCode}</TableCell>
+                      <TableCell className="font-medium">{q.name}</TableCell>
+                      <TableCell className="text-xs">{q.phone}</TableCell>
+                      <TableCell>{q.destination || '—'}</TableCell>
+                      <TableCell>
+                        {(() => {
+                          const s = statusSettings?.find((st: any) => st.code === q.status);
+                          const label = s ? s.label : q.status.replace('_', ' ');
+                          const color = s ? s.colorHex : '#94a3b8';
+                          
+                          return (
+                            <span 
+                              className="capitalize text-[10px] font-bold px-2 py-0.5 rounded-full border shadow-sm"
+                              style={{ 
+                                backgroundColor: `${color}15`, 
+                                color: color,
+                                borderColor: `${color}30`
+                              }}
+                            >
+                              {label}
+                            </span>
+                          );
+                        })()}
+                      </TableCell>
+                      {user?.permissions['query.view_all'] && (
+                        <TableCell className="text-sm">
+                          {q.assignedUser?.name ? (
+                            <div className="flex items-center gap-2">
+                              <div className="w-2 h-2 rounded-full bg-green-500" />
+                              {q.assignedUser.name}
+                            </div>
+                          ) : (
+                            <span className="text-muted-foreground italic text-xs">Unassigned</span>
+                          )}
+                        </TableCell>
+                      )}
+                      <TableCell className="text-sm text-muted-foreground text-xs text-right whitespace-nowrap">
+                        {new Date(q.createdAt).toLocaleDateString(undefined, {
+                          year: 'numeric',
+                          month: 'short',
+                          day: 'numeric'
+                        })}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </Card>
+
+            {/* Mobile Card View */}
+            <div className="md:hidden space-y-3 pb-8">
+              {queries.map((q) => (
+                <Card 
+                  key={q.id} 
+                  className="p-4 active:scale-[0.98] transition-transform cursor-pointer border-slate-200 shadow-sm"
+                  onClick={() => router.push(`/queries/${q.id}`)}
+                >
+                  <div className="flex justify-between items-start mb-3">
+                    <div className="space-y-0.5">
+                      <p className="text-[10px] font-bold text-muted-foreground tracking-widest uppercase">{q.queryCode}</p>
+                      <h3 className="font-bold text-base text-slate-900">{q.name}</h3>
+                    </div>
+                    {(() => {
+                      const s = statusSettings?.find((st: any) => st.code === q.status);
+                      const label = s ? s.label : q.status.replace('_', ' ');
+                      const color = s ? s.colorHex : '#94a3b8';
+                      return (
+                        <span 
+                          className="text-[9px] font-black uppercase px-2 py-1 rounded-md border"
+                          style={{ backgroundColor: `${color}10`, color: color, borderColor: `${color}40` }}
+                        >
+                          {label}
+                        </span>
+                      );
+                    })()}
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-y-3 gap-x-2 text-xs border-t pt-3">
+                    <div className="space-y-1">
+                      <p className="text-[10px] text-muted-foreground font-semibold uppercase">Destination</p>
+                      <p className="font-medium text-slate-700 truncate">{q.destination || '—'}</p>
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-[10px] text-muted-foreground font-semibold uppercase">Phone</p>
+                      <p className="font-medium text-slate-700 truncate">{q.phone}</p>
+                    </div>
+                    {user?.permissions['query.view_all'] && (
+                      <div className="space-y-1">
+                        <p className="text-[10px] text-muted-foreground font-semibold uppercase">Assigned To</p>
+                        <p className="font-medium text-slate-700 truncate">{q.assignedUser?.name || 'Unassigned'}</p>
+                      </div>
+                    )}
+                    <div className="space-y-1 text-right">
+                      <p className="text-[10px] text-muted-foreground font-semibold uppercase">Created</p>
+                      <p className="font-medium text-slate-700">
+                        {new Date(q.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: '2-digit' })}
+                      </p>
+                    </div>
+                  </div>
+                </Card>
+              ))}
+            </div>
+          </>
         )}
-      </Card>
+      </div>
 
       {/* Pagination Container */}
       {!isError && queries.length > 0 && totalPages > 1 && (

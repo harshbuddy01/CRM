@@ -60,6 +60,7 @@ function formatAction(action: string): string {
     'query.assigned': 'Query Assigned',
     'query.updated': 'Query Updated',
     'payment.created': 'Payment Added',
+    'payment.recorded': 'Manual Payment Recorded',
     'payment.deleted': 'Payment Deleted',
     'proposal.created': 'Proposal Created',
     'proposal.sent': 'Proposal Sent',

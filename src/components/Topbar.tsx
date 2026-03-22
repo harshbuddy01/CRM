@@ -5,7 +5,7 @@ import { api } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { LogOut, User, Bell, Check, Loader2 } from 'lucide-react';
+import { LogOut, User, Bell, Check, Loader2, Menu } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import {
   DropdownMenu,
@@ -26,7 +26,7 @@ type Notification = {
   createdAt: string;
 };
 
-export function Topbar() {
+export function Topbar({ onMenuClick }: { onMenuClick?: () => void }) {
   const { user, logout } = useAuthStore();
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -63,12 +63,22 @@ export function Topbar() {
   };
 
   return (
-    <header className="h-14 border-b bg-background flex items-center justify-between px-6 sticky top-0 z-10 w-full">
-      <div className="font-semibold md:hidden text-lg tracking-tight">
-        TravelCRM
-      </div>
-      <div className="hidden md:block text-sm text-muted-foreground">
-        Welcome back, <span className="text-foreground font-medium">{user?.name}</span>
+    <header className="h-14 border-b bg-background flex items-center justify-between px-4 md:px-6 sticky top-0 z-10 w-full">
+      <div className="flex items-center gap-3">
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          className="md:hidden rounded-lg hover:bg-slate-100" 
+          onClick={onMenuClick}
+        >
+          <Menu className="w-5 h-5 text-slate-600" />
+        </Button>
+        <div className="font-bold md:hidden text-lg tracking-tight text-primary">
+          TravelCRM ✈️
+        </div>
+        <div className="hidden md:block text-sm text-muted-foreground">
+          Welcome back, <span className="text-foreground font-medium">{user?.name}</span>
+        </div>
       </div>
 
       <div className="flex items-center gap-4">

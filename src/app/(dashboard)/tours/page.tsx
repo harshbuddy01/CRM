@@ -36,28 +36,30 @@ export default function ToursListPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Tours Management</h1>
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-slate-900">Tours Management</h1>
           <p className="text-muted-foreground mt-1 text-sm">Monitor and manage all active, upcoming, and completed tours.</p>
         </div>
       </div>
 
-      <div className="flex flex-col sm:flex-row gap-4 mb-6">
-        <div className="relative flex-1">
+      <div className="flex flex-col gap-4 mb-6">
+        <div className="relative w-full">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Search tours by code, customer, or destination..."
-            className="pl-8"
+            placeholder="Search tours..."
+            className="pl-8 h-10 md:h-9"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-        <div className="flex bg-muted p-1 rounded-md">
+        <div className="flex bg-slate-100 dark:bg-slate-900 p-1 rounded-lg overflow-x-auto no-scrollbar scrollbar-none snap-x">
           {['all', 'upcoming', 'running', 'completed', 'cancelled'].map((status) => (
             <button
               key={status}
               onClick={() => setStatusFilter(status)}
-              className={`px-3 py-1.5 text-sm font-medium rounded-sm transition-colors capitalize ${
-                statusFilter === status ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'
+              className={`px-4 py-1.5 text-xs font-bold rounded-md transition-all capitalize flex-shrink-0 snap-start whitespace-nowrap ${
+                statusFilter === status 
+                ? 'bg-white dark:bg-slate-800 shadow-sm text-primary scale-105 z-10' 
+                : 'text-slate-500 hover:text-slate-700'
               }`}
             >
               {status}

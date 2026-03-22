@@ -43,7 +43,7 @@ const recordManualPayment = async (data, userId) => {
     throw new BusinessError('Payment must be associated with a Query or Tour');
   }
 
-  return await prisma.payment.create({
+  const payment = await prisma.payment.create({
     data: {
       queryId: data.queryId || null,
       tourId: data.tourId || null,
@@ -56,6 +56,24 @@ const recordManualPayment = async (data, userId) => {
       recordedBy: userId,
     }
   });
+
+  if (payment.queryId) {
+    await prisma.activityLog.create({
+      data: {
+        userId,
+        action: 'payment.recorded',
+        entityType: 'query',
+        entityId: payment.queryId,
+        newValue: {
+          amount: Number(payment.amount),
+          mode: payment.mode,
+          reference: payment.referenceUtr
+        }
+      }
+    });
+  }
+
+  return payment;
 };
 
 const generateRazorpayLink = async ({ queryId, tourId, amount, description }) => {

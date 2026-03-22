@@ -151,26 +151,26 @@ export default function PipelinePage() {
   }
 
   return (
-    <div className="flex flex-col h-[calc(100vh-6rem)]">
-      <div className="mb-6 flex-none">
-        <h1 className="text-3xl font-bold tracking-tight">Lead Pipeline</h1>
-        <p className="text-muted-foreground mt-1 text-sm">
-          Drag and drop leads to update their status. Enforces transition rules automatically.
+    <div className="flex flex-col h-[calc(100vh-8rem)] md:h-[calc(100vh-6rem)]">
+      <div className="mb-4 md:mb-6 flex-none">
+        <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-slate-900 dark:text-white">Lead Pipeline</h1>
+        <p className="text-muted-foreground mt-1 text-xs md:text-sm max-w-2xl">
+          Drag and drop leads to update their status. Rules are enforced automatically based on current status.
         </p>
       </div>
 
       <DragDropContext onDragStart={onDragStart} onDragEnd={onDragEnd}>
-        <div className="flex gap-4 overflow-x-auto pb-4 flex-1 h-full min-h-0 snap-x">
+        <div className="flex gap-4 overflow-x-auto pb-6 flex-1 h-full min-h-0 snap-x scrollbar-thin scrollbar-thumb-slate-200">
           {columns.map((col: any) => (
-            <div key={col.id} className="flex-shrink-0 w-80 flex flex-col snap-start bg-muted/40 rounded-xl border">
+            <div key={col.id} className="flex-shrink-0 w-72 md:w-80 flex flex-col snap-center md:snap-start bg-slate-50/50 dark:bg-slate-900/40 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
               
               {/* Header */}
-              <div className="p-4 border-b bg-muted/30 flex items-center justify-between rounded-t-xl" style={{ borderTopColor: col.color, borderTopWidth: 4 }}>
+              <div className="p-3 md:p-4 border-b bg-white dark:bg-slate-900 flex items-center justify-between" style={{ borderTopColor: col.color, borderTopWidth: 4 }}>
                 <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full shadow-sm" style={{ backgroundColor: col.color }} />
-                  <h3 className="font-semibold text-sm">{col.title}</h3>
+                  <div className="w-2.5 h-2.5 rounded-full shadow-sm" style={{ backgroundColor: col.color }} />
+                  <h3 className="font-bold text-xs md:text-sm tracking-tight">{col.title}</h3>
                 </div>
-                <div className="bg-background text-xs font-semibold px-2 py-0.5 rounded-md border text-muted-foreground shadow-sm">
+                <div className="bg-slate-100 dark:bg-slate-800 text-[10px] font-bold px-2 py-0.5 rounded-md border text-slate-500 shadow-sm">
                   {boardData[col.id]?.length || 0}
                 </div>
               </div>
