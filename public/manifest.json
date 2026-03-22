@@ -1,6 +1,6 @@
 {
-  "name": "TravelCRM",
-  "short_name": "TravelCRM",
+  "name": "imagicaholidays-CRM",
+  "short_name": "imagicaholidays",
   "description": "Premium Travel CRM & Lead Management System",
   "start_url": "/",
   "display": "standalone",

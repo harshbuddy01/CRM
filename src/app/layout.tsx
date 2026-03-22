@@ -16,13 +16,16 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "TravelCRM",
-  description: "Premium Travel CRM & Lead Management System",
+  title: "imagicaholidays-CRM",
+  description: "Premium CRM & Lead Management System",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "TravelCRM",
+    title: "imagicaholidays-CRM",
+  },
+  icons: {
+    apple: "/icons/apple-touch-icon.png",
   },
 };
 

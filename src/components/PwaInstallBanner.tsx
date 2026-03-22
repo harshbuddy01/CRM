@@ -64,7 +64,7 @@ export function PwaInstallBanner() {
             <Download className="w-6 h-6" />
           </div>
           <div className="flex-1 pr-6">
-            <h3 className="font-bold text-sm">Install TravelCRM App</h3>
+            <h3 className="font-bold text-sm">Install imagicaholidays App</h3>
             <p className="text-[11px] opacity-90 leading-tight mt-1">
               {platform === 'ios' 
                 ? "Tap the Share icon below and then 'Add to Home Screen' for a seamless app experience."
