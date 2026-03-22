@@ -28,12 +28,12 @@ const register = async ({ name, email, password, roleId, createdBy, mobileOnly =
     throw new NotFoundError('Role');
   }
 
-  const passwordHash = await bcrypt.hash(password, 10);
+  const passwordHash = await bcrypt.hash(password, 12);
 
   const user = await prisma.user.create({
     data: {
       name,
-      email,
+      email: normalizedEmail,
       passwordHash,
       roleId,
       createdBy,
@@ -154,7 +154,7 @@ const changePassword = async (userId, oldPassword, newPassword) => {
   const isMatch = await bcrypt.compare(oldPassword, user.passwordHash);
   if (!isMatch) throw new UnauthorizedError('Incorrect old password');
 
-  const passwordHash = await bcrypt.hash(newPassword, 10);
+  const passwordHash = await bcrypt.hash(newPassword, 12);
   await prisma.user.update({
     where: { id: userId },
     data: { passwordHash },
@@ -192,7 +192,7 @@ const logout = async (userId, refreshTokenStr) => {
  * the old hash changes and the token becomes invalid.
  */
 const forgotPassword = async (email) => {
-  const user = await prisma.user.findUnique({ where: { email } });
+  const user = await prisma.user.findUnique({ where: { email: email.toLowerCase() } });
 
   // Case 1 — User not found: don't reveal if email exists
   if (!user) {
@@ -281,7 +281,7 @@ const resetPassword = async (userId, token, newPassword) => {
   }
 
   // Hash and update
-  const passwordHash = await bcrypt.hash(newPassword, 10);
+  const passwordHash = await bcrypt.hash(newPassword, 12);
   await prisma.user.update({ where: { id: userId }, data: { passwordHash } });
 
   // Invalidate all sessions (force re-login)

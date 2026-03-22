@@ -41,7 +41,7 @@ router.post('/vouchers/:id/generate-pdf', async (req, res, next) => {
     const pdfBuffer = await pdfService.generatePdfFromHtml(html);
 
     // Upload to Cloudinary
-    const cloudinary = require('cloudinary').v2;
+    const cloudinary = require('../config/cloudinary');
     const result = await new Promise((resolve, reject) => {
       const stream = cloudinary.uploader.upload_stream(
         { folder: 'travelcrm/vouchers', resource_type: 'raw', format: 'pdf' },
@@ -85,6 +85,8 @@ router.post('/vouchers/:id/send', async (req, res, next) => {
 module.exports = router;
 
 // ─── Helper ──────────────────────────────────────────────────
+const esc = (s) => String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
 function generateVoucherHtml(voucher) {
   const isCustomer = voucher.voucherType === 'customer';
   return `
@@ -105,24 +107,24 @@ function generateVoucherHtml(voucher) {
     <body>
       <div class="header">
         <h1>${isCustomer ? 'Booking Confirmation' : 'Supplier Reservation Voucher'}</h1>
-        <p class="voucher-number">${voucher.voucherNumber}</p>
+        <p class="voucher-number">${esc(voucher.voucherNumber)}</p>
       </div>
       <div class="section">
         <h3>${isCustomer ? 'Guest Details' : 'Reservation Details'}</h3>
         <table>
-          ${voucher.leadPaxName ? `<tr><td>Guest Name</td><td>${voucher.leadPaxName}</td></tr>` : ''}
-          ${voucher.paxDetails ? `<tr><td>Pax</td><td>${voucher.paxDetails}</td></tr>` : ''}
-          ${voucher.destination ? `<tr><td>Destination</td><td>${voucher.destination}</td></tr>` : ''}
-          ${voucher.hotelName ? `<tr><td>Hotel</td><td>${voucher.hotelName}</td></tr>` : ''}
-          ${voucher.supplierName ? `<tr><td>Supplier</td><td>${voucher.supplierName}</td></tr>` : ''}
+          ${voucher.leadPaxName ? `<tr><td>Guest Name</td><td>${esc(voucher.leadPaxName)}</td></tr>` : ''}
+          ${voucher.paxDetails ? `<tr><td>Pax</td><td>${esc(voucher.paxDetails)}</td></tr>` : ''}
+          ${voucher.destination ? `<tr><td>Destination</td><td>${esc(voucher.destination)}</td></tr>` : ''}
+          ${voucher.hotelName ? `<tr><td>Hotel</td><td>${esc(voucher.hotelName)}</td></tr>` : ''}
+          ${voucher.supplierName ? `<tr><td>Supplier</td><td>${esc(voucher.supplierName)}</td></tr>` : ''}
           ${voucher.checkIn ? `<tr><td>Check-in</td><td>${new Date(voucher.checkIn).toLocaleDateString()}</td></tr>` : ''}
           ${voucher.checkOut ? `<tr><td>Check-out</td><td>${new Date(voucher.checkOut).toLocaleDateString()}</td></tr>` : ''}
-          ${voucher.roomType ? `<tr><td>Room Type</td><td>${voucher.roomType}</td></tr>` : ''}
-          ${voucher.mealPlan ? `<tr><td>Meal Plan</td><td>${voucher.mealPlan}</td></tr>` : ''}
-          ${voucher.confirmationNumber ? `<tr><td>Confirmation #</td><td>${voucher.confirmationNumber}</td></tr>` : ''}
+          ${voucher.roomType ? `<tr><td>Room Type</td><td>${esc(voucher.roomType)}</td></tr>` : ''}
+          ${voucher.mealPlan ? `<tr><td>Meal Plan</td><td>${esc(voucher.mealPlan)}</td></tr>` : ''}
+          ${voucher.confirmationNumber ? `<tr><td>Confirmation #</td><td>${esc(voucher.confirmationNumber)}</td></tr>` : ''}
         </table>
       </div>
-      ${voucher.greetingMessage ? `<div class="greeting">${voucher.greetingMessage}</div>` : ''}
+      ${voucher.greetingMessage ? `<div class="greeting">${esc(voucher.greetingMessage)}</div>` : ''}
     </body>
     </html>
   `;

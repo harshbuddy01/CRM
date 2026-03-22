@@ -107,7 +107,15 @@ function MasterPanel({ category }: { category: typeof CATEGORIES[0] }) {
 
   const startEdit = (item: any) => { setEditItem(item); setShowForm(true); };
   const closeForm = () => { setShowForm(false); setEditItem(null); };
-  const items = data?.items || [];
+  
+  // V1 endpoints return an array, V2 returns { items, total }
+  let items = Array.isArray(data) ? data : (data?.items || []);
+  
+  // Client-side search for V1 endpoints (since backend doesn't support ?search yet)
+  if (search && Array.isArray(data)) {
+    const s = search.toLowerCase();
+    items = items.filter((item: any) => (item.name || item.title || item.companyName || item.vehicleType || '').toLowerCase().includes(s));
+  }
 
   return (
     <div className="p-5 space-y-4">
@@ -138,7 +146,7 @@ function MasterPanel({ category }: { category: typeof CATEGORIES[0] }) {
       ) : (
         <MasterTable category={category} items={items} onView={setViewItem} onEdit={startEdit} onDelete={(id) => { if (confirm('Delete this record?')) deleteMutation.mutate(id); }} canManage={canManage} />
       )}
-      {data && <p className="text-xs text-muted-foreground text-right">{data.total} total records</p>}
+      {data && <p className="text-xs text-muted-foreground text-right">{data.total || items.length} total records</p>}
 
       {viewItem && (
         <div className="fixed inset-0 z-50 bg-black/50 flex flex-col items-center justify-center p-4">

@@ -142,7 +142,8 @@ async function main() {
   const existingAdmin = await prisma.user.findUnique({ where: { email: adminEmail } });
   
   if (!existingAdmin) {
-    const passwordHash = await bcrypt.hash('Admin@123', 10);
+    const defaultPassword = process.env.ADMIN_DEFAULT_PASSWORD || 'TravelAdmin!2026';
+    const passwordHash = await bcrypt.hash(defaultPassword, 12);
     await prisma.user.create({
       data: {
         name: 'System Admin',

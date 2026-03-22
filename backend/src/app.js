@@ -82,8 +82,6 @@ app.get('/health', (_req, res) => {
     message: 'TravelCRM API is healthy 🚀',
     timestamp: new Date().toISOString(),
     environment: config.nodeEnv,
-    uptime: process.uptime(),
-    memory: process.memoryUsage(),
   });
 });
 

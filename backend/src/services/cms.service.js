@@ -3,7 +3,7 @@
 // ============================================================
 
 const prisma = require('../config/prisma');
-const cloudinary = require('cloudinary').v2;
+const cloudinary = require('../config/cloudinary');
 
 // ─── Helpers ─────────────────────────────────────────────────
 const uploadToCloudinary = (buffer, folder) =>

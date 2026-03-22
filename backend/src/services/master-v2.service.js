@@ -3,14 +3,8 @@
 // ============================================================
 
 const prisma = require('../config/prisma');
-const cloudinary = require('cloudinary').v2;
+const cloudinary = require('../config/cloudinary');
 const config = require('../config');
-
-cloudinary.config({
-  cloud_name: config.cloudinary.cloudName,
-  api_key:    config.cloudinary.apiKey,
-  api_secret: config.cloudinary.apiSecret,
-});
 
 const SOFT_DELETE_MODELS = [
   'supplier','activity','transfer','roomType','mealPlan','packageTheme','dayItineraryTemplate',
@@ -76,6 +70,7 @@ const createMaster = async (modelName, data, photoBuffer) => {
   
   if (modelName === 'supplier') { delete d.name; delete d.type; }
   if (modelName === 'transfer') { d.vehicleType = d.vehicleType || d.name; delete d.name; }
+  if (modelName === 'dayItineraryTemplate') { delete d.isActive; }
 
   return await prisma[modelName].create({ data: d });
 };
@@ -95,6 +90,7 @@ const updateMaster = async (modelName, id, data, photoBuffer) => {
 
   if (modelName === 'supplier') { delete d.name; delete d.type; }
   if (modelName === 'transfer') { d.vehicleType = d.vehicleType || d.name; delete d.name; }
+  if (modelName === 'dayItineraryTemplate') { delete d.isActive; }
 
   return await prisma[modelName].update({ where: { id }, data: d });
 };
