@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { X, Share, PlusSquare, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
 
 export function PwaInstallBanner() {
   const [show, setShow] = useState(false);
@@ -73,16 +74,27 @@ export function PwaInstallBanner() {
         </div>
 
         {platform === 'ios' ? (
-          <div className="mt-4 flex items-center justify-center gap-4 py-2.5 px-3 bg-white/10 rounded-xl border border-white/5 shadow-inner">
-            <div className="flex flex-col items-center gap-1">
-              <Share className="w-5 h-5 text-sky-300" />
-              <span className="text-[9px] font-bold uppercase tracking-wider">Share</span>
+          <div className="space-y-3">
+            <div className="mt-4 flex items-center justify-center gap-4 py-2.5 px-3 bg-white/5 rounded-xl border border-white/10 shadow-inner select-none pointer-events-none">
+              <div className="flex flex-col items-center gap-1 opacity-70">
+                <Share className="w-5 h-5 text-sky-300" />
+                <span className="text-[9px] font-bold uppercase tracking-wider">1. Share</span>
+              </div>
+              <div className="w-px h-8 bg-white/10" />
+              <div className="flex flex-col items-center gap-1">
+                <PlusSquare className="w-5 h-5 text-emerald-300" />
+                <span className="text-[9px] font-bold uppercase tracking-wider text-white">2. Add to Home</span>
+              </div>
             </div>
-            <div className="w-px h-8 bg-white/10" />
-            <div className="flex flex-col items-center gap-1">
-              <PlusSquare className="w-5 h-5 text-emerald-300" />
-              <span className="text-[9px] font-bold uppercase tracking-wider text-white">Add to Home</span>
-            </div>
+            <Button 
+              className="w-full bg-white text-primary hover:bg-slate-100 font-bold rounded-xl shadow-lg h-10 select-none"
+              onClick={() => {
+                toast.info("Tap the Share icon in your browser menu, then scroll down to 'Add to Home Screen'");
+                dismiss();
+              }}
+            >
+              Got It
+            </Button>
           </div>
         ) : (
           <Button 
