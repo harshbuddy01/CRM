@@ -90,7 +90,7 @@ const downloadPdf = async (req, res, next) => {
                 <td>${d.transport || '-'}</td>
                 <td>${d.activities || '-'}</td>
               </tr>
-              ${d.description ? `<tr><td colspan="6" style="background: #f8fafc; padding: 12px; font-style: italic; color: #475569;"><strong>Day ${d.dayNumber} Itinerary:</strong><br/>${d.description.replace(/\\n/g, '<br/>')}</td></tr>` : ''}
+              ${d.description ? `<tr><td colspan="6" style="background: #f8fafc; padding: 12px; font-style: italic; color: #475569;"><strong>Day ${d.dayNumber} Itinerary:</strong><br/>${d.description.replace(/\n/g, '<br/>')}</td></tr>` : ''}
             `).join('')}
           </table>
         </body>
@@ -217,7 +217,7 @@ const sendEmail = async (req, res, next) => {
                 <td>${d.transport || '-'}</td>
                 <td>${d.activities || '-'}</td>
               </tr>
-              ${d.description ? \`<tr><td colspan="6" style="background: #f8fafc; padding: 12px; font-style: italic; color: #475569;"><strong>Day ${d.dayNumber} Itinerary:</strong><br/>\${d.description.replace(/\\n/g, '<br/>')}</td></tr>\` : ''}
+              ${d.description ? `<tr><td colspan="6" style="background: #f8fafc; padding: 12px; font-style: italic; color: #475569;"><strong>Day ${d.dayNumber} Itinerary:</strong><br/>${d.description.replace(/\n/g, '<br/>')}</td></tr>` : ''}
             `).join('')}
           </table>
         </body>
