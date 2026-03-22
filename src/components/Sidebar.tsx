@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useEffect } from 'react';
 import { useAuthStore } from '@/lib/auth-store';
 import { 
   LayoutDashboard, 
@@ -36,6 +37,15 @@ interface SidebarProps {
 export function Sidebar({ open, setOpen }: SidebarProps) {
   const pathname = usePathname();
   const { user } = useAuthStore();
+  
+  useEffect(() => {
+    if (!open) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOpen?.(false);
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [open, setOpen]);
 
   const links = [
     { href: '/', label: 'Overview', icon: LayoutDashboard, exact: true },
@@ -84,13 +94,22 @@ export function Sidebar({ open, setOpen }: SidebarProps) {
         />
       )}
 
-      <aside className={cn(
-        "fixed inset-y-0 left-0 w-64 border-r bg-white z-[70] transform transition-transform duration-300 ease-in-out md:translate-x-0 flex flex-col h-screen",
-        open ? "translate-x-0 shadow-2xl" : "-translate-x-full"
-      )}>
+      <aside 
+        className={cn(
+          "fixed inset-y-0 left-0 w-64 border-r bg-white z-[70] transform transition-transform duration-300 ease-in-out md:translate-x-0 flex flex-col h-screen",
+          open ? "translate-x-0 shadow-2xl" : "-translate-x-full"
+        )}
+        role={open ? "dialog" : undefined}
+        aria-modal={open ? "true" : undefined}
+        aria-label="Navigation Sidebar"
+      >
         <div className="h-14 flex items-center justify-between border-b px-6 font-bold text-lg bg-slate-50">
           <span>TravelCRM ✈️</span>
-          <button onClick={() => setOpen?.(false)} className="md:hidden p-1 hover:bg-slate-200 rounded-lg transition-colors">
+          <button 
+            onClick={() => setOpen?.(false)} 
+            className="md:hidden p-1 hover:bg-slate-200 rounded-lg transition-colors"
+            aria-label="Close menu"
+          >
             <X className="w-5 h-5 text-slate-500" />
           </button>
         </div>

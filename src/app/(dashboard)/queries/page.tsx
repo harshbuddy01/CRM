@@ -165,7 +165,19 @@ export default function QueriesPage() {
                 </TableHeader>
                 <TableBody>
                   {queries.map((q) => (
-                    <TableRow key={q.id} className="cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => router.push(`/queries/${q.id}`)}>
+                    <TableRow 
+                      key={q.id} 
+                      className="cursor-pointer hover:bg-muted/50 transition-colors" 
+                      onClick={() => router.push(`/queries/${q.id}`)}
+                      tabIndex={0}
+                      role="link"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          router.push(`/queries/${q.id}`);
+                        }
+                      }}
+                    >
                       <TableCell className="font-medium text-xs text-muted-foreground">{q.queryCode}</TableCell>
                       <TableCell className="font-medium">{q.name}</TableCell>
                       <TableCell className="text-xs">{q.phone}</TableCell>
@@ -202,7 +214,7 @@ export default function QueriesPage() {
                           )}
                         </TableCell>
                       )}
-                      <TableCell className="text-sm text-muted-foreground text-xs text-right whitespace-nowrap">
+                      <TableCell className="text-muted-foreground text-xs text-right whitespace-nowrap">
                         {new Date(q.createdAt).toLocaleDateString(undefined, {
                           year: 'numeric',
                           month: 'short',
@@ -222,6 +234,14 @@ export default function QueriesPage() {
                   key={q.id} 
                   className="p-4 active:scale-[0.98] transition-transform cursor-pointer border-slate-200 shadow-sm"
                   onClick={() => router.push(`/queries/${q.id}`)}
+                  tabIndex={0}
+                  role="button"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      router.push(`/queries/${q.id}`);
+                    }
+                  }}
                 >
                   <div className="flex justify-between items-start mb-3">
                     <div className="space-y-0.5">

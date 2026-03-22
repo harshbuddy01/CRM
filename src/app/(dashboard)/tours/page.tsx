@@ -36,7 +36,7 @@ export default function ToursListPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-slate-900">Tours Management</h1>
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-100">Tours Management</h1>
           <p className="text-muted-foreground mt-1 text-sm">Monitor and manage all active, upcoming, and completed tours.</p>
         </div>
       </div>

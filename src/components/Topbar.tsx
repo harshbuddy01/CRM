@@ -70,6 +70,7 @@ export function Topbar({ onMenuClick }: { onMenuClick?: () => void }) {
           size="icon" 
           className="md:hidden rounded-lg hover:bg-slate-100" 
           onClick={onMenuClick}
+          aria-label="Open navigation menu"
         >
           <Menu className="w-5 h-5 text-slate-600" />
         </Button>

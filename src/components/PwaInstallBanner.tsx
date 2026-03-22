@@ -13,7 +13,12 @@ export function PwaInstallBanner() {
     if (typeof window !== 'undefined' && window.matchMedia('(display-mode: standalone)').matches) return;
 
     // Check if dismissed in this session
-    const dismissed = sessionStorage.getItem('pwa-banner-dismissed');
+    let dismissed = null;
+    try {
+      dismissed = sessionStorage.getItem('pwa-banner-dismissed');
+    } catch (e) {
+      // In private browsing or restricted environments, sessionStorage might throw
+    }
     if (dismissed) return;
 
     // Detect platform
@@ -33,7 +38,11 @@ export function PwaInstallBanner() {
 
   const dismiss = () => {
     setShow(false);
-    sessionStorage.setItem('pwa-banner-dismissed', 'true');
+    try {
+      sessionStorage.setItem('pwa-banner-dismissed', 'true');
+    } catch (e) {
+      // Ignore storage errors
+    }
   };
 
   if (!show) return null;
@@ -41,7 +50,11 @@ export function PwaInstallBanner() {
   return (
     <div className="fixed bottom-24 left-4 right-4 z-[100] md:hidden">
       <div className="bg-primary text-primary-foreground p-4 rounded-2xl shadow-2xl border border-white/20 animate-in slide-in-from-bottom-5 duration-500">
-        <button onClick={dismiss} className="absolute top-2 right-2 p-1 hover:bg-white/10 rounded-full transition-colors">
+        <button 
+          onClick={dismiss} 
+          className="absolute top-2 right-2 p-1 hover:bg-white/10 rounded-full transition-colors"
+          aria-label="Dismiss install banner"
+        >
           <X className="w-4 h-4" />
         </button>
         

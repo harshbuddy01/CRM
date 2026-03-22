@@ -75,17 +75,23 @@ export default function Dashboard() {
       <div className="pt-4">
         <h2 className="text-lg font-bold text-slate-900 mb-4">Quick Shortcuts</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-           <Link href="/queries/new" className="w-full">
-             <button className="w-full bg-primary text-white h-14 md:h-12 rounded-2xl md:rounded-xl text-xs font-black uppercase tracking-widest hover:brightness-110 shadow-lg shadow-primary/20 transition-all active:scale-95 flex items-center justify-center gap-2">
-               <Target className="w-4 h-4" />
-               New Lead
-             </button>
+           <Link 
+             href="/queries/new" 
+             className="w-full bg-primary text-white h-14 md:h-12 rounded-2xl md:rounded-xl text-xs font-black uppercase tracking-widest hover:brightness-110 shadow-lg shadow-primary/20 transition-all active:scale-95 flex items-center justify-center gap-2"
+             role="button"
+             aria-label="Create a new lead"
+           >
+             <Target className="w-4 h-4" />
+             New Lead
            </Link>
-           <Link href="/queries" className="w-full">
-             <button className="w-full bg-slate-100 text-slate-900 h-14 md:h-12 rounded-2xl md:rounded-xl text-xs font-black uppercase tracking-widest hover:bg-slate-200 border border-slate-200 shadow-sm transition-all active:scale-95 flex items-center justify-center gap-2">
-               <Map className="w-4 h-4" />
-               Lead Pipeline
-             </button>
+           <Link 
+             href="/queries" 
+             className="w-full bg-slate-100 text-slate-900 h-14 md:h-12 rounded-2xl md:rounded-xl text-xs font-black uppercase tracking-widest hover:bg-slate-200 border border-slate-200 shadow-sm transition-all active:scale-95 flex items-center justify-center gap-2"
+             role="button"
+             aria-label="View all leads in pipeline"
+           >
+             <Map className="w-4 h-4" />
+             Lead Pipeline
            </Link>
         </div>
       </div>

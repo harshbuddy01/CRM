@@ -39,6 +39,7 @@ export function BillingTab({ queryId }: { queryId: string }) {
   });
 
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const [isManualPaymentOpen, setIsManualPaymentOpen] = useState(false);
   const [paymentAmount, setPaymentAmount] = useState('');
   const [paymentDesc, setPaymentDesc] = useState('Booking Payment');
   const [generatedLink, setGeneratedLink] = useState('');
@@ -73,6 +74,7 @@ export function BillingTab({ queryId }: { queryId: string }) {
     },
     onSuccess: () => {
       toast.success('Manual payment recorded successfully');
+      setIsManualPaymentOpen(false);
       queryClient.invalidateQueries({ queryKey: ['billing-summary', queryId] });
       queryClient.invalidateQueries({ queryKey: ['payments', queryId] });
     },
@@ -171,7 +173,7 @@ export function BillingTab({ queryId }: { queryId: string }) {
             </DialogContent>
           </Dialog>
 
-          <Dialog>
+          <Dialog open={isManualPaymentOpen} onOpenChange={setIsManualPaymentOpen}>
             <DialogTrigger render={<Button size="sm" variant="outline" className="gap-2 border-emerald-600 text-emerald-600 hover:bg-emerald-50">
               <CreditCard className="w-4 h-4" /> Record Manual Payment
             </Button>} />
@@ -180,12 +182,29 @@ export function BillingTab({ queryId }: { queryId: string }) {
               <form onSubmit={(e) => {
                 e.preventDefault();
                 const formData = new FormData(e.currentTarget);
+                const amountRaw = formData.get('amount') as string;
+                const mode = formData.get('mode') as string;
+                const date = formData.get('date') as string;
+                const reference = formData.get('reference') as string;
+                const notes = formData.get('notes') as string;
+
+                const amount = parseFloat(amountRaw);
+                if (isNaN(amount) || amount <= 0) {
+                  toast.error("Please enter a valid positive amount");
+                  return;
+                }
+
+                if (!mode || !date) {
+                  toast.error("Payment mode and date are required");
+                  return;
+                }
+
                 recordManualPaymentMutation.mutate({
-                  amount: Number(formData.get('amount')),
-                  mode: formData.get('mode') as string,
-                  paymentDate: formData.get('date') as string,
-                  referenceUtr: formData.get('reference') as string,
-                  notes: formData.get('notes') as string,
+                  amount,
+                  mode: mode || 'upi',
+                  paymentDate: date,
+                  referenceUtr: reference || '',
+                  notes: notes || '',
                   queryId
                 });
               }} className="space-y-4 py-4">

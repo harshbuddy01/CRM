@@ -75,9 +75,12 @@
   }
   html {
     -webkit-tap-highlight-color: transparent;
-    scroll-behavior: smooth;
-    user-select: none;
-    -webkit-user-select: none;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    html {
+      scroll-behavior: smooth;
+    }
   }
 }
 
@@ -93,13 +96,18 @@
   .scrolling-touch {
     -webkit-overflow-scrolling: touch;
   }
-}
 
-/* Ensure touch targets are accessible on small screens */
-@media (max-width: 768px) {
-  button, 
-  a, 
-  [role="button"] {
+  .no-select {
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  .touch-target {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  .touch-target-flex {
     min-height: 44px;
     min-width: 44px;
     display: flex;

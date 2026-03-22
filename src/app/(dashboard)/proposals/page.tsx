@@ -212,7 +212,9 @@ export default function ProposalsDashboard() {
                       </TableCell>
                       <TableCell className="text-center font-black text-primary">v{p.version}</TableCell>
                       <TableCell className="font-black text-slate-900">
-                        ₹{Number(p.sellingPrice).toLocaleString('en-IN')}
+                        {p.sellingPrice && isFinite(Number(p.sellingPrice)) 
+                          ? `₹${Number(p.sellingPrice).toLocaleString('en-IN')}` 
+                          : '—'}
                       </TableCell>
                       <TableCell>
                         <span className={`px-2 py-0.5 rounded text-[10px] font-black tracking-wider uppercase border shadow-sm ${
@@ -224,7 +226,9 @@ export default function ProposalsDashboard() {
                         </span>
                       </TableCell>
                       <TableCell className="text-[10px] text-slate-500 font-medium">
-                        {format(new Date(p.createdAt), 'MMM d, yyyy')}
+                        {p.createdAt && !isNaN(new Date(p.createdAt).getTime())
+                          ? format(new Date(p.createdAt), 'MMM d, yyyy')
+                          : '—'}
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-1">
@@ -274,8 +278,11 @@ export default function ProposalsDashboard() {
 
                   <div className="grid grid-cols-2 gap-3 mb-4 text-xs">
                     <div className="space-y-1">
-                      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tight">Price</p>
-                      <p className="font-black text-slate-900 text-sm">₹{Number(p.sellingPrice).toLocaleString('en-IN')}</p>
+                      <p className="font-black text-slate-900 text-sm">
+                        {p.sellingPrice && isFinite(Number(p.sellingPrice))
+                          ? `₹${Number(p.sellingPrice).toLocaleString('en-IN')}`
+                          : '—'}
+                      </p>
                     </div>
                     <div className="space-y-1">
                       <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tight">Destination</p>
