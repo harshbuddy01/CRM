@@ -105,7 +105,7 @@ export function BillingTab({ queryId }: { queryId: string }) {
           <Dialog open={isPaymentModalOpen} onOpenChange={(open) => {
             setIsPaymentModalOpen(open);
             if (open) {
-              setPaymentAmount(String(customer.totalPending));
+              setPaymentAmount(String(customer?.totalPending || 0));
               setGeneratedLink('');
             }
           }}>
