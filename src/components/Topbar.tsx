@@ -156,7 +156,7 @@ export function Topbar({ onMenuClick }: { onMenuClick?: () => void }) {
             <DropdownMenuLabel>My Account</DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem className="text-muted-foreground">
-              {user?.email}
+              {String(user?.email || 'No email')}
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleLogout} className="text-red-600 focus:bg-red-50 focus:text-red-700 cursor-pointer">
