@@ -54,11 +54,16 @@ api.interceptors.response.use(
               })
               .catch((refreshError) => {
                 // Refresh failed — force logout once
-                logout();
+                // If refresh fails, kill all ongoing network requests and clear session
+                logout(); // Ensure logout is still called
                 if (typeof window !== 'undefined') {
+                  window.stop();
+                  localStorage.removeItem('refreshToken');
+                  localStorage.removeItem('auth-storage');
+                  document.cookie = 'accessToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; secure; samesite=strict';
                   window.location.href = '/login';
                 }
-                throw refreshError;
+                return Promise.reject(refreshError); // Reject with the refresh error
               })
               .finally(() => { refreshPromise = null; });
           }
