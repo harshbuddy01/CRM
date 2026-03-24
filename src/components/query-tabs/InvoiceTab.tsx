@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, FileText, Download } from 'lucide-react';
+import { Loader2, FileText, Download, ExternalLink } from 'lucide-react';
 import { format } from 'date-fns';
 
 export function InvoiceTab({ queryId }: { queryId: string }) {
