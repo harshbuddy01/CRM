@@ -175,10 +175,13 @@ const downloadPdf = async (req, res, next) => {
     // Log Activity (Non-blocking)
     prisma.activityLog.create({
       data: {
-        action: 'proposal.downloaded',
+        userId: req.user.id,
+        action: 'proposal.pdf_downloaded',
         entityType: 'query',
         entityId: proposal.queryId,
         newValue: { version: proposal.version }
+      }
+    }).catch(() => {});        newValue: { version: proposal.version }
       }
     }).catch(err => console.error('History Log Error:', err));
 
