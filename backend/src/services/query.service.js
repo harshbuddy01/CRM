@@ -274,6 +274,9 @@ const changeQueryStatus = async (id, status, userId, canViewAll, canEditAll) => 
     }
 
     // 2. Auto-create tour on CONFIRMED status
+    if (!existing.travelDateFrom) {
+      throw new BusinessError('Travel start date is required before confirming a booking to create a Tour.');
+    }
     // Safe generated tour code block
     let tourCode;
     for (let attempt = 1; attempt <= 3; attempt++) {
@@ -300,8 +303,8 @@ const changeQueryStatus = async (id, status, userId, canViewAll, canEditAll) => 
         proposalId: proposal ? proposal.id : null,
         tourCode,
         status: 'upcoming',
-        startDate: existing.travelDateFrom || new Date(),
-        endDate: existing.travelDateTo || new Date(),
+        startDate: existing.travelDateFrom,
+        endDate: existing.travelDateTo || existing.travelDateFrom,
         totalPax: existing.adults + existing.children,
       }
     });

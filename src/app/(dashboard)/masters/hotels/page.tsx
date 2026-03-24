@@ -122,7 +122,7 @@ export default function HotelsPage() {
           <h1 className="text-xl md:text-3xl font-bold tracking-tight">Master Data</h1>
           <p className="text-muted-foreground text-xs md:text-sm">Manage your destinations and hotels inventory</p>
         </div>
-        <Dialog open={isDialogOpen} onOpenChange={(open) => !open ? handleCloseDialog() : setIsDialogOpen(true)}>
+        <Dialog key={editingId ?? 'new'} open={isDialogOpen} onOpenChange={(open) => !open ? handleCloseDialog() : setIsDialogOpen(true)}>
           {/* @ts-ignore - Trigger interface typing override */}
           <DialogTrigger asChild>
             <Button>
@@ -141,7 +141,7 @@ export default function HotelsPage() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Destination</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Select a destination" />
@@ -175,10 +175,10 @@ export default function HotelsPage() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Category</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                          <FormControl>
-                            <SelectTrigger><SelectValue placeholder="Select category" /></SelectTrigger>
-                          </FormControl>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                            <FormControl>
+                              <SelectTrigger><SelectValue placeholder="Select category" /></SelectTrigger>
+                            </FormControl>
                           <SelectContent>
                             <SelectItem value="Budget">Budget</SelectItem>
                             <SelectItem value="3 Star">3 Star</SelectItem>

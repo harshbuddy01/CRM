@@ -39,6 +39,8 @@ export function Topbar({ onMenuClick }: { onMenuClick?: () => void }) {
       return res.data.data as { notifications: Notification[], unreadCount: number };
     },
     refetchInterval: 30000, // Poll every 30 seconds
+    // Don't throw — silently return empty state on auth/network errors
+    retry: false,
   });
 
   const markReadMutation = useMutation({
@@ -90,7 +92,7 @@ export function Topbar({ onMenuClick }: { onMenuClick?: () => void }) {
           <PopoverTrigger asChild>
             <Button variant="ghost" size="icon" className="relative rounded-full">
               <Bell className="w-5 h-5" />
-              {notifData?.unreadCount ? (
+              {(notifData?.unreadCount ?? 0) > 0 ? (
                 <span className="absolute top-1 right-2 w-2 h-2 rounded-full bg-red-500 ring-2 ring-background" />
               ) : null}
             </Button>
@@ -98,7 +100,7 @@ export function Topbar({ onMenuClick }: { onMenuClick?: () => void }) {
           <PopoverContent align="end" className="w-80 p-0 overflow-hidden shadow-lg border">
             <div className="flex items-center justify-between p-4 border-b bg-muted/30">
               <h3 className="font-semibold text-sm">Notifications</h3>
-              {notifData?.unreadCount ? (
+              {(notifData?.unreadCount ?? 0) > 0 ? (
                 <Button 
                   variant="ghost" 
                   size="sm" 
@@ -113,11 +115,11 @@ export function Topbar({ onMenuClick }: { onMenuClick?: () => void }) {
             <div className="max-h-[300px] overflow-y-auto">
               {isLoadingNotifs ? (
                 <div className="flex justify-center p-6"><Loader2 className="w-5 h-5 animate-spin text-muted-foreground" /></div>
-              ) : notifData?.notifications.length === 0 ? (
+              ) : (notifData?.notifications?.length ?? 0) === 0 ? (
                 <div className="p-6 text-center text-sm text-muted-foreground">You have no notifications</div>
               ) : (
                 <div className="flex flex-col">
-                  {notifData?.notifications.map((notif: Notification) => (
+                  {(notifData?.notifications ?? []).map((notif: Notification) => (
                     <div 
                       key={notif.id}
                       className={`p-4 border-b last:border-0 hover:bg-muted/50 transition-colors cursor-pointer ${notif.isRead ? 'opacity-70' : 'bg-primary/5'}`}
@@ -127,12 +129,14 @@ export function Topbar({ onMenuClick }: { onMenuClick?: () => void }) {
                       }}
                     >
                       <div className="flex justify-between items-start mb-1 gap-2">
-                        <p className={`text-sm ${notif.isRead ? 'font-medium' : 'font-bold'}`}>{notif.title || notif.message}</p>
+                        <p className={`text-sm ${notif.isRead ? 'font-medium' : 'font-bold'}`}>
+                          {String(notif.title || notif.message || '')}
+                        </p>
                         <span className="text-[10px] text-muted-foreground whitespace-nowrap">
-                          {formatDistanceToNow(new Date(notif.createdAt), { addSuffix: true })}
+                          {notif.createdAt ? formatDistanceToNow(new Date(notif.createdAt), { addSuffix: true }) : ''}
                         </span>
                       </div>
-                      <p className="text-xs text-muted-foreground line-clamp-2">{notif.message}</p>
+                      <p className="text-xs text-muted-foreground line-clamp-2">{String(notif.message || '')}</p>
                     </div>
                   ))}
                 </div>

@@ -43,8 +43,11 @@ const startCronJobs = () => {
           }
         });
 
-        // Erode the followUpAt so it doesn't alert every single day,
-        // or keep it so it nags them until cleared.
+        // Clear the followUpAt so it doesn't alert every single day and flood the user
+        await prisma.queryNote.update({
+          where: { id: note.id },
+          data: { followUpAt: null }
+        });
       }
 
       // -----------------------------------------------------

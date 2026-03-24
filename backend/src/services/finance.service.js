@@ -46,7 +46,8 @@ const generateInvoiceNumber = async () => {
 };
 
 const listInvoices = async ({ status, page = 1, limit = 50 }) => {
-  const where = status ? { status } : {};
+  const where = { deletedAt: null };
+  if (status) where.status = status;
   const [items, total] = await Promise.all([
     prisma.invoice.findMany({
       where, orderBy: { createdAt: 'desc' },
@@ -121,7 +122,18 @@ const createInvoice = async (data) => {
     throw new Error('Client Name is required to generate an invoice.');
   }
 
-  return prisma.invoice.create({ data });
+  const MAX_RETRIES = 3;
+  for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      if (attempt > 1) {
+        data.invoiceNumber = await generateInvoiceNumber(); // Regenerate on collision
+      }
+      return await prisma.invoice.create({ data });
+    } catch (e) {
+      if (e.code === 'P2002' && attempt < MAX_RETRIES) continue;
+      throw e;
+    }
+  }
 };
 
 const updateInvoice = (id, data) => {
@@ -136,11 +148,11 @@ const updateInvoice = (id, data) => {
   return prisma.invoice.update({ where: { id }, data });
 };
 
-const deleteInvoice = (id) => prisma.invoice.delete({ where: { id } });
+const deleteInvoice = (id) => prisma.invoice.update({ where: { id }, data: { deletedAt: new Date() } });
 
 // ─── Vendor Payments ─────────────────────────────────────────
 const listVendorPayments = async ({ from, to, supplierId, page = 1, limit = 50 }) => {
-  const where = {};
+  const where = { deletedAt: null };
   if (supplierId) where.supplierId = supplierId;
   if (from || to) {
     where.paymentDate = {};
@@ -164,7 +176,7 @@ const createVendorPayment = (data) => {
   return prisma.vendorPayment.create({ data });
 };
 
-const deleteVendorPayment = (id) => prisma.vendorPayment.delete({ where: { id } });
+const deleteVendorPayment = (id) => prisma.vendorPayment.update({ where: { id }, data: { deletedAt: new Date() } });
 
 // ─── P&L Summary ─────────────────────────────────────────────
 const getPnlSummary = async (year, month) => {

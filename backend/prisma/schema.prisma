@@ -376,7 +376,7 @@ model Payment {
   mode           String /// 'upi','neft','card','cash','cheque'
   referenceUtr   String?   @map("reference_utr")
   paymentDate    DateTime  @map("payment_date") @db.Date
-  recordedBy     String    @map("recorded_by")
+  recordedBy     String?   @map("recorded_by")
   status         String    @default("pending") /// 'pending','verified','banked'
   notes          String?
   idempotencyKey String?   @unique @map("idempotency_key") /// Prevents duplicate webhook payments
@@ -386,7 +386,7 @@ model Payment {
 
   tour  Tour?  @relation(fields: [tourId], references: [id])
   query Query? @relation(fields: [queryId], references: [id])
-  user  User   @relation(fields: [recordedBy], references: [id])
+  user  User?  @relation(fields: [recordedBy], references: [id])
 
   @@index([tourId])
   @@index([queryId])
@@ -808,6 +808,7 @@ model Invoice {
   dueDate       DateTime? @map("due_date") @db.Date
   notes         String?   @db.Text
   createdBy     String    @map("created_by")
+  deletedAt     DateTime? @map("deleted_at")
   createdAt     DateTime  @default(now()) @map("created_at")
   updatedAt     DateTime  @updatedAt @map("updated_at")
 
@@ -830,7 +831,9 @@ model VendorPayment {
   tourId      String?  @map("tour_id")
   notes       String?
   recordedBy  String   @map("recorded_by")
+  deletedAt   DateTime? @map("deleted_at")
   createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @default(now()) @map("updated_at")
 
   user User @relation("VendorPaymentRecordedBy", fields: [recordedBy], references: [id])
 

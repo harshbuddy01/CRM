@@ -114,8 +114,8 @@ const loginLimiter = rateLimit({
 });
 
 app.use('/v1', (req, res, next) => {
-  // Skip general limiter for auth routes to prevent double-charging
-  if (req.path.startsWith('/auth')) return next();
+  // Skip general limiter for auth routes and webhooks to prevent double-charging or dropping callbacks
+  if (req.path.startsWith('/auth') || req.path.startsWith('/payments/webhook')) return next();
   return generalLimiter(req, res, next);
 });
 

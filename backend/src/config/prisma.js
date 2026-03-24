@@ -24,7 +24,7 @@ if (process.env.NODE_ENV === 'production') {
 
 // Global Soft Delete Extension (Prisma v5 recommended pattern)
 const softDeleteModels = [
-  'Query', 'QueryNote', 'Proposal', 'Tour', 'Payment',
+  'Query', 'QueryNote', 'Proposal', 'Tour', 'Payment', 'Invoice', 'VendorPayment',
   'Supplier', 'Activity', 'Transfer', 'RoomType', 'MealPlan', 'PackageTheme', 'DayItineraryTemplate'
 ];
 
@@ -37,8 +37,11 @@ const extendedPrisma = prisma.$extends({
           const readOperations = ['findFirst', 'findMany', 'findFirstOrThrow', 'count'];
           if (readOperations.includes(operation)) {
             args.where = args.where || {};
-            // If it's a unique search by ID, we still want to ensure it's not deleted
-            args.where.deletedAt = null;
+            if (args.where.__withDeleted) {
+              delete args.where.__withDeleted;
+            } else {
+              args.where.deletedAt = null;
+            }
           }
 
           // Convert deletes to update(deletedAt)
