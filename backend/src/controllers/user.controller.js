@@ -180,7 +180,7 @@ function buildCredentialEmailHtml({ name, email, password, loginUrl, companyUrl,
 
 const updateUser = async (req, res, next) => {
   try {
-    const user = await userService.updateUser(req.params.id, req.body);
+    const user = await userService.updateUser(req.params.id, req.body, req.user.id);
     res.json({ success: true, message: 'User updated', data: user });
   } catch (error) {
     next(error);
