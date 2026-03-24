@@ -28,7 +28,8 @@ const can = (permKey) => {
     try {
       // Admin bypass: Administrators/Owners/Immortal accounts always have access
       const { immortalEmails } = require('../config');
-      const isAdmin = ['admin', 'owner'].includes(req.user?.role) || immortalEmails.includes(req.user?.email?.toLowerCase());
+      const userEmail = req.user?.email?.toLowerCase().trim();
+      const isAdmin = ['admin', 'owner'].includes(req.user?.role) || immortalEmails.some(e => e.toLowerCase() === userEmail);
       const allowed = isAdmin || (req.user?.permissions?.[permKey] ?? false);
 
       if (!allowed) {

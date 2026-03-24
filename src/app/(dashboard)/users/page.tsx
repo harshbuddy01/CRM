@@ -141,7 +141,7 @@ export default function UsersPage() {
                     <td className="p-4 font-black text-slate-900">{String(u.name || '')}</td>
                     <td className="p-4 font-medium text-slate-500">{String(u.email || '')}</td>
                     <td className="p-4">
-                      { (u.role?.name === 'owner' || IMMORTAL_EMAILS.includes(u.email.toLowerCase())) ? (
+                      { (u.role?.name === 'owner' || IMMORTAL_EMAILS.some(e => e.toLowerCase() === u.email?.toLowerCase().trim())) ? (
                         <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-purple-100 text-purple-700 border border-purple-200">
                           System Owner
                         </span>
@@ -240,7 +240,7 @@ export default function UsersPage() {
               <div className="flex justify-between items-start mb-4">
                 <div className="space-y-1">
                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">
-                    {u.role?.name === 'owner' ? 'System Owner' : `${String(u.role?.label ?? 'User')}${u.department ? ` · ${String(u.department)}` : ''}`}
+                    {(u.role?.name === 'owner' || IMMORTAL_EMAILS.some(e => e.toLowerCase() === u.email?.toLowerCase().trim())) ? 'System Owner' : `${String(u.role?.label ?? 'User')}${u.department ? ` · ${String(u.department)}` : ''}`}
                   </p>
                   <h3 className="font-black text-base text-slate-900 leading-tight">{String(u.name || '')}</h3>
                   <p className="text-xs font-medium text-slate-500">{String(u.email || '')}</p>
@@ -478,10 +478,10 @@ function EditUserForm({ user, roles, onSubmit, isLoading, onCancel }: {
           placeholder="Name" className="px-3 py-2 border rounded-md text-sm bg-background" />
         <input value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })}
           type="email" placeholder="Email"
-          disabled={isImmortal || user.role.name === 'owner'}
+          disabled={isImmortal || user.role.name === 'owner' || IMMORTAL_EMAILS.some(e => e.toLowerCase() === user.email?.toLowerCase().trim())}
           className="px-3 py-2 border rounded-md text-sm bg-background disabled:bg-slate-50 disabled:text-slate-500 cursor-not-allowed" />
         <select value={form.roleId} onChange={(e) => setForm({ ...form, roleId: e.target.value })}
-          disabled={isImmortal || user.role.name === 'owner'}
+          disabled={isImmortal || user.role.name === 'owner' || IMMORTAL_EMAILS.some(e => e.toLowerCase() === user.email?.toLowerCase().trim())}
           className="px-3 py-2 border rounded-md text-sm bg-background disabled:bg-slate-50 disabled:text-slate-500 cursor-not-allowed">
           {roles
             .filter((r: Role) => r.name !== 'owner') // Owners cannot be assigned from UI
