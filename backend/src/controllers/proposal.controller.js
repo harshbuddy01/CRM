@@ -181,8 +181,6 @@ const downloadPdf = async (req, res, next) => {
         entityId: proposal.queryId,
         newValue: { version: proposal.version }
       }
-    }).catch(() => {});        newValue: { version: proposal.version }
-      }
     }).catch(err => console.error('History Log Error:', err));
 
     res.end(buffer);
