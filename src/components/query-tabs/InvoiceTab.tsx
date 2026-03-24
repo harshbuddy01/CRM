@@ -30,25 +30,26 @@ export function InvoiceTab({ queryId }: { queryId: string }) {
         <div className="space-y-3">
           {invoices.map((inv: any) => (
             <Card key={inv.id} className="hover:border-primary transition-colors cursor-pointer group" onClick={() => window.open(`/finance/invoices/${inv.id}`, '_blank')}>
-              <CardContent className="p-4 flex justify-between items-center">
-                <div className="flex items-center gap-3">
-                  <FileText className="w-5 h-5 text-blue-500" />
-                  <div>
-                    <p className="font-medium group-hover:text-primary transition-colors">{inv.invoiceNumber}</p>
-                    <p className="text-xs text-muted-foreground">
-                      ₹{Number(inv.totalAmount).toLocaleString()} • {format(new Date(inv.createdAt), 'PP')}
-                    </p>
+              <CardContent className="p-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <FileText className="w-4 h-4 text-primary" />
+                      <h3 className="font-bold text-slate-900">{inv.invoiceNumber}</h3>
+                    </div>
+                    <p className="text-[10px] font-black uppercase text-slate-400">Issued: {format(new Date(inv.createdAt), 'dd MMM yyyy')}</p>
                   </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                    inv.status === 'paid' ? 'bg-green-100 text-green-700' :
-                    inv.status === 'sent' ? 'bg-blue-100 text-blue-700' :
-                    'bg-gray-100 text-gray-600'
-                  }`}>{inv.status}</span>
-                  <Button size="icon-sm" variant="ghost" className="h-8 w-8 text-muted-foreground hover:text-primary">
-                    <ExternalLink className="w-4 h-4" />
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-black text-slate-900">₹{Number(inv.totalAmount).toLocaleString('en-IN')}</span>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="h-8 w-8 p-0 rounded-lg hover:bg-primary/10 hover:text-primary transition-colors"
+                      onClick={() => window.open(`/finance/invoices/${inv.id}`, '_blank')}
+                    >
+                      <ExternalLink className="w-4 h-4" />
+                    </Button>
+                  </div>
                 </div>
               </CardContent>
             </Card>

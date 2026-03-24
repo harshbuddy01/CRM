@@ -250,7 +250,7 @@ export default function QueryDetailPage() {
               <span className="text-slate-400 text-xs font-bold tracking-tighter uppercase">{query.queryCode}</span>
             </div>
             <p className="text-muted-foreground mt-0.5 text-[10px] md:text-sm font-medium">
-              Created {format(new Date(query.createdAt), 'MMM d, p')} • {query.assignedUser?.name || 'Unassigned'}
+              Created {query.createdAt ? format(new Date(query.createdAt), 'MMM d, p') : 'Unknown Date'} • {query.assignedUser?.name || 'Unassigned'}
             </p>
           </div>
         </div>
