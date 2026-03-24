@@ -126,11 +126,10 @@ export default function UsersPage() {
                 <th className="p-4 w-12 text-center italic">#</th>
                 <th className="p-4">Name</th>
                 <th className="p-4">Email</th>
-                <th className="p-4">Role</th>
-                <th className="p-4">Status</th>
-                <th className="p-4">Leads</th>
-                <th className="p-4">Updated</th>
-                <th className="p-4 text-right">Actions</th>
+                <th className="p-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Role</th>
+                <th className="p-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Status</th>
+                <th className="p-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Updated</th>
+                <th className="p-4 text-right text-xs font-semibold text-slate-500 uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -165,12 +164,6 @@ export default function UsersPage() {
                         {u.isOnLeave && (
                           <span className="text-[9px] font-black uppercase bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full border border-amber-200">On Leave</span>
                         )}
-                      </div>
-                    </td>
-                    <td className="p-4">
-                      <div className="flex flex-col">
-                        <span className="font-black text-slate-900 leading-none">{u.activeLeadCount}</span>
-                        <span className="text-[10px] font-bold text-slate-400 uppercase leading-normal">/ {u.maxLeads}</span>
                       </div>
                     </td>
                     <td className="p-4 text-[10px] font-bold text-slate-400 uppercase">
@@ -267,16 +260,7 @@ export default function UsersPage() {
                 </div>
               </div>
               
-              <div className="grid grid-cols-2 gap-4 py-3 border-y border-slate-100 my-4">
-                <div className="space-y-0.5">
-                  <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider text-center">In Hand Leads</p>
-                  <p className="text-lg font-black text-slate-900 text-center leading-none">{u.activeLeadCount}</p>
-                </div>
-                <div className="space-y-0.5 border-l border-slate-100 pl-4 text-center">
-                  <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">Cap Limit</p>
-                  <p className="text-lg font-black text-slate-900 leading-none">{u.maxLeads}</p>
-                </div>
-              </div>
+              {/* Leads removed as per request */}
 
               <div className="flex flex-wrap gap-2 pt-1">
                 <Button 
@@ -402,7 +386,9 @@ function CreateUserForm({ roles, onSubmit, isLoading }: { roles: Role[]; onSubmi
           required
         >
           <option value="">Select Role</option>
-          {roles.map((r: Role) => (
+          {roles
+            .filter((r: Role) => r.name !== 'owner') // Owners cannot be created from UI
+            .map((r: Role) => (
             <option key={r.id} value={r.id}>{r.label}</option>
           ))}
         </select>
@@ -496,7 +482,9 @@ function EditUserForm({ user, roles, onSubmit, isLoading, onCancel }: {
         <select value={form.roleId} onChange={(e) => setForm({ ...form, roleId: e.target.value })}
           disabled={isImmortal || user.role.name === 'owner'}
           className="px-3 py-2 border rounded-md text-sm bg-background disabled:bg-slate-50 disabled:text-slate-500 cursor-not-allowed">
-          {roles.map((r: Role) => <option key={r.id} value={r.id}>{r.label}</option>)}
+          {roles
+            .filter((r: Role) => r.name !== 'owner') // Owners cannot be assigned from UI
+            .map((r: Role) => <option key={r.id} value={r.id}>{r.label}</option>)}
         </select>
         <input type="number" value={form.maxLeads} onChange={(e) => setForm({ ...form, maxLeads: parseInt(e.target.value, 10) })}
           placeholder="Max Leads" className="px-3 py-2 border rounded-md text-sm bg-background" />
