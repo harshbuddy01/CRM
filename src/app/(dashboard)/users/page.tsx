@@ -32,7 +32,6 @@ interface User {
 
 const IMMORTAL_EMAILS = [
   'harshbuddy01@gmail.com',
-  'admin@travelcrm.com',
   'administrative@imagicaholidays.com',
   'amanasha481@gmail.com'
 ];
