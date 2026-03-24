@@ -129,8 +129,12 @@ router.post(
 );
 
 // Get Email Logs for Query (Sprint 9/10 Bugfix)
-router.get('/:id/email-logs', can('query.view'), async (req, res, next) => {
+router.get('/:id/email-logs', async (req, res, next) => {
   try {
+    const canViewAll = req.user.permissions['query.view_all'];
+    const query = await queryService.getQueryById(req.params.id, req.user.id, canViewAll);
+    if (!query) return res.status(403).json({ success: false, message: 'Access Denied' });
+
     const prisma = require('../config/prisma');
     const logs = await prisma.emailLog.findMany({
       where: { queryId: req.params.id },
@@ -142,8 +146,12 @@ router.get('/:id/email-logs', can('query.view'), async (req, res, next) => {
 });
 
 // Get History/Activity Logs & Integration Logs for Query (Unified Timeline)
-router.get('/:id/history', can('query.view'), async (req, res, next) => {
+router.get('/:id/history', async (req, res, next) => {
   try {
+    const canViewAll = req.user.permissions['query.view_all'];
+    const query = await queryService.getQueryById(req.params.id, req.user.id, canViewAll);
+    if (!query) return res.status(403).json({ success: false, message: 'Access Denied' });
+
     const prisma = require('../config/prisma');
     const [activityLogs, integrationLogs] = await Promise.all([
       prisma.activityLog.findMany({
@@ -178,6 +186,10 @@ router.get('/:id/history', can('query.view'), async (req, res, next) => {
 // Billing Summary (Sprint 10)
 router.get('/:id/billing-summary', async (req, res, next) => {
   try {
+    const canViewAll = req.user.permissions['query.view_all'];
+    const query = await queryService.getQueryById(req.params.id, req.user.id, canViewAll);
+    if (!query) return res.status(403).json({ success: false, message: 'Access Denied' });
+
     const prisma = require('../config/prisma');
     const queryId = req.params.id;
 
