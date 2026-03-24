@@ -29,8 +29,8 @@ const deleteExpense = async (req, res, next) => {
 // ─── Invoices ────────────────────────────────────────────────
 const listInvoices = async (req, res, next) => {
   try {
-    const { status, page, limit } = req.query;
-    res.json({ success: true, data: await financeService.listInvoices({ status, page: parseInt(page) || 1, limit: parseInt(limit) || 50 }) });
+    const { status, queryId, page, limit } = req.query;
+    res.json({ success: true, data: await financeService.listInvoices({ status, queryId, page: parseInt(page) || 1, limit: parseInt(limit) || 50 }) });
   } catch (e) { next(e); }
 };
 const getInvoice = async (req, res, next) => {

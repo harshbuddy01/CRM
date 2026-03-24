@@ -12,7 +12,6 @@ export function InvoiceTab({ queryId }: { queryId: string }) {
     queryKey: ['query-invoices', queryId],
     queryFn: async () => {
       const res = await api.get(`/finance/invoices?queryId=${queryId}`);
-      // The finance API may not support queryId filter directly, fall back to empty
       return res.data?.data?.items || [];
     },
   });
@@ -30,12 +29,12 @@ export function InvoiceTab({ queryId }: { queryId: string }) {
       ) : (
         <div className="space-y-3">
           {invoices.map((inv: any) => (
-            <Card key={inv.id}>
+            <Card key={inv.id} className="hover:border-primary transition-colors cursor-pointer group" onClick={() => window.open(`/finance/invoices/${inv.id}`, '_blank')}>
               <CardContent className="p-4 flex justify-between items-center">
                 <div className="flex items-center gap-3">
                   <FileText className="w-5 h-5 text-blue-500" />
                   <div>
-                    <p className="font-medium">{inv.invoiceNumber}</p>
+                    <p className="font-medium group-hover:text-primary transition-colors">{inv.invoiceNumber}</p>
                     <p className="text-xs text-muted-foreground">
                       ₹{Number(inv.totalAmount).toLocaleString()} • {format(new Date(inv.createdAt), 'PP')}
                     </p>
@@ -47,11 +46,9 @@ export function InvoiceTab({ queryId }: { queryId: string }) {
                     inv.status === 'sent' ? 'bg-blue-100 text-blue-700' :
                     'bg-gray-100 text-gray-600'
                   }`}>{inv.status}</span>
-                  {inv.pdfUrl && (
-                    <a href={inv.pdfUrl} target="_blank" rel="noreferrer">
-                      <Button size="sm" variant="outline" className="gap-1"><Download className="w-3 h-3" /> PDF</Button>
-                    </a>
-                  )}
+                  <Button size="icon-sm" variant="ghost" className="h-8 w-8 text-muted-foreground hover:text-primary">
+                    <ExternalLink className="w-4 h-4" />
+                  </Button>
                 </div>
               </CardContent>
             </Card>

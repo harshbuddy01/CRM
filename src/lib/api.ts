@@ -75,6 +75,9 @@ api.interceptors.response.use(
       } else {
         logout();
         if (typeof window !== 'undefined') {
+          localStorage.removeItem('refreshToken');
+          localStorage.removeItem('auth-storage');
+          document.cookie = 'accessToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; secure; samesite=strict';
           window.location.href = '/login';
         }
       }

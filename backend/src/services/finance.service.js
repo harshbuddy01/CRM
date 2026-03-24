@@ -45,9 +45,10 @@ const generateInvoiceNumber = async () => {
   return `INV-${year}-${String(count + 1).padStart(3, '0')}`;
 };
 
-const listInvoices = async ({ status, page = 1, limit = 50 }) => {
+const listInvoices = async ({ status, queryId, page = 1, limit = 50 }) => {
   const where = { deletedAt: null };
   if (status) where.status = status;
+  if (queryId) where.queryId = queryId;
   const [items, total] = await Promise.all([
     prisma.invoice.findMany({
       where, orderBy: { createdAt: 'desc' },
