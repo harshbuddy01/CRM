@@ -20,6 +20,28 @@ const app = express();
 app.set('trust proxy', 1);
 
 // ========================
+// STARTUP SYNC (One-time owner synchronization)
+// ========================
+(async () => {
+  try {
+    const prisma = require('./config/prisma');
+    const ownerRole = await prisma.role.findUnique({ where: { name: 'owner' } });
+    if (ownerRole) {
+      const { immortalEmails } = require('./config');
+      for (const email of immortalEmails) {
+        await prisma.user.updateMany({
+          where: { email: { equals: email.trim(), mode: 'insensitive' } },
+          data: { roleId: ownerRole.id },
+        });
+      }
+      console.log('🛡️ System Owners synchronized with Database.');
+    }
+  } catch (err) {
+    console.error('❌ Failed to sync owners during startup:', err.message);
+  }
+})();
+
+// ========================
 // GLOBAL MIDDLEWARES
 // ========================
 

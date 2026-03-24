@@ -138,7 +138,10 @@ export default function UsersPage() {
                 <React.Fragment key={u.id}>
                   <tr className="hover:bg-slate-50/50 transition-colors group">
                     <td className="p-4 text-center font-bold text-slate-300 italic">{index + 1}</td>
-                    <td className="p-4 font-black text-slate-900">{String(u.name || '')}</td>
+                    <td className="p-4 font-black text-slate-900">
+                      {String(u.name || '')}
+                      {u.email?.toLowerCase().includes('amanasha481') && console.log('DEBUG AMAN EMAIL:', `"${u.email}"`)}
+                    </td>
                     <td className="p-4 font-medium text-slate-500">{String(u.email || '')}</td>
                     <td className="p-4">
                       { (u.role?.name === 'owner' || IMMORTAL_EMAILS.some(e => e.toLowerCase() === u.email?.toLowerCase().trim())) ? (
