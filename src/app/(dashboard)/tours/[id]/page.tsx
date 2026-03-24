@@ -130,7 +130,11 @@ export default function TourDetailPage() {
               </span>
             </div>
             <p className="text-muted-foreground mt-1 text-sm font-medium">
-              {query?.name} • {format(new Date(tour.startDate), 'MMM d, yyyy')} to {format(new Date(tour.endDate), 'MMM d, yyyy')}
+              {query?.name} • { 
+                (tour.startDate && tour.endDate) 
+                ? `${format(new Date(tour.startDate), 'MMM d, yyyy')} to ${format(new Date(tour.endDate), 'MMM d, yyyy')}`
+                : 'Dates Pending'
+              }
             </p>
           </div>
         </div>
