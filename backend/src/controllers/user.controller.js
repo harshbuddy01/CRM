@@ -74,7 +74,8 @@ const createUser = async (req, res, next) => {
             const queueService = require('../services/queue.service');
             const loginUrl = `${config.frontendUrl || 'https://travelcrm.railway.app'}/login`;
             const htmlBody = buildCredentialEmailHtml({ name, email, password, loginUrl, companyUrl: config.frontendUrl });
-            await queueService.enqueueEmailJob(null, email, 'Welcome to TravelCRM ✈️ — Your Account is Ready', htmlBody);
+            const from = `"${config.email.adminFromName}" <${config.email.adminFrom}>`;
+            await queueService.enqueueEmailJob(null, email, 'Welcome to TravelCRM ✈️ — Your Account is Ready', htmlBody, null, from);
           } catch (err) {
             const logger = require('../utils/logger');
             logger.error('[User] Failed to queue welcome email:', err.message);
@@ -124,7 +125,8 @@ const resetAndSendPassword = async (req, res, next) => {
         companyUrl: config.frontendUrl,
         isReset: true,
       });
-      await queueService.enqueueEmailJob(null, user.email, 'Your TravelCRM Password Has Been Reset', htmlBody);
+      const from = `"${config.email.adminFromName}" <${config.email.adminFrom}>`;
+      await queueService.enqueueEmailJob(null, user.email, 'Your TravelCRM Password Has Been Reset', htmlBody, null, from);
     }
 
     res.json({ success: true, message: `Password has been reset and emailed to ${user.name}.` });

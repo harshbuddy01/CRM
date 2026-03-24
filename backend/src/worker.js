@@ -48,13 +48,13 @@ let emailWorker = null;
 const brevoConfigured = process.env.BREVO_SMTP_USER && process.env.BREVO_SMTP_PASS;
 if (brevoConfigured) {
   emailWorker = new Worker('email-sending', async job => {
-    const { queryId, to, subject, htmlContent, cc } = job.data;
-    console.log(`[Email] Sending to ${to}`);
+    const { queryId, to, subject, htmlContent, cc, from } = job.data;
+    console.log(`[Email] Sending to ${to}${from ? ` (From: ${from})` : ''}`);
   
   try {
     // Nodemailer / Brevo Integration
     const { sendMail } = require('./config/mailer');
-    const msg = { to, subject, html: htmlContent };
+    const msg = { to, subject, html: htmlContent, from };
     if (cc) {
       // Split by comma if multiple CCs provided
       msg.cc = cc.split(',').map(e => e.trim()).filter(Boolean).join(',');

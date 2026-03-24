@@ -223,7 +223,9 @@ const forgotPassword = async (email) => {
   // Try to send the email
   try {
     const { sendMail } = require('../config/mailer');
+    const adminFrom = `"${config.email.adminFromName}" <${config.email.adminFrom}>`;
     await sendMail({
+      from: adminFrom,
       to: email,
       subject: 'TravelCRM — Reset Your Password',
       html: `
