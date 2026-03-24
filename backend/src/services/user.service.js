@@ -105,13 +105,25 @@ const createUser = async (data) => {
  * Update user details (Admin only)
  */
 const updateUser = async (userId, data) => {
-  const user = await prisma.user.findUnique({ where: { id: userId } });
+  const user = await prisma.user.findUnique({ where: { id: userId }, include: { role: true } });
   if (!user) throw new NotFoundError('User');
 
   const updateData = {};
   if (data.name) updateData.name = data.name;
-  if (data.email) updateData.email = data.email.toLowerCase();
-  if (data.roleId) updateData.roleId = data.roleId;
+  
+  // Permanent Identity Guard: Owners cannot change their email or role from the frontend
+  if (user.role.name === 'owner') {
+    if (data.email && data.email.toLowerCase() !== user.email.toLowerCase()) {
+      throw new BusinessError('System Owner email is permanent and cannot be changed from the interface.');
+    }
+    if (data.roleId && data.roleId !== user.roleId) {
+      throw new BusinessError('System Owner role is permanent and cannot be changed.');
+    }
+  } else {
+    if (data.email) updateData.email = data.email.toLowerCase();
+    if (data.roleId) updateData.roleId = data.roleId;
+  }
+  
   if (data.maxLeads !== undefined) updateData.maxLeads = data.maxLeads;
   if (data.isActive !== undefined) updateData.isActive = data.isActive;
   if (data.isOnLeave !== undefined) updateData.isOnLeave = data.isOnLeave;
@@ -214,9 +226,10 @@ const getUserOffboardStats = async (userId) => {
  * Deactivate a user and re-assign their leads/tours to another user
  */
 const deleteUser = async (userId, adminId, reassignToId) => {
-  const user = await prisma.user.findUnique({ where: { id: userId } });
+  const user = await prisma.user.findUnique({ where: { id: userId }, include: { role: true } });
   if (!user) throw new NotFoundError('User');
   if (user.id === adminId) throw new BusinessError('You cannot delete yourself');
+  if (user.role.name === 'owner') throw new BusinessError('System Owners cannot be deactivated.');
   
   const targetId = reassignToId || adminId;
 

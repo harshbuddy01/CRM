@@ -135,9 +135,15 @@ export default function UsersPage() {
                     <td className="p-4 font-black text-slate-900">{String(u.name || '')}</td>
                     <td className="p-4 font-medium text-slate-500">{String(u.email || '')}</td>
                     <td className="p-4">
-                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-blue-50 text-blue-700 border border-blue-100">
-                        {String(u.role?.label ?? 'User')}{u.department ? ` · ${String(u.department)}` : ''}
-                      </span>
+                      {u.role?.name === 'owner' ? (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-purple-100 text-purple-700 border border-purple-200">
+                          System Owner
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-blue-50 text-blue-700 border border-blue-100">
+                          {String(u.role?.label ?? 'User')}{u.department ? ` · ${String(u.department)}` : ''}
+                        </span>
+                      )}
                     </td>
                     <td className="p-4">
                       <div className="flex items-center gap-1.5">
@@ -180,7 +186,7 @@ export default function UsersPage() {
                         >
                           <Shield className="w-4 h-4" />
                         </button>
-                        {currentUser?.id !== u.id && u.role?.name !== 'admin' && (
+                        {currentUser?.id !== u.id && u.role?.name !== 'admin' && u.role?.name !== 'owner' && (
                           <button
                             onClick={() => setOffboardingUser(u)}
                             className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
@@ -227,7 +233,7 @@ export default function UsersPage() {
               <div className="flex justify-between items-start mb-4">
                 <div className="space-y-1">
                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">
-                    {String(u.role?.label ?? 'User')}{u.department ? ` · ${String(u.department)}` : ''}
+                    {u.role?.name === 'owner' ? 'System Owner' : `${String(u.role?.label ?? 'User')}${u.department ? ` · ${String(u.department)}` : ''}`}
                   </p>
                   <h3 className="font-black text-base text-slate-900 leading-tight">{String(u.name || '')}</h3>
                   <p className="text-xs font-medium text-slate-500">{String(u.email || '')}</p>
@@ -282,7 +288,7 @@ export default function UsersPage() {
                 >
                   <Shield className="w-3 h-3 mr-1.5" /> Permissions
                 </Button>
-                {currentUser?.id !== u.id && u.role?.name !== 'admin' && (
+                {currentUser?.id !== u.id && u.role?.name !== 'admin' && u.role?.name !== 'owner' && (
                   <Button 
                     variant="ghost" 
                     size="sm" 
@@ -469,9 +475,12 @@ function EditUserForm({ user, roles, onSubmit, isLoading, onCancel }: {
         <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })}
           placeholder="Name" className="px-3 py-2 border rounded-md text-sm bg-background" />
         <input value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })}
-          type="email" placeholder="Email" className="px-3 py-2 border rounded-md text-sm bg-background" />
+          type="email" placeholder="Email"
+          disabled={user.role.name === 'owner'}
+          className="px-3 py-2 border rounded-md text-sm bg-background disabled:bg-slate-50 disabled:text-slate-500 cursor-not-allowed" />
         <select value={form.roleId} onChange={(e) => setForm({ ...form, roleId: e.target.value })}
-          className="px-3 py-2 border rounded-md text-sm bg-background">
+          disabled={user.role.name === 'owner'}
+          className="px-3 py-2 border rounded-md text-sm bg-background disabled:bg-slate-50 disabled:text-slate-500 cursor-not-allowed">
           {roles.map((r: Role) => <option key={r.id} value={r.id}>{r.label}</option>)}
         </select>
         <input type="number" value={form.maxLeads} onChange={(e) => setForm({ ...form, maxLeads: parseInt(e.target.value, 10) })}

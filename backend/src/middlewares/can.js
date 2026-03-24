@@ -26,8 +26,8 @@ const logger = require('../utils/logger');
 const can = (permKey) => {
   return async (req, res, next) => {
     try {
-      // Admin bypass: Administrators always have access
-      const isAdmin = req.user?.role === 'admin';
+      // Admin bypass: Administrators/Owners always have access
+      const isAdmin = ['admin', 'owner'].includes(req.user?.role);
       const allowed = isAdmin || (req.user?.permissions?.[permKey] ?? false);
 
       if (!allowed) {
