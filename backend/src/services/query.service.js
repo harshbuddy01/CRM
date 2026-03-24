@@ -174,16 +174,23 @@ const assignQuery = async (id, assignedToUserId, currentUserId) => {
   const existingQuery = await prisma.query.findUnique({ where: { id } });
   if (!existingQuery) throw new NotFoundError('Query');
 
-  const agent = await prisma.user.findUnique({ where: { id: assignedToUserId, isActive: true } });
+  const agent = await prisma.user.findUnique({ 
+    where: { id: assignedToUserId, isActive: true },
+    include: { role: true }
+  });
   if (!agent) throw new BusinessError('Assigned user is invalid or inactive');
 
-  // Workload check
-  const activeLeadsCount = await prisma.query.count({
-    where: { assignedTo: assignedToUserId, status: { notIn: ['lost', 'invalid', 'confirmed'] } },
-  });
+  // Workload check — Admins and Owners are immune to lead caps
+  const isHighPrivilege = ['admin', 'owner'].includes(agent.role.name);
+  
+  if (!isHighPrivilege) {
+    const activeLeadsCount = await prisma.query.count({
+      where: { assignedTo: assignedToUserId, status: { notIn: ['lost', 'invalid', 'confirmed'] } },
+    });
 
-  if (activeLeadsCount >= agent.maxLeads) {
-    throw new BusinessError(`User ${agent.name} has reached their max lead capacity (${agent.maxLeads}).`);
+    if (activeLeadsCount >= agent.maxLeads) {
+      throw new BusinessError(`User ${agent.name} has reached their max lead capacity (${agent.maxLeads}).`);
+    }
   }
 
   const updatedEntity = await prisma.query.update({

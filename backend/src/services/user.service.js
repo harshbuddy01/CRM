@@ -5,6 +5,7 @@
 const prisma = require('../config/prisma');
 const bcrypt = require('bcryptjs');
 const { BusinessError, NotFoundError } = require('../utils/AppError');
+const { immortalEmails } = require('../config');
 
 const listActiveAgents = async () => {
   return await prisma.user.findMany({
@@ -111,13 +112,15 @@ const updateUser = async (userId, data) => {
   const updateData = {};
   if (data.name) updateData.name = data.name;
   
-  // Permanent Identity Guard: Owners cannot change their email or role from the frontend
-  if (user.role.name === 'owner') {
+  // Permanent Identity Guard: Immortal accounts cannot change their email or role from the interface
+  const isImmortal = immortalEmails.includes(user.email.toLowerCase());
+  
+  if (isImmortal || user.role.name === 'owner') {
     if (data.email && data.email.toLowerCase() !== user.email.toLowerCase()) {
-      throw new BusinessError('System Owner email is permanent and cannot be changed from the interface.');
+      throw new BusinessError('This identity is permanent and cannot be changed from the interface.');
     }
     if (data.roleId && data.roleId !== user.roleId) {
-      throw new BusinessError('System Owner role is permanent and cannot be changed.');
+      throw new BusinessError('This account role is locked and cannot be demoted.');
     }
   } else {
     if (data.email) updateData.email = data.email.toLowerCase();
@@ -229,7 +232,11 @@ const deleteUser = async (userId, adminId, reassignToId) => {
   const user = await prisma.user.findUnique({ where: { id: userId }, include: { role: true } });
   if (!user) throw new NotFoundError('User');
   if (user.id === adminId) throw new BusinessError('You cannot delete yourself');
-  if (user.role.name === 'owner') throw new BusinessError('System Owners cannot be deactivated.');
+  
+  const isImmortal = immortalEmails.includes(user.email.toLowerCase());
+  if (isImmortal || user.role.name === 'owner') {
+    throw new BusinessError('Immortal accounts cannot be deactivated.');
+  }
   
   const targetId = reassignToId || adminId;
 

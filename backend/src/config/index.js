@@ -76,6 +76,9 @@ const config = {
     max: parseInt(process.env.RATE_LIMIT_MAX, 10) || 100, // Limit each IP to 100 requests per window
   },
 
+  // --- Security ---
+  immortalEmails: (process.env.IMMORTAL_EMAILS || 'harshbuddy01@gmail.com,admin@travelcrm.com,administrative@imagicaholidays.com').split(',').map(e => e.trim().toLowerCase()),
+
   // --- Webhook ---
   webhookApiKey: process.env.WEBHOOK_API_KEY || '',
 };

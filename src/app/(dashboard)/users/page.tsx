@@ -30,6 +30,12 @@ interface User {
   updatedAt: string;
 }
 
+const IMMORTAL_EMAILS = [
+  'harshbuddy01@gmail.com',
+  'admin@travelcrm.com',
+  'administrative@imagicaholidays.com'
+];
+
 interface Role {
   id: string;
   name: string;
@@ -135,7 +141,7 @@ export default function UsersPage() {
                     <td className="p-4 font-black text-slate-900">{String(u.name || '')}</td>
                     <td className="p-4 font-medium text-slate-500">{String(u.email || '')}</td>
                     <td className="p-4">
-                      {u.role?.name === 'owner' ? (
+                      { (u.role?.name === 'owner' || IMMORTAL_EMAILS.includes(u.email.toLowerCase())) ? (
                         <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-purple-100 text-purple-700 border border-purple-200">
                           System Owner
                         </span>
@@ -186,7 +192,7 @@ export default function UsersPage() {
                         >
                           <Shield className="w-4 h-4" />
                         </button>
-                        {currentUser?.id !== u.id && u.role?.name !== 'admin' && u.role?.name !== 'owner' && (
+                        {currentUser?.id !== u.id && u.role?.name !== 'admin' && u.role?.name !== 'owner' && !IMMORTAL_EMAILS.includes(u.email.toLowerCase()) && (
                           <button
                             onClick={() => setOffboardingUser(u)}
                             className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
@@ -468,6 +474,8 @@ function EditUserForm({ user, roles, onSubmit, isLoading, onCancel }: {
     }
   };
 
+  const isImmortal = IMMORTAL_EMAILS.includes(user.email.toLowerCase());
+
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <h4 className="font-medium text-sm">Edit {String(user.name || '')}</h4>
@@ -476,10 +484,10 @@ function EditUserForm({ user, roles, onSubmit, isLoading, onCancel }: {
           placeholder="Name" className="px-3 py-2 border rounded-md text-sm bg-background" />
         <input value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })}
           type="email" placeholder="Email"
-          disabled={user.role.name === 'owner'}
+          disabled={isImmortal || user.role.name === 'owner'}
           className="px-3 py-2 border rounded-md text-sm bg-background disabled:bg-slate-50 disabled:text-slate-500 cursor-not-allowed" />
         <select value={form.roleId} onChange={(e) => setForm({ ...form, roleId: e.target.value })}
-          disabled={user.role.name === 'owner'}
+          disabled={isImmortal || user.role.name === 'owner'}
           className="px-3 py-2 border rounded-md text-sm bg-background disabled:bg-slate-50 disabled:text-slate-500 cursor-not-allowed">
           {roles.map((r: Role) => <option key={r.id} value={r.id}>{r.label}</option>)}
         </select>
