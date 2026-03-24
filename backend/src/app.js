@@ -20,38 +20,6 @@ const app = express();
 app.set('trust proxy', 1);
 
 // ========================
-// STARTUP SYNC (One-time owner synchronization)
-// ========================
-(async () => {
-  try {
-    const prisma = require('./config/prisma');
-    const ownerRole = await prisma.role.findUnique({ where: { name: 'owner' } });
-    if (ownerRole) {
-      const { immortalEmails } = require('./config');
-      
-      // 1. Delete the old admin user if it exists
-      await prisma.user.deleteMany({
-        where: { email: 'admin@travelcrm.com' }
-      });
-
-      // 2. Synchronize current Owners and set high lead capacity
-      for (const email of immortalEmails) {
-        await prisma.user.updateMany({
-          where: { email: { equals: email.trim(), mode: 'insensitive' } },
-          data: { 
-            roleId: ownerRole.id,
-            maxLeads: 999999 // Representing unrestricted growth in DB view
-          },
-        });
-      }
-      console.log('🛡️ System Owners synchronized and Admin decommissioned.');
-    }
-  } catch (err) {
-    console.error('❌ Failed to sync owners during startup:', err.message);
-  }
-})();
-
-// ========================
 // GLOBAL MIDDLEWARES
 // ========================
 
