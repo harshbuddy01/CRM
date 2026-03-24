@@ -4,7 +4,7 @@
   "description": "",
   "main": "src/index.js",
   "scripts": {
-    "start": "npx prisma db push --accept-data-loss && node src/index.js & node src/worker.js & wait",
+    "start": "npx prisma db push --accept-data-loss && npx prisma db seed && node src/index.js & node src/worker.js & wait",
     "dev": "nodemon src/index.js",
     "worker": "node src/worker.js",
     "migrate": "prisma db push --accept-data-loss",
