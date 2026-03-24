@@ -4,9 +4,13 @@
 
 const reportService = require('../services/report.service');
 
+const { immortalEmails } = require('../config');
+
 const getDashboardData = async (req, res, next) => {
   try {
-    const kpis = await reportService.getDashboardKPIs(req.user.id);
+    const userEmail = req.user?.email?.toLowerCase().trim();
+    const canViewAll = ['admin', 'owner'].includes(req.user?.role) || immortalEmails.some(e => e.toLowerCase() === userEmail);
+    const kpis = await reportService.getDashboardKPIs(req.user.id, canViewAll);
     res.json({ success: true, data: kpis });
   } catch (error) {
     next(error);

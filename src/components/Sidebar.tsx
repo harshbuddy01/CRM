@@ -34,6 +34,12 @@ interface SidebarProps {
   setOpen?: (open: boolean) => void;
 }
 
+const IMMORTAL_EMAILS = [
+  'harshbuddy01@gmail.com',
+  'administrative@imagicaholidays.com',
+  'amanasha481@gmail.com'
+];
+
 export function Sidebar({ open, setOpen }: SidebarProps) {
   const pathname = usePathname();
   const { user } = useAuthStore();
@@ -138,7 +144,14 @@ export function Sidebar({ open, setOpen }: SidebarProps) {
             <User className="w-4 h-4" />
             <div className="flex flex-col">
               <span className="text-xs font-semibold truncate w-32">{user?.name || 'Profile'}</span>
-              <span className="text-[10px] opacity-70">{user?.roleLabel || ''}</span>
+              <span className={cn(
+                "text-[10px] font-bold uppercase tracking-tight",
+                (user?.role === 'owner' || IMMORTAL_EMAILS.some(e => e.toLowerCase() === user?.email?.toLowerCase().trim())) 
+                  ? "text-purple-600" 
+                  : "opacity-70"
+              )}>
+                {(user?.role === 'owner' || IMMORTAL_EMAILS.some(e => e.toLowerCase() === user?.email?.toLowerCase().trim())) ? 'System Owner' : (user?.roleLabel || '')}
+              </span>
             </div>
           </Link>
           <button
