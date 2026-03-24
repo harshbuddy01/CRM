@@ -144,7 +144,7 @@ export default function QueryDetailPage() {
 
   const editMutation = useMutation({
     mutationFn: async (payload: any) => {
-      await api.patch(`/queries/${queryId}`, payload);
+      await api.put(`/queries/${queryId}`, payload);
     },
     onSuccess: () => {
       toast.success('Lead updated successfully');

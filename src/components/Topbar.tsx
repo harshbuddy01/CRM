@@ -80,7 +80,7 @@ export function Topbar({ onMenuClick }: { onMenuClick?: () => void }) {
           TravelCRM ✈️
         </div>
         <div className="hidden md:block text-sm text-muted-foreground">
-          Welcome back, <span className="text-foreground font-medium">{user?.name}</span>
+          Welcome back, <span className="text-foreground font-medium">{String(user?.name || '')}</span>
         </div>
       </div>
 

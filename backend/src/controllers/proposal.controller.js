@@ -171,6 +171,17 @@ const downloadPdf = async (req, res, next) => {
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Length', buffer.length);
     res.setHeader('Content-Disposition', `attachment; filename=Proposal-v${proposal.version}-${proposal.query.queryCode}.pdf`);
+    
+    // Log Activity (Non-blocking)
+    prisma.activityLog.create({
+      data: {
+        action: 'proposal.downloaded',
+        entityType: 'query',
+        entityId: proposal.queryId,
+        newValue: { version: proposal.version }
+      }
+    }).catch(err => console.error('History Log Error:', err));
+
     res.end(buffer);
   } catch (error) {
     console.error('PDF Generation Controller Error:', error);

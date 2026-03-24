@@ -425,7 +425,7 @@ model Notification {
 
 model ActivityLog {
   id         String   @id @default(uuid())
-  userId     String   @map("user_id")
+  userId     String?  @map("user_id")
   action     String /// e.g. 'query.status_changed', 'payment.deleted'
   entityType String   @map("entity_type") /// 'query','tour','payment','user'
   entityId   String?  @map("entity_id")
@@ -434,7 +434,7 @@ model ActivityLog {
   ipAddress  String?  @map("ip_address")
   createdAt  DateTime @default(now()) @map("created_at")
 
-  user User @relation(fields: [userId], references: [id])
+  user User? @relation(fields: [userId], references: [id])
 
   @@index([userId])
   @@index([entityType, entityId])

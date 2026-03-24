@@ -132,11 +132,11 @@ export default function UsersPage() {
                 <React.Fragment key={u.id}>
                   <tr className="hover:bg-slate-50/50 transition-colors group">
                     <td className="p-4 text-center font-bold text-slate-300 italic">{index + 1}</td>
-                    <td className="p-4 font-black text-slate-900">{u.name}</td>
-                    <td className="p-4 font-medium text-slate-500">{u.email}</td>
+                    <td className="p-4 font-black text-slate-900">{String(u.name || '')}</td>
+                    <td className="p-4 font-medium text-slate-500">{String(u.email || '')}</td>
                     <td className="p-4">
                       <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-blue-50 text-blue-700 border border-blue-100">
-                        {u.role?.label ?? 'User'}{u.department ? ` · ${u.department}` : ''}
+                        {String(u.role?.label ?? 'User')}{u.department ? ` · ${String(u.department)}` : ''}
                       </span>
                     </td>
                     <td className="p-4">
@@ -454,7 +454,7 @@ function EditUserForm({ user, roles, onSubmit, isLoading, onCancel }: {
     setIsResetting(true);
     try {
       await api.post(`/users/${user.id}/reset-password-send`);
-      toast.success(`New password generated and emailed to ${user.name}.`);
+      toast.success(`New password generated and emailed to ${String(user.name)}.`);
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'Failed to reset password');
     } finally {
@@ -464,7 +464,7 @@ function EditUserForm({ user, roles, onSubmit, isLoading, onCancel }: {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <h4 className="font-medium text-sm">Edit {user.name}</h4>
+      <h4 className="font-medium text-sm">Edit {String(user.name || '')}</h4>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
         <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })}
           placeholder="Name" className="px-3 py-2 border rounded-md text-sm bg-background" />
@@ -629,7 +629,7 @@ function OffboardingModal({ user, usersList, onClose, onConfirm, isPending }: {
             <Trash2 className="w-5 h-5 text-red-500" /> Remove Teammate
           </h3>
           <p className="text-sm text-muted-foreground mt-1">
-            Offboarding <strong className="text-foreground">{user.name}</strong>
+            Offboarding <strong className="text-foreground">{String(user.name || '')}</strong>
           </p>
         </div>
         

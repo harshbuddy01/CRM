@@ -151,7 +151,7 @@ export default function PipelinePage() {
   }
 
   return (
-    <div className="flex flex-col h-[calc(100vh-8rem)] md:h-[calc(100vh-6rem)]">
+    <div className="flex flex-col h-[calc(100vh-8rem)] md:h-[calc(100vh-6rem)] w-full max-w-full overflow-x-hidden">
       <div className="mb-4 md:mb-6 flex-none">
         <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-slate-900 dark:text-white">Lead Pipeline</h1>
         <p className="text-muted-foreground mt-1 text-xs md:text-sm max-w-2xl">

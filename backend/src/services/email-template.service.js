@@ -105,7 +105,7 @@ const sendQueryEmail = async ({ queryId, templateId, subject, body, cc, sentBy }
   );
 
   // 5. Log it
-  return await prisma.emailLog.create({
+  const log = await prisma.emailLog.create({
     data: {
       queryId,
       templateId,
@@ -118,6 +118,19 @@ const sendQueryEmail = async ({ queryId, templateId, subject, body, cc, sentBy }
       communicationType: 'customer',
     },
   });
+
+  // 6. Create ActivityLog for unified history
+  await prisma.activityLog.create({
+    data: {
+      userId: sentBy,
+      action: 'integration.email.success',
+      entityType: 'query',
+      entityId: queryId,
+      newValue: { to: query.email, subject: finalSubject }
+    }
+  });
+
+  return log;
 };
 
 module.exports = {
