@@ -64,6 +64,7 @@ function formatAction(action: string): string {
     'payment.deleted': 'Payment Deleted',
     'proposal.created': 'Proposal Created',
     'proposal.sent': 'Proposal Sent',
+    'proposal.pdf_downloaded': 'Proposal PDF Downloaded',
     'tour.created': 'Tour Created',
     'note.created': 'Note Added',
     'integration.email.success': 'Email Sent Successfully',

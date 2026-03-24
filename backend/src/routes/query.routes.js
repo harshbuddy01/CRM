@@ -154,29 +154,44 @@ router.get('/:id/history', async (req, res, next) => {
     if (!query) return res.status(403).json({ success: false, message: 'Access Denied' });
 
     const prisma = require('../config/prisma');
-    const [activityLogs, integrationLogs] = await Promise.all([
+    const [activityLogs, integrationLogs, emailLogs] = await Promise.all([
       prisma.activityLog.findMany({
         where: { entityType: 'query', entityId: req.params.id },
         include: { user: { select: { id: true, name: true } } }
       }),
       prisma.integrationLog.findMany({
         where: { relatedId: req.params.id }
+      }),
+      prisma.emailLog.findMany({
+        where: { queryId: req.params.id },
+        include: { sender: { select: { id: true, name: true } } }
       })
     ]);
 
-    // Map IntegrationLogs to look like ActivityLogs for the frontend
+    // Map IntegrationLogs to look like ActivityLogs
     const mappedIntegrations = integrationLogs.map(log => ({
       id: log.id,
       entityType: 'integration',
       entityId: log.relatedId,
-      action: `integration.${log.type}.${log.status}`,
+      action: `integration.${log.type || 'system'}.${log.status || 'event'}`,
       newValue: log.payload,
       createdAt: log.createdAt,
       user: { name: 'System' }
     }));
 
+    // Map EmailLogs to look like ActivityLogs
+    const mappedEmails = emailLogs.map(log => ({
+      id: log.id,
+      entityType: 'email',
+      entityId: log.queryId,
+      action: 'integration.email.success', // simplified for timeline
+      newValue: { subject: log.subject, to: log.to },
+      createdAt: log.sentAt,
+      user: log.sender || { name: 'System' }
+    }));
+
     // Merge and Sort by descending created date
-    const history = [...activityLogs, ...mappedIntegrations].sort((a, b) => 
+    const history = [...activityLogs, ...mappedIntegrations, ...mappedEmails].sort((a, b) => 
       new Date(b.createdAt) - new Date(a.createdAt)
     );
 
