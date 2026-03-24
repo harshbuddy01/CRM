@@ -178,21 +178,28 @@ export default function UsersPage() {
                     </td>
                     <td className="p-4 text-right">
                       <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button
-                          onClick={() => setEditingUserId(editingUserId === u.id ? null : u.id)}
-                          className="p-1.5 text-slate-400 hover:text-primary hover:bg-primary/10 rounded-lg transition-all"
-                          title="Edit User"
-                        >
-                          <Edit2 className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => setExpandedPermissions(expandedPermissions === u.id ? null : u.id)}
-                          className="p-1.5 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-all"
-                          title="Permissions"
-                        >
-                          <Shield className="w-4 h-4" />
-                        </button>
-                        {currentUser?.id !== u.id && u.role?.name !== 'admin' && u.role?.name !== 'owner' && !IMMORTAL_EMAILS.includes(u.email.toLowerCase()) && (
+                        {(currentUser?.role?.name === 'owner' || IMMORTAL_EMAILS.includes(currentUser?.email?.toLowerCase()) || (u.role?.name !== 'admin' && u.role?.name !== 'owner' && !IMMORTAL_EMAILS.includes(u.email.toLowerCase()))) && (
+                          <button
+                            onClick={() => setEditingUserId(editingUserId === u.id ? null : u.id)}
+                            className="p-1.5 text-slate-400 hover:text-primary hover:bg-primary/10 rounded-lg transition-all"
+                            title="Edit User"
+                          >
+                            <Edit2 className="w-4 h-4" />
+                          </button>
+                        )}
+                        {(currentUser?.role?.name === 'owner' || IMMORTAL_EMAILS.includes(currentUser?.email?.toLowerCase()) || (u.role?.name !== 'admin' && u.role?.name !== 'owner' && !IMMORTAL_EMAILS.includes(u.email.toLowerCase()))) && (
+                          <button
+                            onClick={() => setExpandedPermissions(expandedPermissions === u.id ? null : u.id)}
+                            className="p-1.5 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-all"
+                            title="Permissions"
+                          >
+                            <Shield className="w-4 h-4" />
+                          </button>
+                        )}
+                        {currentUser?.id !== u.id && !IMMORTAL_EMAILS.includes(u.email.toLowerCase()) && (
+                          (currentUser?.role?.name === 'owner' || IMMORTAL_EMAILS.includes(currentUser?.email?.toLowerCase())) || 
+                          (u.role?.name !== 'admin' && u.role?.name !== 'owner')
+                        ) && (
                           <button
                             onClick={() => setOffboardingUser(u)}
                             className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
