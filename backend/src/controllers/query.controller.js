@@ -36,7 +36,8 @@ const createFromWebhook = async (req, res, next) => {
 
 const list = async (req, res, next) => {
   try {
-    const canViewAll = req.user.permissions['query.view_all'];
+    const isAdmin = req.user.role === 'admin';
+    const canViewAll = isAdmin || req.user.permissions['query.view_all'];
     const result = await queryService.listQueries({
       ...req.query,
       userId: req.user.id,
@@ -50,7 +51,8 @@ const list = async (req, res, next) => {
 
 const getById = async (req, res, next) => {
   try {
-    const canViewAll = req.user.permissions['query.view_all'];
+    const isAdmin = req.user.role === 'admin';
+    const canViewAll = isAdmin || req.user.permissions['query.view_all'];
     const query = await queryService.getQueryById(req.params.id, req.user.id, canViewAll);
     res.json({ success: true, data: query });
   } catch (error) {
@@ -60,8 +62,9 @@ const getById = async (req, res, next) => {
 
 const update = async (req, res, next) => {
   try {
-    const canViewAll = req.user.permissions['query.view_all'];
-    const canEditAll = req.user.permissions['query.edit_all'];
+    const isAdmin = req.user.role === 'admin';
+    const canViewAll = isAdmin || req.user.permissions['query.view_all'];
+    const canEditAll = isAdmin || req.user.permissions['query.edit_all'];
     const query = await queryService.updateQuery(req.params.id, req.body, req.user.id, canViewAll, canEditAll);
     res.json({ success: true, message: 'Query updated successfully', data: query });
   } catch (error) {
@@ -98,8 +101,9 @@ const changeStatus = async (req, res, next) => {
       throw new ForbiddenError('Only Administrators can confirm a booking.');
     }
 
-    const canViewAll = req.user.permissions['query.view_all'];
-    const canEditAll = req.user.permissions['query.edit_all'];
+    const isAdmin = req.user.role === 'admin';
+    const canViewAll = isAdmin || req.user.permissions['query.view_all'];
+    const canEditAll = isAdmin || req.user.permissions['query.edit_all'];
     const query = await queryService.changeQueryStatus(req.params.id, status, req.user.id, canViewAll, canEditAll);
     res.json({ success: true, message: `Query status updated to ${status}`, data: query });
   } catch (error) {

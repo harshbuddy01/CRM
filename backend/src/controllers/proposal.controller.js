@@ -147,7 +147,8 @@ const getProposalsByQuery = async (req, res, next) => {
 
 const getProposalById = async (req, res, next) => {
   try {
-    const canViewAll = req.user.permissions['query.view_all'];
+    const isAdmin = req.user.role === 'admin';
+    const canViewAll = isAdmin || req.user.permissions['query.view_all'];
     const proposal = await proposalService.getProposalById(req.params.id, req.user.id, canViewAll);
     res.json({ success: true, data: proposal });
   } catch (error) {
@@ -195,7 +196,8 @@ const downloadPdf = async (req, res, next) => {
 
 const sendWhatsapp = async (req, res, next) => {
   try {
-    const canViewAll = req.user.permissions['query.view_all'];
+    const isAdmin = req.user.role === 'admin';
+    const canViewAll = isAdmin || req.user.permissions['query.view_all'];
     const proposal = await proposalService.getProposalById(req.params.id, req.user.id, canViewAll);
     const now = new Date();
     
@@ -246,7 +248,8 @@ const sendEmail = async (req, res, next) => {
       return res.status(500).json({ success: false, message: 'Brevo SMTP is not configured on the server.' });
     }
 
-    const canViewAll = req.user.permissions['query.view_all'];
+    const isAdmin = req.user.role === 'admin';
+    const canViewAll = isAdmin || req.user.permissions['query.view_all'];
     const proposal = await proposalService.getProposalById(req.params.id, req.user.id, canViewAll);
     const now = new Date();
     

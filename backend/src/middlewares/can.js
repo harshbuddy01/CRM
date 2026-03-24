@@ -26,7 +26,9 @@ const logger = require('../utils/logger');
 const can = (permKey) => {
   return async (req, res, next) => {
     try {
-      const allowed = req.user?.permissions?.[permKey] ?? false;
+      // Admin bypass: Administrators always have access
+      const isAdmin = req.user?.role === 'admin';
+      const allowed = isAdmin || (req.user?.permissions?.[permKey] ?? false);
 
       if (!allowed) {
         // Log the denied access attempt to audit trail

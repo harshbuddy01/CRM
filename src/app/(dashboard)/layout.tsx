@@ -31,11 +31,11 @@ export default function DashboardLayout({
   if (!user) return null;
 
   return (
-    <div className="flex min-h-screen bg-background text-foreground overflow-x-hidden">
+    <div className="flex min-h-screen bg-background text-foreground">
       <Sidebar open={sidebarOpen} setOpen={setSidebarOpen} />
       <div className={cn("flex-1 flex flex-col md:ml-64 transition-all pb-24 md:pb-0")}>
         <Topbar onMenuClick={() => setSidebarOpen(true)} />
-        <main className="flex-1 p-4 md:p-6 overflow-x-hidden">
+        <main className="flex-1 p-4 md:p-6">
           {children}
         </main>
       </div>

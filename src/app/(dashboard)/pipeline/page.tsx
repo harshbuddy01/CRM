@@ -160,7 +160,7 @@ export default function PipelinePage() {
       </div>
 
       <DragDropContext onDragStart={onDragStart} onDragEnd={onDragEnd}>
-        <div className="flex gap-4 overflow-x-auto pb-6 flex-1 h-full min-h-0 snap-x scrollbar-thin scrollbar-thumb-slate-200">
+        <div className="flex gap-4 overflow-x-auto pb-6 flex-1 h-full min-h-0 scrollbar-thin scrollbar-thumb-slate-200">
           {columns.map((col: any) => (
             <div key={col.id} className="flex-shrink-0 w-72 md:w-80 flex flex-col snap-center md:snap-start bg-slate-50/50 dark:bg-slate-900/40 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
               
