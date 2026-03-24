@@ -26,8 +26,9 @@ const logger = require('../utils/logger');
 const can = (permKey) => {
   return async (req, res, next) => {
     try {
-      // Admin bypass: Administrators/Owners always have access
-      const isAdmin = ['admin', 'owner'].includes(req.user?.role);
+      // Admin bypass: Administrators/Owners/Immortal accounts always have access
+      const { immortalEmails } = require('../config');
+      const isAdmin = ['admin', 'owner'].includes(req.user?.role) || immortalEmails.includes(req.user?.email?.toLowerCase());
       const allowed = isAdmin || (req.user?.permissions?.[permKey] ?? false);
 
       if (!allowed) {
