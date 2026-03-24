@@ -227,10 +227,10 @@ export default function UsersPage() {
               <div className="flex justify-between items-start mb-4">
                 <div className="space-y-1">
                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">
-                    {u.role?.label ?? 'User'}{u.department ? ` · ${u.department}` : ''}
+                    {String(u.role?.label ?? 'User')}{u.department ? ` · ${String(u.department)}` : ''}
                   </p>
-                  <h3 className="font-black text-base text-slate-900 leading-tight">{u.name}</h3>
-                  <p className="text-xs font-medium text-slate-500">{u.email}</p>
+                  <h3 className="font-black text-base text-slate-900 leading-tight">{String(u.name || '')}</h3>
+                  <p className="text-xs font-medium text-slate-500">{String(u.email || '')}</p>
                 </div>
                 <div className="flex flex-col items-end gap-1.5">
                   {u.isActive ? (
