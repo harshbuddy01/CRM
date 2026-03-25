@@ -389,7 +389,7 @@ function CreateUserForm({ roles, onSubmit, isLoading }: { roles: Role[]; onSubmi
         >
           <option value="">Select Role</option>
           {roles
-            .filter((r: Role) => r.name !== 'owner') // Fallback filter just in case
+            .filter((r: Role) => r.name !== 'owner' && r.name !== 'admin') // Only the core 3 users can be Admins
             .map((r: Role) => (
             <option key={r.id} value={r.id}>{r.label}</option>
           ))}
@@ -486,7 +486,7 @@ function EditUserForm({ user, roles, onSubmit, isLoading, onCancel }: {
           disabled={isImmortal || (user.role.name === 'admin' && !IMMORTAL_EMAILS.includes(currentUser?.email?.toLowerCase() || ''))}
           className="px-3 py-2 border rounded-md text-sm bg-background disabled:bg-slate-50 disabled:text-slate-500 cursor-not-allowed">
           {roles
-            .filter((r: Role) => r.name !== 'owner')
+            .filter((r: Role) => r.name !== 'owner' && r.name !== 'admin')
             .map((r: Role) => <option key={r.id} value={r.id}>{r.label}</option>)}
         </select>
         <input type="number" value={form.maxLeads} onChange={(e) => setForm({ ...form, maxLeads: parseInt(e.target.value, 10) })}
