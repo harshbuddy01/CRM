@@ -302,13 +302,13 @@ export default function TourDetailPage() {
                         {day.dayNumber}
                       </div>
                       <div className="pt-1 w-full text-sm">
-                        <p className="font-semibold mb-1">{day.title}</p>
-                        {day.hotel && <p className="text-muted-foreground flex items-center mb-1"><Building className="w-3 h-3 mr-1" /> {day.hotel}</p>}
+                        <p className="font-semibold mb-1">{typeof day.title === 'object' ? (day.title?.name || JSON.stringify(day.title)) : (day.title || `Day ${day.dayNumber}`)}</p>
+                        {day.hotel && <p className="text-muted-foreground flex items-center mb-1"><Building className="w-3 h-3 mr-1" /> {typeof day.hotel === 'object' ? (day.hotel?.name || JSON.stringify(day.hotel)) : day.hotel}</p>}
                         {day.activities && day.activities.length > 0 && (
                           <div className="text-muted-foreground mt-2 space-y-1 pl-4 border-l-2">
-                            {day.activities.map((act: string, i: number) => (
+                            {day.activities.map((act: any, i: number) => (
                               <p key={i} className="text-xs flex items-center relative before:w-1.5 before:h-1.5 before:rounded-full before:bg-muted-foreground/30 before:mr-2">
-                                {act}
+                                {typeof act === 'object' ? (act?.name || act?.title || JSON.stringify(act)) : String(act)}
                               </p>
                             ))}
                           </div>

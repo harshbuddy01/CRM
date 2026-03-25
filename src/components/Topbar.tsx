@@ -156,26 +156,10 @@ export function Topbar({ onMenuClick }: { onMenuClick?: () => void }) {
           </PopoverContent>
         </Popover>
 
-        {/* User Account */}
-        <DropdownMenu>
-          <DropdownMenuTrigger className="focus:outline-none">
-            <Button variant="ghost" size="icon" className="rounded-full">
-              <User className="w-5 h-5" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-56">
-            <DropdownMenuLabel>My Account</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem className="text-muted-foreground">
-              {String(user?.email || 'No email')}
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={handleLogout} className="text-red-600 focus:bg-red-50 focus:text-red-700 cursor-pointer">
-              <LogOut className="w-4 h-4 mr-2" />
-              Log out
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        {/* User Account — links to Settings */}
+        <Button variant="ghost" size="icon" className="rounded-full" onClick={() => router.push('/settings')}>
+          <User className="w-5 h-5" />
+        </Button>
       </div>
     </header>
   );
