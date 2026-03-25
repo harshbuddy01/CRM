@@ -54,6 +54,10 @@ const deleteInvoice = async (req, res, next) => {
   try { await financeService.deleteInvoice(req.params.id); res.json({ success: true, message: 'Invoice deleted' }); }
   catch (e) { next(e); }
 };
+const regenerateInvoice = async (req, res, next) => {
+  try { res.json({ success: true, data: await financeService.regenerateInvoice(req.params.id) }); }
+  catch (e) { next(e); }
+};
 
 // ─── Vendor Payments ─────────────────────────────────────────
 const listVendorPayments = async (req, res, next) => {
@@ -84,7 +88,7 @@ const getPnlSummary = async (req, res, next) => {
 
 module.exports = {
   listExpenses, createExpense, updateExpense, deleteExpense,
-  listInvoices, getInvoice, createInvoice, updateInvoice, deleteInvoice,
+  listInvoices, getInvoice, createInvoice, updateInvoice, deleteInvoice, regenerateInvoice,
   listVendorPayments, createVendorPayment, deleteVendorPayment,
   getPnlSummary,
 };

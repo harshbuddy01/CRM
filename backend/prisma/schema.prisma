@@ -194,6 +194,7 @@ model Query {
   bookingServices BookingService[]
   vouchers        Voucher[]
   documents       QueryDocument[]
+  vendorPayments  VendorPayment[]
 
   @@index([phone]) // Duplicate check
   @@index([assignedTo]) // My leads filter
@@ -823,6 +824,7 @@ model Invoice {
 model VendorPayment {
   id          String   @id @default(uuid())
   supplierId  String?  @map("supplier_id")
+  queryId     String?  @map("query_id")
   vendorName  String   @map("vendor_name")
   amount      Decimal  @db.Decimal(12, 2)
   mode        String   /// 'upi', 'neft', 'cash', 'cheque'
@@ -835,10 +837,12 @@ model VendorPayment {
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @default(now()) @map("updated_at")
 
-  user User @relation("VendorPaymentRecordedBy", fields: [recordedBy], references: [id])
+  user  User   @relation("VendorPaymentRecordedBy", fields: [recordedBy], references: [id])
+  query Query? @relation(fields: [queryId], references: [id])
 
   @@index([paymentDate])
   @@index([supplierId])
+  @@index([queryId])
   @@map("vendor_payments")
 }
 

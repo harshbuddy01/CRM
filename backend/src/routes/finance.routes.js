@@ -21,6 +21,7 @@ router.get('/invoices', can('payment.view_all'), finance.listInvoices);
 router.get('/invoices/:id', can('payment.view_all'), finance.getInvoice);
 router.post('/invoices', can('payment.view_all'), finance.createInvoice);
 router.put('/invoices/:id', can('payment.view_all'), finance.updateInvoice);
+router.put('/invoices/:id/regenerate', can('payment.view_all'), finance.regenerateInvoice);
 router.delete('/invoices/:id', can('payment.view_all'), finance.deleteInvoice);
 
 // ─── Vendor Payments ─────────────────────────────────────────

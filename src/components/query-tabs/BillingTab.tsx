@@ -3,7 +3,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { Card, CardContent } from '@/components/ui/card';
-import { Loader2, IndianRupee, TrendingUp, CreditCard, Copy, ExternalLink, Send } from 'lucide-react';
+import { Loader2, IndianRupee, TrendingUp, CreditCard, Copy, ExternalLink, Send, RefreshCw } from 'lucide-react';
 import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
@@ -37,9 +37,24 @@ export function BillingTab({ queryId }: { queryId: string }) {
       toast.error('Failed to generate invoice', { description: err.response?.data?.message || err.message });
     }
   });
+  
+  const regenerateInvoiceMutation = useMutation({
+    mutationFn: async (invoiceId: string) => {
+      const res = await api.put(`/finance/invoices/${invoiceId}/regenerate`);
+      return res.data;
+    },
+    onSuccess: () => {
+      toast.success('Invoice updated with latest details');
+      queryClient.invalidateQueries({ queryKey: ['billing-summary', queryId] });
+    },
+    onError: (err: any) => {
+      toast.error('Failed to update invoice', { description: err.response?.data?.message || err.message });
+    }
+  });
 
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [isManualPaymentOpen, setIsManualPaymentOpen] = useState(false);
+  const [isSupplierPaymentOpen, setIsSupplierPaymentOpen] = useState(false);
   const [paymentAmount, setPaymentAmount] = useState('');
   const [paymentDesc, setPaymentDesc] = useState('Booking Payment');
   const [generatedLink, setGeneratedLink] = useState('');
@@ -80,6 +95,22 @@ export function BillingTab({ queryId }: { queryId: string }) {
     },
     onError: (err: any) => {
       toast.error('Failed to record payment', { description: err.response?.data?.message || err.message });
+    }
+  });
+
+  const recordSupplierPaymentMutation = useMutation({
+    mutationFn: async (payload: any) => {
+      const res = await api.post('/finance/vendor-payments', payload);
+      return res.data;
+    },
+    onSuccess: () => {
+      toast.success('Supplier payment recorded successfully');
+      setIsSupplierPaymentOpen(false);
+      queryClient.invalidateQueries({ queryKey: ['billing-summary', queryId] });
+      queryClient.invalidateQueries({ queryKey: ['payments', queryId] });
+    },
+    onError: (err: any) => {
+      toast.error('Failed to record supplier payment', { description: err.response?.data?.message || err.message });
     }
   });
 
@@ -253,7 +284,83 @@ export function BillingTab({ queryId }: { queryId: string }) {
       </div>
 
       <div>
-        <h3 className="font-semibold text-lg mb-3">Supplier Side</h3>
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="font-semibold text-lg">Supplier Side</h3>
+          <Dialog open={isSupplierPaymentOpen} onOpenChange={setIsSupplierPaymentOpen}>
+            <DialogTrigger render={<Button size="sm" variant="outline" className="gap-2 border-amber-600 text-amber-600 hover:bg-amber-50">
+              <CreditCard className="w-4 h-4" /> Record Supplier Payment
+            </Button>} />
+            <DialogContent className="sm:max-w-[425px]">
+              <DialogHeader><DialogTitle>Record Supplier Payment</DialogTitle></DialogHeader>
+              <form onSubmit={(e) => {
+                e.preventDefault();
+                const formData = new FormData(e.currentTarget);
+                const amountRaw = formData.get('amount') as string;
+                const mode = formData.get('mode') as string;
+                const date = formData.get('date') as string;
+                const reference = formData.get('reference') as string;
+                const notes = formData.get('notes') as string;
+                const vendorName = formData.get('vendorName') as string;
+
+                const amount = parseFloat(amountRaw);
+                if (isNaN(amount) || amount <= 0) {
+                  toast.error("Please enter a valid positive amount");
+                  return;
+                }
+                if (!mode || !date) {
+                  toast.error("Payment mode and date are required");
+                  return;
+                }
+
+                recordSupplierPaymentMutation.mutate({
+                  amount,
+                  mode: mode || 'upi',
+                  paymentDate: date,
+                  referenceId: reference || '',
+                  vendorName: vendorName || 'General Supplier',
+                  notes: notes || '',
+                  queryId
+                });
+              }} className="space-y-4 py-4">
+                <div className="space-y-2">
+                  <Label>Vendor / Supplier Name</Label>
+                  <Input name="vendorName" placeholder="e.g. ABC Transports" required />
+                </div>
+                <div className="space-y-2">
+                  <Label>Amount (₹)</Label>
+                  <Input name="amount" type="number" defaultValue={supplier.supplierPending > 0 ? supplier.supplierPending : ''} required />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Mode</Label>
+                    <select name="mode" className="flex h-8 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring">
+                      <option value="upi">UPI/QR</option>
+                      <option value="cash">Cash</option>
+                      <option value="neft">NEFT/Bank</option>
+                      <option value="cheque">Cheque</option>
+                    </select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Date</Label>
+                    <Input name="date" type="date" defaultValue={new Date().toISOString().split('T')[0]} required />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label>Reference/UTR (Optional)</Label>
+                  <Input name="reference" placeholder="Transaction ID" />
+                </div>
+                <div className="space-y-2">
+                  <Label>Internal Notes</Label>
+                  <Input name="notes" placeholder="e.g. Taxi advance" />
+                </div>
+                <Button type="submit" className="w-full bg-amber-600 hover:bg-amber-700" disabled={recordSupplierPaymentMutation.isPending}>
+                  {recordSupplierPaymentMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                  Save Supplier Payment
+                </Button>
+              </form>
+            </DialogContent>
+          </Dialog>
+        </div>
         <div className="grid grid-cols-3 gap-3">
           <KpiCard label="Supplier Cost" value={supplier.supplierAmount} />
           <KpiCard label="Paid to Suppliers" value={supplier.supplierReceived} color="text-green-600" />
@@ -267,25 +374,35 @@ export function BillingTab({ queryId }: { queryId: string }) {
           <Card><CardContent className="p-6 text-center text-muted-foreground">No payments recorded yet.</CardContent></Card>
         ) : (
           <div className="space-y-2">
-            {payments.map((p: any) => (
-              <Card key={p.id}>
+            {payments.map((p: any) => {
+              const isSupplier = !!p.vendorName;
+              return (
+              <Card key={p.id} className={isSupplier ? 'border-amber-200 bg-amber-50/30' : ''}>
                 <CardContent className="p-3 flex justify-between items-center">
                   <div className="flex items-center gap-3">
-                    <CreditCard className="w-4 h-4 text-muted-foreground" />
+                    <CreditCard className={`w-4 h-4 ${isSupplier ? 'text-amber-500' : 'text-emerald-500'}`} />
                     <div>
                       <p className="text-sm font-medium">₹{Number(p.amount).toLocaleString('en-IN')}</p>
-                      <p className="text-xs text-muted-foreground">{p.mode.toUpperCase()} {p.referenceUtr && `• ${p.referenceUtr}`}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {p.mode.toUpperCase()} {p.referenceUtr ? `• ${p.referenceUtr}` : p.referenceId ? `• ${p.referenceId}` : ''}
+                      </p>
+                      {isSupplier ? <p className="text-[10px] font-semibold text-amber-700 mt-0.5">TO: {p.vendorName}</p> : null}
                     </div>
                   </div>
                   <div className="text-right">
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                      p.status === 'verified' || p.status === 'banked' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'
-                    }`}>{p.status}</span>
+                    {isSupplier ? (
+                      <span className="px-2 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-700">supplier payment</span>
+                    ) : (
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                        p.status === 'verified' || p.status === 'banked' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'
+                      }`}>customer • {p.status}</span>
+                    )}
                     <p className="text-xs text-muted-foreground mt-1">{format(new Date(p.paymentDate), 'PP')}</p>
                   </div>
                 </CardContent>
               </Card>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
@@ -298,9 +415,21 @@ export function BillingTab({ queryId }: { queryId: string }) {
               <p className="font-medium">{invoice.invoiceNumber}</p>
               <p className="text-xs text-muted-foreground">₹{Number(invoice.totalAmount).toLocaleString('en-IN')}</p>
             </div>
-            <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-              invoice.status === 'paid' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'
-            }`}>{invoice.status}</span>
+            <div className="flex items-center gap-2">
+              <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                invoice.status === 'paid' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'
+              }`}>{invoice.status}</span>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="gap-1.5 h-8 text-xs bg-blue-50 text-blue-600 border-blue-200 hover:bg-blue-100"
+                onClick={() => regenerateInvoiceMutation.mutate(invoice.id)}
+                disabled={regenerateInvoiceMutation.isPending}
+              >
+                {regenerateInvoiceMutation.isPending ? <Loader2 className="w-3 h-3 animate-spin"/> : <RefreshCw className="w-3 h-3" />}
+                Update Invoice
+              </Button>
+            </div>
           </CardContent></Card>
         ) : (
           <Card>

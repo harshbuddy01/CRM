@@ -235,6 +235,13 @@ router.get('/:id/billing-summary', async (req, res, next) => {
     const supplierReceived = bookingServices.reduce((sum, bs) => sum + Number(bs.supplierAmountPaid), 0);
     const supplierPending = supplierAmount - supplierReceived;
 
+    // Supplier payments recorded specifically for this query
+    const vendorPayments = await prisma.vendorPayment.findMany({
+      where: { queryId, deletedAt: null },
+      include: { user: { select: { id: true, name: true } } },
+      orderBy: { paymentDate: 'desc' },
+    });
+
     const grossProfit = totalAmount - supplierAmount;
 
     // Check if invoice exists
@@ -249,7 +256,7 @@ router.get('/:id/billing-summary', async (req, res, next) => {
       data: {
         customer: { totalAmount, totalReceived, totalPending, grossProfit },
         supplier: { supplierAmount, supplierReceived, supplierPending },
-        payments: customerPayments,
+        payments: [...customerPayments, ...vendorPayments], // Combine both for the history timeline
         invoice,
       },
     });

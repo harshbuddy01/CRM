@@ -151,6 +151,45 @@ const updateInvoice = (id, data) => {
 
 const deleteInvoice = (id) => prisma.invoice.update({ where: { id }, data: { deletedAt: new Date() } });
 
+const regenerateInvoice = async (id) => {
+  const existing = await prisma.invoice.findUnique({
+    where: { id },
+    include: { creator: true }
+  });
+  if (!existing) throw new Error('Invoice not found');
+  if (!existing.queryId) throw new Error('Only invoices linked to a query can be auto-regenerated');
+
+  const query = await prisma.query.findUnique({
+    where: { id: existing.queryId },
+    include: {
+      proposals: {
+        where: { deletedAt: null },
+        orderBy: { version: 'desc' },
+        take: 1
+      }
+    }
+  });
+
+  const proposal = query?.proposals?.[0];
+  const updateData = {
+    clientName: query.name,
+    clientEmail: query.email,
+    clientPhone: query.phone,
+  };
+
+  if (proposal) {
+    updateData.subtotal = Number(proposal.sellingPrice);
+    updateData.taxAmount = (Number(updateData.subtotal) * Number(existing.taxPercent)) / 100;
+    updateData.totalAmount = Number(updateData.subtotal) + Number(updateData.taxAmount);
+    updateData.items = [{ description: 'Tour Package', amount: updateData.subtotal, quantity: 1, unitPrice: updateData.subtotal }];
+  }
+
+  return await prisma.invoice.update({
+    where: { id },
+    data: updateData
+  });
+};
+
 // ─── Vendor Payments ─────────────────────────────────────────
 const listVendorPayments = async ({ from, to, supplierId, page = 1, limit = 50 }) => {
   const where = { deletedAt: null };
@@ -222,7 +261,7 @@ const getPnlSummary = async (year, month) => {
 
 module.exports = {
   listExpenses, createExpense, updateExpense, deleteExpense,
-  listInvoices, getInvoice, createInvoice, updateInvoice, deleteInvoice,
+  listInvoices, getInvoice, createInvoice, updateInvoice, deleteInvoice, regenerateInvoice,
   listVendorPayments, createVendorPayment, deleteVendorPayment,
   getPnlSummary,
 };
