@@ -27,8 +27,8 @@ type Notification = {
 };
 
 const IMMORTAL_EMAILS = [
+  'anish629028@gmail.com',
   'harshbuddy01@gmail.com',
-  'administrative@imagicaholidays.com',
   'amanasha481@gmail.com'
 ];
 
