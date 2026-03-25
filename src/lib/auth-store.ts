@@ -34,8 +34,8 @@ export const useAuthStore = create<AuthState>()(
     }),
     {
       name: 'auth-storage',
-      // Only persist user profile — accessToken stays in-memory only (security: prevents XSS token theft)
-      partialize: (state) => ({ user: state.user }),
+      // Persist accessToken inline inside auth-storage so page reloads don't lose it
+      partialize: (state) => ({ user: state.user, accessToken: state.accessToken }),
     }
   )
 );

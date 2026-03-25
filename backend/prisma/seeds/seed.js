@@ -7,7 +7,6 @@ const bcrypt = require('bcryptjs');
 const prisma = new PrismaClient();
 
 const roles = [
-  { name: 'owner', label: 'System Owner', description: 'Root access - Permanent identity' },
   { name: 'admin', label: 'Administrator', description: 'Full system access' },
   { name: 'sales_manager', label: 'Sales Manager', description: 'Can view/reassign all sales leads' },
   { name: 'sales_exec', label: 'Sales Executive', description: 'Can only view own leads' },
@@ -109,8 +108,7 @@ async function main() {
     }
   };
 
-  // Owner & Admin: All permissions
-  await mapPermissions(createdRoles['owner'], Object.keys(createdPerms));
+  // Admin: All permissions
   await mapPermissions(createdRoles['admin'], Object.keys(createdPerms));
 
   // Sales Manager: query.*, proposal.* (except maybe hard deletes)

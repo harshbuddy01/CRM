@@ -146,11 +146,11 @@ export function Sidebar({ open, setOpen }: SidebarProps) {
               <span className="text-xs font-semibold truncate w-32">{user?.name || 'Profile'}</span>
               <span className={cn(
                 "text-[10px] font-bold uppercase tracking-tight",
-                (user?.role === 'owner' || IMMORTAL_EMAILS.some(e => e.toLowerCase() === user?.email?.toLowerCase().trim())) 
+                IMMORTAL_EMAILS.some(e => e.toLowerCase() === user?.email?.toLowerCase().trim()) 
                   ? "text-purple-600" 
                   : "opacity-70"
               )}>
-                {(user?.role === 'owner' || IMMORTAL_EMAILS.some(e => e.toLowerCase() === user?.email?.toLowerCase().trim())) ? 'System Owner' : (user?.roleLabel || '')}
+                {IMMORTAL_EMAILS.some(e => e.toLowerCase() === user?.email?.toLowerCase().trim()) ? 'System Owner' : (user?.roleLabel || '')}
               </span>
             </div>
           </Link>

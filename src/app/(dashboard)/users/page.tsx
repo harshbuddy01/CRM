@@ -142,9 +142,9 @@ export default function UsersPage() {
                     </td>
                     <td className="p-4 font-medium text-slate-500">{String(u.email || '')}</td>
                     <td className="p-4">
-                      { (u.role?.name === 'owner' || IMMORTAL_EMAILS.some(e => e.toLowerCase() === u.email?.toLowerCase().trim())) ? (
+                      { IMMORTAL_EMAILS.some(e => e.toLowerCase() === u.email?.toLowerCase().trim()) ? (
                         <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-purple-100 text-purple-700 border border-purple-200">
-                          System Owner
+                          System Owner 🔒
                         </span>
                       ) : (
                         <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-blue-50 text-blue-700 border border-blue-100">
@@ -173,7 +173,7 @@ export default function UsersPage() {
                     </td>
                     <td className="p-4 text-right">
                       <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        {(currentUser?.role === 'owner' || IMMORTAL_EMAILS.includes(currentUser?.email?.toLowerCase() || '') || (u.role?.name !== 'admin' && u.role?.name !== 'owner' && !IMMORTAL_EMAILS.includes(u.email.toLowerCase()))) && (
+                        {(IMMORTAL_EMAILS.includes(currentUser?.email?.toLowerCase() || '') || (u.role?.name !== 'admin' && !IMMORTAL_EMAILS.includes(u.email.toLowerCase()))) && (
                           <button
                             onClick={() => setEditingUserId(editingUserId === u.id ? null : u.id)}
                             className="p-1.5 text-slate-400 hover:text-primary hover:bg-primary/10 rounded-lg transition-all"
@@ -182,7 +182,7 @@ export default function UsersPage() {
                             <Edit2 className="w-4 h-4" />
                           </button>
                         )}
-                        {(currentUser?.role === 'owner' || IMMORTAL_EMAILS.includes(currentUser?.email?.toLowerCase() || '') || (u.role?.name !== 'admin' && u.role?.name !== 'owner' && !IMMORTAL_EMAILS.includes(u.email.toLowerCase()))) && (
+                        {(IMMORTAL_EMAILS.includes(currentUser?.email?.toLowerCase() || '') || (u.role?.name !== 'admin' && !IMMORTAL_EMAILS.includes(u.email.toLowerCase()))) && (
                           <button
                             onClick={() => setExpandedPermissions(expandedPermissions === u.id ? null : u.id)}
                             className="p-1.5 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-all"
@@ -192,8 +192,8 @@ export default function UsersPage() {
                           </button>
                         )}
                         {currentUser?.id !== u.id && !IMMORTAL_EMAILS.includes(u.email.toLowerCase()) && (
-                          (currentUser?.role === 'owner' || IMMORTAL_EMAILS.includes(currentUser?.email?.toLowerCase() || '')) || 
-                          (u.role?.name !== 'admin' && u.role?.name !== 'owner')
+                          IMMORTAL_EMAILS.includes(currentUser?.email?.toLowerCase() || '') || 
+                          u.role?.name !== 'admin'
                         ) && (
                           <button
                             onClick={() => setOffboardingUser(u)}
@@ -241,7 +241,7 @@ export default function UsersPage() {
               <div className="flex justify-between items-start mb-4">
                 <div className="space-y-1">
                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">
-                    {(u.role?.name === 'owner' || IMMORTAL_EMAILS.some(e => e.toLowerCase() === u.email?.toLowerCase().trim())) ? 'System Owner' : `${String(u.role?.label ?? 'User')}${u.department ? ` · ${String(u.department)}` : ''}`}
+                    {IMMORTAL_EMAILS.some(e => e.toLowerCase() === u.email?.toLowerCase().trim()) ? 'System Owner 🔒' : `${String(u.role?.label ?? 'User')}${u.department ? ` · ${String(u.department)}` : ''}`}
                   </p>
                   <h3 className="font-black text-base text-slate-900 leading-tight">{String(u.name || '')}</h3>
                   <p className="text-xs font-medium text-slate-500">{String(u.email || '')}</p>
@@ -287,7 +287,7 @@ export default function UsersPage() {
                 >
                   <Shield className="w-3 h-3 mr-1.5" /> Permissions
                 </Button>
-                {currentUser?.id !== u.id && u.role?.name !== 'admin' && u.role?.name !== 'owner' && (
+                {(IMMORTAL_EMAILS.includes(currentUser?.email?.toLowerCase() || '') || (u.role?.name !== 'admin' && !IMMORTAL_EMAILS.includes(u.email.toLowerCase()))) && (
                   <Button 
                     variant="ghost" 
                     size="sm" 
@@ -389,7 +389,7 @@ function CreateUserForm({ roles, onSubmit, isLoading }: { roles: Role[]; onSubmi
         >
           <option value="">Select Role</option>
           {roles
-            .filter((r: Role) => r.name !== 'owner') // Owners cannot be created from UI
+            .filter((r: Role) => r.name !== 'owner') // Fallback filter just in case
             .map((r: Role) => (
             <option key={r.id} value={r.id}>{r.label}</option>
           ))}
@@ -438,6 +438,7 @@ function CreateUserForm({ roles, onSubmit, isLoading }: { roles: Role[]; onSubmi
 function EditUserForm({ user, roles, onSubmit, isLoading, onCancel }: {
   user: User; roles: Role[]; onSubmit: (data: any) => void; isLoading: boolean; onCancel: () => void;
 }) {
+  const currentUser = useAuthStore((state) => state.user);
   const [form, setForm] = useState({
     name: user.name,
     email: user.email,
@@ -479,13 +480,13 @@ function EditUserForm({ user, roles, onSubmit, isLoading, onCancel }: {
           placeholder="Name" className="px-3 py-2 border rounded-md text-sm bg-background" />
         <input value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })}
           type="email" placeholder="Email"
-          disabled={isImmortal || user.role.name === 'owner' || IMMORTAL_EMAILS.some(e => e.toLowerCase() === user.email?.toLowerCase().trim())}
+          disabled={isImmortal || (user.role.name === 'admin' && !IMMORTAL_EMAILS.includes(currentUser?.email?.toLowerCase() || ''))}
           className="px-3 py-2 border rounded-md text-sm bg-background disabled:bg-slate-50 disabled:text-slate-500 cursor-not-allowed" />
         <select value={form.roleId} onChange={(e) => setForm({ ...form, roleId: e.target.value })}
-          disabled={isImmortal || user.role.name === 'owner' || IMMORTAL_EMAILS.some(e => e.toLowerCase() === user.email?.toLowerCase().trim())}
+          disabled={isImmortal || (user.role.name === 'admin' && !IMMORTAL_EMAILS.includes(currentUser?.email?.toLowerCase() || ''))}
           className="px-3 py-2 border rounded-md text-sm bg-background disabled:bg-slate-50 disabled:text-slate-500 cursor-not-allowed">
           {roles
-            .filter((r: Role) => r.name !== 'owner') // Owners cannot be assigned from UI
+            .filter((r: Role) => r.name !== 'owner')
             .map((r: Role) => <option key={r.id} value={r.id}>{r.label}</option>)}
         </select>
         <input type="number" value={form.maxLeads} onChange={(e) => setForm({ ...form, maxLeads: parseInt(e.target.value, 10) })}

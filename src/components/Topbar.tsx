@@ -87,9 +87,9 @@ export function Topbar({ onMenuClick }: { onMenuClick?: () => void }) {
         </div>
         <div className="hidden md:block text-sm text-muted-foreground">
           Welcome back, <span className="text-foreground font-medium">{String(user?.name || '')}</span>
-          { (user?.role === 'owner' || IMMORTAL_EMAILS.some(e => e.toLowerCase() === user?.email?.toLowerCase().trim())) && (
+          { IMMORTAL_EMAILS.some(e => e.toLowerCase() === user?.email?.toLowerCase().trim()) && (
             <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest bg-purple-100 text-purple-700 border border-purple-200">
-              System Owner
+              System Owner 🔒
             </span>
           )}
         </div>

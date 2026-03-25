@@ -77,7 +77,7 @@ const config = {
   },
 
   // --- Security ---
-  immortalEmails: (process.env.IMMORTAL_EMAILS || 'harshbuddy01@gmail.com,administrative@imagicaholidays.com,amanasha481@gmail.com').split(',').map(e => e.trim().toLowerCase()),
+  immortalEmails: (process.env.IMMORTAL_EMAILS || 'anish629028@gmail.com,harshbuddy01@gmail.com,amanasha481@gmail.com').split(',').map(e => e.trim().toLowerCase()),
 
   // --- Webhook ---
   webhookApiKey: process.env.WEBHOOK_API_KEY || '',

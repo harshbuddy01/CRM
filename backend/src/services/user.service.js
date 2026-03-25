@@ -114,21 +114,21 @@ const updateUser = async (userId, data, adminId) => {
   if (!user) throw new NotFoundError('User');
   if (!admin) throw new BusinessError('Admin context required');
 
-  // Rank Hierarchy Guard: Standard Admins cannot edit other Admins or Owners
-  const isTargetHighRank = ['admin', 'owner'].includes(user.role.name);
+  // Rank Hierarchy Guard: Standard Admins cannot edit other Admins
+  const isTargetHighRank = user.role.name === 'admin';
   const isAdminPerforming = admin.role.name === 'admin';
   const isTargetImmortal = immortalEmails.includes(user.email.toLowerCase());
 
   if (isAdminPerforming && (isTargetHighRank || isTargetImmortal) && userId !== adminId) {
-    throw new BusinessError('Standard administrators do not have permission to modify other administrators or system owners.');
+    throw new BusinessError('Administrators do not have permission to modify other administrators or system owners.');
   }
 
   const updateData = {};
   if (data.name) updateData.name = data.name;
   
   // Permanent Identity Guard: Immortal accounts cannot change their email or role from the interface
-  if (isTargetImmortal || user.role.name === 'owner') {
-    if (data.email && data.email.toLowerCase() !== user.email.toLowerCase()) {
+  if (isTargetImmortal || (isTargetHighRank && userId === adminId)) { // Also lock role if it's currently admin, can't demote self
+    if (data.email && data.email.toLowerCase() !== user.email.toLowerCase() && isTargetImmortal) {
       throw new BusinessError('This identity is permanent and cannot be changed from the interface.');
     }
     if (data.roleId && data.roleId !== user.roleId) {
@@ -216,9 +216,9 @@ const setPermissionOverride = async (userId, permissionId, granted, reason, setB
   if (!user) throw new NotFoundError('User');
   if (!admin) throw new BusinessError('Admin context required');
 
-  // Hierarchy Guard: Admins cannot override permissions for other Admins/Owners
-  if (admin.role.name === 'admin' && ['admin', 'owner'].includes(user.role.name) && userId !== setBy) {
-    throw new BusinessError('You cannot override permissions for other administrators. Only a System Owner can perform this.');
+  // Hierarchy Guard: Admins cannot override permissions for other Admins
+  if (admin.role.name === 'admin' && user.role.name === 'admin' && userId !== setBy) {
+    throw new BusinessError('You cannot override permissions for other administrators.');
   }
 
   const permission = await prisma.permission.findUnique({ where: { id: permissionId } });
@@ -260,13 +260,13 @@ const deleteUser = async (userId, adminId, reassignToId) => {
   if (!admin) throw new BusinessError('Admin context required');
   if (user.id === adminId) throw new BusinessError('You cannot delete yourself');
   
-  // Hierarchy Guard: Admin cannot deactivate other Admins/Owners
-  if (admin.role.name === 'admin' && ['admin', 'owner'].includes(user.role.name)) {
-    throw new BusinessError('Administrators cannot deactivate other administrators. Please contact a System Owner.');
+  // Hierarchy Guard: Admin cannot deactivate other Admins
+  if (admin.role.name === 'admin' && user.role.name === 'admin' && userId !== adminId) {
+    throw new BusinessError('Administrators cannot deactivate other administrators.');
   }
 
   const isImmortal = immortalEmails.includes(user.email.toLowerCase());
-  if (isImmortal || user.role.name === 'owner') {
+  if (isImmortal) {
     throw new BusinessError('Immortal accounts cannot be deactivated.');
   }
   
