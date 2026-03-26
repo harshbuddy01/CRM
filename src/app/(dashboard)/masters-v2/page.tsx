@@ -313,9 +313,29 @@ function MasterForm({ category, editItem, onClose, onSaved }: { category: typeof
           <Field label="Destination"><DestinationSelect destinations={destinations} value={form.destinationId || ''} onChange={v => set('destinationId', v)} /></Field>
           <Field label="Day Cost (₹)"><Input type="number" placeholder="0" value={form.dayCost || ''} onChange={e => set('dayCost', e.target.value)} /></Field>
           <Field label="Meals Included">
-            <select className="w-full h-10 px-3 border rounded-md bg-background text-sm" value={form.mealsIncluded || ''} onChange={e => set('mealsIncluded', e.target.value)}>
-              <option value="">None</option><option value="BB">BB — Bed & Breakfast</option><option value="HB">HB — Half Board</option><option value="FB">FB — Full Board</option><option value="AI">AI — All Inclusive</option>
-            </select>
+            <div className="flex flex-wrap gap-2 mt-1">
+              {['Breakfast', 'Lunch', 'Snacks', 'Dinner'].map(meal => {
+                const selected = (form.mealsIncluded || '').split(',').map(s => s.trim()).filter(Boolean);
+                const isSelected = selected.includes(meal);
+                return (
+                  <label key={meal} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs cursor-pointer transition-colors ${isSelected ? 'bg-primary text-primary-foreground border-primary' : 'bg-background hover:bg-muted'}`}>
+                    <input 
+                      type="checkbox" 
+                      className="hidden"
+                      checked={isSelected}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          set('mealsIncluded', [...selected, meal].join(', '));
+                        } else {
+                          set('mealsIncluded', selected.filter(m => m !== meal).join(', '));
+                        }
+                      }}
+                    />
+                    {meal}
+                  </label>
+                )
+              })}
+            </div>
           </Field>
           <Field label="Transport"><Input placeholder="e.g. Private cab, shared taxi" value={form.transport || ''} onChange={e => set('transport', e.target.value)} /></Field>
           <Field label="Activities"><Input placeholder="e.g. MG Road, Flower Show, Ropeway" value={form.activities || ''} onChange={e => set('activities', e.target.value)} /></Field>
