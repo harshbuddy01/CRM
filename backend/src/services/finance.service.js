@@ -197,11 +197,17 @@ const regenerateInvoice = async (id) => {
   // Auto-update invoice status based on payments
   if (totalReceived >= invoiceTotal && invoiceTotal > 0) {
     updateData.status = 'paid';
-    updateData.paidAt = updateData.paidAt || new Date();
+    updateData.paidAt = existing.paidAt || new Date();
   }
 
-  // Include payment summary in notes
-  updateData.notes = `Total: ₹${invoiceTotal.toLocaleString('en-IN')} | Received: ₹${totalReceived.toLocaleString('en-IN')} | Balance: ₹${Math.max(0, balanceDue).toLocaleString('en-IN')} (auto-updated ${new Date().toLocaleDateString('en-IN')})`;
+  // Include payment summary in notes, preserving existing ones
+  const paymentSummary = `Total: ₹${invoiceTotal.toLocaleString('en-IN')} | Received: ₹${totalReceived.toLocaleString('en-IN')} | Balance: ₹${Math.max(0, balanceDue).toLocaleString('en-IN')} (auto-updated ${new Date().toLocaleDateString('en-IN')})`;
+  const existingNotes = existing.notes || '';
+  
+  // Clean up any old auto-generated summary before appending the new one
+  const cleanedNotes = existingNotes.replace(/Total:.*\(auto-updated.*\)/g, '').trim();
+  
+  updateData.notes = cleanedNotes ? `${cleanedNotes}\n\n${paymentSummary}` : paymentSummary;
 
   return await prisma.invoice.update({
     where: { id },

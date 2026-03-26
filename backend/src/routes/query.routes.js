@@ -230,7 +230,7 @@ router.get('/:id/billing-summary', async (req, res, next) => {
     const totalPending = totalAmount - totalReceived;
 
     // Supplier side — from BookingServices + VendorPayments
-    const bookingServices = await prisma.bookingService.findMany({ where: { queryId } });
+    const bookingServices = await prisma.bookingService.findMany({ where: { queryId, deletedAt: null } });
     const supplierAmount = bookingServices.reduce((sum, bs) => sum + Number(bs.totalCost), 0);
     const bookingServicePaid = bookingServices.reduce((sum, bs) => sum + Number(bs.supplierAmountPaid), 0);
 
@@ -241,8 +241,8 @@ router.get('/:id/billing-summary', async (req, res, next) => {
       orderBy: { paymentDate: 'desc' },
     });
     const vendorPaymentSum = vendorPayments.reduce((sum, vp) => sum + Number(vp.amount), 0);
-    // Use the higher of the two to avoid double-counting
-    const supplierReceived = Math.max(bookingServicePaid, vendorPaymentSum);
+    // Combine both payment sources assuming they represent distinct entries
+    const supplierReceived = bookingServicePaid + vendorPaymentSum;
     const supplierPending = Math.max(0, supplierAmount - supplierReceived);
 
     const grossProfit = totalAmount - supplierAmount;
