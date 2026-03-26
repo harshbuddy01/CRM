@@ -241,8 +241,8 @@ router.get('/:id/billing-summary', async (req, res, next) => {
       orderBy: { paymentDate: 'desc' },
     });
     const vendorPaymentSum = vendorPayments.reduce((sum, vp) => sum + Number(vp.amount), 0);
-    // Combine both payment sources assuming they represent distinct entries
-    const supplierReceived = bookingServicePaid + vendorPaymentSum;
+    // Use Math.max to avoid double-counting if a payment exists in both places
+    const supplierReceived = Math.max(bookingServicePaid, vendorPaymentSum);
     const supplierPending = Math.max(0, supplierAmount - supplierReceived);
 
     const grossProfit = totalAmount - supplierAmount;
