@@ -170,7 +170,9 @@ const regenerateInvoice = async (id) => {
     }
   });
 
-  const proposal = query?.proposals?.[0];
+  if (!query) throw new Error('Linked query not found or was deleted');
+
+  const proposal = query.proposals?.[0];
   const updateData = {
     clientName: query.name,
     clientEmail: query.email,
@@ -183,6 +185,23 @@ const regenerateInvoice = async (id) => {
     updateData.totalAmount = Number(updateData.subtotal) + Number(updateData.taxAmount);
     updateData.items = [{ description: 'Tour Package', amount: updateData.subtotal, quantity: 1, unitPrice: updateData.subtotal }];
   }
+
+  // Fetch customer payments to update invoice status
+  const customerPayments = await prisma.payment.findMany({
+    where: { queryId: existing.queryId, deletedAt: null, status: { in: ['verified', 'banked'] } },
+  });
+  const totalReceived = customerPayments.reduce((sum, p) => sum + Number(p.amount), 0);
+  const invoiceTotal = updateData.totalAmount || Number(existing.totalAmount);
+  const balanceDue = invoiceTotal - totalReceived;
+
+  // Auto-update invoice status based on payments
+  if (totalReceived >= invoiceTotal && invoiceTotal > 0) {
+    updateData.status = 'paid';
+    updateData.paidAt = updateData.paidAt || new Date();
+  }
+
+  // Include payment summary in notes
+  updateData.notes = `Total: ₹${invoiceTotal.toLocaleString('en-IN')} | Received: ₹${totalReceived.toLocaleString('en-IN')} | Balance: ₹${Math.max(0, balanceDue).toLocaleString('en-IN')} (auto-updated ${new Date().toLocaleDateString('en-IN')})`;
 
   return await prisma.invoice.update({
     where: { id },

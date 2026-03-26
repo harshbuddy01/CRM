@@ -108,6 +108,7 @@ export function BillingTab({ queryId }: { queryId: string }) {
       setIsSupplierPaymentOpen(false);
       queryClient.invalidateQueries({ queryKey: ['billing-summary', queryId] });
       queryClient.invalidateQueries({ queryKey: ['payments', queryId] });
+      queryClient.invalidateQueries({ queryKey: ['booking-services', queryId] });
     },
     onError: (err: any) => {
       toast.error('Failed to record supplier payment', { description: err.response?.data?.message || err.message });

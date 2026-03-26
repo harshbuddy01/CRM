@@ -51,7 +51,12 @@ const remove = (modelName) => async (req, res, next) => {
   try {
     await masterService.deleteMaster(modelName, req.params.id);
     res.json({ success: true, message: 'Deleted successfully' });
-  } catch (error) { next(error); }
+  } catch (error) {
+    if (error.statusCode) {
+      return res.status(error.statusCode).json({ success: false, message: error.message });
+    }
+    next(error);
+  }
 };
 
 const getDestinations = async (req, res, next) => {

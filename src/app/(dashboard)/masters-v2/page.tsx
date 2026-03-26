@@ -102,7 +102,7 @@ function MasterPanel({ category }: { category: typeof CATEGORIES[0] }) {
   const deleteMutation = useMutation({
     mutationFn: (id: string) => api.delete(`${basePath}/${category.id}/${id}`),
     onSuccess: () => { toast.success('Deleted'); invalidate(); },
-    onError: () => toast.error('Failed to delete'),
+    onError: (err: any) => toast.error(err.response?.data?.message || 'Failed to delete'),
   });
 
   const startEdit = (item: any) => { setEditItem(item); setShowForm(true); };
@@ -320,7 +320,6 @@ function MasterForm({ category, editItem, onClose, onSaved }: { category: typeof
           <Field label="Transport"><Input placeholder="e.g. Private cab, shared taxi" value={form.transport || ''} onChange={e => set('transport', e.target.value)} /></Field>
           <Field label="Activities"><Input placeholder="e.g. MG Road, Flower Show, Ropeway" value={form.activities || ''} onChange={e => set('activities', e.target.value)} /></Field>
           <Field label="Details / Plan" className="md:col-span-2"><textarea className="w-full min-h-[90px] px-3 py-2 border rounded-md bg-background text-sm resize-none" placeholder="Day plan, places, timings..." value={form.description || ''} onChange={e => set('description', e.target.value)} /></Field>
-          <StatusField value={form.isActive} onChange={v => set('isActive', v)} />
         </>)}
 
         {hasPhoto && (
@@ -368,7 +367,7 @@ function MasterTable({ category, items, onView, onEdit, onDelete, canManage }: {
             {category.id === 'meal-plans' && <th className="text-left py-3 px-3 font-medium">Price (₹)</th>}
             {category.id === 'package-themes' && <th className="text-left py-3 px-3 font-medium">Icon</th>}
             {category.id === 'day-itinerary-templates' && <><th className="text-left py-3 px-3 font-medium">Destination</th><th className="text-left py-3 px-3 font-medium">Cost</th><th className="text-left py-3 px-3 font-medium">Meals</th></>}
-            <th className="text-left py-3 px-3 font-medium">Status</th>
+            {category.id !== 'day-itinerary-templates' && <th className="text-left py-3 px-3 font-medium">Status</th>}
             <th className="text-right py-3 px-3 font-medium">Actions</th>
           </tr>
         </thead>
@@ -388,11 +387,11 @@ function MasterTable({ category, items, onView, onEdit, onDelete, canManage }: {
               {category.id === 'meal-plans' && <td className="py-3 px-3 text-muted-foreground text-xs font-medium">₹{Number(item.price || 0).toLocaleString('en-IN')}</td>}
               {category.id === 'package-themes' && <td className="py-3 px-3">{item.iconUrl ? <img src={item.iconUrl} alt={String(item.name || '')} className="w-9 h-9 object-cover rounded-lg" /> : <span className="text-muted-foreground text-xs">—</span>}</td>}
               {category.id === 'day-itinerary-templates' && (<><td className="py-3 px-3 text-muted-foreground text-xs">{String(item.destination?.name || '—')}</td><td className="py-3 px-3 text-muted-foreground text-xs">{item.dayCost ? `₹${Number(item.dayCost).toLocaleString('en-IN')}` : '—'}</td><td className="py-3 px-3 text-muted-foreground text-xs">{String(item.mealsIncluded || '—')}</td></>)}
-              <td className="py-3 px-3">
+              {category.id !== 'day-itinerary-templates' && <td className="py-3 px-3">
                 <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${item.isActive !== false ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
                   {item.isActive !== false ? 'Active' : 'Inactive'}
                 </span>
-              </td>
+              </td>}
                 <td className="py-3 px-3 text-right">
                   <div className="flex justify-end gap-1">
                     <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onView(item)}><Eye className="w-3.5 h-3.5 text-blue-500" /></Button>

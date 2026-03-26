@@ -54,6 +54,7 @@ export function PostSalesTab({ queryId }: { queryId: string }) {
       setPaymentModal(null);
       setPaymentAmount('');
       queryClient.invalidateQueries({ queryKey: ['booking-services', queryId] });
+      queryClient.invalidateQueries({ queryKey: ['billing-summary', queryId] });
     },
     onError: (err: any) => toast.error(err.response?.data?.message || 'Failed'),
   });

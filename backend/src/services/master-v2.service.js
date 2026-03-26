@@ -7,7 +7,7 @@ const cloudinary = require('../config/cloudinary');
 const config = require('../config');
 
 const SOFT_DELETE_MODELS = [
-  'supplier','activity','transfer','roomType','mealPlan','packageTheme','dayItineraryTemplate',
+  'supplier',
 ];
 
 const uploadToCloudinary = (buffer, folder = 'crm-masters') => {
@@ -96,10 +96,25 @@ const updateMaster = async (modelName, id, data, photoBuffer) => {
 };
 
 const deleteMaster = async (modelName, id) => {
-  if (SOFT_DELETE_MODELS.includes(modelName)) {
-    return await prisma[modelName].update({ where: { id }, data: { deletedAt: new Date() } });
+  try {
+    if (SOFT_DELETE_MODELS.includes(modelName)) {
+      return await prisma[modelName].update({ where: { id }, data: { deletedAt: new Date() } });
+    }
+    return await prisma[modelName].delete({ where: { id } });
+  } catch (err) {
+    // P2003 = FK constraint violation, P2025 = record not found
+    if (err.code === 'P2003') {
+      const e = new Error('Cannot delete: this record is referenced by other data (proposals, bookings, etc.). Remove those references first.');
+      e.statusCode = 409;
+      throw e;
+    }
+    if (err.code === 'P2025') {
+      const e = new Error('Record not found or already deleted.');
+      e.statusCode = 404;
+      throw e;
+    }
+    throw err;
   }
-  return await prisma[modelName].delete({ where: { id } });
 };
 
 const getDestinations = async () => {
