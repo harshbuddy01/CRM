@@ -315,7 +315,7 @@ function MasterForm({ category, editItem, onClose, onSaved }: { category: typeof
           <Field label="Meals Included">
             <div className="flex flex-wrap gap-2 mt-1">
               {['Breakfast', 'Lunch', 'Snacks', 'Dinner'].map(meal => {
-                const selected = (form.mealsIncluded || '').split(',').map(s => s.trim()).filter(Boolean);
+                const selected = String(form.mealsIncluded || '').split(',').map((s: string) => s.trim()).filter(Boolean);
                 const isSelected = selected.includes(meal);
                 return (
                   <label key={meal} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs cursor-pointer transition-colors ${isSelected ? 'bg-primary text-primary-foreground border-primary' : 'bg-background hover:bg-muted'}`}>
