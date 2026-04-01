@@ -285,9 +285,8 @@ function MasterForm({ category, editItem, onClose, onSaved }: { category: typeof
         </>)}
 
         {category.id === 'transfers' && (<>
-          <Field label="Vehicle Name *"><Input placeholder="e.g. Bolero, Tempo Traveller 9-seater" value={form.name || form.vehicleType || ''} onChange={e => set('name', e.target.value)} required /></Field>
+          <Field label="Transfer Name *"><Input placeholder="e.g. Bolero, Tempo Traveller 9-seater" value={form.name || form.vehicleType || ''} onChange={e => set('name', e.target.value)} required /></Field>
           <Field label="Destination"><DestinationSelect destinations={destinations} value={form.destinationId || ''} onChange={v => set('destinationId', v)} /></Field>
-          <Field label="Price (₹)"><Input type="number" placeholder="0" value={form.price || ''} onChange={e => set('price', e.target.value)} /></Field>
           <StatusField value={form.isActive} onChange={v => set('isActive', v)} />
           <Field label="Description" className="md:col-span-2"><textarea className="w-full min-h-[70px] px-3 py-2 border rounded-md bg-background text-sm resize-none" placeholder="Capacity, features..." value={form.description || ''} onChange={e => set('description', e.target.value)} /></Field>
         </>)}

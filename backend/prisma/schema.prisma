@@ -583,7 +583,7 @@ model Transfer {
   id            String  @id @default(uuid())
   vehicleType   String  @map("vehicle_type")
   destinationId String  @map("destination_id")
-  price         Decimal @db.Decimal(10, 2)
+  price         Decimal? @db.Decimal(10, 2)
   photoUrl      String? @map("photo_url")
   description   String?
   isActive      Boolean @default(true) @map("is_active")

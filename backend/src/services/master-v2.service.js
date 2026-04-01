@@ -70,7 +70,6 @@ const createMaster = async (modelName, data, photoBuffer) => {
   
   if (modelName === 'supplier') { delete d.name; delete d.type; }
   if (modelName === 'transfer') { d.vehicleType = d.vehicleType || d.name; delete d.name; }
-  if (modelName === 'dayItineraryTemplate') { delete d.isActive; }
 
   return await prisma[modelName].create({ data: d });
 };
@@ -90,7 +89,6 @@ const updateMaster = async (modelName, id, data, photoBuffer) => {
 
   if (modelName === 'supplier') { delete d.name; delete d.type; }
   if (modelName === 'transfer') { d.vehicleType = d.vehicleType || d.name; delete d.name; }
-  if (modelName === 'dayItineraryTemplate') { delete d.isActive; }
 
   return await prisma[modelName].update({ where: { id }, data: d });
 };
