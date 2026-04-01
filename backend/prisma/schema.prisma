@@ -627,11 +627,8 @@ model DayItineraryTemplate {
   id            String   @id @default(uuid())
   title         String
   destinationId String   @map("destination_id")
-  dayCost       Decimal? @map("day_cost") @db.Decimal(10, 2)
   description   String?  @db.Text
-  activities    String? /// JSON array or text
-  mealsIncluded String?  @map("meals_included")
-  transport     String?
+  isActive      Boolean  @default(true) @map("is_active")
   deletedAt     DateTime? @map("deleted_at")
 
   destination Destination @relation(fields: [destinationId], references: [id])

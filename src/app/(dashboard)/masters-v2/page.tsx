@@ -311,35 +311,8 @@ function MasterForm({ category, editItem, onClose, onSaved }: { category: typeof
         {category.id === 'day-itinerary-templates' && (<>
           <Field label="Day Title *"><Input placeholder="e.g. Day 1 — Gangtok Arrival & Sightseeing" value={form.title || ''} onChange={e => set('title', e.target.value)} required /></Field>
           <Field label="Destination"><DestinationSelect destinations={destinations} value={form.destinationId || ''} onChange={v => set('destinationId', v)} /></Field>
-          <Field label="Day Cost (₹)"><Input type="number" placeholder="0" value={form.dayCost || ''} onChange={e => set('dayCost', e.target.value)} /></Field>
-          <Field label="Meals Included">
-            <div className="flex flex-wrap gap-2 mt-1">
-              {['Breakfast', 'Lunch', 'Snacks', 'Dinner'].map(meal => {
-                const selected = String(form.mealsIncluded || '').split(',').map((s: string) => s.trim()).filter(Boolean);
-                const isSelected = selected.includes(meal);
-                return (
-                  <label key={meal} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs cursor-pointer transition-colors ${isSelected ? 'bg-primary text-primary-foreground border-primary' : 'bg-background hover:bg-muted'}`}>
-                    <input 
-                      type="checkbox" 
-                      className="hidden"
-                      checked={isSelected}
-                      onChange={(e) => {
-                        if (e.target.checked) {
-                          set('mealsIncluded', [...selected, meal].join(', '));
-                        } else {
-                          set('mealsIncluded', selected.filter(m => m !== meal).join(', '));
-                        }
-                      }}
-                    />
-                    {meal}
-                  </label>
-                )
-              })}
-            </div>
-          </Field>
-          <Field label="Transport"><Input placeholder="e.g. Private cab, shared taxi" value={form.transport || ''} onChange={e => set('transport', e.target.value)} /></Field>
-          <Field label="Activities"><Input placeholder="e.g. MG Road, Flower Show, Ropeway" value={form.activities || ''} onChange={e => set('activities', e.target.value)} /></Field>
           <Field label="Details / Plan" className="md:col-span-2"><textarea className="w-full min-h-[90px] px-3 py-2 border rounded-md bg-background text-sm resize-none" placeholder="Day plan, places, timings..." value={form.description || ''} onChange={e => set('description', e.target.value)} /></Field>
+          <StatusField value={form.isActive} onChange={v => set('isActive', v)} />
         </>)}
 
         {hasPhoto && (
