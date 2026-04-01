@@ -26,6 +26,7 @@ const createProposal = async (queryId, userId, data) => {
   const proposal = await prisma.proposal.create({
     data: {
       queryId,
+      itineraryId: data.itineraryId || null,
       version,
       totalCost,
       markupPct,
@@ -78,7 +79,8 @@ const getProposalsByQuery = async (queryId) => {
     where: { queryId, deletedAt: null },
     orderBy: { version: 'desc' },
     include: {
-      user: { select: { name: true } }
+      user: { select: { name: true } },
+      itinerary: { select: { id: true, title: true, coverPhotoUrl: true } }
     }
   });
 };

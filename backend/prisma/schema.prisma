@@ -132,6 +132,7 @@ model User {
   bookingServices        BookingService[]   @relation("BookingServiceCreatedBy")
   vouchers               Voucher[]          @relation("VoucherCreatedBy")
   uploadedDocuments      QueryDocument[]    @relation("DocumentUploadedBy")
+  itineraries            Itinerary[]        @relation("ItineraryCreatedBy")
 
   @@index([roleId])
   @@index([isActive])
@@ -247,6 +248,7 @@ model Destination {
   transfers      Transfer[]
   dayTemplates   DayItineraryTemplate[]
   destinationCms DestinationCms?
+  itineraryDays  ItineraryDay[]
 
   @@map("destinations")
 }
@@ -257,6 +259,7 @@ model Hotel {
   name          String
   category      String? /// '3*','4*','5*','Budget'
   basePrice     Decimal? @map("base_price") @db.Decimal(10, 2) /// Cost price per night
+  imageUrl      String?  @map("image_url")
   isActive      Boolean  @default(true) @map("is_active")
 
   destination  Destination   @relation(fields: [destinationId], references: [id])
@@ -273,6 +276,7 @@ model Hotel {
 model Proposal {
   id           String    @id @default(uuid())
   queryId      String    @map("query_id")
+  itineraryId  String?   @map("itinerary_id")
   version      Int       @default(1)
   totalCost    Decimal?  @map("total_cost") @db.Decimal(12, 2)
   markupPct    Decimal?  @map("markup_pct") @db.Decimal(5, 2)
@@ -286,12 +290,14 @@ model Proposal {
   createdAt    DateTime  @default(now()) @map("created_at")
   updatedAt    DateTime  @updatedAt @map("updated_at")
 
-  query Query         @relation(fields: [queryId], references: [id], onDelete: Cascade)
-  user  User          @relation(fields: [createdBy], references: [id])
-  days  ProposalDay[]
-  tours Tour[]
+  query     Query      @relation(fields: [queryId], references: [id], onDelete: Cascade)
+  user      User       @relation(fields: [createdBy], references: [id])
+  itinerary Itinerary? @relation(fields: [itineraryId], references: [id])
+  days      ProposalDay[]
+  tours     Tour[]
 
   @@index([queryId])
+  @@index([itineraryId])
   @@map("proposals")
 }
 
@@ -973,4 +979,89 @@ model QueryDocument {
 
   @@index([queryId])
   @@map("query_documents")
+}
+
+// ============================================================
+// 17. ITINERARY BUILDER SYSTEM
+// ============================================================
+
+/// Full itinerary with days, events, gallery and share capabilities
+model Itinerary {
+  id             String    @id @default(uuid())
+  title          String
+  description    String?   @db.Text
+  coverPhotoUrl  String?   @map("cover_photo_url")
+  shareSlug      String?   @unique @map("share_slug") /// nanoid for public share URL
+  status         String    @default("draft") /// 'draft', 'published'
+  totalCost      Decimal?  @map("total_cost") @db.Decimal(12, 2)
+  perPersonCost  Decimal?  @map("per_person_cost") @db.Decimal(12, 2)
+  currency       String    @default("INR")
+  adults         Int       @default(2)
+  children       Int       @default(0)
+  markupPct      Decimal?  @map("markup_pct") @db.Decimal(5, 2)
+  createdBy      String    @map("created_by")
+  deletedAt      DateTime? @map("deleted_at")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  creator       User                    @relation("ItineraryCreatedBy", fields: [createdBy], references: [id])
+  days          ItineraryDay[]
+  galleryImages ItineraryGalleryImage[]
+  proposals     Proposal[]
+
+  @@index([createdBy])
+  @@index([status])
+  @@index([createdAt])
+  @@map("itineraries")
+}
+
+/// A single day within an itinerary
+model ItineraryDay {
+  id            String  @id @default(uuid())
+  itineraryId   String  @map("itinerary_id")
+  dayNumber     Int     @map("day_number")
+  title         String? /// e.g. 'Gangtok Arrival & Local Sightseeing'
+  destinationId String? @map("destination_id")
+
+  itinerary   Itinerary        @relation(fields: [itineraryId], references: [id], onDelete: Cascade)
+  destination Destination?     @relation(fields: [destinationId], references: [id])
+  events      ItineraryEvent[]
+
+  @@index([itineraryId])
+  @@map("itinerary_days")
+}
+
+/// An event within an itinerary day (accommodation, sightseeing, transport, etc.)
+model ItineraryEvent {
+  id          String   @id @default(uuid())
+  dayId       String   @map("day_id")
+  type        String   /// 'accommodation','sightseeing','activity','transport','flight','meal','checkin','checkout','freeTime'
+  title       String
+  description String?  @db.Text
+  startTime   String?  @map("start_time") /// e.g. '09:00'
+  endTime     String?  @map("end_time")   /// e.g. '11:30'
+  cost        Decimal? @db.Decimal(10, 2)
+  imageUrl    String?  @map("image_url")
+  metadata    Json?    /// Type-specific fields: hotelName, roomType, flightNumber, etc.
+  sortOrder   Int      @default(0) @map("sort_order")
+
+  day ItineraryDay @relation(fields: [dayId], references: [id], onDelete: Cascade)
+
+  @@index([dayId])
+  @@index([type])
+  @@map("itinerary_events")
+}
+
+/// Gallery images for an itinerary
+model ItineraryGalleryImage {
+  id          String @id @default(uuid())
+  itineraryId String @map("itinerary_id")
+  imageUrl    String @map("image_url")
+  caption     String?
+  sortOrder   Int    @default(0) @map("sort_order")
+
+  itinerary Itinerary @relation(fields: [itineraryId], references: [id], onDelete: Cascade)
+
+  @@index([itineraryId])
+  @@map("itinerary_gallery_images")
 }

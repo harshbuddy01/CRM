@@ -5,11 +5,13 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { Plus, Trash2, ArrowLeft, IndianRupee, Save } from 'lucide-react';
+import { Plus, Trash2, ArrowLeft, IndianRupee, Save, CalendarRange, X, MapPin, Map, Loader2, Image as ImageIcon } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 
 interface ProposalDay {
   dayNumber: number;
@@ -31,6 +33,8 @@ export default function ProposalBuilderPage({ params }: { params: { id: string }
     { dayNumber: 1, destinationId: '', hotelId: '', activities: '', description: '', mealsIncluded: 'BB', transport: '', dayCost: 0 }
   ]);
   const [markupPct, setMarkupPct] = useState<number>(0);
+  const [itineraryId, setItineraryId] = useState<string | null>(null);
+  const [showItineraryModal, setShowItineraryModal] = useState(false);
 
   const { data: destinations = [] } = useQuery({
     queryKey: ['destinations', 'active'],
@@ -48,9 +52,19 @@ export default function ProposalBuilderPage({ params }: { params: { id: string }
     }
   });
 
+  const { data: itineraries, isLoading: isLoadingItineraries } = useQuery({
+    queryKey: ['itineraries', 'published'],
+    queryFn: async () => {
+      // Only fetch published itineraries for proposal selection
+      const res = await api.get('/itineraries?status=published');
+      return res.data.data;
+    },
+    enabled: showItineraryModal
+  });
+
   const createProposal = useMutation({
     mutationFn: async () => {
-      await api.post(`/queries/${queryId}/proposals`, { days, markupPct });
+      await api.post(`/queries/${queryId}/proposals`, { days, markupPct, itineraryId });
     },
     onSuccess: () => {
       toast.success('Proposal built & saved successfully');
@@ -97,22 +111,74 @@ export default function ProposalBuilderPage({ params }: { params: { id: string }
     setDays(newDays);
   };
 
+  const handleSelectItinerary = async (itinerary: any) => {
+    try {
+      toast.loading('Importing itinerary structure...', { id: 'import-iti' });
+      // Fetch full itinerary to get all events and costs
+      const res = await api.get(`/itineraries/${itinerary.id}`);
+      const fullItinerary = res.data.data;
+
+      // Map to ProposalDays
+      const mappedDays: ProposalDay[] = fullItinerary.days.map((day: any) => {
+        const accomEvent = day.events?.find((e: any) => e.type === 'accommodation');
+        const transportEvents = day.events?.filter((e: any) => ['transport', 'flight'].includes(e.type)) || [];
+        const activityEvents = day.events?.filter((e: any) => ['activity', 'sightseeing'].includes(e.type)) || [];
+        
+        let dayCost = 0;
+        day.events?.forEach((e: any) => { dayCost += Number(e.cost) || 0; });
+
+        return {
+          dayNumber: day.dayNumber,
+          destinationId: day.destinationId || '',
+          hotelId: accomEvent?.metadata?.masterId || '',
+          activities: activityEvents.map((e: any) => e.title).join(', '),
+          description: day.events?.map((e: any) => e.title).join(' \n') || '', // Simple auto-generation
+          mealsIncluded: accomEvent?.metadata?.mealPlan || 'BB',
+          transport: transportEvents.map((e: any) => e.title).join(', '),
+          dayCost: dayCost
+        };
+      });
+
+      if (mappedDays.length > 0) {
+        setDays(mappedDays);
+      }
+      
+      setMarkupPct(Number(fullItinerary.markupPct) || 0);
+      setItineraryId(fullItinerary.id);
+      
+      toast.success('Itinerary imported successfully', { id: 'import-iti' });
+      setShowItineraryModal(false);
+    } catch (err: any) {
+      toast.error('Failed to import itinerary', { id: 'import-iti' });
+    }
+  };
+
   const totalCost = days.reduce((acc, obj) => acc + (Number(obj.dayCost) || 0), 0);
   const markupAmount = totalCost * (markupPct / 100);
   const sellingPrice = totalCost + markupAmount;
 
   return (
     <div className="p-4 md:p-8 space-y-6 max-w-5xl mx-auto pb-32">
-      <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" onClick={() => router.back()}>
-          <ArrowLeft className="w-5 h-5" />
-        </Button>
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Build Proposal</h1>
-          <p className="text-muted-foreground flex items-center gap-2">
-            Configure daily itinerary and calculate margins
-          </p>
+      <div className="flex items-center gap-4 justify-between">
+        <div className="flex items-center gap-4">
+          <Button variant="ghost" size="icon" onClick={() => router.back()}>
+            <ArrowLeft className="w-5 h-5" />
+          </Button>
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Build Proposal</h1>
+            <p className="text-muted-foreground flex items-center gap-2">
+              Configure daily itinerary and calculate margins
+            </p>
+          </div>
         </div>
+        <Button 
+          variant="outline" 
+          className="rounded-xl font-bold border-primary text-primary hover:bg-primary/5"
+          onClick={() => setShowItineraryModal(true)}
+        >
+          <CalendarRange className="w-4 h-4 mr-2" />
+          {itineraryId ? 'Change Itinerary' : 'Import from Builder'}
+        </Button>
       </div>
 
       <div className="space-y-6">
@@ -120,8 +186,8 @@ export default function ProposalBuilderPage({ params }: { params: { id: string }
           const destHotels = hotels.filter((h: any) => h.destinationId === day.destinationId);
 
           return (
-            <Card key={index} className="overflow-visible">
-              <CardHeader className="py-4 border-b bg-muted/20 flex flex-row items-center justify-between">
+            <Card key={index} className="overflow-visible border-slate-200">
+              <CardHeader className="py-4 border-b bg-slate-50 flex flex-row items-center justify-between">
                 <CardTitle className="text-lg">Day {day.dayNumber}</CardTitle>
                 {days.length > 1 && (
                   <Button variant="ghost" size="icon" className="text-destructive h-8 w-8 -my-2" onClick={() => handleRemoveDay(index)}>
@@ -174,11 +240,11 @@ export default function ProposalBuilderPage({ params }: { params: { id: string }
                   <div className="space-y-4">
                     <div className="space-y-2">
                       <label className="text-sm font-medium">Transportation</label>
-                      <Input placeholder="e.g. Private Airport Transfer" value={day.transport} onChange={(e) => updateDay(index, 'transport', e.target.value)} />
+                      <Input placeholder="e.g. Private Airport Transfer" value={day.transport || ''} onChange={(e) => updateDay(index, 'transport', e.target.value)} />
                     </div>
                     <div className="space-y-2">
                       <label className="text-sm font-medium">Activities Overview</label>
-                      <Input placeholder="e.g. City Tour, Scuba Diving" value={day.activities} onChange={(e) => updateDay(index, 'activities', e.target.value)} />
+                      <Input placeholder="e.g. City Tour, Scuba Diving" value={day.activities || ''} onChange={(e) => updateDay(index, 'activities', e.target.value)} />
                     </div>
                     <div className="space-y-2">
                       <label className="text-sm font-medium">Detailed ITINERARY Description</label>
@@ -203,7 +269,7 @@ export default function ProposalBuilderPage({ params }: { params: { id: string }
           );
         })}
 
-        <Button variant="outline" className="w-full py-8 border-dashed" onClick={handleAddDay}>
+        <Button variant="outline" className="w-full py-8 border-dashed rounded-xl" onClick={handleAddDay}>
           <Plus className="w-5 h-5 mr-2" /> Add Another Day
         </Button>
       </div>
@@ -239,11 +305,70 @@ export default function ProposalBuilderPage({ params }: { params: { id: string }
             </p>
           </div>
         </div>
-        <Button size="lg" className="w-full md:w-auto font-bold" onClick={() => createProposal.mutate()} disabled={createProposal.isPending || days.some(d => !d.destinationId)}>
+        <Button size="lg" className="w-full md:w-auto font-bold rounded-xl" onClick={() => createProposal.mutate()} disabled={createProposal.isPending || days.some(d => !d.destinationId)}>
           <Save className="w-5 h-5 mr-2" />
           {createProposal.isPending ? 'Saving...' : 'Save Proposal vNext'}
         </Button>
       </div>
+
+      {/* Itinerary Picker Modal */}
+      <Dialog open={showItineraryModal} onOpenChange={setShowItineraryModal}>
+        <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Import Itinerary</DialogTitle>
+            <DialogDescription>
+              Select a published itinerary from the builder. This will auto-populate your proposal days, costs, and destinations.
+            </DialogDescription>
+          </DialogHeader>
+
+          {isLoadingItineraries ? (
+            <div className="py-20 flex justify-center"><Loader2 className="w-8 h-8 animate-spin text-muted-foreground" /></div>
+          ) : (
+            <div className="grid grid-cols-2 gap-4 mt-4">
+              {itineraries?.length === 0 ? (
+                <div className="col-span-2 text-center py-10 text-muted-foreground">
+                  <Map className="w-12 h-12 mx-auto mb-2 opacity-20" />
+                  <p>No published itineraries found.</p>
+                  <p className="text-sm">Go to the Itinerary Builder and publish one first.</p>
+                </div>
+              ) : (
+                itineraries?.map((itinerary: any) => (
+                  <Card 
+                    key={itinerary.id} 
+                    className="overflow-hidden cursor-pointer hover:border-primary transition-colors group"
+                    onClick={() => handleSelectItinerary(itinerary)}
+                  >
+                    <div className="h-32 bg-slate-100 relative">
+                      {itinerary.coverPhotoUrl ? (
+                         <img src={itinerary.coverPhotoUrl} alt="" className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="flex items-center justify-center h-full text-slate-300">
+                          <ImageIcon className="w-8 h-8" />
+                        </div>
+                      )}
+                      <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Button variant="secondary" className="rounded-xl font-bold">Import Now</Button>
+                      </div>
+                    </div>
+                    <CardContent className="p-4">
+                      <h4 className="font-bold text-slate-900 truncate">{itinerary.title}</h4>
+                      <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground">
+                        <span className="bg-slate-100 px-1.5 py-0.5 rounded flex items-center gap-1">
+                          <CalendarRange className="w-3 h-3" />
+                          {itinerary._count?.days || itinerary.days?.length || 0} days
+                        </span>
+                        {itinerary.perPersonCost && (
+                          <span className="font-semibold text-slate-700">₹{Number(itinerary.perPersonCost).toLocaleString('en-IN')} / pp</span>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -1,0 +1,470 @@
+// ============================================================
+// TravelCRM — Itinerary Service
+// Full CRUD, day/event management, image upload, share & export
+// ============================================================
+
+const prisma = require('../config/prisma');
+const cloudinary = require('../config/cloudinary');
+const { nanoid } = require('nanoid');
+const { NotFoundError, ValidationError } = require('../utils/AppError');
+
+// ── Helpers ──────────────────────────────────────────────────
+
+const VALID_EVENT_TYPES = [
+  'accommodation', 'sightseeing', 'activity', 'transport',
+  'flight', 'meal', 'checkin', 'checkout', 'freeTime',
+];
+
+const fullInclude = {
+  creator: { select: { id: true, name: true } },
+  days: {
+    orderBy: { dayNumber: 'asc' },
+    include: {
+      destination: { select: { id: true, name: true } },
+      events: { orderBy: { sortOrder: 'asc' } },
+    },
+  },
+  galleryImages: { orderBy: { sortOrder: 'asc' } },
+};
+
+/**
+ * Upload a buffer to Cloudinary and return the secure URL.
+ */
+const uploadToCloudinary = (file, folder) => {
+  return new Promise((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream(
+      {
+        folder: `travelcrm/itineraries/${folder}`,
+        resource_type: 'auto',
+        public_id: file.originalname
+          ? file.originalname.replace(/\.[^.]+$/, '')
+          : undefined,
+      },
+      (err, result) => {
+        if (err) return reject(err);
+        resolve(result);
+      }
+    );
+    stream.end(file.buffer);
+  });
+};
+
+// ── Core CRUD ────────────────────────────────────────────────
+
+const create = async (userId, data) => {
+  const { title, description, days } = data;
+  if (!title) throw new ValidationError('Title is required');
+
+  return prisma.itinerary.create({
+    data: {
+      title,
+      description: description || null,
+      createdBy: userId,
+      days: days && days.length
+        ? {
+            create: days.map((day, idx) => ({
+              dayNumber: idx + 1,
+              title: day.title || null,
+              destinationId: day.destinationId || null,
+              events: day.events && day.events.length
+                ? {
+                    create: day.events.map((ev, eidx) => ({
+                      type: ev.type || 'sightseeing',
+                      title: ev.title || 'Untitled Event',
+                      description: ev.description || null,
+                      startTime: ev.startTime || null,
+                      endTime: ev.endTime || null,
+                      cost: ev.cost ? Number(ev.cost) : null,
+                      metadata: ev.metadata || null,
+                      sortOrder: eidx,
+                    })),
+                  }
+                : undefined,
+            })),
+          }
+        : undefined,
+    },
+    include: fullInclude,
+  });
+};
+
+const list = async (filters = {}) => {
+  const { search, status, page = 1, limit = 50 } = filters;
+  const where = { deletedAt: null };
+
+  if (status) where.status = status;
+  if (search) {
+    where.title = { contains: search, mode: 'insensitive' };
+  }
+
+  const [items, total] = await Promise.all([
+    prisma.itinerary.findMany({
+      where,
+      orderBy: { createdAt: 'desc' },
+      skip: (page - 1) * limit,
+      take: limit,
+      include: {
+        creator: { select: { id: true, name: true } },
+        days: {
+          orderBy: { dayNumber: 'asc' },
+          include: {
+            destination: { select: { id: true, name: true } },
+          },
+        },
+        _count: { select: { days: true, galleryImages: true } },
+      },
+    }),
+    prisma.itinerary.count({ where }),
+  ]);
+
+  return { items, total };
+};
+
+const getById = async (id) => {
+  const itinerary = await prisma.itinerary.findUnique({
+    where: { id },
+    include: fullInclude,
+  });
+  if (!itinerary || itinerary.deletedAt) {
+    throw new NotFoundError('Itinerary not found');
+  }
+  return itinerary;
+};
+
+const update = async (id, data) => {
+  await getById(id); // ensure exists
+  const {
+    title, description, status, totalCost, perPersonCost,
+    currency, adults, children, markupPct,
+  } = data;
+
+  return prisma.itinerary.update({
+    where: { id },
+    data: {
+      ...(title !== undefined && { title }),
+      ...(description !== undefined && { description }),
+      ...(status !== undefined && { status }),
+      ...(totalCost !== undefined && { totalCost: Number(totalCost) }),
+      ...(perPersonCost !== undefined && { perPersonCost: Number(perPersonCost) }),
+      ...(currency !== undefined && { currency }),
+      ...(adults !== undefined && { adults: Number(adults) }),
+      ...(children !== undefined && { children: Number(children) }),
+      ...(markupPct !== undefined && { markupPct: Number(markupPct) }),
+    },
+    include: fullInclude,
+  });
+};
+
+const remove = async (id) => {
+  await getById(id);
+  return prisma.itinerary.update({
+    where: { id },
+    data: { deletedAt: new Date() },
+  });
+};
+
+const duplicate = async (id, userId) => {
+  const source = await getById(id);
+
+  return prisma.itinerary.create({
+    data: {
+      title: `${source.title} (Copy)`,
+      description: source.description,
+      coverPhotoUrl: source.coverPhotoUrl,
+      status: 'draft',
+      totalCost: source.totalCost,
+      perPersonCost: source.perPersonCost,
+      currency: source.currency,
+      adults: source.adults,
+      children: source.children,
+      markupPct: source.markupPct,
+      createdBy: userId,
+      days: {
+        create: source.days.map((day) => ({
+          dayNumber: day.dayNumber,
+          title: day.title,
+          destinationId: day.destinationId,
+          events: {
+            create: day.events.map((ev) => ({
+              type: ev.type,
+              title: ev.title,
+              description: ev.description,
+              startTime: ev.startTime,
+              endTime: ev.endTime,
+              cost: ev.cost,
+              imageUrl: ev.imageUrl,
+              metadata: ev.metadata,
+              sortOrder: ev.sortOrder,
+            })),
+          },
+        })),
+      },
+      galleryImages: {
+        create: source.galleryImages.map((img) => ({
+          imageUrl: img.imageUrl,
+          caption: img.caption,
+          sortOrder: img.sortOrder,
+        })),
+      },
+    },
+    include: fullInclude,
+  });
+};
+
+// ── Share Logic ──────────────────────────────────────────────
+
+const generateShareSlug = async (id) => {
+  await getById(id);
+  const slug = nanoid(12);
+  return prisma.itinerary.update({
+    where: { id },
+    data: { shareSlug: slug, status: 'published' },
+    include: fullInclude,
+  });
+};
+
+const getByShareSlug = async (slug) => {
+  const itinerary = await prisma.itinerary.findUnique({
+    where: { shareSlug: slug },
+    include: fullInclude,
+  });
+  if (!itinerary || itinerary.deletedAt) {
+    throw new NotFoundError('Itinerary not found or link expired');
+  }
+  return itinerary;
+};
+
+// ── Day Management ───────────────────────────────────────────
+
+const addDay = async (itineraryId, data) => {
+  await getById(itineraryId);
+
+  // Auto-calculate next day number
+  const maxDay = await prisma.itineraryDay.aggregate({
+    where: { itineraryId },
+    _max: { dayNumber: true },
+  });
+  const nextDayNumber = (maxDay._max.dayNumber || 0) + 1;
+
+  return prisma.itineraryDay.create({
+    data: {
+      itineraryId,
+      dayNumber: data.dayNumber || nextDayNumber,
+      title: data.title || null,
+      destinationId: data.destinationId || null,
+    },
+    include: {
+      destination: { select: { id: true, name: true } },
+      events: { orderBy: { sortOrder: 'asc' } },
+    },
+  });
+};
+
+const updateDay = async (dayId, data) => {
+  const day = await prisma.itineraryDay.findUnique({ where: { id: dayId } });
+  if (!day) throw new NotFoundError('Day not found');
+
+  return prisma.itineraryDay.update({
+    where: { id: dayId },
+    data: {
+      ...(data.title !== undefined && { title: data.title }),
+      ...(data.destinationId !== undefined && { destinationId: data.destinationId || null }),
+      ...(data.dayNumber !== undefined && { dayNumber: data.dayNumber }),
+    },
+    include: {
+      destination: { select: { id: true, name: true } },
+      events: { orderBy: { sortOrder: 'asc' } },
+    },
+  });
+};
+
+const removeDay = async (dayId) => {
+  const day = await prisma.itineraryDay.findUnique({ where: { id: dayId } });
+  if (!day) throw new NotFoundError('Day not found');
+
+  await prisma.itineraryDay.delete({ where: { id: dayId } });
+
+  // Renumber remaining days
+  const remaining = await prisma.itineraryDay.findMany({
+    where: { itineraryId: day.itineraryId },
+    orderBy: { dayNumber: 'asc' },
+  });
+
+  await Promise.all(
+    remaining.map((d, idx) =>
+      prisma.itineraryDay.update({
+        where: { id: d.id },
+        data: { dayNumber: idx + 1 },
+      })
+    )
+  );
+
+  return { success: true };
+};
+
+// ── Event Management ─────────────────────────────────────────
+
+const addEvent = async (dayId, data) => {
+  const day = await prisma.itineraryDay.findUnique({ where: { id: dayId } });
+  if (!day) throw new NotFoundError('Day not found');
+
+  if (data.type && !VALID_EVENT_TYPES.includes(data.type)) {
+    throw new ValidationError(`Invalid event type: ${data.type}. Allowed: ${VALID_EVENT_TYPES.join(', ')}`);
+  }
+
+  // Auto-calculate sort order
+  const maxSort = await prisma.itineraryEvent.aggregate({
+    where: { dayId },
+    _max: { sortOrder: true },
+  });
+  const nextSort = (maxSort._max.sortOrder || 0) + 1;
+
+  return prisma.itineraryEvent.create({
+    data: {
+      dayId,
+      type: data.type || 'sightseeing',
+      title: data.title || 'Untitled Event',
+      description: data.description || null,
+      startTime: data.startTime || null,
+      endTime: data.endTime || null,
+      cost: data.cost ? Number(data.cost) : null,
+      metadata: data.metadata || null,
+      sortOrder: data.sortOrder ?? nextSort,
+    },
+  });
+};
+
+const updateEvent = async (eventId, data) => {
+  const event = await prisma.itineraryEvent.findUnique({ where: { id: eventId } });
+  if (!event) throw new NotFoundError('Event not found');
+
+  if (data.type && !VALID_EVENT_TYPES.includes(data.type)) {
+    throw new ValidationError(`Invalid event type: ${data.type}`);
+  }
+
+  return prisma.itineraryEvent.update({
+    where: { id: eventId },
+    data: {
+      ...(data.type !== undefined && { type: data.type }),
+      ...(data.title !== undefined && { title: data.title }),
+      ...(data.description !== undefined && { description: data.description }),
+      ...(data.startTime !== undefined && { startTime: data.startTime }),
+      ...(data.endTime !== undefined && { endTime: data.endTime }),
+      ...(data.cost !== undefined && { cost: data.cost ? Number(data.cost) : null }),
+      ...(data.metadata !== undefined && { metadata: data.metadata }),
+      ...(data.sortOrder !== undefined && { sortOrder: data.sortOrder }),
+    },
+  });
+};
+
+const removeEvent = async (eventId) => {
+  const event = await prisma.itineraryEvent.findUnique({ where: { id: eventId } });
+  if (!event) throw new NotFoundError('Event not found');
+  await prisma.itineraryEvent.delete({ where: { id: eventId } });
+  return { success: true };
+};
+
+const reorderEvents = async (dayId, eventIds) => {
+  if (!Array.isArray(eventIds) || eventIds.length === 0) {
+    throw new ValidationError('eventIds must be a non-empty array');
+  }
+
+  await Promise.all(
+    eventIds.map((id, idx) =>
+      prisma.itineraryEvent.update({
+        where: { id },
+        data: { sortOrder: idx },
+      })
+    )
+  );
+
+  return prisma.itineraryEvent.findMany({
+    where: { dayId },
+    orderBy: { sortOrder: 'asc' },
+  });
+};
+
+// ── Image Upload ─────────────────────────────────────────────
+
+const uploadCoverPhoto = async (id, file) => {
+  await getById(id);
+  const result = await uploadToCloudinary(file, `${id}/cover`);
+  return prisma.itinerary.update({
+    where: { id },
+    data: { coverPhotoUrl: result.secure_url },
+    include: fullInclude,
+  });
+};
+
+const uploadEventImage = async (eventId, file) => {
+  const event = await prisma.itineraryEvent.findUnique({ where: { id: eventId } });
+  if (!event) throw new NotFoundError('Event not found');
+
+  const result = await uploadToCloudinary(file, `events/${eventId}`);
+  return prisma.itineraryEvent.update({
+    where: { id: eventId },
+    data: { imageUrl: result.secure_url },
+  });
+};
+
+const addGalleryImages = async (id, files) => {
+  await getById(id);
+
+  const maxSort = await prisma.itineraryGalleryImage.aggregate({
+    where: { itineraryId: id },
+    _max: { sortOrder: true },
+  });
+  let nextSort = (maxSort._max.sortOrder || 0) + 1;
+
+  const uploadResults = [];
+  for (const file of files) {
+    const result = await uploadToCloudinary(file, `${id}/gallery`);
+    const image = await prisma.itineraryGalleryImage.create({
+      data: {
+        itineraryId: id,
+        imageUrl: result.secure_url,
+        caption: null,
+        sortOrder: nextSort++,
+      },
+    });
+    uploadResults.push(image);
+  }
+
+  return uploadResults;
+};
+
+const removeGalleryImage = async (imageId) => {
+  const image = await prisma.itineraryGalleryImage.findUnique({ where: { id: imageId } });
+  if (!image) throw new NotFoundError('Gallery image not found');
+  await prisma.itineraryGalleryImage.delete({ where: { id: imageId } });
+  return { success: true };
+};
+
+// ── Export ────────────────────────────────────────────────────
+
+const getExportData = async (id) => {
+  return getById(id);
+};
+
+module.exports = {
+  create,
+  list,
+  getById,
+  update,
+  remove,
+  duplicate,
+  generateShareSlug,
+  getByShareSlug,
+  addDay,
+  updateDay,
+  removeDay,
+  addEvent,
+  updateEvent,
+  removeEvent,
+  reorderEvents,
+  uploadCoverPhoto,
+  uploadEventImage,
+  addGalleryImages,
+  removeGalleryImage,
+  getExportData,
+};

@@ -690,9 +690,13 @@ function QueryProposalsList({ queryId, queryCode, customerName, customerEmail }:
       {proposals.map((p: any) => (
         <div key={p.id} className="p-4 border rounded-lg hover:border-primary transition-colors flex justify-between items-center group">
           <div className="flex items-center gap-4">
-            <div className="hidden sm:flex w-12 h-12 bg-primary/10 text-primary rounded-full items-center justify-center font-bold">
-              v{p.version}
-            </div>
+            {p.itinerary?.coverPhotoUrl ? (
+              <img src={p.itinerary.coverPhotoUrl} alt="" className="hidden sm:block w-14 h-14 rounded-lg object-cover shadow-sm" />
+            ) : (
+              <div className="hidden sm:flex w-12 h-12 bg-primary/10 text-primary rounded-full items-center justify-center font-bold">
+                v{p.version}
+              </div>
+            )}
             <div>
               <h4 className="font-semibold text-lg flex items-center gap-2">
                 Version {p.version}
@@ -704,6 +708,11 @@ function QueryProposalsList({ queryId, queryCode, customerName, customerEmail }:
                 Selling Price: <span className="font-medium text-foreground inline-flex items-center"><IndianRupee className="w-3 h-3 mr-0.5" />{Number(p.sellingPrice).toLocaleString()}</span> • 
                 Created by {p.user?.name || 'System'}
               </p>
+              {p.itinerary && (
+                <p className="text-xs text-blue-600 mt-1 flex items-center gap-1 font-medium bg-blue-50 w-fit px-2 py-0.5 rounded-md">
+                  <span className="truncate max-w-[200px]">{p.itinerary.title}</span>
+                </p>
+              )}
             </div>
           </div>
           <div className="flex gap-2 items-center">

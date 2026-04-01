@@ -6,7 +6,7 @@ export function middleware(request: NextRequest) {
   const isAuth = !!token;
   const path = request.nextUrl.pathname;
 
-  const publicPaths = ['/login', '/forgot-password', '/reset-password'];
+  const publicPaths = ['/login', '/forgot-password', '/reset-password', '/share'];
   const isPublicPage = publicPaths.some(p => path.startsWith(p));
 
   let response = NextResponse.next();

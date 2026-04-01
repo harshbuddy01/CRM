@@ -159,6 +159,8 @@ apiRouter.use('/integrations', require('./routes/sheet-sync.routes'));
 apiRouter.use('/', require('./routes/booking-service.routes'));
 apiRouter.use('/', require('./routes/voucher.routes'));
 apiRouter.use('/', require('./routes/query-document.routes'));
+// Itinerary Builder System
+apiRouter.use('/itineraries', require('./routes/itinerary.routes'));
 
 // Mount the router under both prefixes
 app.use('/v1', apiRouter);
