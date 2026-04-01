@@ -358,8 +358,8 @@ function MasterTable({ category, items, onView, onEdit, onDelete, canManage }: {
             {category.id === 'transfers' && <><th className="text-left py-3 px-3 font-medium">Destination</th><th className="text-left py-3 px-3 font-medium">Price</th><th className="text-left py-3 px-3 font-medium">Photo</th></>}
             {category.id === 'meal-plans' && <th className="text-left py-3 px-3 font-medium">Price (₹)</th>}
             {category.id === 'package-themes' && <th className="text-left py-3 px-3 font-medium">Icon</th>}
-            {category.id === 'day-itinerary-templates' && <><th className="text-left py-3 px-3 font-medium">Destination</th><th className="text-left py-3 px-3 font-medium">Cost</th><th className="text-left py-3 px-3 font-medium">Meals</th></>}
-            {category.id !== 'day-itinerary-templates' && <th className="text-left py-3 px-3 font-medium">Status</th>}
+            {category.id === 'day-itinerary-templates' && <><th className="text-left py-3 px-3 font-medium">Destination</th><th className="text-left py-3 px-3 font-medium">Description</th></>}
+            <th className="text-left py-3 px-3 font-medium">Status</th>
             <th className="text-right py-3 px-3 font-medium">Actions</th>
           </tr>
         </thead>
@@ -378,12 +378,12 @@ function MasterTable({ category, items, onView, onEdit, onDelete, canManage }: {
               {category.id === 'transfers' && (<><td className="py-3 px-3 text-muted-foreground text-xs">{String(item.destination?.name || '—')}</td><td className="py-3 px-3 text-muted-foreground text-xs font-medium">₹{Number(item.price || 0).toLocaleString('en-IN')}</td><td className="py-3 px-3">{item.photoUrl ? <img src={item.photoUrl} alt={String(item.name || '')} className="w-14 h-9 object-cover rounded" /> : <span className="text-muted-foreground text-xs">—</span>}</td></>)}
               {category.id === 'meal-plans' && <td className="py-3 px-3 text-muted-foreground text-xs font-medium">₹{Number(item.price || 0).toLocaleString('en-IN')}</td>}
               {category.id === 'package-themes' && <td className="py-3 px-3">{item.iconUrl ? <img src={item.iconUrl} alt={String(item.name || '')} className="w-9 h-9 object-cover rounded-lg" /> : <span className="text-muted-foreground text-xs">—</span>}</td>}
-              {category.id === 'day-itinerary-templates' && (<><td className="py-3 px-3 text-muted-foreground text-xs">{String(item.destination?.name || '—')}</td><td className="py-3 px-3 text-muted-foreground text-xs">{item.dayCost ? `₹${Number(item.dayCost).toLocaleString('en-IN')}` : '—'}</td><td className="py-3 px-3 text-muted-foreground text-xs">{String(item.mealsIncluded || '—')}</td></>)}
-              {category.id !== 'day-itinerary-templates' && <td className="py-3 px-3">
+              {category.id === 'day-itinerary-templates' && (<><td className="py-3 px-3 text-muted-foreground text-xs">{String(item.destination?.name || '—')}</td><td className="py-3 px-3 text-muted-foreground text-xs">{String(item.description || '—').length > 50 ? String(item.description).slice(0, 50) + '...' : String(item.description || '—')}</td></>)}
+              <td className="py-3 px-3">
                 <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${item.isActive !== false ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
                   {item.isActive !== false ? 'Active' : 'Inactive'}
                 </span>
-              </td>}
+              </td>
                 <td className="py-3 px-3 text-right">
                   <div className="flex justify-end gap-1">
                     <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onView(item)}><Eye className="w-3.5 h-3.5 text-blue-500" /></Button>
