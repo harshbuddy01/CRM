@@ -170,7 +170,9 @@ export default function ItinerariesPage() {
               onChange={(e) => setNewTitle(e.target.value)}
               className="h-11 rounded-xl"
               autoFocus
-              onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !creating) handleCreate();
+              }}
             />
           </div>
           <DialogFooter>

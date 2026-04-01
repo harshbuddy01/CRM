@@ -3,7 +3,7 @@
 // ============================================================
 
 const prisma = require('../config/prisma');
-const { BadRequestError } = require('../utils/errors');
+const { BusinessError } = require('../utils/AppError');
 
 /**
  * Auto-generate BookingService records from confirmed proposal days
@@ -24,7 +24,7 @@ const generateFromProposal = async (queryId, userId) => {
     },
   });
 
-  if (!proposal) throw new BadRequestError('No proposal found for this query');
+  if (!proposal) throw new BusinessError('No proposal found for this query');
 
   // Check if booking services already exist
   const existing = await prisma.bookingService.count({ where: { queryId } });

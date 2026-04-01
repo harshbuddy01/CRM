@@ -121,7 +121,7 @@ export default function ProposalBuilderPage({ params }: { params: { id: string }
       // Map to ProposalDays
       const rawDays = Array.isArray(fullItinerary.days) ? fullItinerary.days : [];
       if (rawDays.length === 0) {
-        setDays([]);
+        setDays([{ dayNumber: 1, destinationId: '', hotelId: '', activities: '', description: '', mealsIncluded: 'BB', transport: '', dayCost: 0 }]);
         toast.info('The selected itinerary has no days planned');
       } else {
         const mappedDays: ProposalDay[] = rawDays.map((day: any) => {
@@ -308,7 +308,7 @@ export default function ProposalBuilderPage({ params }: { params: { id: string }
             </p>
           </div>
         </div>
-        <Button size="lg" className="w-full md:w-auto font-bold rounded-xl" onClick={() => createProposal.mutate()} disabled={createProposal.isPending || days.some(d => !d.destinationId)}>
+        <Button size="lg" className="w-full md:w-auto font-bold rounded-xl" onClick={() => createProposal.mutate()} disabled={createProposal.isPending || days.length === 0 || days.some(d => !d.destinationId)}>
           <Save className="w-5 h-5 mr-2" />
           {createProposal.isPending ? 'Saving...' : 'Save Proposal vNext'}
         </Button>

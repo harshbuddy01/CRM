@@ -181,7 +181,17 @@ const escapeHtml = (text) => {
 const generateItineraryHtml = (itinerary) => {
   const totalDays = itinerary.days.length;
   const destinations = [...new Set(itinerary.days.map(d => d.destination?.name).filter(Boolean))].map(escapeHtml);
-  const safeCoverUrl = itinerary.coverPhotoUrl ? encodeURI(itinerary.coverPhotoUrl) : '';
+  let safeCoverUrl = '';
+  if (itinerary.coverPhotoUrl) {
+    try {
+      // Adding a dummy base allows relative URLs or protocol-relative to parse (if intended), 
+      // but typically coverPhotoUrl is absolute.
+      const urlObj = new URL(itinerary.coverPhotoUrl, 'http://dummy');
+      if (urlObj.protocol === 'http:' || urlObj.protocol === 'https:') {
+        safeCoverUrl = encodeURI(itinerary.coverPhotoUrl);
+      }
+    } catch(e) { }
+  }
 
   return `
     <html>

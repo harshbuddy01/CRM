@@ -25,7 +25,10 @@ export default function SharePage() {
     }
     const controller = new AbortController();
     fetch(`${API_URL}/itineraries/share/${slug}`, { signal: controller.signal })
-      .then(r => r.json())
+      .then(async r => {
+        if (!r.ok) throw new Error('Failed to load itinerary');
+        return r.json();
+      })
       .then(data => { 
         if (controller.signal.aborted) return;
         if (data.success) setItinerary(data.data); else setError('Itinerary not found'); 
@@ -154,8 +157,26 @@ export default function SharePage() {
         {itinerary.perPersonCost && (
           <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl p-8 text-white text-center shadow-xl shadow-blue-600/20">
             <p className="text-sm font-bold uppercase tracking-[0.15em] text-white/60">Package Price Per Person</p>
-            <p className="text-4xl md:text-5xl font-black mt-2">{new Intl.NumberFormat(undefined, { style: 'currency', currency: itinerary.currency || 'INR' }).format(Number(itinerary.perPersonCost))}</p>
-            {itinerary.totalCost && <p className="text-sm text-white/60 mt-2">Total Package: {new Intl.NumberFormat(undefined, { style: 'currency', currency: itinerary.currency || 'INR' }).format(Number(itinerary.totalCost))}</p>}
+            <p className="text-4xl md:text-5xl font-black mt-2">
+              {(() => {
+                try {
+                  return new Intl.NumberFormat(undefined, { style: 'currency', currency: itinerary.currency || 'INR' }).format(Number(itinerary.perPersonCost));
+                } catch (e) {
+                  return `${itinerary.currency || 'INR'} ${Number(itinerary.perPersonCost).toLocaleString('en-IN')}`;
+                }
+              })()}
+            </p>
+            {itinerary.totalCost && (
+              <p className="text-sm text-white/60 mt-2">
+                Total Package: {(() => {
+                  try {
+                    return new Intl.NumberFormat(undefined, { style: 'currency', currency: itinerary.currency || 'INR' }).format(Number(itinerary.totalCost));
+                  } catch (e) {
+                    return `${itinerary.currency || 'INR'} ${Number(itinerary.totalCost).toLocaleString('en-IN')}`;
+                  }
+                })()}
+              </p>
+            )}
             <p className="text-xs text-white/40 mt-3">{itinerary.adults} Adults{itinerary.children ? `, ${itinerary.children} Children` : ''} • {itinerary.currency || 'INR'}</p>
           </div>
         )}
