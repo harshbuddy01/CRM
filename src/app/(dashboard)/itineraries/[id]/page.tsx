@@ -79,6 +79,7 @@ export default function ItineraryBuilderPage() {
     const fd = new FormData(); fd.append('photo', file);
     try { await api.post(`/itineraries/${id}/cover-photo`, fd, { headers: { 'Content-Type': 'multipart/form-data' } }); toast.success('Cover photo updated'); invalidate(); }
     catch { toast.error('Upload failed'); }
+    finally { e.target.value = ''; }
   };
 
   const handleGalleryUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -86,6 +87,7 @@ export default function ItineraryBuilderPage() {
     const fd = new FormData(); Array.from(files).forEach(f => fd.append('photos', f));
     try { await api.post(`/itineraries/${id}/gallery`, fd, { headers: { 'Content-Type': 'multipart/form-data' } }); toast.success('Gallery images added'); invalidate(); }
     catch { toast.error('Upload failed'); }
+    finally { e.target.value = ''; }
   };
 
   const handleEventImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -93,7 +95,10 @@ export default function ItineraryBuilderPage() {
     const fd = new FormData(); fd.append('photo', file);
     try { await api.post(`/itineraries/events/${eventImgTarget}/image`, fd, { headers: { 'Content-Type': 'multipart/form-data' } }); toast.success('Image updated'); invalidate(); }
     catch { toast.error('Upload failed'); }
-    setEventImgTarget(null);
+    finally {
+      e.target.value = '';
+      setEventImgTarget(null);
+    }
   };
 
   const handleShare = async () => {
@@ -236,8 +241,17 @@ export default function ItineraryBuilderPage() {
                     <div key={img.id} className="relative group aspect-square rounded-lg overflow-hidden">
                       <img src={img.imageUrl} alt="" className="w-full h-full object-cover" />
                       <button
-                        className="absolute top-0.5 right-0.5 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
-                        onClick={async () => { await api.delete(`/itineraries/gallery/${img.id}`); invalidate(); }}
+                        className="absolute top-0.5 right-0.5 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-50"
+                        onClick={async (e) => { 
+                          try {
+                            e.currentTarget.disabled = true;
+                            await api.delete(`/itineraries/gallery/${img.id}`); 
+                            invalidate(); 
+                          } catch (err: any) {
+                            toast.error(err.response?.data?.message || 'Failed to delete image');
+                            e.currentTarget.disabled = false;
+                          }
+                        }}
                       >
                         <X className="w-2.5 h-2.5" />
                       </button>
@@ -643,7 +657,7 @@ function FinalPreviewTab({ itinerary, onShare, onExport }: { itinerary: any; onS
       </Card>
 
       {/* Pricing Summary */}
-      {itinerary.perPersonCost && (
+      {itinerary.perPersonCost !== null && itinerary.perPersonCost !== undefined && (
         <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl p-6 text-white text-center">
           <p className="text-sm font-bold uppercase tracking-wider text-white/70">Package Price Per Person</p>
           <p className="text-4xl font-black mt-1">₹{Number(itinerary.perPersonCost).toLocaleString('en-IN')}</p>

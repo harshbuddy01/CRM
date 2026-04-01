@@ -18,11 +18,26 @@ export default function SharePage() {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    fetch(`${API_URL}/itineraries/share/${slug}`)
+    if (!slug || Array.isArray(slug)) {
+      setError('Itinerary not found');
+      setLoading(false);
+      return;
+    }
+    const controller = new AbortController();
+    fetch(`${API_URL}/itineraries/share/${slug}`, { signal: controller.signal })
       .then(r => r.json())
-      .then(data => { if (data.success) setItinerary(data.data); else setError('Itinerary not found'); })
-      .catch(() => setError('Failed to load'))
-      .finally(() => setLoading(false));
+      .then(data => { 
+        if (controller.signal.aborted) return;
+        if (data.success) setItinerary(data.data); else setError('Itinerary not found'); 
+      })
+      .catch((e) => {
+        if (e.name === 'AbortError') return;
+        setError('Failed to load');
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setLoading(false);
+      });
+    return () => controller.abort();
   }, [slug]);
 
   if (loading) return <div className="flex h-screen items-center justify-center bg-slate-50"><Loader2 className="w-8 h-8 animate-spin text-blue-400" /></div>;
@@ -65,8 +80,8 @@ export default function SharePage() {
                   <th className="text-left p-4 font-semibold">Day</th><th className="text-left p-4 font-semibold">Hotel</th><th className="text-left p-4 font-semibold">Room</th><th className="text-left p-4 font-semibold">Meals</th>
                 </tr></thead>
                 <tbody>
-                  {itinerary.days?.map((day: any) => day.events?.filter((e: any) => e.type === 'accommodation').map((ev: any) => (
-                    <tr key={ev.id} className="border-b last:border-0">
+                  {itinerary.days?.map((day: any) => day.events?.filter((e: any) => e.type === 'accommodation').map((ev: any, idx: number) => (
+                    <tr key={ev.id ?? `day-${day.dayNumber}-accom-${idx}`} className="border-b last:border-0">
                       <td className="p-4 font-medium">Day {day.dayNumber}</td>
                       <td className="p-4 font-bold text-slate-900">{ev.metadata?.hotelName || ev.title}</td>
                       <td className="p-4 text-muted-foreground">{ev.metadata?.roomType || '—'}</td>
@@ -88,7 +103,7 @@ export default function SharePage() {
               const hasImage = day.events?.some((e: any) => e.imageUrl);
               const firstImage = day.events?.find((e: any) => e.imageUrl)?.imageUrl;
               return (
-                <div key={day.id} className="relative flex gap-4 md:gap-6 mb-10 last:mb-0">
+                <div key={day.id ?? `day-${idx}`} className="relative flex gap-4 md:gap-6 mb-10 last:mb-0">
                   <div className="relative z-10 flex-shrink-0">
                     <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-black text-sm shadow-lg">{day.dayNumber}</div>
                   </div>
@@ -100,8 +115,8 @@ export default function SharePage() {
                           {day.destination?.name && <p className="text-xs text-blue-600 font-medium mt-0.5 flex items-center gap-1"><MapPin className="w-3 h-3" />{day.destination.name}</p>}
                           {day.events?.length > 0 && (
                             <div className="mt-3 space-y-2">
-                              {day.events.map((ev: any) => { const Icon = EVENT_ICONS[ev.type] || MapPin; return (
-                                <div key={ev.id} className="flex items-start gap-2">
+                              {day.events.map((ev: any, evIdx: number) => { const Icon = EVENT_ICONS[ev.type] || MapPin; return (
+                                <div key={ev.id ?? `event-${evIdx}`} className="flex items-start gap-2">
                                   <Icon className="w-3.5 h-3.5 text-slate-400 mt-0.5 flex-shrink-0" />
                                   <div>
                                     <p className="text-sm font-medium text-slate-800">{ev.title}</p>
@@ -128,8 +143,8 @@ export default function SharePage() {
           <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
             <h2 className="font-bold text-lg text-slate-900 mb-4">Gallery</h2>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              {itinerary.galleryImages.map((img: any) => (
-                <img key={img.id} src={img.imageUrl} alt={img.caption || ''} className="w-full aspect-[4/3] rounded-xl object-cover shadow-sm" />
+              {itinerary.galleryImages.map((img: any, idx: number) => (
+                <img key={img.id ?? img.imageUrl ?? idx} src={img.imageUrl} alt={img.caption || ''} className="w-full aspect-[4/3] rounded-xl object-cover shadow-sm" />
               ))}
             </div>
           </div>
@@ -139,8 +154,8 @@ export default function SharePage() {
         {itinerary.perPersonCost && (
           <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl p-8 text-white text-center shadow-xl shadow-blue-600/20">
             <p className="text-sm font-bold uppercase tracking-[0.15em] text-white/60">Package Price Per Person</p>
-            <p className="text-4xl md:text-5xl font-black mt-2">₹{Number(itinerary.perPersonCost).toLocaleString('en-IN')}</p>
-            {itinerary.totalCost && <p className="text-sm text-white/60 mt-2">Total Package: ₹{Number(itinerary.totalCost).toLocaleString('en-IN')}</p>}
+            <p className="text-4xl md:text-5xl font-black mt-2">{new Intl.NumberFormat(undefined, { style: 'currency', currency: itinerary.currency || 'INR' }).format(Number(itinerary.perPersonCost))}</p>
+            {itinerary.totalCost && <p className="text-sm text-white/60 mt-2">Total Package: {new Intl.NumberFormat(undefined, { style: 'currency', currency: itinerary.currency || 'INR' }).format(Number(itinerary.totalCost))}</p>}
             <p className="text-xs text-white/40 mt-3">{itinerary.adults} Adults{itinerary.children ? `, ${itinerary.children} Children` : ''} • {itinerary.currency || 'INR'}</p>
           </div>
         )}

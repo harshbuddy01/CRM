@@ -119,27 +119,30 @@ export default function ProposalBuilderPage({ params }: { params: { id: string }
       const fullItinerary = res.data.data;
 
       // Map to ProposalDays
-      const mappedDays: ProposalDay[] = fullItinerary.days.map((day: any) => {
-        const accomEvent = day.events?.find((e: any) => e.type === 'accommodation');
-        const transportEvents = day.events?.filter((e: any) => ['transport', 'flight'].includes(e.type)) || [];
-        const activityEvents = day.events?.filter((e: any) => ['activity', 'sightseeing'].includes(e.type)) || [];
-        
-        let dayCost = 0;
-        day.events?.forEach((e: any) => { dayCost += Number(e.cost) || 0; });
+      const rawDays = Array.isArray(fullItinerary.days) ? fullItinerary.days : [];
+      if (rawDays.length === 0) {
+        setDays([]);
+        toast.info('The selected itinerary has no days planned');
+      } else {
+        const mappedDays: ProposalDay[] = rawDays.map((day: any) => {
+          const accomEvent = day.events?.find((e: any) => e.type === 'accommodation');
+          const transportEvents = day.events?.filter((e: any) => ['transport', 'flight'].includes(e.type)) || [];
+          const activityEvents = day.events?.filter((e: any) => ['activity', 'sightseeing'].includes(e.type)) || [];
+          
+          let dayCost = 0;
+          day.events?.forEach((e: any) => { dayCost += Number(e.cost) || 0; });
 
-        return {
-          dayNumber: day.dayNumber,
-          destinationId: day.destinationId || '',
-          hotelId: accomEvent?.metadata?.masterId || '',
-          activities: activityEvents.map((e: any) => e.title).join(', '),
-          description: day.events?.map((e: any) => e.title).join(' \n') || '', // Simple auto-generation
-          mealsIncluded: accomEvent?.metadata?.mealPlan || 'BB',
-          transport: transportEvents.map((e: any) => e.title).join(', '),
-          dayCost: dayCost
-        };
-      });
-
-      if (mappedDays.length > 0) {
+          return {
+            dayNumber: day.dayNumber,
+            destinationId: day.destinationId || '',
+            hotelId: accomEvent?.metadata?.masterId || '',
+            activities: activityEvents.map((e: any) => e.title).join(', '),
+            description: day.events?.map((e: any) => e.title).join('\n') || '', // Simple auto-generation
+            mealsIncluded: accomEvent?.metadata?.mealPlan || 'BB',
+            transport: transportEvents.map((e: any) => e.title).join(', '),
+            dayCost: dayCost
+          };
+        });
         setDays(mappedDays);
       }
       

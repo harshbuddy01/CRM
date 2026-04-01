@@ -14,7 +14,9 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { format } from 'date-fns';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 
 const STATUS_STYLES: Record<string, string> = {
   draft: 'bg-amber-50 text-amber-700 border-amber-200',
@@ -28,7 +30,9 @@ export default function ItinerariesPage() {
   const [newTitle, setNewTitle] = useState('');
   const [creating, setCreating] = useState(false);
 
-  const { data, isLoading } = useQuery({
+  const router = useRouter();
+
+  const { data, isLoading, isError, error } = useQuery({
     queryKey: ['itineraries', searchTerm],
     queryFn: async () => {
       const res = await api.get('/itineraries', { params: searchTerm ? { search: searchTerm } : {} });
@@ -67,7 +71,12 @@ export default function ItinerariesPage() {
       setNewTitle('');
       qc.invalidateQueries({ queryKey: ['itineraries'] });
       // Navigate to builder
-      window.location.href = `/itineraries/${res.data.data.id}`;
+      const id = res.data?.data?.id;
+      if (id) {
+        router.push(`/itineraries/${id}`);
+      } else {
+        toast.error('Invalid created itinerary ID');
+      }
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'Failed to create');
     } finally {
@@ -149,10 +158,12 @@ export default function ItinerariesPage() {
       </div>
 
       {/* Create Modal */}
-      {showCreate && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setShowCreate(false)}>
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 space-y-4" onClick={(e) => e.stopPropagation()}>
-            <h2 className="text-lg font-bold text-slate-900">Create New Itinerary</h2>
+      <Dialog open={showCreate} onOpenChange={setShowCreate}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Create New Itinerary</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
             <Input
               placeholder="e.g. Sikkim 5N6D Premium Package"
               value={newTitle}
@@ -161,19 +172,24 @@ export default function ItinerariesPage() {
               autoFocus
               onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
             />
-            <div className="flex justify-end gap-2">
-              <Button variant="ghost" onClick={() => setShowCreate(false)} className="rounded-xl">Cancel</Button>
-              <Button onClick={handleCreate} disabled={creating} className="rounded-xl font-bold">
-                {creating ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Plus className="w-4 h-4 mr-2" />}
-                Create
-              </Button>
-            </div>
           </div>
-        </div>
-      )}
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setShowCreate(false)} className="rounded-xl">Cancel</Button>
+            <Button onClick={handleCreate} disabled={creating} className="rounded-xl font-bold">
+              {creating ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Plus className="w-4 h-4 mr-2" />}
+              Create
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Itinerary Cards Grid */}
-      {items.length === 0 ? (
+      {isError ? (
+        <div className="border-2 border-dashed rounded-2xl py-16 text-center text-red-500">
+          <p className="font-bold text-lg">Error loading itineraries</p>
+          <p className="text-sm mt-1">{error instanceof Error ? error.message : 'Unknown error'}</p>
+        </div>
+      ) : items.length === 0 ? (
         <div className="border-2 border-dashed rounded-2xl py-16 text-center">
           <CalendarRange className="w-12 h-12 text-muted-foreground mx-auto mb-4 opacity-20" />
           <h3 className="text-lg font-bold text-slate-900">No itineraries yet</h3>

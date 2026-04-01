@@ -9,7 +9,29 @@ const multer = require('multer');
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Invalid file type. Only images are allowed.'));
+    }
+  }
 });
+
+const handleSingleUpload = (field) => (req, res, next) => {
+  upload.single(field)(req, res, (err) => {
+    if (err) return res.status(400).json({ success: false, message: err.message });
+    next();
+  });
+};
+
+const handleArrayUpload = (field, maxCount) => (req, res, next) => {
+  upload.array(field, maxCount)(req, res, (err) => {
+    if (err) return res.status(400).json({ success: false, message: err.message });
+    next();
+  });
+};
+
 const ctrl = require('../controllers/itinerary.controller');
 const { authenticate } = require('../middlewares/authenticate');
 
@@ -31,8 +53,8 @@ router.delete('/:id', ctrl.remove);
 router.post('/:id/duplicate', ctrl.duplicate);
 
 // Cover photo & gallery
-router.post('/:id/cover-photo', upload.single('photo'), ctrl.uploadCoverPhoto);
-router.post('/:id/gallery', upload.array('photos', 20), ctrl.uploadGalleryImages);
+router.post('/:id/cover-photo', handleSingleUpload('photo'), ctrl.uploadCoverPhoto);
+router.post('/:id/gallery', handleArrayUpload('photos', 20), ctrl.uploadGalleryImages);
 router.delete('/gallery/:imageId', ctrl.removeGalleryImage);
 
 // Day management
@@ -45,7 +67,7 @@ router.post('/days/:dayId/events', ctrl.addEvent);
 router.put('/events/:eventId', ctrl.updateEvent);
 router.delete('/events/:eventId', ctrl.removeEvent);
 router.put('/days/:dayId/reorder', ctrl.reorderEvents);
-router.post('/events/:eventId/image', upload.single('photo'), ctrl.uploadEventImage);
+router.post('/events/:eventId/image', handleSingleUpload('photo'), ctrl.uploadEventImage);
 
 // Share & Export
 router.post('/:id/generate-share-link', ctrl.generateShareLink);

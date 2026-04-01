@@ -6,14 +6,18 @@ export function middleware(request: NextRequest) {
   const isAuth = !!token;
   const path = request.nextUrl.pathname;
 
-  const publicPaths = ['/login', '/forgot-password', '/reset-password', '/share'];
-  const isPublicPage = publicPaths.some(p => path.startsWith(p));
+  const isSharePage = path.startsWith('/share');
+  const publicAuthPaths = ['/login', '/forgot-password', '/reset-password'];
+  const isPublicAuthPage = publicAuthPaths.some(p => path.startsWith(p));
 
   let response = NextResponse.next();
 
-  if (isAuth && isPublicPage) {
+  if (isSharePage) {
+    // share pages are accessible by anyone (auth or not), no redirects needed
+    response = NextResponse.next();
+  } else if (isAuth && isPublicAuthPage) {
     response = NextResponse.redirect(new URL('/', request.url));
-  } else if (!isAuth && !isPublicPage) {
+  } else if (!isAuth && !isPublicAuthPage) {
     response = NextResponse.redirect(new URL('/login', request.url));
   }
 

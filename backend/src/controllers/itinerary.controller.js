@@ -167,9 +167,21 @@ const EVENT_TYPE_ICONS = {
   freeTime: '☀️',
 };
 
+const escapeHtml = (text) => {
+  if (!text) return '';
+  return String(text)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+    .replace(/`/g, '&#x60;');
+};
+
 const generateItineraryHtml = (itinerary) => {
   const totalDays = itinerary.days.length;
-  const destinations = [...new Set(itinerary.days.map(d => d.destination?.name).filter(Boolean))];
+  const destinations = [...new Set(itinerary.days.map(d => d.destination?.name).filter(Boolean))].map(escapeHtml);
+  const safeCoverUrl = itinerary.coverPhotoUrl ? encodeURI(itinerary.coverPhotoUrl) : '';
 
   return `
     <html>
@@ -184,7 +196,7 @@ const generateItineraryHtml = (itinerary) => {
         .header .subtitle { color: #64748b; font-size: 14px; margin-top: 4px; }
         .meta-row { display: flex; gap: 24px; margin-top: 12px; font-size: 13px; color: #475569; }
         .meta-row span { display: flex; align-items: center; gap: 4px; }
-        ${itinerary.coverPhotoUrl ? `.cover { width: 100%; height: 250px; object-fit: cover; border-radius: 12px; margin-bottom: 32px; }` : ''}
+        ${safeCoverUrl ? `.cover { width: 100%; height: 250px; object-fit: cover; border-radius: 12px; margin-bottom: 32px; }` : ''}
         .price-box { background: linear-gradient(135deg, #eff6ff, #dbeafe); border: 1px solid #93c5fd; border-radius: 12px; padding: 16px 24px; margin-bottom: 32px; display: flex; justify-content: space-between; align-items: center; }
         .price-box .amount { font-size: 24px; font-weight: 700; color: #1e40af; }
         .price-box .label { font-size: 12px; color: #3b82f6; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; }
@@ -205,16 +217,16 @@ const generateItineraryHtml = (itinerary) => {
     <body>
       <div class="container">
         <div class="header">
-          <h1>${itinerary.title}</h1>
-          ${itinerary.description ? `<div class="subtitle">${itinerary.description}</div>` : ''}
+          <h1>${escapeHtml(itinerary.title)}</h1>
+          ${itinerary.description ? `<div class="subtitle">${escapeHtml(itinerary.description)}</div>` : ''}
           <div class="meta-row">
             <span>📅 ${totalDays} Days</span>
             <span>📍 ${destinations.join(', ') || 'Multiple Destinations'}</span>
-            <span>👥 ${itinerary.adults} Adults${itinerary.children ? `, ${itinerary.children} Children` : ''}</span>
+            <span>👥 ${escapeHtml(itinerary.adults)} Adults${itinerary.children ? `, ${escapeHtml(itinerary.children)} Children` : ''}</span>
           </div>
         </div>
 
-        ${itinerary.coverPhotoUrl ? `<img class="cover" src="${itinerary.coverPhotoUrl}" alt="Cover" />` : ''}
+        ${safeCoverUrl ? `<img class="cover" src="${safeCoverUrl}" alt="Cover" />` : ''}
 
         ${itinerary.perPersonCost ? `
           <div class="price-box">
@@ -236,19 +248,19 @@ const generateItineraryHtml = (itinerary) => {
         ${itinerary.days.map(day => `
           <div class="day-card">
             <div class="day-header">
-              <h3>Day ${day.dayNumber}${day.title ? `: ${day.title}` : ''}</h3>
-              ${day.destination?.name ? `<span class="dest">${day.destination.name}</span>` : ''}
+              <h3>Day ${day.dayNumber}${day.title ? `: ${escapeHtml(day.title)}` : ''}</h3>
+              ${day.destination?.name ? `<span class="dest">${escapeHtml(day.destination.name)}</span>` : ''}
             </div>
             ${day.events.length > 0 ? day.events.map(ev => `
               <div class="event">
                 <div class="event-icon">${EVENT_TYPE_ICONS[ev.type] || '📌'}</div>
                 <div class="event-content">
-                  <div class="event-title">${ev.title}</div>
-                  ${ev.description ? `<div class="event-desc">${ev.description}</div>` : ''}
+                  <div class="event-title">${escapeHtml(ev.title)}</div>
+                  ${ev.description ? `<div class="event-desc">${escapeHtml(ev.description)}</div>` : ''}
                   <div class="event-meta">
-                    ${ev.startTime ? `<span>🕐 ${ev.startTime}${ev.endTime ? ` – ${ev.endTime}` : ''}</span>` : ''}
+                    ${ev.startTime ? `<span>🕐 ${escapeHtml(ev.startTime)}${ev.endTime ? ` – ${escapeHtml(ev.endTime)}` : ''}</span>` : ''}
                     ${ev.cost ? `<span>💰 ₹${Number(ev.cost).toLocaleString('en-IN')}</span>` : ''}
-                    <span style="text-transform: capitalize;">${ev.type}</span>
+                    <span style="text-transform: capitalize;">${escapeHtml(ev.type)}</span>
                   </div>
                 </div>
               </div>

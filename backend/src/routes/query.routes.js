@@ -230,7 +230,7 @@ router.get('/:id/billing-summary', async (req, res, next) => {
     const totalPending = totalAmount - totalReceived;
 
     // Supplier side — from BookingServices + VendorPayments
-    const bookingServices = await prisma.bookingService.findMany({ where: { queryId, deletedAt: null } });
+    const bookingServices = await prisma.bookingService.findMany({ where: { queryId } });
     const supplierAmount = bookingServices.reduce((sum, bs) => sum + Number(bs.totalCost), 0);
     const bookingServicePaid = bookingServices.reduce((sum, bs) => sum + Number(bs.supplierAmountPaid), 0);
 

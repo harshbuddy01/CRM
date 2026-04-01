@@ -27,6 +27,13 @@ const fullInclude = {
   galleryImages: { orderBy: { sortOrder: 'asc' } },
 };
 
+const sanitizePublicId = (filename) => {
+  if (!filename) return undefined;
+  const name = String(filename).replace(/\.[^.]+$/, '');
+  const sanitized = name.replace(/[^a-zA-Z0-9-_]/g, '-').replace(/-+/g, '-').replace(/^-+|-+$/g, '').substring(0, 100);
+  return sanitized || `upload-${Date.now()}`;
+};
+
 /**
  * Upload a buffer to Cloudinary and return the secure URL.
  */
@@ -36,9 +43,7 @@ const uploadToCloudinary = (file, folder) => {
       {
         folder: `travelcrm/itineraries/${folder}`,
         resource_type: 'auto',
-        public_id: file.originalname
-          ? file.originalname.replace(/\.[^.]+$/, '')
-          : undefined,
+        public_id: sanitizePublicId(file.originalname),
       },
       (err, result) => {
         if (err) return reject(err);
@@ -69,12 +74,12 @@ const create = async (userId, data) => {
               events: day.events && day.events.length
                 ? {
                     create: day.events.map((ev, eidx) => ({
-                      type: ev.type || 'sightseeing',
+                      type: ev.type && VALID_EVENT_TYPES.includes(ev.type) ? ev.type : 'sightseeing',
                       title: ev.title || 'Untitled Event',
                       description: ev.description || null,
                       startTime: ev.startTime || null,
                       endTime: ev.endTime || null,
-                      cost: ev.cost ? Number(ev.cost) : null,
+                      cost: ev.cost !== null && ev.cost !== undefined ? Number(ev.cost) : null,
                       metadata: ev.metadata || null,
                       sortOrder: eidx,
                     })),
@@ -89,7 +94,11 @@ const create = async (userId, data) => {
 };
 
 const list = async (filters = {}) => {
-  const { search, status, page = 1, limit = 50 } = filters;
+  const { search, status } = filters;
+  const parsedPage = parseInt(filters.page, 10);
+  const parsedLimit = parseInt(filters.limit, 10);
+  const page = Math.max(1, isNaN(parsedPage) ? 1 : parsedPage);
+  const limit = Math.min(100, Math.max(1, isNaN(parsedLimit) ? 50 : parsedLimit));
   const where = { deletedAt: null };
 
   if (status) where.status = status;
@@ -138,18 +147,28 @@ const update = async (id, data) => {
     currency, adults, children, markupPct,
   } = data;
 
+  if (status !== undefined && !['draft', 'published'].includes(status)) {
+    throw new ValidationError('Invalid status');
+  }
+
+  const validateNum = (val) => {
+    const num = Number(val);
+    if (!Number.isFinite(num)) throw new ValidationError(`Invalid number provided`);
+    return num;
+  };
+
   return prisma.itinerary.update({
     where: { id },
     data: {
       ...(title !== undefined && { title }),
       ...(description !== undefined && { description }),
       ...(status !== undefined && { status }),
-      ...(totalCost !== undefined && { totalCost: Number(totalCost) }),
-      ...(perPersonCost !== undefined && { perPersonCost: Number(perPersonCost) }),
+      ...(totalCost !== undefined && { totalCost: validateNum(totalCost) }),
+      ...(perPersonCost !== undefined && { perPersonCost: validateNum(perPersonCost) }),
       ...(currency !== undefined && { currency }),
-      ...(adults !== undefined && { adults: Number(adults) }),
-      ...(children !== undefined && { children: Number(children) }),
-      ...(markupPct !== undefined && { markupPct: Number(markupPct) }),
+      ...(adults !== undefined && { adults: validateNum(adults) }),
+      ...(children !== undefined && { children: validateNum(children) }),
+      ...(markupPct !== undefined && { markupPct: validateNum(markupPct) }),
     },
     include: fullInclude,
   });
@@ -282,22 +301,19 @@ const removeDay = async (dayId) => {
   const day = await prisma.itineraryDay.findUnique({ where: { id: dayId } });
   if (!day) throw new NotFoundError('Day not found');
 
-  await prisma.itineraryDay.delete({ where: { id: dayId } });
-
-  // Renumber remaining days
-  const remaining = await prisma.itineraryDay.findMany({
-    where: { itineraryId: day.itineraryId },
-    orderBy: { dayNumber: 'asc' },
-  });
-
-  await Promise.all(
-    remaining.map((d, idx) =>
-      prisma.itineraryDay.update({
-        where: { id: d.id },
+  await prisma.$transaction(async (tx) => {
+    await tx.itineraryDay.delete({ where: { id: dayId } });
+    const remaining = await tx.itineraryDay.findMany({
+      where: { itineraryId: day.itineraryId },
+      orderBy: { dayNumber: 'asc' },
+    });
+    for (let idx = 0; idx < remaining.length; idx++) {
+      await tx.itineraryDay.update({
+        where: { id: remaining[idx].id },
         data: { dayNumber: idx + 1 },
-      })
-    )
-  );
+      });
+    }
+  });
 
   return { success: true };
 };
@@ -350,7 +366,7 @@ const updateEvent = async (eventId, data) => {
       ...(data.description !== undefined && { description: data.description }),
       ...(data.startTime !== undefined && { startTime: data.startTime }),
       ...(data.endTime !== undefined && { endTime: data.endTime }),
-      ...(data.cost !== undefined && { cost: data.cost ? Number(data.cost) : null }),
+      ...(data.cost !== undefined && { cost: data.cost !== null && data.cost !== undefined ? Number(data.cost) : null }),
       ...(data.metadata !== undefined && { metadata: data.metadata }),
       ...(data.sortOrder !== undefined && { sortOrder: data.sortOrder }),
     },
@@ -369,7 +385,19 @@ const reorderEvents = async (dayId, eventIds) => {
     throw new ValidationError('eventIds must be a non-empty array');
   }
 
-  await Promise.all(
+  const existing = await prisma.itineraryEvent.findMany({
+    where: { id: { in: eventIds } }
+  });
+
+  if (existing.length !== eventIds.length) {
+    throw new ValidationError('One or more events not found');
+  }
+  
+  if (existing.some(e => e.dayId !== dayId)) {
+    throw new ValidationError('Event ownership verification failed');
+  }
+
+  await prisma.$transaction(
     eventIds.map((id, idx) =>
       prisma.itineraryEvent.update({
         where: { id },
