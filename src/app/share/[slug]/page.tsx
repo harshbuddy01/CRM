@@ -269,7 +269,7 @@ export default function SharePage() {
                     <div className="w-10 h-10 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-100"><CheckCircle className="w-5 h-5" /></div>
                     <span className="font-black text-xs uppercase tracking-widest text-slate-700">Inclusions</span>
                   </div>
-                  <div className="text-sm text-slate-600 leading-relaxed whitespace-pre-wrap pl-1">{itinerary.inclusionsHtml}</div>
+                  <div className="text-sm text-slate-600 leading-relaxed pl-1 prose prose-slate max-w-none" dangerouslySetInnerHTML={{ __html: itinerary.inclusionsHtml }} />
                 </div>
               )}
               {itinerary.exclusionsHtml && (
@@ -278,7 +278,7 @@ export default function SharePage() {
                     <div className="w-10 h-10 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center border border-rose-100"><XCircle className="w-5 h-5" /></div>
                     <span className="font-black text-xs uppercase tracking-widest text-slate-700">Exclusions</span>
                   </div>
-                  <div className="text-sm text-slate-600 leading-relaxed whitespace-pre-wrap pl-1">{itinerary.exclusionsHtml}</div>
+                  <div className="text-sm text-slate-600 leading-relaxed pl-1 prose prose-slate max-w-none" dangerouslySetInnerHTML={{ __html: itinerary.exclusionsHtml }} />
                 </div>
               )}
             </div>
@@ -290,7 +290,7 @@ export default function SharePage() {
                     <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100"><CreditCard className="w-4 h-4" /></div>
                     <span className="font-black text-[10px] uppercase tracking-widest text-slate-600">Payment Policy</span>
                   </div>
-                  <div className="text-sm text-slate-500 leading-relaxed whitespace-pre-wrap pl-1">{itinerary.paymentPolicyHtml}</div>
+                  <div className="text-sm text-slate-600 leading-relaxed pl-1 prose prose-slate max-w-none" dangerouslySetInnerHTML={{ __html: itinerary.paymentPolicyHtml }} />
                 </div>
               )}
               {itinerary.cancellationPolicyHtml && (
@@ -299,7 +299,7 @@ export default function SharePage() {
                     <div className="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center border border-amber-100"><AlertTriangle className="w-4 h-4" /></div>
                     <span className="font-black text-[10px] uppercase tracking-widest text-slate-600">Cancellation Policy</span>
                   </div>
-                  <div className="text-sm text-slate-500 leading-relaxed whitespace-pre-wrap pl-1">{itinerary.cancellationPolicyHtml}</div>
+                  <div className="text-sm text-slate-600 leading-relaxed pl-1 prose prose-slate max-w-none" dangerouslySetInnerHTML={{ __html: itinerary.cancellationPolicyHtml }} />
                 </div>
               )}
               {itinerary.termsHtml && (
@@ -308,7 +308,7 @@ export default function SharePage() {
                     <div className="w-8 h-8 rounded-xl bg-slate-50 text-slate-600 flex items-center justify-center border border-slate-100"><Shield className="w-4 h-4" /></div>
                     <span className="font-black text-[10px] uppercase tracking-widest text-slate-600">Terms & Conditions</span>
                   </div>
-                  <div className="text-sm text-slate-500 leading-relaxed whitespace-pre-wrap pl-1">{itinerary.termsHtml}</div>
+                  <div className="text-sm text-slate-500 leading-relaxed pl-1 prose prose-slate max-w-none" dangerouslySetInnerHTML={{ __html: itinerary.termsHtml }} />
                 </div>
               )}
             </div>

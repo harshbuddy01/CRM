@@ -192,8 +192,6 @@ const generateItineraryHtml = (itinerary) => {
   let safeCoverUrl = '';
   if (itinerary.coverPhotoUrl) {
     try {
-      // Adding a dummy base allows relative URLs or protocol-relative to parse (if intended), 
-      // but typically coverPhotoUrl is absolute.
       const urlObj = new URL(itinerary.coverPhotoUrl, 'http://dummy');
       if (urlObj.protocol === 'http:' || urlObj.protocol === 'https:') {
         safeCoverUrl = encodeURI(itinerary.coverPhotoUrl);
@@ -201,106 +199,175 @@ const generateItineraryHtml = (itinerary) => {
     } catch(e) { }
   }
 
+  const accomEvents = itinerary.days?.flatMap(d => (d.events || []).filter(e => e.type === 'accommodation')) || [];
+
   return `
     <html>
     <head>
+      <meta charset="UTF-8">
       <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Inter', sans-serif; color: #1e293b; line-height: 1.6; background: #f8fafc; }
-        .container { max-width: 800px; margin: 0 auto; background: white; padding: 40px; }
-        .header { border-bottom: 3px solid #3b82f6; padding-bottom: 24px; margin-bottom: 32px; }
-        .header h1 { font-size: 28px; font-weight: 700; color: #0f172a; }
-        .header .subtitle { color: #64748b; font-size: 14px; margin-top: 4px; }
-        .meta-row { display: flex; gap: 24px; margin-top: 12px; font-size: 13px; color: #475569; }
-        .meta-row span { display: flex; align-items: center; gap: 4px; }
-        ${safeCoverUrl ? `.cover { width: 100%; height: 250px; object-fit: cover; border-radius: 12px; margin-bottom: 32px; }` : ''}
-        .price-box { background: linear-gradient(135deg, #eff6ff, #dbeafe); border: 1px solid #93c5fd; border-radius: 12px; padding: 16px 24px; margin-bottom: 32px; display: flex; justify-content: space-between; align-items: center; }
-        .price-box .amount { font-size: 24px; font-weight: 700; color: #1e40af; }
-        .price-box .label { font-size: 12px; color: #3b82f6; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; }
-        .day-card { border: 1px solid #e2e8f0; border-radius: 12px; margin-bottom: 20px; overflow: hidden; }
-        .day-header { background: #f1f5f9; padding: 14px 20px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; }
-        .day-header h3 { font-size: 16px; font-weight: 600; color: #0f172a; }
-        .day-header .dest { font-size: 12px; color: #3b82f6; background: #eff6ff; padding: 2px 10px; border-radius: 99px; font-weight: 500; }
-        .event { padding: 14px 20px; border-bottom: 1px solid #f1f5f9; display: flex; gap: 14px; align-items: flex-start; }
-        .event:last-child { border-bottom: none; }
-        .event-icon { font-size: 18px; flex-shrink: 0; margin-top: 2px; }
-        .event-content { flex: 1; }
-        .event-title { font-weight: 600; font-size: 14px; color: #1e293b; }
-        .event-desc { font-size: 13px; color: #64748b; margin-top: 2px; }
-        .event-meta { font-size: 11px; color: #94a3b8; margin-top: 4px; display: flex; gap: 12px; }
-        .footer { margin-top: 40px; text-align: center; font-size: 12px; color: #94a3b8; border-top: 1px solid #e2e8f0; padding-top: 20px; }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap');
+        
+        :root {
+          --primary: #1e293b;
+          --accent: #2563eb;
+          --muted: #64748b;
+          --bg: #ffffff;
+          --border: #f1f5f9;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-print-color-adjust: exact; }
+        body { font-family: 'Inter', sans-serif; color: var(--primary); line-height: 1.6; background: white; font-size: 13px; }
+        .h-serif { font-family: 'Playfair Display', serif; }
+        
+        .container { padding: 40px; }
+        
+        /* Hero Section */
+        .hero { position: relative; height: 350px; border-radius: 20px; overflow: hidden; margin-bottom: 50px; background: #000; }
+        .hero-img { width: 100%; height: 100%; object-fit: cover; opacity: 0.6; }
+        .hero-content { position: absolute; bottom: 40px; left: 40px; right: 40px; color: white; }
+        .hero-title { font-size: 42px; font-weight: 800; margin-bottom: 10px; line-height: 1.1; font-family: 'Playfair Display', serif; }
+        .hero-meta { display: flex; gap: 20px; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; opacity: 0.8; }
+
+        /* Accommodation Section */
+        .section-header { display: flex; align-items: center; gap: 15px; margin-bottom: 25px; margin-top: 40px; }
+        .section-header h2 { font-size: 24px; font-family: 'Playfair Display', serif; white-space: nowrap; }
+        .section-header .line { height: 1px; background: var(--border); width: 100%; }
+
+        .accom-grid { display: grid; grid-cols: 2; gap: 20px; }
+        .accom-card { border: 1px solid var(--border); border-radius: 16px; overflow: hidden; margin-bottom: 15px; page-break-inside: avoid; }
+        .accom-img { width: 100%; height: 160px; object-fit: cover; background: #f8fafc; }
+        .accom-body { padding: 15px; }
+        .accom-title { font-family: 'Playfair Display', serif; font-size: 16px; font-weight: 700; margin-bottom: 4px; }
+        .accom-meta { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); border-top: 1px solid #f8fafc; pt: 10px; mt: 10px; }
+
+        /* Day Itinerary Section */
+        .day-wrap { margin-bottom: 50px; page-break-inside: avoid; }
+        .day-row { display: flex; gap: 30px; align-items: flex-start; }
+        .day-content { flex: 1; }
+        .day-img-wrap { width: 250px; height: 320px; border-radius: 24px; overflow: hidden; flex-shrink: 0; background: #f8fafc; }
+        .day-img-wrap img { width: 100%; height: 100%; object-fit: cover; }
+        
+        .day-num-box { width: 40px; height: 40px; background: var(--primary); color: white; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-family: 'Playfair Display', serif; font-size: 18px; margin-bottom: 15px; }
+        .day-title { font-family: 'Playfair Display', serif; font-size: 28px; line-height: 1.2; margin-bottom: 10px; }
+        .day-desc { font-size: 13px; color: var(--muted); margin-bottom: 20px; text-align: justify; }
+
+        .event-item { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; font-size: 11px; font-weight: 600; color: #1e293b; background: #f8fafc; padding: 6px 12px; border-radius: 8px; }
+
+        /* Pricing Section */
+        .price-box { mt: 60px; text-align: center; border-top: 2px solid var(--border); padding-top: 40px; page-break-inside: avoid; }
+        .price-label { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.2em; color: var(--muted); margin-bottom: 10px; }
+        .price-amount { font-family: 'Playfair Display', serif; font-size: 38px; color: var(--primary); }
+
+        /* Policy Section */
+        .policy-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-top: 40px; page-break-inside: avoid; }
+        .policy-col h4 { font-family: 'Playfair Display', serif; font-size: 18px; margin-bottom: 15px; border-bottom: 2px solid var(--border); padding-bottom: 8px; }
+        .policy-content { font-size: 11px; color: var(--muted); }
+
+        .footer { margin-top: 80px; text-align: center; font-size: 10px; color: #94a3b8; letter-spacing: 0.05em; }
+        
+        @page { margin: 0; }
       </style>
     </head>
     <body>
       <div class="container">
-        <div class="header">
-          <h1>${escapeHtml(itinerary.title)}</h1>
-          ${itinerary.description ? `<div class="subtitle">${escapeHtml(itinerary.description)}</div>` : ''}
-          <div class="meta-row">
-            <span>📅 ${totalDays} Days</span>
-            <span>📍 ${destinations.join(', ') || 'Multiple Destinations'}</span>
-            <span>👥 ${escapeHtml(itinerary.adults)} Adults${itinerary.children ? `, ${escapeHtml(itinerary.children)} Children` : ''}</span>
+        <!-- Hero -->
+        <div class="hero">
+          ${safeCoverUrl ? `<img class="hero-img" src="${safeCoverUrl}" />` : '<div class="hero-img" style="background: linear-gradient(to bottom, #1e293b, #0f172a)"></div>'}
+          <div class="hero-content">
+            <h1 class="hero-title">${escapeHtml(itinerary.title)}</h1>
+            <div class="hero-meta">
+              <span>📍 ${destinations.slice(0, 3).join(' • ') || 'Multiple Destinations'}</span>
+              <span>📅 ${totalDays} Day Journey</span>
+              <span>👥 ${escapeHtml(itinerary.adults)} Guests</span>
+            </div>
           </div>
         </div>
 
-        ${safeCoverUrl ? `<img class="cover" src="${safeCoverUrl}" alt="Cover" />` : ''}
-
-        ${itinerary.perPersonCost ? `
-          <div class="price-box">
-            <div>
-              <div class="label">Package Price Per Person</div>
-              <div class="amount">₹${Number(itinerary.perPersonCost).toLocaleString('en-IN')}</div>
-            </div>
-            ${itinerary.totalCost ? `
-              <div style="text-align: right;">
-                <div class="label">Total Package</div>
-                <div class="amount" style="font-size: 18px;">₹${Number(itinerary.totalCost).toLocaleString('en-IN')}</div>
-              </div>
-            ` : ''}
+        <!-- Accom Overview -->
+        ${accomEvents.length > 0 ? `
+          <div class="section-header">
+            <h2 class="h-serif">Accommodations</h2>
+            <div class="line"></div>
           </div>
-        ` : ''}
-
-        <h2 style="font-size: 20px; margin-bottom: 16px; color: #0f172a;">Day-by-Day Itinerary</h2>
-
-        ${itinerary.days.map(day => `
-          <div class="day-card">
-            <div class="day-header">
-              <h3>Day ${day.dayNumber}${day.title ? `: ${escapeHtml(day.title)}` : ''}</h3>
-              ${day.destination?.name ? `<span class="dest">${escapeHtml(day.destination.name)}</span>` : ''}
-            </div>
-            ${day.events.length > 0 ? day.events.map(ev => `
-              <div class="event">
-                <div class="event-icon">${EVENT_TYPE_ICONS[ev.type] || '📌'}</div>
-                <div class="event-content">
-                  <div class="event-title">${escapeHtml(ev.title)}</div>
-                  ${ev.description ? `<div class="event-desc">${escapeHtml(ev.description)}</div>` : ''}
-                  <div class="event-meta">
-                    ${ev.startTime ? `<span>🕐 ${escapeHtml(ev.startTime)}${ev.endTime ? ` – ${escapeHtml(ev.endTime)}` : ''}</span>` : ''}
-                    ${ev.cost ? `<span>💰 ₹${Number(ev.cost).toLocaleString('en-IN')}</span>` : ''}
-                    <span style="text-transform: capitalize;">${escapeHtml(ev.type)}</span>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 40px;">
+            ${itinerary.days?.flatMap(d => (d.events || []).filter(e => e.type === 'accommodation').map(ev => `
+              <div class="accom-card">
+                ${ev.imageUrl ? `<img class="accom-img" src="${ev.imageUrl}" />` : '<div class="accom-img"></div>'}
+                <div class="accom-body">
+                  <div class="accom-title">${escapeHtml(ev.metadata?.hotelName || ev.title)}</div>
+                  <div style="font-size: 10px; color: var(--accent); font-weight: 700; margin-bottom: 5px;">DAY ${d.dayNumber} • ${escapeHtml(ev.metadata?.category || 'Standard')}</div>
+                  <div class="accom-meta">
+                    <span>${escapeHtml(ev.metadata?.roomType || 'Standard Room')}</span>
+                    <span>${escapeHtml(ev.metadata?.mealPlan || 'EP Plan')}</span>
                   </div>
                 </div>
               </div>
-            `).join('') : `
-              <div class="event">
-                <div class="event-icon">📌</div>
-                <div class="event-content">
-                  <div class="event-desc" style="color: #94a3b8;">No events planned for this day</div>
+            `)).join('')}
+          </div>
+        ` : ''}
+
+        <div class="section-header">
+          <h2 class="h-serif">The Experience</h2>
+          <div class="line"></div>
+        </div>
+
+        <!-- Day Stories -->
+        ${itinerary.days.map((day, idx) => `
+          <div class="day-wrap">
+            <div class="day-row" style="${idx % 2 !== 0 ? 'flex-direction: row-reverse;' : ''}">
+              <div class="day-content">
+                <div class="day-num-box">${day.dayNumber}</div>
+                <h3 class="day-title h-serif">${escapeHtml(day.title || `Exploring ${day.destination?.name || 'Nature'}`)}</h3>
+                <div class="day-desc">${escapeHtml(day.description || 'Discover the hidden gems and breathtaking landscapes. This day is specially curated to provide an immersive experience into the local culture and natural beauty.')}</div>
+                
+                <div style="display: grid; grid-template-columns: 1fr; gap: 8px;">
+                  ${day.events.filter(e => e.type !== 'accommodation').map(ev => `
+                    <div class="event-item">
+                      <span style="font-size: 14px;">${EVENT_TYPE_ICONS[ev.type] || '•'}</span>
+                      <span>${escapeHtml(ev.title)}</span>
+                      ${ev.startTime ? `<span style="margin-left: auto; color: var(--muted); font-size: 9px;">${escapeHtml(ev.startTime)}</span>` : ''}
+                    </div>
+                  `).join('')}
                 </div>
               </div>
-            `}
+              <div class="day-img-wrap">
+                ${day.imageUrl ? `<img src="${day.imageUrl}" />` : '<div style="width:100%; height:100%; background:#f1f5f9;"></div>'}
+              </div>
+            </div>
           </div>
         `).join('')}
 
+        <!-- Policies -->
+        <div class="policy-grid">
+          <div class="policy-col">
+            <h4 class="h-serif">Inclusions</h4>
+            <div class="policy-content">${itinerary.inclusionsHtml || 'Standard service inclusions apply.'}</div>
+          </div>
+          <div class="policy-col">
+            <h4 class="h-serif">Exclusions</h4>
+            <div class="policy-content">${itinerary.exclusionsHtml || 'Personal expenses and tips excluded.'}</div>
+          </div>
+        </div>
+
+        <!-- Pricing Summary -->
+        ${itinerary.perPersonCost ? `
+          <div class="price-box">
+            <div class="price-label">Estimated Investment</div>
+            <div class="price-amount">₹${Number(itinerary.perPersonCost).toLocaleString('en-IN')} <span style="font-size: 14px; color: var(--muted); font-weight: 400;">/ Person</span></div>
+            ${itinerary.totalCost ? `<div style="font-size: 11px; color: var(--muted); font-weight: 700; margin-top: 5px; letter-spacing: 0.1em;">TOTAL PACKAGE: ₹${Number(itinerary.totalCost).toLocaleString('en-IN')}</div>` : ''}
+          </div>
+        ` : ''}
+
         <div class="footer">
-          Generated with TravelCRM • Thank you for choosing us!
+          CRAFTED BY TRAVELCRM • WWW.IMAGICAHOLIDAYS.COM
         </div>
       </div>
     </body>
     </html>
   `;
 };
+
 
 const exportPdf = async (req, res, next) => {
   try {
