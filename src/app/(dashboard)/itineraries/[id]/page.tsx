@@ -152,84 +152,84 @@ export default function ItineraryBuilderPage() {
       <input ref={galleryRef} type="file" accept="image/*" multiple className="hidden" onChange={handleGalleryUpload} />
       <input ref={eventImgRef} type="file" accept="image/*" className="hidden" onChange={handleEventImageUpload} />
 
-      {/* Header with cover photo */}
-      <div className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-700 text-white">
-        {itinerary.coverPhotoUrl && <img src={itinerary.coverPhotoUrl} alt="" className="absolute inset-0 w-full h-full object-cover opacity-40" />}
-        <div className="relative p-6 md:p-8">
-          <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
-            <div className="flex-1">
-              <Link href="/itineraries" className="inline-flex items-center gap-1 text-white/70 hover:text-white text-xs font-medium mb-3 transition-colors">
-                <ArrowLeft className="w-3.5 h-3.5" /> Back to Itineraries
-              </Link>
-              {editingTitle ? (
-                <div className="flex items-center gap-2 max-w-xl">
-                  <Input 
-                    value={titleInput} 
-                    onChange={e => setTitleInput(e.target.value)}
-                    className="bg-white/20 border-white/30 text-white placeholder:text-white/50 font-black text-2xl h-12"
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        updateMut.mutate({ title: titleInput }, { onSuccess: () => setEditingTitle(false) });
-                      } else if (e.key === 'Escape') setEditingTitle(false);
-                    }}
-                    autoFocus
-                  />
-                  <Button size="sm" variant="secondary" onClick={() => {
-                    updateMut.mutate({ title: titleInput }, { onSuccess: () => setEditingTitle(false) });
-                  }}><Check className="w-4 h-4" /></Button>
-                  <Button size="sm" variant="ghost" className="text-white hover:bg-white/20" onClick={() => setEditingTitle(false)}><X className="w-4 h-4" /></Button>
+       {/* Header with cover photo */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col min-h-0">
+        <div className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-700 text-white shadow-xl">
+          {itinerary.coverPhotoUrl && <img src={itinerary.coverPhotoUrl} alt="" className="absolute inset-0 w-full h-full object-cover opacity-40 transition-opacity duration-700" />}
+          <div className="relative p-6 md:p-8">
+            <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
+              <div className="flex-1">
+                <Link href="/itineraries" className="inline-flex items-center gap-1 text-white/70 hover:text-white text-xs font-medium mb-3 transition-colors">
+                  <ArrowLeft className="w-3.5 h-3.5" /> Back to Itineraries
+                </Link>
+                {editingTitle ? (
+                  <div className="flex items-center gap-2 max-w-xl">
+                    <Input 
+                      value={titleInput} 
+                      onChange={e => setTitleInput(e.target.value)}
+                      className="bg-white/20 border-white/30 text-white placeholder:text-white/50 font-black text-2xl h-12 rounded-xl focus:ring-0 focus:border-white/50"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          updateMut.mutate({ title: titleInput }, { onSuccess: () => setEditingTitle(false) });
+                        } else if (e.key === 'Escape') setEditingTitle(false);
+                      }}
+                      autoFocus
+                    />
+                    <Button size="sm" variant="secondary" className="rounded-xl" onClick={() => {
+                      updateMut.mutate({ title: titleInput }, { onSuccess: () => setEditingTitle(false) });
+                    }}><Check className="w-4 h-4" /></Button>
+                    <Button size="sm" variant="ghost" className="text-white hover:bg-white/20 rounded-xl" onClick={() => setEditingTitle(false)}><X className="w-4 h-4" /></Button>
+                  </div>
+                ) : (
+                  <h1 className="text-2xl md:text-3xl font-black tracking-tight flex items-center gap-3 group cursor-pointer" onClick={() => { setTitleInput(itinerary.title); setEditingTitle(true); }}>
+                    {itinerary.title}
+                    <Pencil className="w-4 h-4 text-white/40 opacity-0 group-hover:opacity-100 transition-opacity" />
+                  </h1>
+                )}
+                {allDestinations.length > 0 && (
+                  <div className="flex items-center gap-2 mt-2 flex-wrap">
+                    <MapPin className="w-3.5 h-3.5 text-white/60" />
+                    {allDestinations.map((d: string) => <span key={d} className="text-[10px] uppercase tracking-widest bg-white/20 px-2 py-0.5 rounded font-bold">{d}</span>)}
+                  </div>
+                )}
+                <div className="flex items-center gap-2 mt-2">
+                  <span className="bg-white/20 px-2 py-1 flex items-center rounded-md font-bold text-[10px] uppercase tracking-wider">
+                    {itinerary.status}
+                  </span>
+                  <span className="text-white/60 text-xs font-bold uppercase tracking-wider">{itinerary.days?.length || 0} Days</span>
                 </div>
-              ) : (
-                <h1 className="text-2xl md:text-3xl font-black tracking-tight flex items-center gap-3 group cursor-pointer" onClick={() => { setTitleInput(itinerary.title); setEditingTitle(true); }}>
-                  {itinerary.title}
-                  <Pencil className="w-4 h-4 text-white/40 opacity-0 group-hover:opacity-100 transition-opacity" />
-                </h1>
-              )}
-              {allDestinations.length > 0 && (
-                <div className="flex items-center gap-2 mt-2 flex-wrap">
-                  <MapPin className="w-3.5 h-3.5 text-white/60" />
-                  {allDestinations.map((d: string) => <span key={d} className="text-xs bg-white/20 px-2 py-0.5 rounded-md font-medium">{d}</span>)}
-                </div>
-              )}
-              <div className="flex items-center gap-2 mt-2">
-                <span className="bg-white/20 px-2 py-1 flex items-center rounded-md font-bold text-xs capitalize">
-                  {itinerary.status}
-                </span>
-                <span className="text-white/60 text-sm">{itinerary.days?.length || 0} Days</span>
               </div>
-            </div>
-            
-            <div className="flex flex-wrap gap-2 md:justify-end shrink-0 items-center">
-              {/* Compact Tabs in Header */}
-              <TabsList className="bg-white/10 border border-white/20 rounded-xl p-1 h-9 mr-2">
-                <TabsTrigger value="build" className="rounded-lg font-bold text-[10px] uppercase tracking-wider text-white/70 data-[state=active]:bg-white data-[state=active]:text-primary px-3 transition-all">Build</TabsTrigger>
-                <TabsTrigger value="pricing" className="rounded-lg font-bold text-[10px] uppercase tracking-wider text-white/70 data-[state=active]:bg-white data-[state=active]:text-primary px-3 transition-all">Pricing</TabsTrigger>
-                <TabsTrigger value="final" className="rounded-lg font-bold text-[10px] uppercase tracking-wider text-white/70 data-[state=active]:bg-white data-[state=active]:text-primary px-3 transition-all">Final</TabsTrigger>
-              </TabsList>
-
-              <Button size="sm" variant="secondary" className="rounded-xl font-bold text-xs h-9" onClick={() => coverRef.current?.click()}>
-                <Camera className="w-3.5 h-3.5 mr-1" /> Cover
-              </Button>
-              <Button size="sm" variant="secondary" className="rounded-xl font-bold text-xs h-9" onClick={handleShare}>
-                <Share2 className="w-3.5 h-3.5 mr-1" /> Share
-              </Button>
-              <Button size="sm" variant="secondary" className="rounded-xl font-bold text-xs h-9" onClick={handleExportPdf}>
-                <Download className="w-3.5 h-3.5 mr-1" /> PDF
-              </Button>
               
-              {itinerary.status !== 'finalized' && (
-                <Button size="sm" className="rounded-xl font-bold text-xs h-9 bg-emerald-500 hover:bg-emerald-600 border-none text-white ml-1 shadow-lg shadow-emerald-500/20" onClick={handleFinalize}>
-                  <Check className="w-3.5 h-3.5 mr-1 text-white" /> Finalize
+              <div className="flex flex-wrap gap-2 md:justify-end shrink-0 items-center">
+                {/* Compact Tabs in Header */}
+                <TabsList className="bg-white/10 border border-white/20 rounded-xl p-1 h-9 mr-2">
+                  <TabsTrigger value="build" className="rounded-lg font-bold text-[10px] uppercase tracking-wider text-white/70 data-[state=active]:bg-white data-[state=active]:text-primary px-3 transition-all">Build</TabsTrigger>
+                  <TabsTrigger value="pricing" className="rounded-lg font-bold text-[10px] uppercase tracking-wider text-white/70 data-[state=active]:bg-white data-[state=active]:text-primary px-3 transition-all">Pricing</TabsTrigger>
+                  <TabsTrigger value="final" className="rounded-lg font-bold text-[10px] uppercase tracking-wider text-white/70 data-[state=active]:bg-white data-[state=active]:text-primary px-3 transition-all">Final</TabsTrigger>
+                </TabsList>
+
+                <Button size="sm" variant="secondary" className="rounded-xl font-bold text-xs h-9" onClick={() => coverRef.current?.click()}>
+                  <Camera className="w-3.5 h-3.5 mr-1" /> Cover
                 </Button>
-              )}
+                <Button size="sm" variant="secondary" className="rounded-xl font-bold text-xs h-9" onClick={handleShare}>
+                  <Share2 className="w-3.5 h-3.5 mr-1" /> Share
+                </Button>
+                <Button size="sm" variant="secondary" className="rounded-xl font-bold text-xs h-9" onClick={handleExportPdf}>
+                  <Download className="w-3.5 h-3.5 mr-1" /> PDF
+                </Button>
+                
+                {itinerary.status !== 'finalized' && (
+                  <Button size="sm" className="rounded-xl font-bold text-xs h-9 bg-emerald-500 hover:bg-emerald-600 border-none text-white ml-1 shadow-lg shadow-emerald-500/20" onClick={handleFinalize}>
+                    <Check className="w-3.5 h-3.5 mr-1 text-white" /> Finalize
+                  </Button>
+                )}
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col min-h-0">
         {/* Main Content Area */}
-        <div className="flex-1 mt-4">
+        <div className="mt-4">
           {/* ═══ BUILD TAB ═══ */}
           <TabsContent value="build" className="space-y-0 mt-0 data-[state=inactive]:hidden">
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
