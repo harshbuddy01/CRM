@@ -364,26 +364,10 @@ export default function ItineraryBuilderPage() {
                             </button>
 
                             {editingDayId === selectedDay.id ? (
-                              <div className="space-y-4 pr-10 animate-in fade-in slide-in-from-top-1">
-                                <div>
-                                  <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1 block">Headline</label>
-                                  <Input 
-                                    className="font-black text-lg bg-slate-50 border-slate-200 h-10 rounded-xl focus:ring-0 focus:border-blue-500"
-                                    value={selectedDay.title || ''}
-                                    onChange={(e) => updateDayMut.mutate({ dayId: selectedDay.id, data: { title: e.target.value } })}
-                                    placeholder="Enter Day Headline..."
-                                  />
-                                </div>
-                                <div>
-                                  <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1 block">Description</label>
-                                  <textarea 
-                                    className="w-full min-h-[100px] p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all resize-none"
-                                    value={selectedDay.description || ''}
-                                    onChange={(e) => updateDayMut.mutate({ dayId: selectedDay.id, data: { description: e.target.value } })}
-                                    placeholder="Write a beautiful description..."
-                                  />
-                                </div>
-                              </div>
+                              <EditingDayForm 
+                                day={selectedDay} 
+                                onSave={(data) => updateDayMut.mutate({ dayId: selectedDay.id, data })}
+                              />
                             ) : (
                               <div className="pr-8">
                                 <div className="text-[9px] font-black uppercase tracking-widest text-blue-600 mb-2">Editorial Intro</div>
@@ -513,6 +497,49 @@ export default function ItineraryBuilderPage() {
 /* ═══════════════════════════════════════════════════════════════
    SUB-COMPONENTS
    ═══════════════════════════════════════════════════════════════ */
+
+function EditingDayForm({ day, onSave }: { day: any; onSave: (data: any) => void }) {
+  const [title, setTitle] = useState(day.title || '');
+  const [description, setDescription] = useState(day.description || '');
+
+  // Sync local state if day changes externally (e.g. from template)
+  useEffect(() => {
+    setTitle(day.title || '');
+    setDescription(day.description || '');
+  }, [day.title, day.description]);
+
+  const handleSave = () => {
+    if (title !== day.title || description !== day.description) {
+      onSave({ title, description });
+    }
+  };
+
+  return (
+    <div className="space-y-4 pr-10 animate-in fade-in slide-in-from-top-1">
+      <div>
+        <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1 block">Headline</label>
+        <Input 
+          className="font-black text-lg bg-slate-50 border-slate-200 h-10 rounded-xl focus:ring-0 focus:border-blue-500"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          onBlur={handleSave}
+          onKeyDown={(e) => e.key === 'Enter' && handleSave()}
+          placeholder="Enter Day Headline..."
+        />
+      </div>
+      <div>
+        <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1 block">Description</label>
+        <textarea 
+          className="w-full min-h-[100px] p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all resize-none"
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          onBlur={handleSave}
+          placeholder="Write a beautiful description..."
+        />
+      </div>
+    </div>
+  );
+}
 
 function SuggestionsPanel({ selectedDay, onAddEvent, onUpdateDay }: { selectedDay: any; onAddEvent: (data: any) => void; onUpdateDay: (data: any) => void }) {
   const [search, setSearch] = useState('');
