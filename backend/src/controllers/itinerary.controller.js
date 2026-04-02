@@ -335,6 +335,7 @@ module.exports = {
   uploadEventImage,
   addDay,
   updateDay,
+  uploadDayImage,
   removeDay,
   addEvent,
   updateEvent,
