@@ -143,6 +143,7 @@ const getById = async (id) => {
 const update = async (id, data) => {
   await getById(id); // ensure exists
   const {
+    title, description, status, totalCost, perPersonCost,
     currency, adults, children, markupPct, 
     inclusionsHtml, exclusionsHtml, paymentPolicyHtml, cancellationPolicyHtml, termsHtml,
   } = data;

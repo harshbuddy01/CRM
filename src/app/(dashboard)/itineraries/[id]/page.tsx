@@ -20,6 +20,7 @@ import {
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
+import DOMPurify from 'dompurify';
 
 const EVENT_TYPES = [
   { value: 'accommodation', label: 'Accommodation', icon: Hotel, color: 'text-blue-600 bg-blue-50' },
@@ -1083,8 +1084,13 @@ function PricingTab({ itinerary, onUpdate }: { itinerary: any; onUpdate: (data: 
 }
 
 function FinalPreviewTab({ itinerary, onShare, onExport }: { itinerary: any; onShare: () => void; onExport: () => void }) {
-  const accomEvents = itinerary.days?.flatMap((d: any) => (d.events || []).filter((e: any) => e.type === 'accommodation')) || [];
+  const accomEvents = (itinerary.days || []).flatMap((d: any) => (d.events || []).filter((e: any) => e.type === 'accommodation'));
   
+  const sanitize = (html: string) => {
+    if (typeof window === 'undefined') return html;
+    return DOMPurify.sanitize(html);
+  };
+
   return (
     <div className="max-w-4xl mx-auto space-y-12 pb-20">
       <div className="flex justify-end gap-3 print:hidden">
@@ -1104,7 +1110,7 @@ function FinalPreviewTab({ itinerary, onShare, onExport }: { itinerary: any; onS
             <div className="h-px flex-1 bg-slate-100" />
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {itinerary.days?.map((day: any) => day.events?.filter((e: any) => e.type === 'accommodation').map((ev: any) => (
+            {(itinerary.days || []).map((day: any) => (day.events || []).filter((e: any) => e.type === 'accommodation').map((ev: any) => (
               <motion.div key={ev.id} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
                 <Card className="rounded-[32px] border-slate-100 overflow-hidden group shadow-sm hover:shadow-xl transition-all duration-500">
                   <div className="aspect-[16/10] relative overflow-hidden bg-slate-100">
@@ -1168,7 +1174,7 @@ function FinalPreviewTab({ itinerary, onShare, onExport }: { itinerary: any; onS
         </div>
         
         <div className="space-y-16">
-          {itinerary.days?.map((day: any, idx: number) => (
+          {(itinerary.days || []).map((day: any, idx: number) => (
             <motion.div 
               key={day.id} 
               initial={{ opacity: 0, x: idx % 2 === 0 ? -20 : 20 }} 
@@ -1176,7 +1182,7 @@ function FinalPreviewTab({ itinerary, onShare, onExport }: { itinerary: any; onS
               viewport={{ once: true }}
               className="group"
             >
-              <div className={cn("grid grid-cols-1 lg:grid-cols-2 gap-10 items-center", idx % 2 === 0 ? '' : 'lg:flex-row-reverse')}>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
                 <div className={cn("space-y-6", idx % 2 === 0 ? 'lg:order-1' : 'lg:order-2')}>
                   <div className="inline-flex items-center gap-3">
                     <span className="w-12 h-12 rounded-[20px] bg-slate-900 flex items-center justify-center text-white font-serif text-xl shadow-2xl shadow-slate-200">
@@ -1201,7 +1207,7 @@ function FinalPreviewTab({ itinerary, onShare, onExport }: { itinerary: any; onS
                     </p>
                   </div>
 
-                  {day.events?.length > 0 && (
+                  {(day.events || []).length > 0 && (
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       {day.events.map((ev: any) => {
                         const evType = getEventType(ev.type);
@@ -1256,7 +1262,7 @@ function FinalPreviewTab({ itinerary, onShare, onExport }: { itinerary: any; onS
                   </div>
                   <h4 className="font-serif text-2xl text-slate-900">Inclusions</h4>
                 </div>
-                <div className="text-sm text-slate-600 leading-relaxed prose prose-slate prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: itinerary.inclusionsHtml }} />
+                <div className="text-sm text-slate-600 leading-relaxed prose prose-slate prose-sm max-w-none whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: sanitize(itinerary.inclusionsHtml) }} />
               </div>
             )}
             {itinerary.exclusionsHtml && (
@@ -1267,7 +1273,7 @@ function FinalPreviewTab({ itinerary, onShare, onExport }: { itinerary: any; onS
                   </div>
                   <h4 className="font-serif text-2xl text-slate-900">Exclusions</h4>
                 </div>
-                <div className="text-sm text-slate-600 leading-relaxed prose prose-slate prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: itinerary.exclusionsHtml }} />
+                <div className="text-sm text-slate-600 leading-relaxed prose prose-slate prose-sm max-w-none whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: sanitize(itinerary.exclusionsHtml) }} />
               </div>
             )}
           </div>
@@ -1279,7 +1285,7 @@ function FinalPreviewTab({ itinerary, onShare, onExport }: { itinerary: any; onS
                   <CreditCard className="w-4 h-4 text-blue-600" />
                   <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Payment</span>
                 </div>
-                <div className="text-xs text-slate-500 leading-relaxed whitespace-pre-wrap">{itinerary.paymentPolicyHtml}</div>
+                <div className="text-xs text-slate-500 leading-relaxed whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: sanitize(itinerary.paymentPolicyHtml) }} />
               </div>
             )}
             {itinerary.cancellationPolicyHtml && (
@@ -1288,7 +1294,7 @@ function FinalPreviewTab({ itinerary, onShare, onExport }: { itinerary: any; onS
                   <AlertTriangle className="w-4 h-4 text-amber-600" />
                   <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Cancellation</span>
                 </div>
-                <div className="text-xs text-slate-500 leading-relaxed whitespace-pre-wrap">{itinerary.cancellationPolicyHtml}</div>
+                <div className="text-xs text-slate-500 leading-relaxed whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: sanitize(itinerary.cancellationPolicyHtml) }} />
               </div>
             )}
             {itinerary.termsHtml && (
@@ -1297,7 +1303,7 @@ function FinalPreviewTab({ itinerary, onShare, onExport }: { itinerary: any; onS
                   <Shield className="w-4 h-4 text-slate-600" />
                   <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Security</span>
                 </div>
-                <div className="text-xs text-slate-500 leading-relaxed whitespace-pre-wrap">{itinerary.termsHtml}</div>
+                <div className="text-xs text-slate-500 leading-relaxed whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: sanitize(itinerary.termsHtml) }} />
               </div>
             )}
           </div>

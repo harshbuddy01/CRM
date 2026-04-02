@@ -186,20 +186,24 @@ const escapeHtml = (text) => {
     .replace(/`/g, '&#x60;');
 };
 
+const sanitizeHtml = require('sanitize-html');
+
+const getSafeImageUrl = (url) => {
+  if (!url) return '';
+  try {
+    const urlObj = new URL(url, 'http://dummy');
+    return (urlObj.protocol === 'http:' || urlObj.protocol === 'https:') ? encodeURI(url) : '';
+  } catch(e) { return ''; }
+};
+
 const generateItineraryHtml = (itinerary) => {
   const totalDays = itinerary.days.length;
   const destinations = [...new Set(itinerary.days.map(d => d.destination?.name).filter(Boolean))].map(escapeHtml);
-  let safeCoverUrl = '';
-  if (itinerary.coverPhotoUrl) {
-    try {
-      const urlObj = new URL(itinerary.coverPhotoUrl, 'http://dummy');
-      if (urlObj.protocol === 'http:' || urlObj.protocol === 'https:') {
-        safeCoverUrl = encodeURI(itinerary.coverPhotoUrl);
-      }
-    } catch(e) { }
-  }
+  const safeCoverUrl = getSafeImageUrl(itinerary.coverPhotoUrl);
+  const safeInclusions = sanitizeHtml(itinerary.inclusionsHtml || '', { allowedTags: sanitizeHtml.defaults.allowedTags.concat(['img']) });
+  const safeExclusions = sanitizeHtml(itinerary.exclusionsHtml || '', { allowedTags: sanitizeHtml.defaults.allowedTags.concat(['img']) });
 
-  const accomEvents = itinerary.days?.flatMap(d => (d.events || []).filter(e => e.type === 'accommodation')) || [];
+  const accomEvents = (itinerary.days || []).flatMap(d => (d.events || []).filter(e => e.type === 'accommodation'));
 
   return `
     <html>
@@ -234,12 +238,12 @@ const generateItineraryHtml = (itinerary) => {
         .section-header h2 { font-size: 24px; font-family: 'Playfair Display', serif; white-space: nowrap; }
         .section-header .line { height: 1px; background: var(--border); width: 100%; }
 
-        .accom-grid { display: grid; grid-cols: 2; gap: 20px; }
+        .accom-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
         .accom-card { border: 1px solid var(--border); border-radius: 16px; overflow: hidden; margin-bottom: 15px; page-break-inside: avoid; }
         .accom-img { width: 100%; height: 160px; object-fit: cover; background: #f8fafc; }
         .accom-body { padding: 15px; }
         .accom-title { font-family: 'Playfair Display', serif; font-size: 16px; font-weight: 700; margin-bottom: 4px; }
-        .accom-meta { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); border-top: 1px solid #f8fafc; pt: 10px; mt: 10px; }
+        .accom-meta { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); border-top: 1px solid #f8fafc; padding-top: 10px; margin-top: 10px; }
 
         /* Day Itinerary Section */
         .day-wrap { margin-bottom: 50px; page-break-inside: avoid; }
@@ -255,7 +259,7 @@ const generateItineraryHtml = (itinerary) => {
         .event-item { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; font-size: 11px; font-weight: 600; color: #1e293b; background: #f8fafc; padding: 6px 12px; border-radius: 8px; }
 
         /* Pricing Section */
-        .price-box { mt: 60px; text-align: center; border-top: 2px solid var(--border); padding-top: 40px; page-break-inside: avoid; }
+        .price-box { margin-top: 60px; text-align: center; border-top: 2px solid var(--border); padding-top: 40px; page-break-inside: avoid; }
         .price-label { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.2em; color: var(--muted); margin-bottom: 10px; }
         .price-amount { font-family: 'Playfair Display', serif; font-size: 38px; color: var(--primary); }
 
@@ -291,9 +295,9 @@ const generateItineraryHtml = (itinerary) => {
             <div class="line"></div>
           </div>
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 40px;">
-            ${itinerary.days?.flatMap(d => (d.events || []).filter(e => e.type === 'accommodation').map(ev => `
+            ${(itinerary.days || []).flatMap(d => (d.events || []).filter(e => e.type === 'accommodation').map(ev => `
               <div class="accom-card">
-                ${ev.imageUrl ? `<img class="accom-img" src="${ev.imageUrl}" />` : '<div class="accom-img"></div>'}
+                ${ev.imageUrl ? `<img class="accom-img" src="${getSafeImageUrl(ev.imageUrl)}" />` : '<div class="accom-img"></div>'}
                 <div class="accom-body">
                   <div class="accom-title">${escapeHtml(ev.metadata?.hotelName || ev.title)}</div>
                   <div style="font-size: 10px; color: var(--accent); font-weight: 700; margin-bottom: 5px;">DAY ${d.dayNumber} • ${escapeHtml(ev.metadata?.category || 'Standard')}</div>
@@ -313,7 +317,7 @@ const generateItineraryHtml = (itinerary) => {
         </div>
 
         <!-- Day Stories -->
-        ${itinerary.days.map((day, idx) => `
+        ${(itinerary.days || []).map((day, idx) => `
           <div class="day-wrap">
             <div class="day-row" style="${idx % 2 !== 0 ? 'flex-direction: row-reverse;' : ''}">
               <div class="day-content">
@@ -322,7 +326,7 @@ const generateItineraryHtml = (itinerary) => {
                 <div class="day-desc">${escapeHtml(day.description || 'Discover the hidden gems and breathtaking landscapes. This day is specially curated to provide an immersive experience into the local culture and natural beauty.')}</div>
                 
                 <div style="display: grid; grid-template-columns: 1fr; gap: 8px;">
-                  ${day.events.filter(e => e.type !== 'accommodation').map(ev => `
+                  ${(day.events || []).filter(e => e.type !== 'accommodation').map(ev => `
                     <div class="event-item">
                       <span style="font-size: 14px;">${EVENT_TYPE_ICONS[ev.type] || '•'}</span>
                       <span>${escapeHtml(ev.title)}</span>
@@ -332,7 +336,7 @@ const generateItineraryHtml = (itinerary) => {
                 </div>
               </div>
               <div class="day-img-wrap">
-                ${day.imageUrl ? `<img src="${day.imageUrl}" />` : '<div style="width:100%; height:100%; background:#f1f5f9;"></div>'}
+                ${day.imageUrl ? `<img src="${getSafeImageUrl(day.imageUrl)}" />` : '<div style="width:100%; height:100%; background:#f1f5f9;"></div>'}
               </div>
             </div>
           </div>
@@ -342,11 +346,11 @@ const generateItineraryHtml = (itinerary) => {
         <div class="policy-grid">
           <div class="policy-col">
             <h4 class="h-serif">Inclusions</h4>
-            <div class="policy-content">${itinerary.inclusionsHtml || 'Standard service inclusions apply.'}</div>
+            <div class="policy-content">${safeInclusions || 'Standard service inclusions apply.'}</div>
           </div>
           <div class="policy-col">
             <h4 class="h-serif">Exclusions</h4>
-            <div class="policy-content">${itinerary.exclusionsHtml || 'Personal expenses and tips excluded.'}</div>
+            <div class="policy-content">${safeExclusions || 'Personal expenses and tips excluded.'}</div>
           </div>
         </div>
 
