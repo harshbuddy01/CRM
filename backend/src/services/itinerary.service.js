@@ -503,6 +503,7 @@ module.exports = {
   getByShareSlug,
   addDay,
   updateDay,
+  uploadDayImage,
   removeDay,
   addEvent,
   updateEvent,
