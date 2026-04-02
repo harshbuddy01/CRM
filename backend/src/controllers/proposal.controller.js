@@ -389,6 +389,22 @@ const confirmProposal = async (req, res, next) => {
     // 1. Get proposal with query details for tour data
     const proposal = await proposalService.getProposalById(id, req.user.id, canViewAll);
 
+    // Validate status
+    if (proposal.status !== 'pending') {
+      return res.status(400).json({
+        success: false,
+        message: `Only a 'pending' proposal can be confirmed. Current status is '${proposal.status}'.`
+      });
+    }
+
+    // Validate travel dates
+    if (!proposal.query.travelDateFrom || !proposal.query.travelDateTo) {
+      return res.status(400).json({
+        success: false,
+        message: 'Cannot confirm proposal: The associated lead (query) must have valid travel dates to create a Tour.'
+      });
+    }
+
     // 2. Perform transaction to ensure atomic consistency
     const result = await prisma.$transaction(async (tx) => {
       // A. Mark this proposal as confirmed
@@ -414,13 +430,22 @@ const confirmProposal = async (req, res, next) => {
       });
 
       // D. Create or link a Tour record (Ops Phase starts)
-      // We generate a deterministic tour code if it doesn't exist
-      const tourCode = `TUR-${new Date().getFullYear()}-${proposal.query.queryCode?.split('-').pop() || Math.random().toString(36).substr(2, 5).toUpperCase()}`;
+      // Robust tour code generation
+      const crypto = require('crypto');
+      const baseCode = (proposal.query.queryCode && proposal.query.queryCode.trim() !== '')
+        ? proposal.query.queryCode.split('-').pop()
+        : crypto.randomUUID().substring(0, 8).toUpperCase();
+      
+      const tourCode = `TUR-${new Date().getFullYear()}-${baseCode}`;
       
       // Check if tour already exists for this query
       const existingTour = await tx.tour.findFirst({
         where: { queryId: proposal.queryId }
       });
+
+      const startDate = updatedQuery.travelDateFrom;
+      const endDate = updatedQuery.travelDateTo;
+      const totalPax = (updatedQuery.adults || 0) + (updatedQuery.children || 0);
 
       let tour;
       if (existingTour) {
@@ -430,9 +455,9 @@ const confirmProposal = async (req, res, next) => {
             proposalId: id,
             itineraryId: proposal.itineraryId,
             status: 'upcoming',
-            startDate: updatedQuery.travelDateFrom || new Date(),
-            endDate: updatedQuery.travelDateTo || new Date(),
-            totalPax: (updatedQuery.adults || 0) + (updatedQuery.children || 0),
+            startDate,
+            endDate,
+            totalPax,
           }
         });
       } else {
@@ -443,9 +468,9 @@ const confirmProposal = async (req, res, next) => {
             itineraryId: proposal.itineraryId,
             tourCode: tourCode,
             status: 'upcoming',
-            startDate: updatedQuery.travelDateFrom || new Date(),
-            endDate: updatedQuery.travelDateTo || new Date(),
-            totalPax: (updatedQuery.adults || 0) + (updatedQuery.children || 0),
+            startDate,
+            endDate,
+            totalPax,
           }
         });
       }

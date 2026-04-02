@@ -866,7 +866,7 @@ function QueryProposalsList({ queryId, queryCode, customerName, customerEmail }:
                     {p.itinerary?.title || `Proposal for ${customerName}`}
                   </p>
                   <p className="text-[11px] font-medium text-slate-500 flex items-center gap-2 mt-1">
-                    <Clock className="w-3 h-3" /> Updated {new Date(p.updatedAt).toLocaleDateString()}
+                    <Clock className="w-3 h-3" /> Updated {p.updatedAt ? new Date(p.updatedAt).toLocaleDateString() : 'Unknown'}
                   </p>
                 </div>
                 </div>

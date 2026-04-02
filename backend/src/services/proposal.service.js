@@ -175,7 +175,8 @@ const getProposalById = async (id, userId = null, canViewAll = false) => {
   const proposal = await prisma.proposal.findUnique({
     where: { id },
     include: {
-      query: { select: { assignedTo: true, name: true, phone: true, email: true, adults: true, children: true, travelDateFrom: true, travelDateTo: true } },
+      query: { select: { queryCode: true, assignedTo: true, name: true, phone: true, email: true, adults: true, children: true, travelDateFrom: true, travelDateTo: true } },
+      itinerary: true,
       days: {
         orderBy: { dayNumber: 'asc' },
         include: {

@@ -1566,7 +1566,7 @@ function GalleryEditor({ itinerary, onOpenLibrary }: { itinerary: any; onOpenLib
     Array.from(files).forEach(f => fd.append('photos', f));
     
     try {
-      await api.post(`/itineraries/${itinerary.id}/gallery`, fd);
+      await api.post(`/itineraries/${itinerary.id}/gallery`, fd, { headers: { 'Content-Type': 'multipart/form-data' } });
       toast.success('Photos uploaded');
       queryClient.invalidateQueries({ queryKey: ['itinerary', itinerary.id] });
     } catch { toast.error('Upload failed'); }
