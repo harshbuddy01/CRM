@@ -3,8 +3,9 @@
 // ============================================================
 
 const prisma = require('../config/prisma');
-const { NotFoundError, ValidationError } = require('../utils/AppError');
+const { NotFoundError, ValidationError, BusinessError } = require('../utils/AppError');
 const queueService = require('./queue.service');
+const itineraryService = require('./itinerary.service');
 
 const createProposal = async (queryId, userId, data) => {
   // Check if query exists
@@ -74,6 +75,91 @@ const createProposal = async (queryId, userId, data) => {
   return proposal;
 };
 
+const createProposalFromItinerary = async (queryId, userId, itineraryId) => {
+  // Check if query exists
+  const query = await prisma.query.findUnique({ where: { id: queryId } });
+  if (!query) throw new NotFoundError('Query');
+
+  // 1. Duplicate the Itinerary
+  const newItinerary = await itineraryService.duplicate(itineraryId, userId);
+
+  // 2. Auto-increment version logic
+  const existingProposalsCount = await prisma.proposal.count({
+    where: { queryId }
+  });
+  const version = existingProposalsCount + 1;
+
+  // 3. Create Proposal linked to this new itinerary
+  // Note: sellingPrice is calculated from itinerary details or perPersonCost
+  const proposal = await prisma.proposal.create({
+    data: {
+      queryId,
+      itineraryId: newItinerary.id,
+      version,
+      totalCost: newItinerary.totalCost || 0,
+      markupPct: newItinerary.markupPct || 0,
+      sellingPrice: newItinerary.perPersonCost || 0,
+      createdBy: userId,
+      pdfStatus: 'pending',
+    },
+    include: {
+      user: { select: { name: true } },
+      itinerary: { select: { id: true, title: true, coverPhotoUrl: true } }
+    }
+  });
+
+  // Trace Activity
+  await prisma.activityLog.create({
+    data: {
+      entityType: 'query', 
+      entityId: queryId, 
+      action: 'proposal.created',
+      userId: userId, 
+      newValue: { version, fromItinerary: itineraryId, newItinerary: newItinerary.id }
+    }
+  });
+
+  return proposal;
+};
+
+const createProposalWithNewItinerary = async (queryId, userId, title) => {
+  // Check if query exists
+  const query = await prisma.query.findUnique({ where: { id: queryId } });
+  if (!query) throw new NotFoundError('Query');
+
+  // 1. Create a blank Itinerary
+  const itinerary = await itineraryService.create(userId, {
+    title: title || `Itinerary for ${query.name}`,
+    days: [{ title: 'Day 1', description: 'Arrival' }] // Start with 1 day
+  });
+
+  // 2. Auto-increment version
+  const existingProposalsCount = await prisma.proposal.count({
+    where: { queryId }
+  });
+  const version = existingProposalsCount + 1;
+
+  // 3. Create Proposal
+  const proposal = await prisma.proposal.create({
+    data: {
+      queryId,
+      itineraryId: itinerary.id,
+      version,
+      totalCost: 0,
+      markupPct: 0,
+      sellingPrice: 0,
+      createdBy: userId,
+      pdfStatus: 'pending',
+    },
+    include: {
+      user: { select: { name: true } },
+      itinerary: { select: { id: true, title: true, coverPhotoUrl: true } }
+    }
+  });
+
+  return proposal;
+};
+
 const getProposalsByQuery = async (queryId) => {
   return await prisma.proposal.findMany({
     where: { queryId, deletedAt: null },
@@ -126,6 +212,8 @@ const listAllProposals = async () => {
 
 module.exports = {
   createProposal,
+  createProposalFromItinerary,
+  createProposalWithNewItinerary,
   getProposalsByQuery,
   getProposalById,
   listAllProposals,

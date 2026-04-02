@@ -87,6 +87,18 @@ router.post(
   proposalController.createProposal
 );
 
+router.post(
+  '/:id/proposals/insert',
+  can('query.edit_own'),
+  proposalController.insertFromItinerary
+);
+
+router.post(
+  '/:id/proposals/new-itinerary',
+  can('query.edit_own'),
+  proposalController.createWithNewItinerary
+);
+
 router.get(
   '/:id/proposals',
   proposalController.getProposalsByQuery

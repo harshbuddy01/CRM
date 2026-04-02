@@ -8,7 +8,7 @@ import { useAuthStore } from '@/lib/auth-store';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { Calendar as CalendarIcon, Phone, Mail, MapPin, IndianRupee, Users, Send, Loader2, User, Trash2, ArrowLeft, UserPlus, FileText, Plus, MessageCircle, CreditCard, Edit } from 'lucide-react';
+import { Calendar as CalendarIcon, Phone, Mail, MapPin, IndianRupee, Users, Send, Loader2, User, Trash2, ArrowLeft, UserPlus, FileText, Plus, MessageCircle, CreditCard, Edit, Search, Image as ImageIcon } from 'lucide-react';
 import { toast } from 'sonner';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -542,13 +542,12 @@ export default function QueryDetailPage() {
                 </TabsList>
 
                 <TabsContent value="proposals" className="mt-4 p-4">
-                  <div className="flex justify-between items-center mb-6">
-                    <h3 className="text-lg font-semibold">Proposals</h3>
-                    <Link href={`/queries/${params.id}/proposals/new`}>
-                      <Button><Plus className="w-4 h-4 mr-2" /> Build Proposal</Button>
-                    </Link>
-                  </div>
-                  <QueryProposalsList queryId={params.id as string} queryCode={data?.queryCode || ''} customerName={data?.name || ''} customerEmail={data?.email || ''} />
+                  <QueryProposalsList 
+                    queryId={params.id as string} 
+                    queryCode={data?.queryCode || ''} 
+                    customerName={data?.name || ''} 
+                    customerEmail={data?.email || ''} 
+                  />
                 </TabsContent>
 
                 <TabsContent value="mails" className="mt-4 p-4">
@@ -605,11 +604,41 @@ export default function QueryDetailPage() {
 }
 
 function QueryProposalsList({ queryId, queryCode, customerName, customerEmail }: { queryId: string, queryCode: string, customerName: string, customerEmail: string }) {
+  const queryClient = useQueryClient();
+  const router = useRouter();
   const [waModalOpenId, setWaModalOpenId] = useState<string | null>(null);
   const [emailModalOpenId, setEmailModalOpenId] = useState<string | null>(null);
   const [manualWaLink, setManualWaLink] = useState<string | null>(null);
-
+  const [showInsertModal, setShowInsertModal] = useState(false);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
+
+  const createProposalMutation = useMutation({
+    mutationFn: async () => {
+      const res = await api.post(`/queries/${queryId}/proposals/new-itinerary`, { title: `Itinerary for ${customerName}` });
+      return res.data.data;
+    },
+    onSuccess: (data) => {
+      toast.success('Itinerary created & linked');
+      queryClient.invalidateQueries({ queryKey: ['proposals', queryId] });
+      if (data.itineraryId) {
+        router.push(`/itineraries/${data.itineraryId}`);
+      }
+    },
+    onError: (err: any) => toast.error(err.response?.data?.message || 'Failed to create itinerary')
+  });
+
+  const insertProposalMutation = useMutation({
+    mutationFn: async (itineraryId: string) => {
+      const res = await api.post(`/queries/${queryId}/proposals/insert`, { itineraryId });
+      return res.data.data;
+    },
+    onSuccess: () => {
+      toast.success('Itinerary inserted successfully');
+      setShowInsertModal(false);
+      queryClient.invalidateQueries({ queryKey: ['proposals', queryId] });
+    },
+    onError: (err: any) => toast.error(err.response?.data?.message || 'Failed to insert itinerary')
+  });
 
   const downloadPdf = useMutation({
     mutationFn: async (proposal: any) => {
@@ -672,155 +701,201 @@ function QueryProposalsList({ queryId, queryCode, customerName, customerEmail }:
 
   if (isLoading) return <div className="py-8 flex justify-center"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>;
 
-  if (!proposals || proposals.length === 0) {
-    return (
-      <div className="text-center py-12 border-2 border-dashed rounded-lg">
-        <FileText className="w-12 h-12 text-muted-foreground mx-auto mb-4 opacity-50" />
-        <h3 className="text-lg font-medium">No Proposals Yet</h3>
-        <p className="text-muted-foreground mb-4">You haven&apos;t built any proposals for this query.</p>
-        <Link href={`/queries/${queryId}/proposals/new`}>
-          <Button variant="outline"><Plus className="w-4 h-4 mr-2" /> Build the First Proposal</Button>
-        </Link>
+  const renderEmptyState = () => (
+    <div className="text-center py-16 border-2 border-dashed rounded-3xl bg-slate-50/50">
+      <div className="bg-white p-4 rounded-2xl shadow-sm border w-fit mx-auto mb-6">
+        <FileText className="w-10 h-10 text-primary/40" />
       </div>
-    );
-  }
+      <h3 className="text-xl font-black text-slate-900">No Proposals Yet</h3>
+      <p className="text-muted-foreground max-w-sm mx-auto mt-2 mb-8 text-sm font-medium">
+        Every great trip starts with a perfect plan. Create a fresh itinerary or insert from a master template.
+      </p>
+      <div className="flex flex-col sm:flex-row items-center justify-center gap-3 px-4">
+        <Button 
+          className="rounded-xl px-8 font-black shadow-lg shadow-primary/20 w-full sm:w-auto h-12"
+          onClick={() => createProposalMutation.mutate()}
+          disabled={createProposalMutation.isPending}
+        >
+          {createProposalMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Plus className="w-4 h-4 mr-2" />}
+          + Create itinerary
+        </Button>
+        <Button 
+          variant="outline" 
+          className="rounded-xl px-8 font-black border-slate-200 bg-white hover:bg-slate-50 w-full sm:w-auto h-12"
+          onClick={() => setShowInsertModal(true)}
+        >
+          <Plus className="w-4 h-4 mr-2 text-primary" />
+          ↓ Insert itinerary
+        </Button>
+      </div>
+    </div>
+  );
 
   return (
-    <div className="space-y-4">
-      {proposals.map((p: any) => (
-        <div key={p.id} className="p-4 border rounded-lg hover:border-primary transition-colors flex justify-between items-center group">
-          <div className="flex items-center gap-4">
-            {p.itinerary?.coverPhotoUrl ? (
-              <img src={p.itinerary.coverPhotoUrl} alt="" className="hidden sm:block w-14 h-14 rounded-lg object-cover shadow-sm" />
-            ) : (
-              <div className="hidden sm:flex w-12 h-12 bg-primary/10 text-primary rounded-full items-center justify-center font-bold">
-                v{p.version}
-              </div>
-            )}
-            <div>
-              <h4 className="font-semibold text-lg flex items-center gap-2">
-                Version {p.version}
-                <span className="text-xs bg-muted px-2 py-1 rounded-full text-muted-foreground font-normal">
-                  {new Date(p.createdAt).toLocaleDateString('en-GB')}
-                </span>
-              </h4>
-              <p className="text-muted-foreground text-sm mt-1">
-                Selling Price: <span className="font-medium text-foreground inline-flex items-center"><IndianRupee className="w-3 h-3 mr-0.5" />{Number(p.sellingPrice).toLocaleString()}</span> • 
-                Created by {p.user?.name || 'System'}
-              </p>
-              {p.itinerary && (
-                <p className="text-xs text-blue-600 mt-1 flex items-center gap-1 font-medium bg-blue-50 w-fit px-2 py-0.5 rounded-md">
-                  <span className="truncate max-w-[200px]">{p.itinerary.title}</span>
-                </p>
-              )}
-            </div>
+    <div className="space-y-6">
+      {/* Header Actions when proposals exist */}
+      {proposals && proposals.length > 0 && (
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-2">
+          <div>
+            <h3 className="text-lg font-black text-slate-900 tracking-tight">Active Proposals</h3>
+            <p className="text-xs text-muted-foreground font-medium">Manage versions and dispatch to client</p>
           </div>
-          <div className="flex gap-2 items-center">
-            
+          <div className="flex items-center gap-2 w-full sm:w-auto">
             <Button 
-              variant="ghost" 
               size="sm" 
-              onClick={() => downloadPdf.mutate(p)}
-              disabled={downloadingId === p.id}
+              className="rounded-lg font-bold flex-1 sm:flex-none h-9"
+              onClick={() => createProposalMutation.mutate()}
+              disabled={createProposalMutation.isPending}
             >
-              {downloadingId === p.id ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : null}
-              PDF
+              {createProposalMutation.isPending ? <Loader2 className="w-3 h-3 animate-spin mr-2" /> : <Plus className="w-3 h-3 mr-1" />}
+              Create
             </Button>
-
             <Button 
+              size="sm" 
               variant="outline" 
-              size="sm" 
-              className="text-blue-600 border-blue-200 hover:bg-blue-50"
-              onClick={() => setEmailModalOpenId(p.id)}
+              className="rounded-lg font-bold border-slate-200 bg-white flex-1 sm:flex-none h-9"
+              onClick={() => setShowInsertModal(true)}
             >
-              <Mail className="w-4 h-4 mr-2" /> {p.lastSentAt ? 'Resend Email' : 'Email'}
+              <Plus className="w-3 h-3 mr-1 text-primary" />
+              Insert
             </Button>
-
-            <Dialog open={waModalOpenId === p.id} onOpenChange={(open) => {
-              if (!open) {
-                setWaModalOpenId(null);
-                setManualWaLink(null);
-              }
-            }}>
-              {/* @ts-expect-error shadcn generic trigger issue */}
-              <DialogTrigger asChild>
-                <Button 
-                  variant="default" 
-                  size="sm" 
-                  className="bg-emerald-600 hover:bg-emerald-700"
-                  onClick={() => handleWaModalOpen(p.id)}
-                >
-                  <MessageCircle className="w-4 h-4 mr-2" /> {p.lastSentAt ? 'Resend WA' : 'WhatsApp'}
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Send via WhatsApp</DialogTitle>
-                </DialogHeader>
-                {manualWaLink ? (
-                  <div className="flex flex-col items-center justify-center py-6 gap-4">
-                    <p className="text-muted-foreground text-center">Your WhatsApp link is ready.</p>
-                    <Button 
-                      className="bg-emerald-600 hover:bg-emerald-700 w-full"
-                      onClick={() => {
-                        // Security Validation for external WhatsApp link
-                        try {
-                          const url = new URL(manualWaLink as string);
-                          if (url.protocol !== 'https:') {
-                            throw new Error('Insecure protocol');
-                          }
-                          
-                          const isValidHost = 
-                            url.hostname === 'wa.me' || 
-                            url.hostname === 'whatsapp.com' || 
-                            url.hostname.endsWith('.whatsapp.com');
-
-                          if (!isValidHost) {
-                            throw new Error('Unrecognized WhatsApp host');
-                          }
-                          window.open(manualWaLink as string, '_blank');
-                        } catch (err) {
-                          toast.error('Security Block: Invalid WhatsApp link detected');
-                          console.error('Safe-link violation:', err);
-                        } finally {
-                          setWaModalOpenId(null);
-                          setManualWaLink(null);
-                        }
-                      }}
-                    >
-                      Open WhatsApp
-                    </Button>
-                  </div>
-                ) : (
-                  <>
-                    <DialogDescription>
-                      Dispatch a pre-approved Interakt template with the attached Proposal PDF link directly to the customer.
-                    </DialogDescription>
-                    <div className="bg-muted p-4 rounded-md text-sm border font-mono">
-                      <p>COMPANY_NAME</p>
-                      <p>Hi {'{Customer Name}'},</p>
-                      <p>Please find your proposal attached.</p>
-                    </div>
-                    <div className="flex justify-end gap-3 mt-4">
-                      <Button variant="ghost" onClick={() => setWaModalOpenId(null)}>Cancel</Button>
-                      <Button 
-                        className="bg-emerald-600 hover:bg-emerald-700"
-                        onClick={() => sendWhatsapp.mutate(p.id)}
-                        disabled={sendWhatsapp.isPending}
-                      >
-                        {sendWhatsapp.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                        Confirm & Send
-                      </Button>
-                    </div>
-                  </>
-                )}
-              </DialogContent>
-            </Dialog>
-
           </div>
         </div>
-      ))}
+      )}
+
+      {(!proposals || proposals.length === 0) ? renderEmptyState() : (
+        <div className="space-y-4">
+          {proposals.map((p: any) => (
+            <div key={p.id} className="p-4 border rounded-2xl hover:border-primary transition-all bg-white flex justify-between items-center group shadow-sm">
+              <div className="flex items-center gap-4">
+                {p.itinerary?.coverPhotoUrl ? (
+                  <img src={p.itinerary.coverPhotoUrl} alt="" className="hidden sm:block w-14 h-14 rounded-xl object-cover shadow-sm border" />
+                ) : (
+                  <div className="hidden sm:flex w-14 h-14 bg-slate-50 border text-primary rounded-xl items-center justify-center font-bold">
+                    v{p.version}
+                  </div>
+                )}
+                <div>
+                  <h4 className="font-bold text-slate-900 text-base flex items-center gap-2">
+                    Version {p.version}
+                    <span className="text-[10px] bg-slate-100 px-2 py-0.5 rounded-full text-slate-500 font-bold uppercase tracking-wider">
+                      {new Date(p.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}
+                    </span>
+                  </h4>
+                  <p className="text-slate-500 text-xs mt-1 font-medium italic">
+                    Selling Price: <span className="font-bold text-slate-900 not-italic inline-flex items-center"><IndianRupee className="w-3 h-3 mr-0.5" />{Number(p.sellingPrice).toLocaleString()}</span>
+                  </p>
+                  {p.itinerary && (
+                    <p className="text-[11px] text-primary mt-2 flex items-center gap-1.5 font-bold bg-primary/5 w-fit px-2 py-1 rounded-lg border border-primary/10">
+                      <ImageIcon className="w-3 h-3" />
+                      <span className="truncate max-w-[200px]">{p.itinerary.title}</span>
+                    </p>
+                  )}
+                </div>
+              </div>
+              <div className="flex gap-2 items-center">
+                {p.itinerary && (
+                  <Link href={`/itineraries/${p.itinerary.id}`}>
+                    <Button variant="ghost" size="sm" className="rounded-lg h-9 font-bold text-slate-600 hover:text-primary">
+                      <Edit className="w-3.5 h-3.5 mr-1" /> Edit
+                    </Button>
+                  </Link>
+                )}
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="rounded-lg h-9 font-bold text-slate-600"
+                  onClick={() => downloadPdf.mutate(p)}
+                  disabled={downloadingId === p.id}
+                >
+                  {downloadingId === p.id ? <Loader2 className="w-3 h-3 animate-spin mr-2" /> : <FileText className="w-3.5 h-3.5 mr-1" />}
+                  PDF
+                </Button>
+
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="rounded-lg h-9 font-bold text-blue-600 border-blue-100 hover:bg-blue-50"
+                  onClick={() => setEmailModalOpenId(p.id)}
+                >
+                  <Mail className="w-3.5 h-3.5 mr-1.5" /> Email
+                </Button>
+
+                <Dialog open={waModalOpenId === p.id} onOpenChange={(open) => {
+                  if (!open) {
+                    setWaModalOpenId(null);
+                    setManualWaLink(null);
+                  }
+                }}>
+                  {/* @ts-expect-error shadcn generic trigger issue */}
+                  <DialogTrigger asChild>
+                    <Button 
+                      variant="default" 
+                      size="sm" 
+                      className="rounded-lg h-9 font-bold bg-emerald-600 hover:bg-emerald-700 shadow-md shadow-emerald-100"
+                      onClick={() => handleWaModalOpen(p.id)}
+                    >
+                      <MessageCircle className="w-3.5 h-3.5 mr-1.5" /> WhatsApp
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Send via WhatsApp</DialogTitle>
+                    </DialogHeader>
+                    {manualWaLink ? (
+                      <div className="flex flex-col items-center justify-center py-6 gap-4">
+                        <p className="text-muted-foreground text-center">Your WhatsApp link is ready.</p>
+                        <Button 
+                          className="bg-emerald-600 hover:bg-emerald-700 w-full"
+                          onClick={() => {
+                            try {
+                              const url = new URL(manualWaLink as string);
+                              if (url.protocol !== 'https:') throw new Error('Insecure protocol');
+                              window.open(manualWaLink as string, '_blank');
+                            } catch (err) {
+                              toast.error('Invalid WhatsApp link');
+                            } finally {
+                              setWaModalOpenId(null);
+                              setManualWaLink(null);
+                            }
+                          }}
+                        >
+                          Open WhatsApp
+                        </Button>
+                      </div>
+                    ) : (
+                      <>
+                        <DialogDescription>
+                          Dispatch a pre-approved Interakt template with the attached Proposal PDF link directly to the customer.
+                        </DialogDescription>
+                        <div className="flex justify-end gap-3 mt-4">
+                          <Button variant="ghost" onClick={() => setWaModalOpenId(null)}>Cancel</Button>
+                          <Button 
+                            className="bg-emerald-600 hover:bg-emerald-700"
+                            onClick={() => sendWhatsapp.mutate(p.id)}
+                            disabled={sendWhatsapp.isPending}
+                          >
+                            {sendWhatsapp.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                            Confirm & Send
+                          </Button>
+                        </div>
+                      </>
+                    )}
+                  </DialogContent>
+                </Dialog>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
       
+      <InsertItineraryModal 
+        isOpen={showInsertModal} 
+        onClose={() => setShowInsertModal(false)}
+        onSelect={(id) => insertProposalMutation.mutate(id)}
+        isInserting={insertProposalMutation.isPending}
+      />
+
       {emailModalOpenId && (
         <ProposalEmailComposeModal 
           isOpen={true}
@@ -834,9 +909,88 @@ function QueryProposalsList({ queryId, queryCode, customerName, customerEmail }:
   );
 }
 
+function InsertItineraryModal({ isOpen, onClose, onSelect, isInserting }: { isOpen: boolean, onClose: () => void, onSelect: (id: string) => void, isInserting: boolean }) {
+  const [search, setSearch] = useState('');
+  
+  const { data: itineraries, isLoading } = useQuery({
+    queryKey: ['itineraries', 'published', search],
+    queryFn: async () => {
+      const res = await api.get(`/itineraries?status=published&search=${search}`);
+      return res.data.data;
+    },
+    enabled: isOpen
+  });
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="max-w-2xl max-h-[80vh] flex flex-col p-0">
+        <DialogHeader className="p-6 pb-2">
+          <DialogTitle className="text-2xl font-black">Insert Itinerary</DialogTitle>
+          <DialogDescription className="font-medium">
+            Search and select a master template to clone into this lead.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="px-6 py-2">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input 
+              placeholder="Search by title or destination..." 
+              className="pl-10 rounded-xl h-11"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-6 pt-2 space-y-3">
+          {isLoading ? (
+            <div className="py-20 flex justify-center"><Loader2 className="w-8 h-8 animate-spin opacity-20" /></div>
+          ) : itineraries?.length === 0 ? (
+            <div className="py-20 text-center">
+              <p className="text-muted-foreground font-medium">No templates found matching your search.</p>
+            </div>
+          ) : (
+            itineraries?.map((it: any) => (
+              <div 
+                key={it.id} 
+                className="p-3 border rounded-2xl hover:border-primary hover:bg-primary/[0.02] cursor-pointer transition-all flex items-center gap-4 group"
+                onClick={() => !isInserting && onSelect(it.id)}
+              >
+                <div className="w-16 h-16 rounded-xl bg-slate-100 overflow-hidden shrink-0 border group-hover:border-primary/20">
+                  {it.coverPhotoUrl ? (
+                    <img src={it.coverPhotoUrl} alt="" className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center"><ImageIcon className="w-6 h-6 text-slate-300" /></div>
+                  )}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <h4 className="font-bold text-slate-900 group-hover:text-primary transition-colors truncate">{it.title}</h4>
+                  <p className="text-xs text-muted-foreground font-medium mt-1">
+                    {it.daysCount || 0} Days • {it.destination || 'Global'}
+                  </p>
+                </div>
+                <Button size="sm" variant="ghost" className="rounded-lg font-bold group-hover:bg-primary group-hover:text-white transition-all">
+                  Insert
+                </Button>
+              </div>
+            ))
+          )}
+        </div>
+
+        {isInserting && (
+          <div className="absolute inset-0 bg-white/60 backdrop-blur-[2px] flex flex-col items-center justify-center rounded-lg z-50">
+            <Loader2 className="w-10 h-10 animate-spin text-primary mb-2" />
+            <p className="text-sm font-black text-primary animate-pulse tracking-widest uppercase">Cloning Template...</p>
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function QueryPaymentsSection({ queryId }: { queryId: string }) {
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
-
   const { data: payments, isLoading } = useQuery({
     queryKey: ['payments', queryId],
     queryFn: async () => {
@@ -846,12 +1000,11 @@ function QueryPaymentsSection({ queryId }: { queryId: string }) {
   });
 
   if (isLoading) return <div className="py-8 flex justify-center"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>;
-
   const totalPaid = payments?.reduce((sum: number, p: any) => sum + Number(p.amount), 0) || 0;
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex justify-between items-center text-sm">
         <div>
           <h3 className="text-lg font-semibold">Payments Received</h3>
           <p className="text-sm text-muted-foreground">Total Paid: <span className="font-medium text-emerald-600 inline-flex items-center"><IndianRupee className="w-3 h-3 mr-0.5" />{totalPaid.toLocaleString('en-IN')}</span></p>
@@ -860,13 +1013,11 @@ function QueryPaymentsSection({ queryId }: { queryId: string }) {
           <Plus className="w-4 h-4 mr-2" /> Record Deposit
         </Button>
       </div>
-
       {!payments || payments.length === 0 ? (
         <div className="text-center py-12 border-2 border-dashed rounded-lg">
           <CreditCard className="w-12 h-12 text-muted-foreground mx-auto mb-4 opacity-50" />
           <h3 className="text-lg font-medium">No Payments Yet</h3>
-          <p className="text-muted-foreground mb-4">You must record at least one payment before confirming a booking.</p>
-          <Button variant="outline" onClick={() => setIsPaymentModalOpen(true)}>
+          <Button variant="outline" onClick={() => setIsPaymentModalOpen(true)} className="mt-4">
             <Plus className="w-4 h-4 mr-2" /> Record Initial Deposit
           </Button>
         </div>
@@ -875,35 +1026,15 @@ function QueryPaymentsSection({ queryId }: { queryId: string }) {
           {payments.map((p: any) => (
             <div key={p.id} className="p-4 border rounded-lg flex justify-between items-center">
               <div>
-                <p className="font-semibold text-lg flex items-center">
-                  <IndianRupee className="w-4 h-4 mr-0.5" /> {Number(p.amount).toLocaleString('en-IN')}
-                </p>
-                <div className="flex items-center gap-2 mt-1 text-sm text-muted-foreground">
-                  <span className="capitalize">{p.mode.replace('_', ' ')}</span>
-                  {p.referenceUtr && <span>• Ref: {p.referenceUtr}</span>}
-                  <span>• {new Date(p.paymentDate).toLocaleDateString('en-GB')}</span>
-                </div>
+                <p className="font-semibold text-lg"><IndianRupee className="w-4 h-4 mr-0.5 inline" /> {Number(p.amount).toLocaleString('en-IN')}</p>
+                <p className="text-xs text-muted-foreground mt-1 capitalize">{p.mode} • {new Date(p.paymentDate).toLocaleDateString()}</p>
               </div>
-              <div className="text-right">
-                <span className={`px-2 py-1 rounded text-xs font-medium ${
-                  p.status === 'verified' ? 'bg-emerald-100 text-emerald-700' :
-                  p.status === 'pending' ? 'bg-amber-100 text-amber-700' :
-                  'bg-red-100 text-red-700'
-                }`}>
-                  {p.status.toUpperCase()}
-                </span>
-                <p className="text-xs text-muted-foreground mt-1">By {p.user?.name || 'System'}</p>
-              </div>
+              <span className={`px-2 py-1 rounded text-xs font-medium ${p.status === 'verified' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>{p.status.toUpperCase()}</span>
             </div>
           ))}
         </div>
       )}
-
-      <PaymentEntryModal 
-        isOpen={isPaymentModalOpen} 
-        onClose={() => setIsPaymentModalOpen(false)} 
-        queryId={queryId} 
-      />
+      <PaymentEntryModal isOpen={isPaymentModalOpen} onClose={() => setIsPaymentModalOpen(false)} queryId={queryId} />
     </div>
   );
 }

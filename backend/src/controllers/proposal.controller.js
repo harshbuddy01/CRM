@@ -123,16 +123,45 @@ const createProposal = async (req, res, next) => {
   try {
     const queryId = req.params.id; // query id
     const userId = req.user.id;
-    const { days, markupPct } = req.body;
+    const { days, markupPct, itineraryId } = req.body;
 
-    if (!days || !Array.isArray(days) || days.length === 0) {
-      return res.status(400).json({ success: false, message: 'Proposal must have at least one day' });
-    }
-
-    const proposal = await proposalService.createProposal(queryId, userId, { days, markupPct });
+    // If itineraryId is provided, we might want to link it, 
+    // but the new "Insert" flow will use a dedicated endpoint.
+    // Keeping this for backward compatibility or simple linking.
+    const proposal = await proposalService.createProposal(queryId, userId, { days, markupPct, itineraryId });
     res.status(201).json({ success: true, message: 'Proposal created', data: proposal });
   } catch (error) {
     next(error);
+  }
+};
+
+const insertFromItinerary = async (req, res, next) => {
+  try {
+    const queryId = req.params.id;
+    const { itineraryId } = req.body;
+    const userId = req.user.id;
+
+    if (!itineraryId) {
+      return res.status(400).json({ success: false, message: 'itineraryId is required' });
+    }
+
+    const proposal = await proposalService.createProposalFromItinerary(queryId, userId, itineraryId);
+    res.status(201).json({ success: true, message: 'Proposal created from itinerary', data: proposal });
+  } catch (err) {
+    next(err);
+  }
+};
+
+const createWithNewItinerary = async (req, res, next) => {
+  try {
+    const queryId = req.params.id;
+    const { title } = req.body;
+    const userId = req.user.id;
+
+    const proposal = await proposalService.createProposalWithNewItinerary(queryId, userId, title);
+    res.status(201).json({ success: true, message: 'Proposal created with new itinerary', data: proposal });
+  } catch (err) {
+    next(err);
   }
 };
 
@@ -363,6 +392,8 @@ const listAllProposals = async (req, res, next) => {
 
 module.exports = {
   createProposal,
+  insertFromItinerary,
+  createWithNewItinerary,
   getProposalsByQuery,
   getProposalById,
   downloadPdf,
