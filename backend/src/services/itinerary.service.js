@@ -143,8 +143,8 @@ const getById = async (id) => {
 const update = async (id, data) => {
   await getById(id); // ensure exists
   const {
-    title, description, status, totalCost, perPersonCost,
-    currency, adults, children, markupPct, termsHtml,
+    currency, adults, children, markupPct, 
+    inclusionsHtml, exclusionsHtml, paymentPolicyHtml, cancellationPolicyHtml, termsHtml,
   } = data;
 
   if (status !== undefined && !['draft', 'published'].includes(status)) {
@@ -169,6 +169,10 @@ const update = async (id, data) => {
       ...(adults !== undefined && { adults: validateNum(adults) }),
       ...(children !== undefined && { children: validateNum(children) }),
       ...(markupPct !== undefined && { markupPct: validateNum(markupPct) }),
+      ...(inclusionsHtml !== undefined && { inclusionsHtml }),
+      ...(exclusionsHtml !== undefined && { exclusionsHtml }),
+      ...(paymentPolicyHtml !== undefined && { paymentPolicyHtml }),
+      ...(cancellationPolicyHtml !== undefined && { cancellationPolicyHtml }),
       ...(termsHtml !== undefined && { termsHtml }),
     },
     include: fullInclude,

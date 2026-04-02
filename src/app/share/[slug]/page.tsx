@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef } from 'react';
 import { useParams } from 'next/navigation';
-import { MapPin, Clock, Hotel, Utensils, Car, Plane, Sun, Mountain, Compass, LogIn, LogOut, CalendarRange, Loader2, Shield } from 'lucide-react';
+import { MapPin, Clock, Hotel, Utensils, Car, Plane, Sun, Mountain, Compass, LogIn, LogOut, CalendarRange, Loader2, Shield, CheckCircle, XCircle, CreditCard, AlertTriangle } from 'lucide-react';
 import { motion, useScroll, useTransform, useSpring } from 'framer-motion';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/v1';
@@ -257,17 +257,61 @@ export default function SharePage() {
           </motion.div>
         )}
 
-        {/* Terms & Conditions */}
-        {itinerary.termsHtml && (
-          <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="bg-slate-100 rounded-3xl p-8 text-slate-700 my-8">
-            <div className="flex items-center justify-center gap-2 mb-6 text-slate-400">
-              <Shield className="w-5 h-5" />
-              <h3 className="font-bold text-sm uppercase tracking-widest text-slate-500">Terms & Conditions</h3>
+        {/* Package Policies */}
+        {(itinerary.inclusionsHtml || itinerary.exclusionsHtml || itinerary.paymentPolicyHtml || itinerary.cancellationPolicyHtml || itinerary.termsHtml) && (
+          <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="bg-white rounded-3xl shadow-sm border border-slate-200 p-8 space-y-10">
+            <h2 className="font-black text-2xl text-slate-900 mb-2 flex items-center gap-2 italic"><Shield className="w-7 h-7 text-blue-600" /> Package Policies</h2>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+              {itinerary.inclusionsHtml && (
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-100"><CheckCircle className="w-5 h-5" /></div>
+                    <span className="font-black text-xs uppercase tracking-widest text-slate-700">Inclusions</span>
+                  </div>
+                  <div className="text-sm text-slate-600 leading-relaxed whitespace-pre-wrap pl-1">{itinerary.inclusionsHtml}</div>
+                </div>
+              )}
+              {itinerary.exclusionsHtml && (
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center border border-rose-100"><XCircle className="w-5 h-5" /></div>
+                    <span className="font-black text-xs uppercase tracking-widest text-slate-700">Exclusions</span>
+                  </div>
+                  <div className="text-sm text-slate-600 leading-relaxed whitespace-pre-wrap pl-1">{itinerary.exclusionsHtml}</div>
+                </div>
+              )}
             </div>
-            <div 
-              className="prose prose-sm prose-slate max-w-none text-xs md:text-sm whitespace-pre-wrap leading-relaxed text-slate-600 bg-white p-6 rounded-2xl shadow-sm border border-slate-200/60"
-              dangerouslySetInnerHTML={{ __html: itinerary.termsHtml }}
-            />
+
+            <div className="space-y-8 pt-8 border-t border-slate-100">
+              {itinerary.paymentPolicyHtml && (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100"><CreditCard className="w-4 h-4" /></div>
+                    <span className="font-black text-[10px] uppercase tracking-widest text-slate-600">Payment Policy</span>
+                  </div>
+                  <div className="text-sm text-slate-500 leading-relaxed whitespace-pre-wrap pl-1">{itinerary.paymentPolicyHtml}</div>
+                </div>
+              )}
+              {itinerary.cancellationPolicyHtml && (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center border border-amber-100"><AlertTriangle className="w-4 h-4" /></div>
+                    <span className="font-black text-[10px] uppercase tracking-widest text-slate-600">Cancellation Policy</span>
+                  </div>
+                  <div className="text-sm text-slate-500 leading-relaxed whitespace-pre-wrap pl-1">{itinerary.cancellationPolicyHtml}</div>
+                </div>
+              )}
+              {itinerary.termsHtml && (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-xl bg-slate-50 text-slate-600 flex items-center justify-center border border-slate-100"><Shield className="w-4 h-4" /></div>
+                    <span className="font-black text-[10px] uppercase tracking-widest text-slate-600">Terms & Conditions</span>
+                  </div>
+                  <div className="text-sm text-slate-500 leading-relaxed whitespace-pre-wrap pl-1">{itinerary.termsHtml}</div>
+                </div>
+              )}
+            </div>
           </motion.div>
         )}
 

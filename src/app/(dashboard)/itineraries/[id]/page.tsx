@@ -15,7 +15,7 @@ import {
   Share2, Download, Copy, Check, GripVertical, Eye,
   Utensils, Car, Plane, Sun, LogIn, LogOut as LogOutIcon,
   Mountain, Compass, IndianRupee, CalendarRange,
-  FileText, BookOpen, Pencil, Shield,
+  FileText, BookOpen, Pencil, Shield, CreditCard, XCircle, CheckCircle, AlertTriangle,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
@@ -49,8 +49,9 @@ export default function ItineraryBuilderPage() {
   const galleryRef = useRef<HTMLInputElement>(null);
   const eventImgRef = useRef<HTMLInputElement>(null);
   const dayImgRef = useRef<HTMLInputElement>(null);
-  const [eventImgTarget, setEventImgTarget] = useState<string | null>(null);
+  const [activeSection, setActiveSection] = useState<'day' | 'packageTerms' | 'gallery'>('day');
   const [editingDayId, setEditingDayId] = useState<string | null>(null);
+  const [eventImgTarget, setEventImgTarget] = useState<string | null>(null);
 
   const { data: itinerary, isLoading } = useQuery({
     queryKey: ['itinerary', id],
@@ -253,17 +254,20 @@ export default function ItineraryBuilderPage() {
                   {itinerary.days?.map((day: any) => (
                     <button
                       key={day.id}
-                      onClick={() => setSelectedDayId(day.id)}
+                      onClick={() => {
+                        setSelectedDayId(day.id);
+                        setActiveSection('day');
+                      }}
                       className={cn(
                         "flex items-center gap-3 p-2 rounded-xl transition-all group text-left",
-                        selectedDayId === day.id 
+                        activeSection === 'day' && selectedDayId === day.id 
                           ? "bg-blue-600 text-white shadow-lg shadow-blue-200 ring-2 ring-blue-100" 
                           : "hover:bg-slate-100 text-slate-600"
                       )}
                     >
                       <div className={cn(
                         "w-8 h-8 rounded-full flex items-center justify-center shrink-0 font-bold text-[10px] transition-colors",
-                        selectedDayId === day.id ? "bg-white text-blue-600" : "bg-slate-200 text-slate-500 group-hover:bg-slate-300"
+                        activeSection === 'day' && selectedDayId === day.id ? "bg-white text-blue-600" : "bg-slate-200 text-slate-500 group-hover:bg-slate-300"
                       )}>
                         {day.dayNumber}
                       </div>
@@ -275,167 +279,211 @@ export default function ItineraryBuilderPage() {
                   
                   <button 
                     onClick={() => addDayMut.mutate({ dayNumber: (itinerary.days?.length || 0) + 1 })}
-                    className="flex items-center gap-2 p-2 rounded-xl border-2 border-dashed border-slate-200 text-slate-400 hover:border-blue-400 hover:text-blue-500 hover:bg-blue-50/30 transition-all font-bold text-[10px] uppercase tracking-wider"
+                    className="flex items-center gap-2 p-2 rounded-xl border-2 border-dashed border-slate-200 text-slate-400 hover:border-blue-400 hover:text-blue-500 hover:bg-blue-50/30 transition-all font-bold text-[10px] uppercase tracking-wider mb-2"
                   >
                     <Plus className="w-4 h-4 ml-1" /> Add Day
                   </button>
+
+                  <div className="pt-4 border-t border-slate-100 space-y-2">
+                    <button
+                      onClick={() => setActiveSection('packageTerms')}
+                      className={cn(
+                        "w-full flex items-center gap-3 p-2 rounded-xl transition-all group text-left",
+                        activeSection === 'packageTerms' 
+                          ? "bg-blue-600 text-white shadow-lg shadow-blue-200 ring-2 ring-blue-100" 
+                          : "hover:bg-slate-100 text-slate-600"
+                      )}
+                    >
+                      <div className={cn(
+                        "w-8 h-8 rounded-xl flex items-center justify-center shrink-0 transition-colors",
+                        activeSection === 'packageTerms' ? "bg-white text-blue-600" : "bg-slate-100 text-slate-400"
+                      )}>
+                        <FileText className="w-4 h-4" />
+                      </div>
+                      <span className="font-bold text-xs">Package Terms</span>
+                    </button>
+
+                    <button
+                      onClick={() => setActiveSection('gallery')}
+                      className={cn(
+                        "w-full flex items-center gap-3 p-2 rounded-xl transition-all group text-left",
+                        activeSection === 'gallery' 
+                          ? "bg-blue-600 text-white shadow-lg shadow-blue-200 ring-2 ring-blue-100" 
+                          : "hover:bg-slate-100 text-slate-600"
+                      )}
+                    >
+                      <div className={cn(
+                        "w-8 h-8 rounded-xl flex items-center justify-center shrink-0 transition-colors",
+                        activeSection === 'gallery' ? "bg-white text-blue-600" : "bg-slate-100 text-slate-400"
+                      )}>
+                        <ImageIcon className="w-4 h-4" />
+                      </div>
+                      <span className="font-bold text-xs">Image Gallery</span>
+                    </button>
+                  </div>
                 </div>
               </div>
 
-              {/* Center: Events & Day Overview */}
-              <div className="lg:col-span-7 space-y-5">
-                {selectedDay ? (
-                  <div className="space-y-0">
-                    <div className="flex items-center justify-between mb-6">
-                      <div className="flex items-center gap-2">
-                        <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white font-black text-sm shadow-lg shadow-blue-200">
-                          {selectedDay.dayNumber}
-                        </div>
-                        <div>
-                          <h3 className="text-lg font-black tracking-tight text-slate-800 uppercase">Day {selectedDay.dayNumber} Timeline</h3>
-                          <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none mt-0.5">
-                            <MapPin className="w-3 h-3" /> {selectedDay.destination?.name || 'Destination Unset'}
-                          </div>
-                        </div>
-                      </div>
-                      <div className="relative">
-                        <Button 
-                          size="sm" 
-                          className="rounded-xl font-bold text-xs h-9 bg-slate-900 hover:bg-slate-800 text-white shadow-lg shadow-slate-200"
-                          onClick={() => setShowEventDropdown(!showEventDropdown)}
-                        >
-                          <Plus className="w-3.5 h-3.5 mr-1" /> Add Event
-                        </Button>
-                        {showEventDropdown && (
-                          <div className="absolute right-0 top-full mt-2 z-50 bg-white rounded-2xl border border-slate-100 shadow-xl p-2 w-52 overflow-hidden animate-in fade-in zoom-in-95">
-                            {EVENT_TYPES.map(type => (
-                              <button
-                                key={type.value}
-                                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-slate-50 text-left text-sm transition-colors"
-                                onClick={() => {
-                                  addEventMut.mutate({ dayId: selectedDayId, data: { type: type.value, title: type.label } });
-                                  setShowEventDropdown(false);
-                                }}
-                              >
-                                <div className={cn('p-1.5 rounded-lg text-slate-500 bg-slate-100')}><type.icon className="w-3.5 h-3.5" /></div>
-                                <span className="font-bold text-xs text-slate-700">{type.label}</span>
-                              </button>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Day Headline Card (Flagship Card Style - Screenshot 2) */}
-                    <div className="relative pl-8 border-l-2 border-slate-100 ml-5 -mt-2 pb-10">
-                      <div className="absolute top-0 -left-[11px] w-5 h-5 rounded-full bg-white border-4 border-slate-200 shadow-sm z-10" />
-                      
-                      <Card className={cn(
-                        "bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300",
-                        editingDayId === selectedDay.id ? "ring-2 ring-blue-500 border-transparent" : ""
-                      )}>
-                        <div className="flex flex-col md:flex-row min-h-[200px]">
-                          {/* Left: Image Area */}
-                          <div className="md:w-1/3 bg-slate-50 border-r border-slate-100 relative group/dayimg overflow-hidden shrink-0 min-h-[160px]">
-                            {selectedDay.imageUrl ? (
-                              <img src={selectedDay.imageUrl} alt="" className="w-full h-full object-cover transition-transform duration-700 group-hover/dayimg:scale-110" />
-                            ) : (
-                              <div className="w-full h-full flex flex-col items-center justify-center text-slate-300">
-                                <ImageIcon className="w-8 h-8 opacity-20 mb-2" />
-                                <span className="text-[9px] font-black uppercase tracking-[0.2em] opacity-40">Add Image</span>
-                              </div>
-                            )}
-                            <button 
-                              className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center opacity-0 group-hover/dayimg:opacity-100 transition-opacity text-white gap-2"
-                              onClick={() => dayImgRef.current?.click()}
-                            >
-                              <Camera className="w-6 h-6" />
-                              <span className="text-[10px] font-bold uppercase tracking-widest">Flagship Photo</span>
-                            </button>
-                          </div>
-
-                          {/* Right: Text Area */}
-                          <div className="flex-1 p-6 relative">
-                            <button 
-                              className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center bg-slate-50 hover:bg-blue-50 text-slate-400 hover:text-blue-600 rounded-xl transition-all shadow-sm z-10"
-                              onClick={() => setEditingDayId(editingDayId === selectedDay.id ? null : selectedDay.id)}
-                            >
-                              {editingDayId === selectedDay.id ? <Check className="w-4 h-4 text-emerald-600" /> : <Edit3 className="w-4 h-4" />}
-                            </button>
-
-                            {editingDayId === selectedDay.id ? (
-                              <EditingDayForm 
-                                day={selectedDay} 
-                                onSave={(data) => updateDayMut.mutate({ dayId: selectedDay.id, data })}
-                              />
-                            ) : (
-                              <div className="pr-8">
-                                <div className="text-[9px] font-black uppercase tracking-widest text-blue-600 mb-2">Editorial Intro</div>
-                                <h2 className="text-xl font-black tracking-tight text-slate-800 leading-tight mb-3">
-                                  {selectedDay.title || `Day ${selectedDay.dayNumber}: Introduction`}
-                                </h2>
-                                <p className="text-[13px] font-medium text-slate-500 leading-relaxed line-clamp-4">
-                                  {selectedDay.description || "Start adding a beautiful description or use a template from the right panel to populate this section."}
-                                </p>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      </Card>
-                    </div>
-
-                    {/* Timeline Events */}
-                    <div className="space-y-0">
-                      {selectedDay.events?.map((ev: any) => {
-                        const evType = getEventType(ev.type);
-                        return (
-                          <div key={ev.id} className="relative pl-8 border-l-2 border-slate-100 ml-5 pb-8">
-                            <div className="absolute top-4 -left-[14px] w-7 h-7 rounded-full border-[3px] border-white bg-slate-100 flex items-center justify-center shadow-sm z-20">
-                              <evType.icon className="w-3.5 h-3.5 text-slate-500" />
+              {/* Center: Content Area */}
+              <div className="lg:col-span-7">
+                {activeSection === 'day' ? (
+                  <div className="space-y-6">
+                    {selectedDay ? (
+                      <div className="space-y-0">
+                        <div className="flex items-center justify-between mb-6">
+                          <div className="flex items-center gap-2">
+                            <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white font-black text-sm shadow-lg shadow-blue-200">
+                              {selectedDay.dayNumber}
                             </div>
-                            
-                            <Card className="flex-1 bg-white border border-slate-200/80 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow group">
-                              <div className="flex flex-col sm:flex-row min-h-[120px]">
-                                <div className="sm:w-28 h-28 sm:h-auto bg-slate-50 border-r border-slate-100 relative group/img flex-shrink-0">
-                                  {ev.imageUrl ? (
-                                    <img src={ev.imageUrl} alt="" className="w-full h-full object-cover" />
-                                  ) : (
-                                    <div className="w-full h-full flex flex-col items-center justify-center text-slate-300">
-                                      <ImageIcon className="w-5 h-5 opacity-30" />
-                                    </div>
-                                  )}
-                                  <button className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover/img:opacity-100 transition-opacity text-white" onClick={() => { setEventImgTarget(ev.id); eventImgRef.current?.click(); }}>
-                                    <Camera className="w-4 h-4" />
+                            <div>
+                              <h3 className="text-lg font-black tracking-tight text-slate-800 uppercase">Day {selectedDay.dayNumber} Timeline</h3>
+                              <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none mt-0.5">
+                                <MapPin className="w-3 h-3" /> {selectedDay.destination?.name || 'Destination Unset'}
+                              </div>
+                            </div>
+                          </div>
+                          <div className="relative">
+                            <Button 
+                              size="sm" 
+                              className="rounded-xl font-bold text-xs h-9 bg-slate-900 hover:bg-slate-800 text-white shadow-lg shadow-slate-200"
+                              onClick={() => setShowEventDropdown(!showEventDropdown)}
+                            >
+                              <Plus className="w-3.5 h-3.5 mr-1" /> Add Event
+                            </Button>
+                            {showEventDropdown && (
+                              <div className="absolute right-0 top-full mt-2 z-50 bg-white rounded-2xl border border-slate-100 shadow-xl p-2 w-52 overflow-hidden animate-in fade-in zoom-in-95">
+                                {EVENT_TYPES.map(type => (
+                                  <button
+                                    key={type.value}
+                                    className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-slate-50 text-left text-sm transition-colors"
+                                    onClick={() => {
+                                      addEventMut.mutate({ dayId: selectedDayId, data: { type: type.value, title: type.label } });
+                                      setShowEventDropdown(false);
+                                    }}
+                                  >
+                                    <div className={cn('p-1.5 rounded-lg text-slate-500 bg-slate-100')}><type.icon className="w-3.5 h-3.5" /></div>
+                                    <span className="font-bold text-xs text-slate-700">{type.label}</span>
                                   </button>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Day Headline Card */}
+                        <div className="relative pl-8 border-l-2 border-slate-100 ml-5 -mt-2 pb-10">
+                          <div className="absolute top-0 -left-[11px] w-5 h-5 rounded-full bg-white border-4 border-slate-200 shadow-sm z-10" />
+                          
+                          <Card className={cn(
+                            "bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300",
+                            editingDayId === selectedDay.id ? "ring-2 ring-blue-500 border-transparent" : ""
+                          )}>
+                            <div className="flex flex-col md:flex-row min-h-[200px]">
+                              <div className="md:w-1/3 bg-slate-50 border-r border-slate-100 relative group/dayimg overflow-hidden shrink-0 min-h-[160px]">
+                                {selectedDay.imageUrl ? (
+                                  <img src={selectedDay.imageUrl} alt="" className="w-full h-full object-cover transition-transform duration-700 group-hover/dayimg:scale-110" />
+                                ) : (
+                                  <div className="w-full h-full flex flex-col items-center justify-center text-slate-300">
+                                    <ImageIcon className="w-8 h-8 opacity-20 mb-2" />
+                                    <span className="text-[9px] font-black uppercase tracking-[0.2em] opacity-40">Add Image</span>
+                                  </div>
+                                )}
+                                <button 
+                                  className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center opacity-0 group-hover/dayimg:opacity-100 transition-opacity text-white gap-2"
+                                  onClick={() => dayImgRef.current?.click()}
+                                >
+                                  <Camera className="w-6 h-6" />
+                                  <span className="text-[10px] font-bold uppercase tracking-widest">Flagship Photo</span>
+                                </button>
+                              </div>
+
+                              <div className="flex-1 p-6 relative">
+                                <button 
+                                  className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center bg-slate-50 hover:bg-blue-50 text-slate-400 hover:text-blue-600 rounded-xl transition-all shadow-sm z-10"
+                                  onClick={() => setEditingDayId(editingDayId === selectedDay.id ? null : selectedDay.id)}
+                                >
+                                  {editingDayId === selectedDay.id ? <Check className="w-4 h-4 text-emerald-600" /> : <Edit3 className="w-4 h-4" />}
+                                </button>
+
+                                {editingDayId === selectedDay.id ? (
+                                  <EditingDayForm 
+                                    day={selectedDay} 
+                                    onSave={(data) => updateDayMut.mutate({ dayId: selectedDay.id, data })}
+                                  />
+                                ) : (
+                                  <div className="pr-8">
+                                    <div className="text-[9px] font-black uppercase tracking-widest text-blue-600 mb-2">Editorial Intro</div>
+                                    <h2 className="text-xl font-black tracking-tight text-slate-800 leading-tight mb-3">
+                                      {selectedDay.title || `Day ${selectedDay.dayNumber}: Introduction`}
+                                    </h2>
+                                    <p className="text-[13px] font-medium text-slate-500 leading-relaxed line-clamp-4">
+                                      {selectedDay.description || "Start adding a beautiful description or use a template from the right panel to populate this section."}
+                                    </p>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </Card>
+                        </div>
+
+                        {/* Timeline Events */}
+                        <div className="space-y-0">
+                          {selectedDay.events?.map((ev: any) => {
+                            const evType = getEventType(ev.type);
+                            return (
+                              <div key={ev.id} className="relative pl-8 border-l-2 border-slate-100 ml-5 pb-8">
+                                <div className="absolute top-4 -left-[14px] w-7 h-7 rounded-full border-[3px] border-white bg-slate-100 flex items-center justify-center shadow-sm z-20">
+                                  <evType.icon className="w-3.5 h-3.5 text-slate-500" />
                                 </div>
-                                <div className="flex-1 p-4 flex flex-col justify-between">
-                                  <div>
-                                    <div className="flex justify-between items-start gap-2">
-                                      <h4 className="font-bold text-sm text-slate-800">{ev.title}</h4>
-                                      <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                        <button className="h-7 w-7 flex items-center justify-center bg-slate-50 hover:bg-blue-50 text-slate-400 hover:text-blue-600 rounded-lg" onClick={() => setEditingEvent(ev)}><Edit3 className="w-3.5 h-3.5" /></button>
-                                        <button className="h-7 w-7 flex items-center justify-center bg-slate-50 hover:bg-red-50 text-slate-400 hover:text-red-600 rounded-lg" onClick={() => removeEventMut.mutate(ev.id)}><Trash2 className="w-3.5 h-3.5" /></button>
+                                
+                                <Card className="flex-1 bg-white border border-slate-200/80 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow group">
+                                  <div className="flex flex-col sm:flex-row min-h-[120px]">
+                                    <div className="sm:w-28 h-28 sm:h-auto bg-slate-50 border-r border-slate-100 relative group/img flex-shrink-0">
+                                      {ev.imageUrl ? (
+                                        <img src={ev.imageUrl} alt="" className="w-full h-full object-cover" />
+                                      ) : (
+                                        <div className="w-full h-full flex flex-col items-center justify-center text-slate-300">
+                                          <ImageIcon className="w-5 h-5 opacity-30" />
+                                        </div>
+                                      )}
+                                      <button className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover/img:opacity-100 transition-opacity text-white" onClick={() => { setEventImgTarget(ev.id); eventImgRef.current?.click(); }}>
+                                        <Camera className="w-4 h-4" />
+                                      </button>
+                                    </div>
+                                    <div className="flex-1 p-4 flex flex-col justify-between">
+                                      <div>
+                                        <div className="flex justify-between items-start gap-2">
+                                          <h4 className="font-bold text-sm text-slate-800">{ev.title}</h4>
+                                          <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <button className="h-7 w-7 flex items-center justify-center bg-slate-50 hover:bg-blue-50 text-slate-400 hover:text-blue-600 rounded-lg" onClick={() => setEditingEvent(ev)}><Edit3 className="w-3.5 h-3.5" /></button>
+                                            <button className="h-7 w-7 flex items-center justify-center bg-slate-50 hover:bg-red-50 text-slate-400 hover:text-red-600 rounded-lg" onClick={() => removeEventMut.mutate(ev.id)}><Trash2 className="w-3.5 h-3.5" /></button>
+                                          </div>
+                                        </div>
+                                        {ev.description && <p className="text-[11px] font-medium text-slate-500 mt-1 line-clamp-2">{ev.description}</p>}
+                                      </div>
+                                      <div className="mt-3 flex flex-wrap items-center gap-2 text-[9px] font-bold uppercase tracking-widest text-slate-400">
+                                        {ev.startTime && <span className="flex items-center gap-1 bg-slate-50 px-2 py-1 rounded-md"><Clock className="w-3 h-3" /> {ev.startTime}</span>}
+                                        {ev.cost && <span className="bg-emerald-50 text-emerald-700 px-2 py-1 rounded-md">₹{Number(ev.cost).toLocaleString('en-IN')}</span>}
                                       </div>
                                     </div>
-                                    {ev.description && <p className="text-[11px] font-medium text-slate-500 mt-1 line-clamp-2">{ev.description}</p>}
                                   </div>
-                                  <div className="mt-3 flex flex-wrap items-center gap-2 text-[9px] font-bold uppercase tracking-widest text-slate-400">
-                                    {ev.startTime && <span className="flex items-center gap-1 bg-slate-50 px-2 py-1 rounded-md"><Clock className="w-3 h-3" /> {ev.startTime}</span>}
-                                    {ev.cost && <span className="bg-emerald-50 text-emerald-700 px-2 py-1 rounded-md">₹{Number(ev.cost).toLocaleString('en-IN')}</span>}
-                                  </div>
-                                </div>
+                                </Card>
                               </div>
-                            </Card>
-                          </div>
-                        );
-                      })}
-                    </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col items-center justify-center py-20 text-slate-300 bg-slate-50/50 rounded-[40px] border-2 border-dashed border-slate-100 h-full">
+                        <ChevronRight className="w-12 h-12 mb-4 opacity-20" />
+                        <p className="font-bold text-sm uppercase tracking-widest">Select a day to edit</p>
+                      </div>
+                    )}
                   </div>
+                ) : activeSection === 'packageTerms' ? (
+                  <PackageTermsEditor itinerary={itinerary} onUpdate={(data: any) => updateMut.mutate(data)} />
                 ) : (
-                  <div className="flex flex-col items-center justify-center py-20 text-slate-300 bg-slate-50/50 rounded-[40px] border-2 border-dashed border-slate-100 h-full">
-                    <ChevronRight className="w-12 h-12 mb-4 opacity-20" />
-                    <p className="font-bold text-sm uppercase tracking-widest">Select a day to build</p>
-                  </div>
+                  <GalleryEditor itinerary={itinerary} />
                 )}
               </div>
 
@@ -447,24 +495,6 @@ export default function ItineraryBuilderPage() {
                   onUpdateDay={(data: any) => { if (selectedDayId) updateDayMut.mutate({ dayId: selectedDayId, data }); }}
                 />
               </div>
-            </div>
-            
-            {/* Terms Area inside BUILD tab but at bottom */}
-            <div className="mt-12 pt-8 border-t border-slate-100">
-              <div className="flex items-center gap-2 mb-4">
-                <Shield className="w-4 h-4 text-slate-400" />
-                <h3 className="font-black text-xs uppercase tracking-widest text-slate-500">Service Terms & Conditions</h3>
-              </div>
-              <textarea
-                className="w-full min-h-[150px] p-6 text-sm font-medium rounded-3xl border-slate-200 focus:border-blue-400 focus:ring-0 bg-white shadow-sm resize-none transition-all"
-                placeholder="List your inclusions, exclusions, and payment policies..."
-                defaultValue={itinerary.termsHtml || ''}
-                onBlur={(e) => {
-                  if (e.target.value !== (itinerary.termsHtml || '')) {
-                    updateMut.mutate({ termsHtml: e.target.value });
-                  }
-                }}
-              />
             </div>
           </TabsContent>
 
@@ -483,11 +513,18 @@ export default function ItineraryBuilderPage() {
       {/* Event Edit Modal */}
       {editingEvent && (
         <EventEditModal
-          key={editingEvent.id}
           event={editingEvent}
+          itinerary={itinerary}
+          destId={itinerary.days?.find((d: any) => d.id === editingEvent.dayId)?.destinationId}
           onClose={() => setEditingEvent(null)}
-          onSave={(data: any) => updateEventMut.mutate({ eventId: editingEvent.id, data })}
-          destId={selectedDay?.destinationId}
+          onDelete={(id) => {
+            removeEventMut.mutate(id);
+            setEditingEvent(null);
+          }}
+          onSave={(data) => {
+            updateEventMut.mutate({ eventId: editingEvent.id, data });
+            setEditingEvent(null);
+          }}
         />
       )}
     </div>
@@ -509,7 +546,7 @@ function EditingDayForm({ day, onSave }: { day: any; onSave: (data: any) => void
   }, [day.title, day.description]);
 
   const handleSave = () => {
-    if (title !== day.title || description !== day.description) {
+    if (title !== (day.title || '') || description !== (day.description || '')) {
       onSave({ title, description });
     }
   };
@@ -638,7 +675,7 @@ function SuggestionsPanel({ selectedDay, onAddEvent, onUpdateDay }: { selectedDa
   );
 }
 
-function EventEditModal({ event, onClose, onSave, destId }: { event: any; onClose: () => void; onSave: (data: any) => void; destId?: string }) {
+function EventEditModal({ event, onClose, onSave, onDelete, destId, itinerary }: { event: any; onClose: () => void; onSave: (data: any) => void; onDelete: (id: string) => void; destId?: string; itinerary: any }) {
   const [form, setForm] = useState(() => ({ 
     ...event, 
     description: event.description || '', 
@@ -667,113 +704,251 @@ function EventEditModal({ event, onClose, onSave, destId }: { event: any; onClos
 
   return (
     <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4" onClick={onClose}>
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[85vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-        <div className="flex items-center justify-between p-4 border-b sticky top-0 bg-white rounded-t-2xl z-10">
-          <div className="flex items-center gap-2">
-            <div className={cn('p-1.5 rounded-lg', evType.color)}><evType.icon className="w-4 h-4" /></div>
-            <h2 className="font-bold text-sm">Edit {evType.label}</h2>
+    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={onClose}>
+      <div className={cn("bg-white rounded-[32px] shadow-2xl w-full overflow-hidden flex flex-col transition-all duration-300", form.type === 'accommodation' ? 'max-w-2xl max-h-[90vh]' : 'max-w-lg max-h-[85vh]')} onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between p-6 border-b bg-slate-50/50">
+          <div className="flex items-center gap-3">
+            <div className={cn('p-2 rounded-2xl shadow-sm border bg-white', evType.color)}><evType.icon className="w-5 h-5" /></div>
+            <h2 className="font-black text-lg text-slate-800">
+              {form.type === 'accommodation' 
+                ? `Accommodation From ${form.metadata?.checkInDate || '...'}`
+                : `Edit ${evType.label}`}
+            </h2>
           </div>
-          <button onClick={onClose}><X className="w-5 h-5 text-muted-foreground" /></button>
+          <button onClick={onClose} className="w-10 h-10 rounded-2xl flex items-center justify-center hover:bg-slate-200/50 transition-colors"><X className="w-6 h-6 text-slate-400" /></button>
         </div>
-        <div className="p-4 space-y-3">
-          <div><label className="text-xs font-medium text-muted-foreground uppercase">Title</label><Input className="mt-1 h-9 rounded-lg" value={form.title} onChange={e => set('title', e.target.value)} /></div>
-          <div><label className="text-xs font-medium text-muted-foreground uppercase">Description</label><textarea className="mt-1 w-full min-h-[60px] px-3 py-2 border rounded-lg bg-background text-sm resize-none" value={form.description || ''} onChange={e => set('description', e.target.value)} /></div>
-          <div className="grid grid-cols-2 gap-3">
-            <div><label className="text-xs font-medium text-muted-foreground uppercase">Start Time</label><Input type="time" className="mt-1 h-9 rounded-lg" value={form.startTime || ''} onChange={e => set('startTime', e.target.value)} /></div>
-            <div><label className="text-xs font-medium text-muted-foreground uppercase">End Time</label><Input type="time" className="mt-1 h-9 rounded-lg" value={form.endTime || ''} onChange={e => set('endTime', e.target.value)} /></div>
-          </div>
-          <div><label className="text-xs font-medium text-muted-foreground uppercase">Cost (₹)</label><Input type="number" className="mt-1 h-9 rounded-lg" value={form.cost || ''} onChange={e => set('cost', e.target.value)} /></div>
 
-          {/* Type-specific fields */}
+        <div className="p-8 space-y-6 overflow-y-auto custom-scrollbar">
+          {form.type !== 'accommodation' && (
+            <>
+              <div><label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1.5 ml-1">Title</label><Input className="h-11 rounded-2xl border-slate-200 focus:border-blue-400 focus:ring-0 bg-slate-50/50" value={form.title} onChange={e => set('title', e.target.value)} /></div>
+              <div><label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1.5 ml-1">Description</label><textarea className="w-full min-h-[80px] px-4 py-3 border border-slate-200 rounded-2xl bg-slate-50/50 text-sm focus:border-blue-400 focus:ring-0 resize-none transition-all" value={form.description || ''} onChange={e => set('description', e.target.value)} /></div>
+              <div className="grid grid-cols-2 gap-4">
+                <div><label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1.5 ml-1">Start Time</label><Input type="time" className="h-11 rounded-2xl border-slate-200 bg-slate-50/50" value={form.startTime || ''} onChange={e => set('startTime', e.target.value)} /></div>
+                <div><label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1.5 ml-1">End Time</label><Input type="time" className="h-11 rounded-2xl border-slate-200 bg-slate-50/50" value={form.endTime || ''} onChange={e => set('endTime', e.target.value)} /></div>
+              </div>
+              <div><label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1.5 ml-1">Cost (₹)</label><Input type="number" className="h-11 rounded-2xl border-slate-200 bg-slate-50/50" value={form.cost || ''} onChange={e => set('cost', e.target.value)} /></div>
+            </>
+          )}
+
           {form.type === 'accommodation' && (
-            <div className="space-y-3 pt-2 border-t mt-4">
-              <div className="flex gap-2 bg-slate-100 p-1 rounded-lg">
-                <button 
-                  className={cn('flex-1 text-xs py-1.5 rounded-md font-bold transition-all', accomMode === 'manual' ? 'bg-white shadow-sm text-slate-900' : 'text-slate-500 hover:text-slate-700')}
-                  onClick={() => setAccomMode('manual')}
-                >
-                  Manual Entry
-                </button>
-                <button 
-                  className={cn('flex-1 text-xs py-1.5 rounded-md font-bold transition-all', accomMode === 'master' ? 'bg-white shadow-sm text-slate-900' : 'text-slate-500 hover:text-slate-700')}
-                  onClick={() => setAccomMode('master')}
-                >
-                  From Master
-                </button>
+            <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+              {/* Row 1: Destination & Type */}
+              <div className="grid grid-cols-2 gap-6">
+                <div>
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1.5 ml-1">Destination</label>
+                  <select 
+                    className="w-full h-11 px-4 border border-slate-200 rounded-2xl bg-slate-50/50 text-sm focus:border-blue-400 focus:ring-0 outline-none"
+                    value={form.metadata?.destinationId || ''}
+                    onChange={(e) => setMeta('destinationId', e.target.value)}
+                  >
+                    <option value="">Choose Destination</option>
+                    {(itinerary.days?.map((d: any) => d.destination).filter(Boolean).filter((v: any, i: any, a: any) => a.findIndex((t: any) => t.id === v.id) === i) || []).map((d: any) => (
+                      <option key={d.id} value={d.id}>{d.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1.5 ml-1">Type</label>
+                  <select 
+                    className="w-full h-11 px-4 border border-slate-200 rounded-2xl bg-slate-50/50 text-sm focus:border-blue-400 focus:ring-0 outline-none"
+                    value={accomMode}
+                  onChange={(e) => setAccomMode(e.target.value as 'manual' | 'master')}
+                  >
+                    <option value="manual">Manual</option>
+                    <option value="master">From Master</option>
+                  </select>
+                </div>
               </div>
 
-              {accomMode === 'master' && (
-                <div>
-                  <label className="text-xs font-medium text-muted-foreground uppercase">Select Hotel</label>
-                  {!destId ? (
-                    <div className="text-xs text-red-500 mt-1">Please select a destination for this day first.</div>
-                  ) : (
+              {/* Row 2: Hotel & Category */}
+              <div className="grid grid-cols-3 gap-6 items-end">
+                <div className="col-span-2">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1.5 ml-1">Hotel Name</label>
+                  {accomMode === 'master' ? (
                     <select 
-                      className="mt-1 w-full h-9 px-3 border rounded-lg text-sm bg-background"
+                      className="w-full h-11 px-4 border border-slate-200 rounded-2xl bg-slate-50/50 text-sm focus:border-blue-400 focus:ring-0"
                       value={form.metadata?.masterId || ''}
                       onChange={e => {
                         const h = hotels?.find((ht: any) => ht.id === e.target.value);
                         if (h) {
                           set('title', h.name);
-                          set('cost', h.basePrice || 0);
                           setMeta('masterId', h.id);
                           setMeta('hotelName', h.name);
                           setMeta('category', h.category);
-                        } else {
-                          setMeta('masterId', '');
-                          setMeta('hotelName', '');
-                          setMeta('category', '');
-                          set('title', '');
-                          set('cost', 0);
                         }
                       }}
                     >
                       <option value="">-- Choose Hotel --</option>
                       {(hotels || []).map((h: any) => (
-                        <option key={h.id} value={h.id}>{h.name} - ₹{h.basePrice}</option>
+                        <option key={h.id} value={h.id}>{h.name}</option>
                       ))}
                     </select>
+                  ) : (
+                    <Input 
+                      className="h-11 rounded-2xl border-slate-200 bg-slate-50/50" 
+                      value={form.metadata?.hotelName || ''} 
+                      onChange={e => {
+                        setMeta('hotelName', e.target.value);
+                        set('title', e.target.value);
+                      }} 
+                    />
                   )}
                 </div>
-              )}
+                <div>
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1.5 ml-1">Category</label>
+                  <select 
+                    className="w-full h-11 px-4 border border-slate-200 rounded-2xl bg-slate-50/50 text-sm focus:border-blue-400 focus:ring-0"
+                    value={form.metadata?.category || ''}
+                    onChange={(e) => setMeta('category', e.target.value)}
+                  >
+                    <option value="">Choose</option>
+                    <option value="Standard">Standard</option>
+                    <option value="3 Star">3 Star</option>
+                    <option value="4 Star">4 Star</option>
+                    <option value="5 Star">5 Star</option>
+                    <option value="Luxury">Luxury</option>
+                  </select>
+                </div>
+              </div>
 
-              {accomMode === 'manual' && (
-                <div><label className="text-xs font-medium text-muted-foreground uppercase">Hotel Name</label><Input className="mt-1 h-9 rounded-lg" value={form.metadata?.hotelName || ''} onChange={e => setMeta('hotelName', e.target.value)} /></div>
-              )}
-              
-              <div><label className="text-xs font-medium text-muted-foreground uppercase">Room Type</label><Input className="mt-1 h-9 rounded-lg" value={form.metadata?.roomType || ''} onChange={e => setMeta('roomType', e.target.value)} /></div>
-              <div><label className="text-xs font-medium text-muted-foreground uppercase">Meal Plan</label><Input className="mt-1 h-9 rounded-lg" placeholder="BB, HB, FB" value={form.metadata?.mealPlan || ''} onChange={e => setMeta('mealPlan', e.target.value)} /></div>
+              {/* Row 3: Room, Meal, Option */}
+              <div className="grid grid-cols-3 gap-6">
+                <div>
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1.5 ml-1">Room Name</label>
+                  <Input className="h-11 rounded-2xl border-slate-200 bg-slate-50/50" value={form.metadata?.roomType || ''} onChange={e => setMeta('roomType', e.target.value)} placeholder="e.g. DELUXE" />
+                </div>
+                <div>
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1.5 ml-1">Meal Plan</label>
+                  <Input className="h-11 rounded-2xl border-slate-200 bg-slate-50/50" value={form.metadata?.mealPlan || ''} onChange={e => setMeta('mealPlan', e.target.value)} placeholder="e.g. map" />
+                </div>
+                <div>
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1.5 ml-1">Hotel Option</label>
+                  <select className="w-full h-11 px-4 border border-slate-200 rounded-2xl bg-slate-50/50 text-sm focus:border-blue-400 focus:ring-0" value={form.metadata?.hotelOption || 'Option 1'} onChange={e => setMeta('hotelOption', e.target.value)}>
+                    <option value="Option 1">Option 1</option>
+                    <option value="Option 2">Option 2</option>
+                    <option value="Option 3">Option 3</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Enter Number of Rooms */}
+              <div>
+                <label className="text-[11px] font-black text-slate-800 uppercase tracking-widest block mb-3 ml-1">Enter Number of Rooms</label>
+                <div className="grid grid-cols-6 gap-3 bg-slate-50/80 p-4 rounded-[24px] border border-slate-100 shadow-sm">
+                  {[
+                    { key: 'single', label: 'Single' },
+                    { key: 'double', label: 'Double' },
+                    { key: 'triple', label: 'Triple' },
+                    { key: 'quad', label: 'Quad' },
+                    { key: 'cwb', label: 'CWB' },
+                    { key: 'cnb', label: 'CNB' },
+                  ].map((field) => (
+                    <div key={field.key}>
+                      <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider block text-center mb-1.5">{field.label}</label>
+                      <input 
+                        type="number" 
+                        className="w-full h-10 text-center text-sm font-bold border border-slate-200 rounded-xl focus:border-blue-400 focus:ring-0 outline-none shadow-sm"
+                        value={form.metadata?.rooms?.[field.key] || 0}
+                        onChange={(e) => {
+                          const currentRooms = form.metadata?.rooms || {};
+                          setMeta('rooms', { ...currentRooms, [field.key]: parseInt(e.target.value) || 0 });
+                        }}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Check-in / Check-out */}
+              <div className="bg-amber-50/40 p-5 rounded-[28px] border border-amber-100/60 shadow-inner grid grid-cols-2 gap-8 relative overflow-hidden">
+                <div className="absolute top-0 right-0 p-2 opacity-5"><div className="w-12 h-12 rounded-full border-4 border-amber-400/20" /></div>
+                
+                <div>
+                  <label className="text-[10px] font-black text-amber-700/60 uppercase tracking-widest block mb-2 ml-1">Check-in*</label>
+                  <div className="flex gap-2">
+                    <Input type="date" className="h-11 rounded-2xl border-amber-200/50 bg-white shadow-sm flex-1" value={form.metadata?.checkInDate || ''} onChange={e => setMeta('checkInDate', e.target.value)} />
+                    <select className="w-24 h-11 px-3 border border-amber-200/50 rounded-2xl bg-white shadow-sm text-xs font-bold" value={form.metadata?.checkInTime || '12:00'} onChange={e => setMeta('checkInTime', e.target.value)}>
+                      {Array.from({ length: 24 }).map((_, i) => (
+                        <option key={i} value={`${i.toString().padStart(2, '0')}:00`}>{i.toString().padStart(2, '0')}:00</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+                <div>
+                  <label className="text-[10px] font-black text-amber-700/60 uppercase tracking-widest block mb-2 ml-1">Check-out*</label>
+                  <div className="flex gap-2">
+                    <Input type="date" className="h-11 rounded-2xl border-amber-200/50 bg-white shadow-sm flex-1" value={form.metadata?.checkOutDate || ''} onChange={e => setMeta('checkOutDate', e.target.value)} />
+                    <select className="w-24 h-11 px-3 border border-amber-200/50 rounded-2xl bg-white shadow-sm text-xs font-bold" value={form.metadata?.checkOutTime || '12:00'} onChange={e => setMeta('checkOutTime', e.target.value)}>
+                      {Array.from({ length: 24 }).map((_, i) => (
+                        <option key={i} value={`${i.toString().padStart(2, '0')}:00`}>{i.toString().padStart(2, '0')}:00</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2 ml-1">Description</label>
+                <textarea 
+                  className="w-full min-h-[100px] px-5 py-4 border border-slate-200 rounded-[28px] bg-white text-sm focus:border-blue-400 focus:ring-0 resize-none shadow-sm transition-all" 
+                  value={form.description || ''} 
+                  placeholder="e.g. 2 rooms with breakfast and dinner"
+                  onChange={e => set('description', e.target.value)} 
+                />
+              </div>
             </div>
           )}
+          
+          {/* Other Types */}
           {form.type === 'flight' && (<>
-            <div className="grid grid-cols-2 gap-3">
-              <div><label className="text-xs font-medium text-muted-foreground uppercase">Airline</label><Input className="mt-1 h-9 rounded-lg" value={form.metadata?.airline || ''} onChange={e => setMeta('airline', e.target.value)} /></div>
-              <div><label className="text-xs font-medium text-muted-foreground uppercase">Flight No.</label><Input className="mt-1 h-9 rounded-lg" value={form.metadata?.flightNumber || ''} onChange={e => setMeta('flightNumber', e.target.value)} /></div>
+            <div className="grid grid-cols-2 gap-4">
+              <div><label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1.5 ml-1">Airline</label><Input className="h-11 rounded-2xl border-slate-200 bg-slate-50/50" value={form.metadata?.airline || ''} onChange={e => setMeta('airline', e.target.value)} /></div>
+              <div><label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1.5 ml-1">Flight No.</label><Input className="h-11 rounded-2xl border-slate-200 bg-slate-50/50" value={form.metadata?.flightNumber || ''} onChange={e => setMeta('flightNumber', e.target.value)} /></div>
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div><label className="text-xs font-medium text-muted-foreground uppercase">From</label><Input className="mt-1 h-9 rounded-lg" value={form.metadata?.from || ''} onChange={e => setMeta('from', e.target.value)} /></div>
-              <div><label className="text-xs font-medium text-muted-foreground uppercase">To</label><Input className="mt-1 h-9 rounded-lg" value={form.metadata?.to || ''} onChange={e => setMeta('to', e.target.value)} /></div>
+            <div className="grid grid-cols-2 gap-4">
+              <div><label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1.5 ml-1">From</label><Input className="h-11 rounded-2xl border-slate-200 bg-slate-50/50" value={form.metadata?.from || ''} onChange={e => setMeta('from', e.target.value)} /></div>
+              <div><label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1.5 ml-1">To</label><Input className="h-11 rounded-2xl border-slate-200 bg-slate-50/50" value={form.metadata?.to || ''} onChange={e => setMeta('to', e.target.value)} /></div>
             </div>
           </>)}
           {form.type === 'transport' && (<>
-            <div><label className="text-xs font-medium text-muted-foreground uppercase">Vehicle / Mode</label><Input className="mt-1 h-9 rounded-lg" value={form.metadata?.vehicle || ''} onChange={e => setMeta('vehicle', e.target.value)} /></div>
-            <div className="grid grid-cols-2 gap-3">
-              <div><label className="text-xs font-medium text-muted-foreground uppercase">From</label><Input className="mt-1 h-9 rounded-lg" value={form.metadata?.from || ''} onChange={e => setMeta('from', e.target.value)} /></div>
-              <div><label className="text-xs font-medium text-muted-foreground uppercase">To</label><Input className="mt-1 h-9 rounded-lg" value={form.metadata?.to || ''} onChange={e => setMeta('to', e.target.value)} /></div>
+            <div><label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1.5 ml-1">Vehicle / Mode</label><Input className="h-11 rounded-2xl border-slate-200 bg-slate-50/50" value={form.metadata?.vehicle || ''} onChange={e => setMeta('vehicle', e.target.value)} /></div>
+            <div className="grid grid-cols-2 gap-4">
+              <div><label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1.5 ml-1">From</label><Input className="h-11 rounded-2xl border-slate-200 bg-slate-50/50" value={form.metadata?.from || ''} onChange={e => setMeta('from', e.target.value)} /></div>
+              <div><label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1.5 ml-1">To</label><Input className="h-11 rounded-2xl border-slate-200 bg-slate-50/50" value={form.metadata?.to || ''} onChange={e => setMeta('to', e.target.value)} /></div>
             </div>
           </>)}
           {form.type === 'meal' && (<>
-            <div><label className="text-xs font-medium text-muted-foreground uppercase">Restaurant</label><Input className="mt-1 h-9 rounded-lg" value={form.metadata?.restaurant || ''} onChange={e => setMeta('restaurant', e.target.value)} /></div>
-            <div><label className="text-xs font-medium text-muted-foreground uppercase">Cuisine / Type</label><Input className="mt-1 h-9 rounded-lg" value={form.metadata?.cuisine || ''} onChange={e => setMeta('cuisine', e.target.value)} /></div>
+            <div><label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1.5 ml-1">Restaurant</label><Input className="h-11 rounded-2xl border-slate-200 bg-slate-50/50" value={form.metadata?.restaurant || ''} onChange={e => setMeta('restaurant', e.target.value)} /></div>
+            <div><label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1.5 ml-1">Cuisine / Type</label><Input className="h-11 rounded-2xl border-slate-200 bg-slate-50/50" value={form.metadata?.cuisine || ''} onChange={e => setMeta('cuisine', e.target.value)} /></div>
           </>)}
         </div>
-        <div className="flex justify-end gap-2 p-4 border-t sticky bottom-0 bg-white rounded-b-2xl">
-          <Button variant="ghost" size="sm" className="rounded-lg" onClick={onClose}>Cancel</Button>
-          <Button size="sm" className="rounded-lg font-bold" onClick={() => onSave({ title: form.title, description: form.description, startTime: form.startTime, endTime: form.endTime, cost: form.cost, metadata: form.metadata, type: form.type })}>
-            <Check className="w-3.5 h-3.5 mr-1" /> Save
+
+        <div className="flex items-center justify-between gap-4 p-8 border-t bg-slate-50/80 sticky bottom-0 z-10">
+          <Button 
+            variant="destructive" 
+            className="rounded-[20px] font-bold px-8 h-12 bg-orange-600 hover:bg-orange-700 shadow-lg shadow-orange-200/50 active:scale-95 transition-all" 
+            onClick={() => {
+              if (confirm('Are you sure you want to delete this event?')) {
+                onDelete(form.id);
+              }
+            }}
+          >
+            <Trash2 className="w-5 h-5 mr-2" /> Delete
           </Button>
+
+          <div className="flex gap-4">
+            <Button variant="ghost" className="rounded-2xl font-bold px-8 h-12 text-slate-400 hover:text-slate-600 hover:bg-slate-200/50 active:scale-95 transition-all" onClick={onClose}>Cancel</Button>
+            <Button 
+              className="rounded-[20px] font-bold px-10 h-12 bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-200/50 active:scale-95 transition-all" 
+              onClick={() => onSave({ title: form.title, description: form.description, startTime: form.startTime, endTime: form.endTime, cost: form.cost, metadata: form.metadata, type: form.type })}
+            >
+              <Check className="w-5 h-5 mr-2" /> Save
+            </Button>
+          </div>
         </div>
       </div>
+    </div>
     </div>
   );
 }
@@ -913,6 +1088,66 @@ function FinalPreviewTab({ itinerary, onShare, onExport }: { itinerary: any; onS
         </CardContent>
       </Card>
 
+      {/* Package Terms */}
+      {(itinerary.inclusionsHtml || itinerary.exclusionsHtml || itinerary.paymentPolicyHtml || itinerary.cancellationPolicyHtml || itinerary.termsHtml) && (
+        <Card className="rounded-2xl border-slate-200">
+          <CardContent className="p-6 space-y-8">
+            <h3 className="font-bold text-lg text-slate-900 mb-2">Package Policies</h3>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              {itinerary.inclusionsHtml && (
+                <div>
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="w-6 h-6 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center"><CheckCircle className="w-3.5 h-3.5" /></div>
+                    <span className="font-black text-[10px] uppercase tracking-widest text-slate-700">Inclusions</span>
+                  </div>
+                  <div className="text-xs text-slate-500 leading-relaxed whitespace-pre-wrap pl-8">{itinerary.inclusionsHtml}</div>
+                </div>
+              )}
+              {itinerary.exclusionsHtml && (
+                <div>
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="w-6 h-6 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center"><XCircle className="w-3.5 h-3.5" /></div>
+                    <span className="font-black text-[10px] uppercase tracking-widest text-slate-700">Exclusions</span>
+                  </div>
+                  <div className="text-xs text-slate-500 leading-relaxed whitespace-pre-wrap pl-8">{itinerary.exclusionsHtml}</div>
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-6 pt-4 border-t border-slate-50">
+              {itinerary.paymentPolicyHtml && (
+                <div>
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="w-6 h-6 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center"><CreditCard className="w-3.5 h-3.5" /></div>
+                    <span className="font-black text-[10px] uppercase tracking-widest text-slate-700">Payment Policy</span>
+                  </div>
+                  <div className="text-xs text-slate-500 leading-relaxed whitespace-pre-wrap pl-8">{itinerary.paymentPolicyHtml}</div>
+                </div>
+              )}
+              {itinerary.cancellationPolicyHtml && (
+                <div>
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="w-6 h-6 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center"><AlertTriangle className="w-3.5 h-3.5" /></div>
+                    <span className="font-black text-[10px] uppercase tracking-widest text-slate-700">Cancellation Policy</span>
+                  </div>
+                  <div className="text-xs text-slate-500 leading-relaxed whitespace-pre-wrap pl-8">{itinerary.cancellationPolicyHtml}</div>
+                </div>
+              )}
+              {itinerary.termsHtml && (
+                <div>
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="w-6 h-6 rounded-lg bg-slate-50 text-slate-600 flex items-center justify-center"><Shield className="w-3.5 h-3.5" /></div>
+                    <span className="font-black text-[10px] uppercase tracking-widest text-slate-700">Terms & Conditions</span>
+                  </div>
+                  <div className="text-xs text-slate-500 leading-relaxed whitespace-pre-wrap pl-8">{itinerary.termsHtml}</div>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Pricing Summary */}
       {itinerary.perPersonCost !== null && itinerary.perPersonCost !== undefined && (
         <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl p-6 text-white text-center">
@@ -921,6 +1156,133 @@ function FinalPreviewTab({ itinerary, onShare, onExport }: { itinerary: any; onS
           {itinerary.totalCost && <p className="text-sm text-white/70 mt-1">Total: ₹{Number(itinerary.totalCost).toLocaleString('en-IN')}</p>}
         </div>
       )}
+    </div>
+  );
+}
+
+function PackageTermsEditor({ itinerary, onUpdate }: { itinerary: any; onUpdate: (data: any) => void }) {
+  return (
+    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <div className="flex items-center justify-between mb-2">
+        <div>
+          <h2 className="text-2xl font-black tracking-tight text-slate-800">Package Terms</h2>
+          <p className="text-xs font-medium text-slate-500 mt-1">Manage inclusions, exclusions, and company policies for this itinerary.</p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <TermSection 
+          title="Inclusions" 
+          icon={CheckCircle} 
+          value={itinerary.inclusionsHtml} 
+          onSave={(val: string) => onUpdate({ inclusionsHtml: val })}
+          color="emerald"
+          placeholder="List what's included (e.g. Breakfast, Sightseeing, Transfers)..."
+        />
+        <TermSection 
+          title="Exclusions" 
+          icon={XCircle} 
+          value={itinerary.exclusionsHtml} 
+          onSave={(val: string) => onUpdate({ exclusionsHtml: val })}
+          color="rose"
+          placeholder="List what's NOT included (e.g. GST, Personal Expenses)..."
+        />
+      </div>
+
+      <TermSection 
+        title="Payment Policy" 
+        icon={CreditCard} 
+        value={itinerary.paymentPolicyHtml} 
+        onSave={(val: string) => onUpdate({ paymentPolicyHtml: val })}
+        color="blue"
+        placeholder="Describe your booking and final payment terms..."
+      />
+
+      <TermSection 
+        title="Cancellation Policy" 
+        icon={AlertTriangle} 
+        value={itinerary.cancellationPolicyHtml} 
+        onSave={(val: string) => onUpdate({ cancellationPolicyHtml: val })}
+        color="amber"
+        placeholder="Outline your refund and cancellation slab terms..."
+      />
+
+      <TermSection 
+        title="Terms & Conditions" 
+        icon={Shield} 
+        value={itinerary.termsHtml} 
+        onSave={(val: string) => onUpdate({ termsHtml: val })}
+        color="slate"
+        placeholder="Add any general terms, child policies, or legal fine print..."
+      />
+    </div>
+  );
+}
+
+function TermSection({ title, icon: Icon, value, onSave, color, placeholder }: any) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [localValue, setLocalValue] = useState(value || '');
+
+  useEffect(() => { setLocalValue(value || ''); }, [value]);
+
+  const handleSave = () => {
+    if (localValue.trim() !== (value || '').trim()) {
+      onSave(localValue);
+    }
+    setIsEditing(false);
+  };
+
+  const colors: any = {
+    emerald: "text-emerald-600 bg-emerald-50 border-emerald-100",
+    rose: "text-rose-600 bg-rose-50 border-rose-100",
+    blue: "text-blue-600 bg-blue-50 border-blue-100",
+    amber: "text-amber-600 bg-amber-50 border-amber-100",
+    slate: "text-slate-600 bg-slate-50 border-slate-100",
+  };
+
+  return (
+    <Card className="rounded-[32px] border-slate-200/60 overflow-hidden shadow-sm hover:shadow-md transition-all group/term">
+      <div className="p-6">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-3">
+            <div className={cn("w-10 h-10 rounded-2xl flex items-center justify-center border", colors[color] || colors.slate)}>
+              <Icon className="w-5 h-5" />
+            </div>
+            <h3 className="font-black text-sm uppercase tracking-widest text-slate-700">{title}</h3>
+          </div>
+          <button 
+            onClick={() => isEditing ? handleSave() : setIsEditing(true)}
+            className="w-10 h-10 flex items-center justify-center bg-slate-50 hover:bg-blue-50 text-slate-400 hover:text-blue-600 rounded-2xl transition-all shadow-sm"
+          >
+            {isEditing ? <Check className="w-5 h-5 text-emerald-600" /> : <Edit3 className="w-5 h-5" />}
+          </button>
+        </div>
+
+        {isEditing ? (
+          <textarea
+            className="w-full min-h-[120px] p-4 text-sm font-medium rounded-2xl border-slate-200 focus:border-blue-400 focus:ring-0 bg-slate-50/50 resize-none transition-all"
+            value={localValue}
+            onChange={(e) => setLocalValue(e.target.value)}
+            onBlur={handleSave}
+            autoFocus
+            placeholder={placeholder}
+          />
+        ) : (
+          <div className="min-h-[60px] text-[13px] font-medium text-slate-500 leading-relaxed whitespace-pre-wrap">
+            {value ? value : <span className="italic opacity-50">No information added. Click edit to add {title.toLowerCase()}.</span>}
+          </div>
+        )}
+      </div>
+    </Card>
+  );
+}
+
+function GalleryEditor({ itinerary }: { itinerary: any }) {
+  return (
+    <div className="flex flex-col items-center justify-center py-20 text-slate-300 bg-white rounded-[40px] border border-slate-200 h-full shadow-sm">
+      <ImageIcon className="w-12 h-12 mb-4 opacity-20" />
+      <p className="font-bold text-sm uppercase tracking-widest">Gallery Image Management</p>
+      <p className="text-xs text-slate-400 mt-1">Add or remove images for this itinerary's public view.</p>
     </div>
   );
 }
