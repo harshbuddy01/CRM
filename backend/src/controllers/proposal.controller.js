@@ -381,6 +381,100 @@ const logEvent = async (req, res, next) => {
   }
 };
 
+const confirmProposal = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const canViewAll = req.user.permissions['query.view_all'];
+    
+    // 1. Get proposal with query details for tour data
+    const proposal = await proposalService.getProposalById(id, req.user.id, canViewAll);
+
+    // 2. Perform transaction to ensure atomic consistency
+    const result = await prisma.$transaction(async (tx) => {
+      // A. Mark this proposal as confirmed
+      const confirmedProposal = await tx.proposal.update({
+        where: { id },
+        data: { status: 'confirmed' }
+      });
+
+      // B. Mark all other proposals for this same query as rejected
+      await tx.proposal.updateMany({
+        where: { 
+          queryId: proposal.queryId,
+          id: { not: id },
+          status: 'pending' // Only reject pending ones to avoid overwriting existing rejections
+        },
+        data: { status: 'rejected' }
+      });
+
+      // C. Move the query to confirmed status
+      const updatedQuery = await tx.query.update({
+        where: { id: proposal.queryId },
+        data: { status: 'confirmed' }
+      });
+
+      // D. Create or link a Tour record (Ops Phase starts)
+      // We generate a deterministic tour code if it doesn't exist
+      const tourCode = `TUR-${new Date().getFullYear()}-${proposal.query.queryCode?.split('-').pop() || Math.random().toString(36).substr(2, 5).toUpperCase()}`;
+      
+      // Check if tour already exists for this query
+      const existingTour = await tx.tour.findFirst({
+        where: { queryId: proposal.queryId }
+      });
+
+      let tour;
+      if (existingTour) {
+        tour = await tx.tour.update({
+          where: { id: existingTour.id },
+          data: {
+            proposalId: id,
+            itineraryId: proposal.itineraryId,
+            status: 'upcoming',
+            startDate: updatedQuery.travelDateFrom || new Date(),
+            endDate: updatedQuery.travelDateTo || new Date(),
+            totalPax: (updatedQuery.adults || 0) + (updatedQuery.children || 0),
+          }
+        });
+      } else {
+        tour = await tx.tour.create({
+          data: {
+            queryId: proposal.queryId,
+            proposalId: id,
+            itineraryId: proposal.itineraryId,
+            tourCode: tourCode,
+            status: 'upcoming',
+            startDate: updatedQuery.travelDateFrom || new Date(),
+            endDate: updatedQuery.travelDateTo || new Date(),
+            totalPax: (updatedQuery.adults || 0) + (updatedQuery.children || 0),
+          }
+        });
+      }
+
+      // E. Log Activity for audit trail
+      await tx.activityLog.create({
+        data: {
+          userId: req.user.id,
+          action: 'proposal.confirmed',
+          entityType: 'query',
+          entityId: proposal.queryId,
+          newValue: { version: proposal.version, tourId: tour.id, tourCode: tour.tourCode }
+        }
+      });
+
+      return { confirmedProposal, tour };
+    });
+
+    res.json({ 
+      success: true, 
+      message: 'Proposal confirmed! Query and Tour successfully transitioned to Operations.', 
+      data: result 
+    });
+  } catch (error) {
+    console.error('Confirm Proposal Error:', error);
+    next(error);
+  }
+};
+
 const listAllProposals = async (req, res, next) => {
   try {
     const proposals = await proposalService.listAllProposals();

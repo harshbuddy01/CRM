@@ -30,7 +30,9 @@ import {
   Image as ImageIcon,
   CheckCircle2,
   XCircle,
-  Clock
+  Clock,
+  Database,
+  Eye
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Input } from '@/components/ui/input';
@@ -624,7 +626,9 @@ export default function QueryDetailPage() {
       />
     </div>
   );
-}function QueryProposalsList({ queryId, queryCode, customerName, customerEmail }: { queryId: string, queryCode: string, customerName: string, customerEmail: string }) {
+}
+
+function QueryProposalsList({ queryId, queryCode, customerName, customerEmail }: { queryId: string, queryCode: string, customerName: string, customerEmail: string }) {
   const queryClient = useQueryClient();
   const router = useRouter();
   const [waModalOpenId, setWaModalOpenId] = useState<string | null>(null);
@@ -637,6 +641,8 @@ export default function QueryDetailPage() {
   const toggleSelect = (id: string) => {
     setSelectedIds(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
   };
+
+  const confirmProposalMutation = useMutation({
     mutationFn: async (proposalId: string) => {
       const res = await api.post(`/proposals/${proposalId}/confirm`);
       return res.data;
@@ -748,20 +754,20 @@ export default function QueryDetailPage() {
       </p>
       <div className="flex flex-col sm:flex-row items-center justify-center gap-3 px-4">
         <Button 
-          className="rounded-xl px-8 font-black shadow-lg shadow-primary/20 w-full sm:w-auto h-12"
+          className="rounded-xl px-8 h-12 font-black transition-all bg-primary hover:bg-primary/90 text-white shadow-lg hover:shadow-primary/20 w-full sm:w-auto"
           onClick={() => createProposalMutation.mutate()}
           disabled={createProposalMutation.isPending}
         >
-          {createProposalMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Plus className="w-4 h-4 mr-2" />}
-          + Create itinerary
+          {createProposalMutation.isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Plus className="w-4 h-4 mr-2" />}
+          Fresh Itinerary
         </Button>
         <Button 
-          variant="outline" 
-          className="rounded-xl px-8 font-black border-slate-200 bg-white hover:bg-slate-50 w-full sm:w-auto h-12"
+          variant="outline"
+          className="rounded-xl px-8 h-12 font-black border-slate-200 hover:border-primary hover:bg-primary/[0.02] transition-all w-full sm:w-auto shadow-sm"
           onClick={() => setShowInsertModal(true)}
         >
-          <Plus className="w-4 h-4 mr-2 text-primary" />
-          ↓ Insert itinerary
+          <Database className="w-4 h-4 mr-2 text-primary" />
+          From Masters
         </Button>
       </div>
     </div>
@@ -769,22 +775,21 @@ export default function QueryDetailPage() {
 
   return (
     <div className="space-y-6">
-      {proposals && proposals.length > 0 && (
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-2">
-          <div>
-            <h3 className="text-lg font-black text-slate-900 tracking-tight">Active Proposals</h3>
-            <p className="text-xs text-muted-foreground font-medium">Manage versions and dispatch to client</p>
+      {proposals?.length > 0 && (
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-50/80 p-6 rounded-[32px] border border-slate-100 shadow-sm transition-all hover:shadow-md">
+          <div className="flex flex-col gap-1">
+            <h3 className="text-xl font-black text-slate-900 tracking-tight flex items-center gap-2">
+              Proposed Itineraries
+              <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 text-primary text-[11px] font-black uppercase tracking-wider">
+                {proposals.length} Versions
+              </div>
+            </h3>
+            <p className="text-xs text-muted-foreground font-medium flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              Manage multiple versions of your travel plan below.
+            </p>
           </div>
           <div className="flex items-center gap-2 w-full sm:w-auto">
-            <Button 
-              size="sm" 
-              className="rounded-lg font-bold flex-1 sm:flex-none h-9"
-              onClick={() => createProposalMutation.mutate()}
-              disabled={createProposalMutation.isPending}
-            >
-              {createProposalMutation.isPending ? <Loader2 className="w-3 h-3 animate-spin mr-2" /> : <Plus className="w-3 h-3 mr-1" />}
-              Create
-            </Button>
             <Button 
               size="sm" 
               variant="outline" 
@@ -800,7 +805,7 @@ export default function QueryDetailPage() {
                 size="sm" 
                 variant="default" 
                 className="rounded-lg font-black bg-blue-600 hover:bg-blue-700 h-9 px-4 animate-in fade-in slide-in-from-right-4"
-                onClick={() => setEmailModalOpenId(selectedIds[0])} // For now open first or link them
+                onClick={() => setEmailModalOpenId(selectedIds[0])}
               >
                 Bulk Send ({selectedIds.length})
               </Button>
@@ -809,8 +814,8 @@ export default function QueryDetailPage() {
         </div>
       )}
 
-      {(!proposals || proposals.length === 0) ? renderEmptyState() : (
-        <div className="space-y-4">
+      {!proposals || proposals.length === 0 ? renderEmptyState() : (
+        <div className="grid grid-cols-1 gap-4">
           {proposals.map((p: any) => (
             <div key={p.id} className={cn(
               "p-5 border rounded-[32px] transition-all bg-white flex justify-between items-center group shadow-sm relative overflow-hidden",
@@ -830,122 +835,122 @@ export default function QueryDetailPage() {
                   {p.itinerary?.coverPhotoUrl ? (
                     <img src={p.itinerary.coverPhotoUrl} alt="" className="hidden sm:block w-20 h-20 rounded-[28px] object-cover shadow-md border-2 border-white" />
                   ) : (
-                    <div className="hidden sm:flex w-20 h-20 bg-slate-100 border text-primary rounded-[28px] items-center justify-center font-black text-xl">
-                      v{p.version}
+                    <div className="hidden sm:flex w-20 h-20 rounded-[28px] bg-slate-100 items-center justify-center border-2 border-white shadow-sm">
+                      <ImageIcon className="w-8 h-8 text-slate-300" />
                     </div>
                   )}
-                  <div className="absolute -bottom-2 -right-2 bg-white rounded-full p-1 shadow-sm border">
-                    <div className={cn("w-6 h-6 rounded-full flex items-center justify-center", 
-                      p.status === 'confirmed' ? "bg-emerald-100 text-emerald-600" : 
-                      p.status === 'rejected' ? "bg-slate-100 text-slate-400" : 
-                      "bg-blue-100 text-blue-600")}>
-                      {p.status === 'confirmed' ? <CheckCircle2 className="w-4 h-4" /> : 
-                       p.status === 'rejected' ? <XCircle className="w-4 h-4" /> : 
-                       <Clock className="w-4 h-4" />}
+                  {p.status === 'confirmed' && (
+                    <div className="absolute -top-2 -right-2 bg-emerald-500 text-white rounded-full p-1.5 shadow-lg border-2 border-white">
+                      <CheckCircle2 className="w-4 h-4" />
                     </div>
-                  </div>
+                  )}
+                  {p.status === 'rejected' && (
+                    <div className="absolute -top-2 -right-2 bg-slate-400 text-white rounded-full p-1.5 shadow-lg border-2 border-white">
+                      <XCircle className="w-4 h-4" />
+                    </div>
+                  )}
                 </div>
                 <div>
                   <div className="flex items-center gap-3">
-                    <h4 className="font-black text-slate-900 text-lg tracking-tight">Version {p.version}</h4>
-                    <span className="text-[10px] bg-slate-100 px-3 py-1 rounded-full text-slate-500 font-black uppercase tracking-widest leading-none">
-                      {new Date(p.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-4 mt-2">
-                    <p className="text-slate-500 text-sm font-bold flex items-center">
-                      <IndianRupee className="w-4 h-4 mr-1 text-slate-400" />
-                      {Number(p.sellingPrice).toLocaleString()}
-                    </p>
-                    {p.itinerary && (
-                      <div className="flex items-center gap-2 bg-slate-50 px-3 py-1 rounded-xl border border-slate-100 max-w-[250px]">
-                        <ImageIcon className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                        <span className="text-[11px] font-bold text-slate-600 truncate">{p.itinerary.title}</span>
-                      </div>
+                    <p className="font-black text-slate-900 text-lg leading-none">v{p.version}</p>
+                    {p.status !== 'pending' && (
+                      <span className={cn(
+                        "px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest",
+                        p.status === 'confirmed' ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-600"
+                      )}>
+                        {p.status}
+                      </span>
                     )}
                   </div>
+                  <p className="text-sm font-bold text-slate-900 mt-2 truncate max-w-[200px] sm:max-w-md">
+                    {p.itinerary?.title || `Proposal for ${customerName}`}
+                  </p>
+                  <p className="text-[11px] font-medium text-slate-500 flex items-center gap-2 mt-1">
+                    <Clock className="w-3 h-3" /> Updated {new Date(p.updatedAt).toLocaleDateString()}
+                  </p>
+                </div>
                 </div>
               </div>
-              <div className="flex gap-2 items-center">
-                {p.status === 'pending' && !proposals.some((op: any) => op.status === 'confirmed') && (
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="rounded-2xl h-10 font-black px-5 border-emerald-200 text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700"
-                    onClick={() => confirmProposalMutation.mutate(p.id)}
-                    disabled={confirmProposalMutation.isPending}
-                  >
-                    <CheckCircle2 className="w-4 h-4 mr-2" />
-                    Confirm
-                  </Button>
-                )}
-                
-                {p.itinerary && (
-                  <Link href={`/itineraries/${p.itinerary.id}`}>
-                    <Button variant="ghost" size="sm" className="rounded-2xl h-10 w-10 p-0 text-slate-400 hover:text-primary">
-                      <Edit className="w-4 h-4" />
-                    </Button>
-                  </Link>
-                )}
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="rounded-2xl h-10 w-10 p-0 text-slate-400 hover:text-blue-500"
-                  onClick={() => downloadPdf.mutate(p)}
-                  disabled={downloadingId === p.id}
-                >
-                  {downloadingId === p.id ? <Loader2 className="w-4 h-4 animate-spin text-blue-500" /> : <FileText className="w-4 h-4" />}
-                </Button>
 
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="rounded-2xl h-10 font-black px-4 border-slate-200 text-slate-700 hover:bg-slate-50"
-                  onClick={() => setEmailModalOpenId(p.id)}
-                >
-                  <Mail className="w-4 h-4 mr-1.5 text-slate-400" /> Email
-                </Button>
-
-                <Dialog open={waModalOpenId === p.id} onOpenChange={(open) => {
-                  if (!open) {
-                    setWaModalOpenId(null);
-                    setManualWaLink(null);
-                  }
-                }}>
-                  {/* @ts-expect-error shadcn generic trigger issue */}
-                  <DialogTrigger asChild>
+              <div className="flex items-center gap-2">
+                {/* Actions */}
+                <div className="flex items-center gap-1.5 bg-slate-50 p-1.5 rounded-2xl border border-slate-100 opacity-0 group-hover:opacity-100 transition-all scale-95 group-hover:scale-100">
+                  {p.status === 'pending' && (
                     <Button 
-                      variant="default" 
-                      size="sm" 
-                      className="rounded-2xl h-10 font-black px-4 bg-emerald-600 hover:bg-emerald-700 shadow-md shadow-emerald-100"
-                      onClick={() => handleWaModalOpen(p.id)}
+                      size="sm"
+                      variant="ghost"
+                      className="rounded-xl h-10 w-10 p-0 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 transition-all font-black"
+                      title="Confirm this proposal"
+                      onClick={() => confirmProposalMutation.mutate(p.id)}
+                      disabled={confirmProposalMutation.isPending}
                     >
-                      <MessageCircle className="w-4 h-4 mr-1.5" /> WhatsApp
+                      {confirmProposalMutation.isPending && confirmProposalMutation.variables === p.id ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <CheckCircle2 className="w-5 h-5" />
+                      )}
                     </Button>
-                  </DialogTrigger>
-                  <DialogContent>
+                  )}
+                  <Button 
+                    size="sm" 
+                    variant="ghost" 
+                    className="rounded-xl h-10 w-10 p-0 text-slate-600 hover:text-primary hover:bg-white hover:shadow-sm"
+                    onClick={() => router.push(`/itineraries/${p.itineraryId}`)}
+                  >
+                    <Eye className="w-4 h-4" />
+                  </Button>
+                  <Button 
+                    size="sm" 
+                    variant="ghost" 
+                    className="rounded-xl h-10 w-10 p-0 text-slate-600 hover:text-blue-600 hover:bg-white hover:shadow-sm"
+                    onClick={() => downloadPdf.mutate(p)}
+                    disabled={downloadingId === p.id}
+                  >
+                    {downloadingId === p.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileText className="w-4 h-4" />}
+                  </Button>
+                  <Button 
+                    size="sm" 
+                    variant="ghost" 
+                    className="rounded-xl h-10 w-10 p-0 text-slate-600 hover:text-orange-600 hover:bg-white hover:shadow-sm"
+                    onClick={() => setEmailModalOpenId(p.id)}
+                  >
+                    <Mail className="w-4 h-4" />
+                  </Button>
+                  <Button 
+                    size="sm" 
+                    variant="ghost" 
+                    className="rounded-xl h-10 w-10 p-0 text-slate-600 hover:text-emerald-600 hover:bg-white hover:shadow-sm"
+                    onClick={() => handleWaModalOpen(p.id)}
+                  >
+                    <MessageCircle className="w-4 h-4" />
+                  </Button>
+                </div>
+
+                <Dialog open={waModalOpenId === p.id} onOpenChange={(open) => !open && setWaModalOpenId(null)}>
+                  <DialogContent className="sm:max-w-md">
                     <DialogHeader>
-                      <DialogTitle>Send via WhatsApp</DialogTitle>
+                      <DialogTitle className="flex items-center gap-2">
+                        <MessageCircle className="w-5 h-5 text-emerald-600" />
+                        Send via WhatsApp
+                      </DialogTitle>
                     </DialogHeader>
                     {manualWaLink ? (
-                      <div className="flex flex-col items-center justify-center py-6 gap-4">
-                        <p className="text-muted-foreground text-center">Your WhatsApp link is ready.</p>
+                      <div className="space-y-4 py-4">
+                        <div className="p-4 bg-emerald-50 rounded-2xl border border-emerald-100 flex items-start gap-3">
+                          <div className="mt-0.5"><div className="w-2 h-2 rounded-full bg-emerald-500" /></div>
+                          <p className="text-sm font-medium text-emerald-900 leading-relaxed">
+                            Since automated WhatsApp is disabled, please click the button below to open WhatsApp on your device with the proposal link.
+                          </p>
+                        </div>
                         <Button 
-                          className="bg-emerald-600 hover:bg-emerald-700 w-full"
+                          className="w-full bg-emerald-600 hover:bg-emerald-700 h-12 rounded-xl font-black shadow-lg shadow-emerald-600/20"
                           onClick={() => {
-                            try {
-                              const url = new URL(manualWaLink as string);
-                              if (url.protocol !== 'https:') throw new Error('Insecure protocol');
-                              window.open(manualWaLink as string, '_blank');
-                            } catch (err) {
-                              toast.error('Invalid WhatsApp link');
-                            } finally {
-                              setWaModalOpenId(null);
-                              setManualWaLink(null);
-                            }
+                            window.open(manualWaLink, '_blank');
+                            setWaModalOpenId(null);
+                            setManualWaLink(null);
                           }}
                         >
-                          Open WhatsApp
+                          Open WhatsApp Now
                         </Button>
                       </div>
                     ) : (
