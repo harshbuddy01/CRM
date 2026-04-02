@@ -199,20 +199,27 @@ export default function ItineraryBuilderPage() {
               </div>
             </div>
             
-            <div className="flex flex-wrap gap-2 md:justify-end shrink-0">
-              <Button size="sm" variant="secondary" className="rounded-xl font-bold text-xs" onClick={() => coverRef.current?.click()}>
-                <Camera className="w-3.5 h-3.5 mr-1" /> Cover Photo
+            <div className="flex flex-wrap gap-2 md:justify-end shrink-0 items-center">
+              {/* Compact Tabs in Header */}
+              <TabsList className="bg-white/10 border border-white/20 rounded-xl p-1 h-9 mr-2">
+                <TabsTrigger value="build" className="rounded-lg font-bold text-[10px] uppercase tracking-wider text-white/70 data-[state=active]:bg-white data-[state=active]:text-primary px-3 transition-all">Build</TabsTrigger>
+                <TabsTrigger value="pricing" className="rounded-lg font-bold text-[10px] uppercase tracking-wider text-white/70 data-[state=active]:bg-white data-[state=active]:text-primary px-3 transition-all">Pricing</TabsTrigger>
+                <TabsTrigger value="final" className="rounded-lg font-bold text-[10px] uppercase tracking-wider text-white/70 data-[state=active]:bg-white data-[state=active]:text-primary px-3 transition-all">Final</TabsTrigger>
+              </TabsList>
+
+              <Button size="sm" variant="secondary" className="rounded-xl font-bold text-xs h-9" onClick={() => coverRef.current?.click()}>
+                <Camera className="w-3.5 h-3.5 mr-1" /> Cover
               </Button>
-              <Button size="sm" variant="secondary" className="rounded-xl font-bold text-xs" onClick={handleShare}>
+              <Button size="sm" variant="secondary" className="rounded-xl font-bold text-xs h-9" onClick={handleShare}>
                 <Share2 className="w-3.5 h-3.5 mr-1" /> Share
               </Button>
-              <Button size="sm" variant="secondary" className="rounded-xl font-bold text-xs" onClick={handleExportPdf}>
+              <Button size="sm" variant="secondary" className="rounded-xl font-bold text-xs h-9" onClick={handleExportPdf}>
                 <Download className="w-3.5 h-3.5 mr-1" /> PDF
               </Button>
               
               {itinerary.status !== 'finalized' && (
-                <Button size="sm" className="rounded-xl font-bold text-xs bg-emerald-500 hover:bg-emerald-600 border-none text-white ml-2 shadow-lg shadow-emerald-500/20" onClick={handleFinalize}>
-                  <Check className="w-3.5 h-3.5 mr-1 text-white" /> Finalize Itinerary
+                <Button size="sm" className="rounded-xl font-bold text-xs h-9 bg-emerald-500 hover:bg-emerald-600 border-none text-white ml-1 shadow-lg shadow-emerald-500/20" onClick={handleFinalize}>
+                  <Check className="w-3.5 h-3.5 mr-1 text-white" /> Finalize
                 </Button>
               )}
             </div>
@@ -220,161 +227,149 @@ export default function ItineraryBuilderPage() {
         </div>
       </div>
 
-      {/* Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="bg-slate-100 rounded-xl p-1">
-          <TabsTrigger value="build" className="rounded-lg font-bold text-xs">Build</TabsTrigger>
-          <TabsTrigger value="pricing" className="rounded-lg font-bold text-xs">Pricing</TabsTrigger>
-          <TabsTrigger value="final" className="rounded-lg font-bold text-xs">Final Preview</TabsTrigger>
-        </TabsList>
-
-        {/* ═══ BUILD TAB ═══ */}
-        <TabsContent value="build" className="space-y-0">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-            {/* Left: Day List */}
-            <div className="lg:col-span-3 space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="font-bold text-sm text-slate-700">Days</h3>
-                <Button size="sm" variant="outline" className="h-7 text-xs rounded-lg" onClick={() => addDayMut.mutate({})}>
-                  <Plus className="w-3 h-3 mr-1" /> Add Day
-                </Button>
-              </div>
-              <div className="space-y-3">
-                {itinerary.days?.map((day: any) => (
-                  <div
-                    key={day.id}
-                    role="button"
-                    tabIndex={0}
-                    onClick={() => setSelectedDayId(day.id)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault();
-                        setSelectedDayId(day.id);
-                      }
-                    }}
-                    className={cn(
-                      'w-full text-left p-3 rounded-2xl border-2 transition-all duration-200 cursor-pointer group outline-none focus-visible:ring-2 focus-visible:ring-blue-500',
-                      selectedDayId === day.id ? 'border-primary bg-primary/5 shadow-md shadow-primary/10' : 'border-slate-200 hover:border-blue-300 bg-white'
-                    )}
-                  >
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex items-center gap-3">
-                        <div className={cn(
-                          'w-10 h-10 rounded-full flex items-center justify-center font-black text-sm transition-colors',
-                          selectedDayId === day.id ? 'bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-sm' : 'bg-slate-100 text-slate-500 group-hover:bg-blue-100 group-hover:text-blue-600'
-                        )}>
-                          {day.dayNumber}
-                        </div>
-                        <div>
-                          <div className="flex items-center gap-1.5">
-                            <span className="font-bold text-sm text-slate-800">Day {day.dayNumber}</span>
-                            <div className="p-1 rounded-md opacity-0 group-hover:opacity-100 transition-opacity bg-slate-100 hover:bg-slate-200 text-slate-500">
-                              <Edit3 className="w-3 h-3" />
-                            </div>
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col min-h-0">
+        {/* Main Content Area */}
+        <div className="flex-1 mt-4">
+          {/* ═══ BUILD TAB ═══ */}
+          <TabsContent value="build" className="space-y-0 mt-0 data-[state=inactive]:hidden">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+              {/* Left: Day List */}
+              <div className="lg:col-span-3 space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-bold text-sm text-slate-700">Days</h3>
+                  <Button size="sm" variant="outline" className="h-7 text-xs rounded-lg" onClick={() => addDayMut.mutate({})}>
+                    <Plus className="w-3 h-3 mr-1" /> Add Day
+                  </Button>
+                </div>
+                <div className="space-y-3">
+                  {itinerary.days?.map((day: any) => (
+                    <div
+                      key={day.id}
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => setSelectedDayId(day.id)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          setSelectedDayId(day.id);
+                        }
+                      }}
+                      className={cn(
+                        'w-full text-left p-3 rounded-2xl border-2 transition-all duration-200 cursor-pointer group outline-none focus-visible:ring-2 focus-visible:ring-blue-500',
+                        selectedDayId === day.id ? 'border-primary bg-primary/5 shadow-md shadow-primary/10' : 'border-slate-200 hover:border-blue-300 bg-white'
+                      )}
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex items-center gap-3">
+                          <div className={cn(
+                            'w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-colors',
+                            selectedDayId === day.id ? 'bg-primary text-white' : 'bg-slate-100 text-slate-500'
+                          )}>
+                            {day.dayNumber}
                           </div>
-                          <p className="text-xs text-muted-foreground mt-0.5 max-w-[120px] truncate">{day.destination?.name || 'No Destination'}</p>
+                          <div>
+                            <p className={cn('font-bold text-xs', selectedDayId === day.id ? 'text-primary' : 'text-slate-700')}>Day {day.dayNumber}</p>
+                            <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">{day.destination?.name || 'No Dest'}</p>
+                          </div>
                         </div>
+                        <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity text-red-400 hover:text-red-600 hover:bg-red-50" onClick={(e) => { e.stopPropagation(); removeDayMut.mutate(day.id); }}>
+                          <Trash2 className="w-3 h-3" />
+                        </Button>
                       </div>
                       
-                      <Button variant="ghost" size="icon" className="h-6 w-6 text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => { e.stopPropagation(); if (confirm('Remove this day?')) removeDayMut.mutate(day.id); }}>
-                        <Trash2 className="w-3 h-3" />
-                      </Button>
-                    </div>
-
-                    {selectedDayId === day.id && (
-                      <div className="mt-4 space-y-2 animate-in fade-in slide-in-from-top-2 duration-200">
-                        <select
-                          className="w-full text-xs h-8 px-2 border rounded-lg bg-white shadow-sm"
-                          value={day.destinationId || ''}
-                          onClick={(e) => e.stopPropagation()}
-                          onChange={(e) => updateDayMut.mutate({ dayId: day.id, data: { destinationId: e.target.value || null } })}
-                        >
-                          <option value="">— Destination —</option>
-                          {destinations.map((d: any) => <option key={d.id} value={d.id}>{d.name}</option>)}
-                        </select>
-                        <Input
-                          placeholder="Day title..."
-                          className="h-8 text-xs rounded-lg shadow-sm"
-                          defaultValue={day.title || ''}
-                          onClick={(e) => e.stopPropagation()}
-                          onBlur={(e) => { if (e.target.value !== (day.title || '')) updateDayMut.mutate({ dayId: day.id, data: { title: e.target.value } }); }}
-                        />
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Center: Events & Day Description */}
-            <div className="lg:col-span-6 space-y-5">
-              {selectedDay ? (
-                <>
-                  <div className="flex items-center justify-between mt-1">
-                    <h3 className="font-bold text-sm text-slate-700">
-                      Day {selectedDay.dayNumber} Timeline
-                      {selectedDay.destination?.name && <span className="font-normal text-muted-foreground ml-1">— {selectedDay.destination.name}</span>}
-                    </h3>
-                    <div className="relative">
-                      <Button size="sm" className="h-8 text-xs rounded-xl font-bold bg-slate-800 hover:bg-slate-900 text-white shadow-sm" onClick={() => setShowEventDropdown(!showEventDropdown)}>
-                        <Plus className="w-3.5 h-3.5 mr-1.5" /> Add Event
-                      </Button>
-                      {showEventDropdown && (
-                        <div className="absolute right-0 top-full mt-2 z-50 bg-white rounded-2xl border border-slate-100 shadow-xl p-2 w-52 overflow-hidden">
-                          {EVENT_TYPES.map(type => (
-                            <button
-                              key={type.value}
-                              className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-slate-50 text-left text-sm transition-colors"
-                              onClick={() => {
-                                addEventMut.mutate({ dayId: selectedDayId, data: { type: type.value, title: type.label } });
-                                setShowEventDropdown(false);
-                              }}
-                            >
-                              <div className={cn('p-1.5 rounded-lg text-slate-500 bg-slate-100')}><type.icon className="w-3.5 h-3.5" /></div>
-                              <span className="font-bold text-xs text-slate-700">{type.label}</span>
-                            </button>
-                          ))}
+                      {/* Day Destination & Title Quick Edit */}
+                      {selectedDayId === day.id && (
+                        <div className="mt-3 space-y-2 pt-3 border-t border-primary/10">
+                          <select 
+                            className="w-full text-[10px] h-7 px-1 rounded border-slate-200 bg-white"
+                            value={day.destinationId || ''}
+                            onChange={(e) => updateDayMut.mutate({ dayId: day.id, data: { destinationId: e.target.value || null } })}
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <option value="">Select Destination</option>
+                            {destinations.map((d: any) => (
+                              <option key={d.id} value={d.id}>{d.name}</option>
+                            ))}
+                          </select>
+                          <input 
+                            className="w-full text-[10px] font-medium h-7 px-2 rounded border border-slate-200 bg-white focus:ring-1 focus:ring-primary outline-none"
+                            placeholder="Brief Title (e.g. Arrival)"
+                            defaultValue={day.title || ''}
+                            onClick={(e) => e.stopPropagation()}
+                            onBlur={(e) => { if (e.target.value !== (day.title || '')) updateDayMut.mutate({ dayId: day.id, data: { title: e.target.value } }); }}
+                          />
                         </div>
                       )}
                     </div>
-                  </div>
+                  ))}
+                </div>
+              </div>
 
-                  {/* Day Description Editor */}
-                  <div className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden relative">
-                    <div className="p-5">
-                       <Input 
-                         key={`title-${selectedDay.id}`}
-                         className="text-lg md:text-xl font-black text-slate-800 border-none bg-transparent placeholder:text-slate-300 px-0 h-auto focus-visible:ring-0 mb-2 truncate"
-                         placeholder={`DAY ${selectedDay.dayNumber} : Enter Day Headline...`}
-                         defaultValue={selectedDay.title || ''}
-                         onBlur={(e) => {
-                           if (e.target.value !== (selectedDay.title || '')) {
-                             updateDayMut.mutate({ dayId: selectedDay.id, data: { title: e.target.value } });
-                           }
-                         }}
-                       />
-                      <textarea 
-                        key={`desc-${selectedDay.id}`}
-                        className="w-full min-h-[100px] text-sm text-slate-500 font-medium border-none focus:ring-0 bg-transparent resize-y px-0 leading-relaxed"
-                        placeholder="Write a descriptive narrative about what happens on this day..."
-                        defaultValue={selectedDay.description || ''}
-                        onBlur={(e) => {
-                          if (e.target.value !== (selectedDay.description || '')) {
-                            updateDayMut.mutate({ dayId: selectedDay.id, data: { description: e.target.value } });
-                          }
-                        }}
-                      />
+              {/* Center: Events & Day Overview */}
+              <div className="lg:col-span-6 space-y-5">
+                {selectedDay ? (
+                  <>
+                    <div className="flex items-center justify-between mt-1">
+                      <h3 className="font-bold text-sm text-slate-700">
+                        Day {selectedDay.dayNumber} Timeline
+                        {selectedDay.destination?.name && <span className="font-normal text-muted-foreground ml-1">— {selectedDay.destination.name}</span>}
+                      </h3>
+                      <div className="relative">
+                        <Button size="sm" className="h-8 text-xs rounded-xl font-bold bg-slate-800 hover:bg-slate-900 text-white shadow-sm" onClick={() => setShowEventDropdown(!showEventDropdown)}>
+                          <Plus className="w-3.5 h-3.5 mr-1.5" /> Add Event
+                        </Button>
+                        {showEventDropdown && (
+                          <div className="absolute right-0 top-full mt-2 z-50 bg-white rounded-2xl border border-slate-100 shadow-xl p-2 w-52 overflow-hidden">
+                            {EVENT_TYPES.map(type => (
+                              <button
+                                key={type.value}
+                                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-slate-50 text-left text-sm transition-colors"
+                                onClick={() => {
+                                  addEventMut.mutate({ dayId: selectedDayId, data: { type: type.value, title: type.label } });
+                                  setShowEventDropdown(false);
+                                }}
+                              >
+                                <div className={cn('p-1.5 rounded-lg text-slate-500 bg-slate-100')}><type.icon className="w-3.5 h-3.5" /></div>
+                                <span className="font-bold text-xs text-slate-700">{type.label}</span>
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
 
-                  {selectedDay.events?.length === 0 ? (
-                    <div className="border-2 border-dashed border-slate-200 rounded-3xl py-16 text-center text-slate-400 bg-slate-50/50">
-                      <CalendarRange className="w-10 h-10 mx-auto mb-3 opacity-20" />
-                      <p className="text-sm font-bold text-slate-500">No events added yet</p>
-                      <p className="text-xs mt-1 font-medium">Click "Add Event" or choose an item from suggestions</p>
-                    </div>
-                  ) : (
-                    <div className="relative space-y-4 before:absolute before:inset-0 before:ml-4 before:-translate-x-px md:before:mx-4 md:before:translate-x-0 before:h-full before:w-[2px] before:bg-slate-100">
+                    <div className="relative space-y-5 before:absolute before:inset-0 before:ml-4 before:-translate-x-px md:before:mx-4 md:before:translate-x-0 before:h-full before:w-[2px] before:bg-slate-100">
+                      {/* Day Headline & Description Intro Section */}
+                      <div className="relative flex items-stretch gap-4 z-10 pl-10">
+                        <div className="absolute left-0 top-0 w-9 h-9 rounded-full border-[4px] border-slate-50 bg-slate-900 flex items-center justify-center shadow-sm z-20">
+                          <FileText className="w-4 h-4 text-white" />
+                        </div>
+                        <Card className="flex-1 bg-white border border-slate-200/80 rounded-3xl overflow-hidden shadow-sm hover:shadow-md transition-shadow p-5">
+                          <Input 
+                             key={`title-${selectedDay.id}`}
+                             className="text-lg md:text-xl font-black text-slate-800 border-none bg-transparent placeholder:text-slate-300 px-0 h-auto focus-visible:ring-0 mb-2 truncate"
+                             placeholder={`DAY ${selectedDay.dayNumber} : Enter Day Headline...`}
+                             defaultValue={selectedDay.title || ''}
+                             onBlur={(e) => {
+                               if (e.target.value !== (selectedDay.title || '')) {
+                                 updateDayMut.mutate({ dayId: selectedDay.id, data: { title: e.target.value } });
+                               }
+                             }}
+                          />
+                          <textarea 
+                            key={`desc-${selectedDay.id}`}
+                            className="w-full min-h-[100px] text-sm text-slate-500 font-medium border-none focus:ring-0 bg-transparent resize-y px-0 leading-relaxed"
+                            placeholder="Write a descriptive narrative about what happens on this day..."
+                            defaultValue={selectedDay.description || ''}
+                            onBlur={(e) => {
+                              if (e.target.value !== (selectedDay.description || '')) {
+                                updateDayMut.mutate({ dayId: selectedDay.id, data: { description: e.target.value } });
+                              }
+                            }}
+                          />
+                        </Card>
+                      </div>
+
                       {selectedDay.events.map((ev: any) => {
                         const evType = getEventType(ev.type);
                         return (
@@ -430,34 +425,21 @@ export default function ItineraryBuilderPage() {
                         );
                       })}
                     </div>
-                  )}
-                </>
-              ) : (
-                <div className="flex flex-col items-center justify-center py-20 text-muted-foreground bg-white rounded-3xl border border-slate-100 shadow-sm h-full">
-                  <ChevronRight className="w-10 h-10 mb-2 opacity-20 text-slate-400" />
-                  <p className="font-bold text-sm text-slate-600">Select a day to manage events</p>
-                </div>
-              )}
-            </div>
+                  </>
+                ) : (
+                  <div className="flex flex-col items-center justify-center py-20 text-muted-foreground bg-white rounded-3xl border border-slate-100 shadow-sm h-full">
+                    <ChevronRight className="w-10 h-10 mb-2 opacity-20 text-slate-400" />
+                    <p className="font-bold text-sm text-slate-600">Select a day to manage events</p>
+                  </div>
+                )}
+              </div>
 
             {/* Right: Suggestions */}
             <div className="lg:col-span-3 space-y-3">
               <SuggestionsPanel 
                 selectedDay={selectedDay} 
                 onAddEvent={(data: any) => { if (selectedDayId) addEventMut.mutate({ dayId: selectedDayId, data }); }} 
-                onApplyDayTemplate={async ({ title, description, event }) => {
-                  if (selectedDayId) {
-                    const previousDayData = { title: selectedDay?.title, description: selectedDay?.description };
-                    try {
-                      await updateDayMut.mutateAsync({ dayId: selectedDayId, data: { title, description } });
-                      await addEventMut.mutateAsync({ dayId: selectedDayId, data: event });
-                      toast.success('Applied Day Itinerary Template');
-                    } catch (error: any) {
-                      await updateDayMut.mutateAsync({ dayId: selectedDayId, data: previousDayData });
-                      toast.error(error?.message || 'Failed to apply template. Rollback applied.');
-                    }
-                  }
-                }}
+                onUpdateDay={(data: any) => { if (selectedDayId) updateDayMut.mutate({ dayId: selectedDayId, data }); }}
               />
             </div>
           </div>
@@ -489,15 +471,18 @@ export default function ItineraryBuilderPage() {
         {/* ═══ FINAL TAB ═══ */}
         <TabsContent value="final">
           <FinalPreviewTab itinerary={itinerary} onShare={handleShare} onExport={handleExportPdf} />
-        </TabsContent>
+          </TabsContent>
+        </div>
       </Tabs>
 
       {/* Event Edit Modal */}
       {editingEvent && (
         <EventEditModal
+          key={editingEvent.id}
           event={editingEvent}
           onClose={() => setEditingEvent(null)}
           onSave={(data: any) => updateEventMut.mutate({ eventId: editingEvent.id, data })}
+          destId={selectedDay?.destinationId}
         />
       )}
     </div>
@@ -508,7 +493,7 @@ export default function ItineraryBuilderPage() {
    SUB-COMPONENTS
    ═══════════════════════════════════════════════════════════════ */
 
-function SuggestionsPanel({ selectedDay, onAddEvent, onApplyDayTemplate }: { selectedDay: any; onAddEvent: (data: any) => void; onApplyDayTemplate: (data: any) => void }) {
+function SuggestionsPanel({ selectedDay, onAddEvent, onUpdateDay }: { selectedDay: any; onAddEvent: (data: any) => void; onUpdateDay: (data: any) => void }) {
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState<'hotels' | 'activities' | 'transfers' | 'dayItinerary'>('dayItinerary');
   const destId = selectedDay?.destinationId;
@@ -535,71 +520,70 @@ function SuggestionsPanel({ selectedDay, onAddEvent, onApplyDayTemplate }: { sel
 
   return (
     <div className="space-y-4">
-      <h3 className="font-bold text-sm text-slate-700">Suggestions</h3>
+      <h3 className="font-bold text-sm text-slate-700 font-black uppercase tracking-widest opacity-50">Suggestions</h3>
       
       <div className="flex gap-1.5 overflow-x-auto pb-1 no-scrollbar">
         {(['dayItinerary', 'hotels', 'activities', 'transfers'] as const).map(c => (
-          <button key={c} onClick={() => setCategory(c)} className={cn('px-3 py-1.5 rounded-full text-[11px] whitespace-nowrap font-bold capitalize transition-colors', category === c ? 'bg-slate-900 text-white' : 'bg-slate-100/80 text-slate-600 hover:bg-slate-200')}>
-            {c === 'dayItinerary' ? 'Day Itineraries' : c}
+          <button key={c} onClick={() => setCategory(c)} className={cn('px-4 py-2 rounded-xl text-[10px] whitespace-nowrap font-black uppercase tracking-wider transition-all shadow-sm', category === c ? 'bg-slate-900 text-white' : 'bg-white border border-slate-200 text-slate-500 hover:bg-slate-50')}>
+            {c === 'dayItinerary' ? 'Day Templates' : c}
           </button>
         ))}
       </div>
           
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-        <Input placeholder={`Search ${category}...`} className="pl-9 h-10 text-sm rounded-xl bg-white border-slate-200/60 shadow-sm" value={search} onChange={e => setSearch(e.target.value)} />
+        <Input placeholder={`Search ${category}...`} className="pl-9 h-11 text-xs rounded-2xl bg-white border-slate-200 shadow-sm focus:ring-slate-200" value={search} onChange={e => setSearch(e.target.value)} />
       </div>
 
       {!destId && category !== 'dayItinerary' ? (
-        <div className="border border-dashed border-slate-200 rounded-2xl p-6 text-center text-sm text-slate-500 bg-slate-50/50">
-          <MapPin className="w-8 h-8 mx-auto mb-2 opacity-20 text-slate-500" />
-          Assign a destination to this day to see local suggestions.
+        <div className="border-2 border-dashed border-slate-200 rounded-3xl p-8 text-center text-xs font-bold text-slate-400 bg-slate-50/50">
+          <MapPin className="w-8 h-8 mx-auto mb-3 opacity-20" />
+          Set destination to see local items
         </div>
       ) : (
-        <div className="space-y-3 max-h-[600px] overflow-y-auto pr-2 pb-10">
+        <div className="space-y-3 max-h-[600px] overflow-y-auto pr-2 pb-10 no-scrollbar">
           {(data || []).map((item: any) => (
-            <div key={item.id} className="flex gap-4 p-3.5 border border-slate-200/80 rounded-2xl bg-white shadow-sm hover:shadow-md transition-all group">
+            <div key={item.id} className="flex gap-4 p-4 border border-slate-200/80 rounded-3xl bg-white shadow-sm hover:shadow-md transition-all group relative">
               {item.photoUrl ? (
-                <img src={item.photoUrl} className="w-16 h-16 rounded-xl object-cover shadow-sm bg-slate-100 flex-shrink-0" alt="" />
+                <img src={item.photoUrl} className="w-16 h-16 rounded-2xl object-cover shadow-sm bg-slate-100 flex-shrink-0" alt="" />
               ) : (
-                 <div className="w-16 h-16 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center flex-shrink-0">
-                   <ImageIcon className="w-6 h-6 text-slate-300" />
+                 <div className="w-16 h-16 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center flex-shrink-0">
+                   {category === 'hotels' ? <Hotel className="w-6 h-6 text-slate-200" /> : <ImageIcon className="w-6 h-6 text-slate-200" />}
                  </div>
               )}
-              <div className="flex-1 min-w-0 flex flex-col justify-center pt-0.5">
-                <p className="font-extrabold text-sm text-slate-800 truncate leading-tight">{item.title || item.name || item.vehicleType}</p>
-                {item.category && <p className="text-[11px] text-slate-500 font-semibold mt-0.5 uppercase tracking-wide">{item.category}</p>}
-                {item.description && <p className="text-xs text-slate-500 line-clamp-2 mt-1 leading-snug">{item.description}</p>}
+              <div className="flex-1 min-w-0 flex flex-col justify-center">
+                <p className="font-black text-xs text-slate-800 truncate leading-tight">{item.title || item.name || item.vehicleType}</p>
+                {item.category && <p className="text-[10px] text-slate-400 font-bold mt-1 uppercase tracking-wider">{item.category}</p>}
                 {(item.basePrice || item.pricePerPerson || item.price) && (
-                  <p className="text-xs font-black text-slate-700 mt-1.5">₹{Number(item.basePrice || item.pricePerPerson || item.price).toLocaleString('en-IN')}</p>
+                  <p className="text-[11px] font-black text-slate-900 mt-1.5">₹{Number(item.basePrice || item.pricePerPerson || item.price).toLocaleString('en-IN')}</p>
                 )}
               </div>
               <div className="flex items-center">
                 <button 
-                  className="h-10 w-10 flex items-center justify-center bg-slate-900 hover:bg-slate-800 text-white rounded-full flex-shrink-0 shadow-md transition-transform active:scale-95" 
+                  className="h-9 w-9 flex items-center justify-center bg-slate-900 hover:bg-slate-800 text-white rounded-full flex-shrink-0 shadow-lg transition-transform active:scale-90" 
                   onClick={() => {
-                    const eventData = {
-                      type: typeMap[category],
-                      title: item.title || item.name || item.vehicleType || 'Event',
-                      description: category === 'dayItinerary' ? null : (item.description || ''),
-                      cost: item.basePrice || item.pricePerPerson || item.price || 0,
-                      metadata: { masterType: category, masterId: item.id, ...item },
-                      sortOrder: category === 'dayItinerary' ? 0 : undefined,
-                    };
                     if (category === 'dayItinerary') {
-                      onApplyDayTemplate({ title: item.title, description: item.description, event: eventData });
+                      onUpdateDay({ title: item.title, description: item.description });
+                      toast.success('Applied Day Template');
                     } else {
+                      const eventData = {
+                        type: typeMap[category],
+                        title: item.title || item.name || item.vehicleType || 'Event',
+                        description: item.description || '',
+                        cost: item.basePrice || item.pricePerPerson || item.price || 0,
+                        metadata: { masterType: category, masterId: item.id, ...item },
+                      };
                       onAddEvent(eventData);
                       toast.success(`Added ${item.title || item.name || item.vehicleType}`);
                     }
                   }}
                 >
-                  <Plus className="w-5 h-5" />
+                  <Plus className="w-4 h-4" />
                 </button>
               </div>
             </div>
           ))}
-          {data?.length === 0 && <p className="text-center text-sm font-medium text-slate-400 py-10">No {category} found</p>}
+          {data?.length === 0 && <p className="text-center text-xs font-bold text-slate-300 py-10 uppercase tracking-widest">No Results</p>}
         </div>
       )}
     </div>
@@ -607,9 +591,18 @@ function SuggestionsPanel({ selectedDay, onAddEvent, onApplyDayTemplate }: { sel
 }
 
 function EventEditModal({ event, onClose, onSave, destId }: { event: any; onClose: () => void; onSave: (data: any) => void; destId?: string }) {
-  const [form, setForm] = useState({ ...event, metadata: event.metadata || {} });
+  const [form, setForm] = useState(() => ({ 
+    ...event, 
+    description: event.description || '', 
+    metadata: event.metadata || {} 
+  }));
   const [accomMode, setAccomMode] = useState<'manual' | 'master'>(event.metadata?.masterId ? 'master' : 'manual');
   
+  // Update state if event changes externally
+  useEffect(() => {
+    setForm({ ...event, description: event.description || '', metadata: event.metadata || {} });
+  }, [event]);
+
   const set = (k: string, v: any) => setForm((f: any) => ({ ...f, [k]: v }));
   const setMeta = (k: string, v: any) => setForm((f: any) => ({ ...f, metadata: { ...f.metadata, [k]: v } }));
   const evType = getEventType(form.type);
