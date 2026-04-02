@@ -144,7 +144,7 @@ const update = async (id, data) => {
   await getById(id); // ensure exists
   const {
     title, description, status, totalCost, perPersonCost,
-    currency, adults, children, markupPct,
+    currency, adults, children, markupPct, termsHtml,
   } = data;
 
   if (status !== undefined && !['draft', 'published'].includes(status)) {
@@ -169,6 +169,7 @@ const update = async (id, data) => {
       ...(adults !== undefined && { adults: validateNum(adults) }),
       ...(children !== undefined && { children: validateNum(children) }),
       ...(markupPct !== undefined && { markupPct: validateNum(markupPct) }),
+      ...(termsHtml !== undefined && { termsHtml }),
     },
     include: fullInclude,
   });
@@ -197,11 +198,13 @@ const duplicate = async (id, userId) => {
       adults: source.adults,
       children: source.children,
       markupPct: source.markupPct,
+      termsHtml: source.termsHtml,
       createdBy: userId,
       days: {
         create: source.days.map((day) => ({
           dayNumber: day.dayNumber,
           title: day.title,
+          description: day.description,
           destinationId: day.destinationId,
           events: {
             create: day.events.map((ev) => ({
@@ -270,6 +273,7 @@ const addDay = async (itineraryId, data) => {
       itineraryId,
       dayNumber: data.dayNumber || nextDayNumber,
       title: data.title || null,
+      description: data.description || null,
       destinationId: data.destinationId || null,
     },
     include: {
@@ -287,6 +291,7 @@ const updateDay = async (dayId, data) => {
     where: { id: dayId },
     data: {
       ...(data.title !== undefined && { title: data.title }),
+      ...(data.description !== undefined && { description: data.description }),
       ...(data.destinationId !== undefined && { destinationId: data.destinationId || null }),
       ...(data.dayNumber !== undefined && { dayNumber: data.dayNumber }),
     },

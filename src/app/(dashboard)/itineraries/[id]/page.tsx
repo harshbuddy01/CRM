@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { toast } from 'sonner';
-import { useParams, useSearchParams } from 'next/navigation';
+import { useParams, useSearchParams, useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
@@ -15,6 +15,7 @@ import {
   Share2, Download, Copy, Check, GripVertical, Eye,
   Utensils, Car, Plane, Sun, LogIn, LogOut as LogOutIcon,
   Mountain, Compass, IndianRupee, CalendarRange,
+  FileText, BookOpen, Pencil, Shield,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
@@ -41,6 +42,8 @@ export default function ItineraryBuilderPage() {
   const [selectedDayId, setSelectedDayId] = useState<string | null>(null);
   const [showEventDropdown, setShowEventDropdown] = useState(false);
   const [editingEvent, setEditingEvent] = useState<any>(null);
+  const [editingTitle, setEditingTitle] = useState(false);
+  const [titleInput, setTitleInput] = useState('');
   const [showCoverUpload, setShowCoverUpload] = useState(false);
   const coverRef = useRef<HTMLInputElement>(null);
   const galleryRef = useRef<HTMLInputElement>(null);
@@ -125,6 +128,17 @@ export default function ItineraryBuilderPage() {
     } catch { toast.error('PDF export failed'); }
   };
 
+  const handleFinalize = () => {
+    updateMut.mutate({ status: 'finalized' }, {
+      onSuccess: () => {
+        toast.success(
+          'Itinerary Finalized! Ready to be converted into a Proposal.', 
+          { description: 'You can now select this itinerary when creating a proposal for a lead.' }
+        );
+      }
+    });
+  };
+
   if (isLoading) return <div className="flex h-[60vh] items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-muted-foreground opacity-50" /></div>;
   if (!itinerary) return <div className="text-center py-20 text-muted-foreground">Itinerary not found</div>;
 
@@ -142,21 +156,52 @@ export default function ItineraryBuilderPage() {
       <div className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-700 text-white">
         {itinerary.coverPhotoUrl && <img src={itinerary.coverPhotoUrl} alt="" className="absolute inset-0 w-full h-full object-cover opacity-40" />}
         <div className="relative p-6 md:p-8">
-          <div className="flex items-start justify-between">
+          <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
             <div className="flex-1">
               <Link href="/itineraries" className="inline-flex items-center gap-1 text-white/70 hover:text-white text-xs font-medium mb-3 transition-colors">
                 <ArrowLeft className="w-3.5 h-3.5" /> Back to Itineraries
               </Link>
-              <h1 className="text-2xl md:text-3xl font-black tracking-tight">{itinerary.title}</h1>
+              {editingTitle ? (
+                <div className="flex items-center gap-2 max-w-xl">
+                  <Input 
+                    value={titleInput} 
+                    onChange={e => setTitleInput(e.target.value)}
+                    className="bg-white/20 border-white/30 text-white placeholder:text-white/50 font-black text-2xl h-12"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        updateMut.mutate({ title: titleInput });
+                        setEditingTitle(false);
+                      } else if (e.key === 'Escape') setEditingTitle(false);
+                    }}
+                    autoFocus
+                  />
+                  <Button size="sm" variant="secondary" onClick={() => {
+                    updateMut.mutate({ title: titleInput });
+                    setEditingTitle(false);
+                  }}><Check className="w-4 h-4" /></Button>
+                  <Button size="sm" variant="ghost" className="text-white hover:bg-white/20" onClick={() => setEditingTitle(false)}><X className="w-4 h-4" /></Button>
+                </div>
+              ) : (
+                <h1 className="text-2xl md:text-3xl font-black tracking-tight flex items-center gap-3 group cursor-pointer" onClick={() => { setTitleInput(itinerary.title); setEditingTitle(true); }}>
+                  {itinerary.title}
+                  <Pencil className="w-4 h-4 text-white/40 opacity-0 group-hover:opacity-100 transition-opacity" />
+                </h1>
+              )}
               {allDestinations.length > 0 && (
                 <div className="flex items-center gap-2 mt-2 flex-wrap">
                   <MapPin className="w-3.5 h-3.5 text-white/60" />
                   {allDestinations.map((d: string) => <span key={d} className="text-xs bg-white/20 px-2 py-0.5 rounded-md font-medium">{d}</span>)}
                 </div>
               )}
-              <p className="text-white/60 text-sm mt-2">{itinerary.days?.length || 0} Days • {itinerary.status}</p>
+              <div className="flex items-center gap-2 mt-2">
+                <span className="bg-white/20 px-2 py-1 flex items-center rounded-md font-bold text-xs capitalize">
+                  {itinerary.status}
+                </span>
+                <span className="text-white/60 text-sm">{itinerary.days?.length || 0} Days</span>
+              </div>
             </div>
-            <div className="flex gap-2">
+            
+            <div className="flex flex-wrap gap-2 md:justify-end shrink-0">
               <Button size="sm" variant="secondary" className="rounded-xl font-bold text-xs" onClick={() => coverRef.current?.click()}>
                 <Camera className="w-3.5 h-3.5 mr-1" /> Cover Photo
               </Button>
@@ -166,6 +211,12 @@ export default function ItineraryBuilderPage() {
               <Button size="sm" variant="secondary" className="rounded-xl font-bold text-xs" onClick={handleExportPdf}>
                 <Download className="w-3.5 h-3.5 mr-1" /> PDF
               </Button>
+              
+              {itinerary.status !== 'finalized' && (
+                <Button size="sm" className="rounded-xl font-bold text-xs bg-emerald-500 hover:bg-emerald-600 border-none text-white ml-2 shadow-lg shadow-emerald-500/20" onClick={handleFinalize}>
+                  <Check className="w-3.5 h-3.5 mr-1 text-white" /> Finalize & Create Proposal
+                </Button>
+              )}
             </div>
           </div>
         </div>
@@ -183,86 +234,74 @@ export default function ItineraryBuilderPage() {
         <TabsContent value="build" className="space-y-0">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
             {/* Left: Day List */}
-            <div className="lg:col-span-3 space-y-3">
+            <div className="lg:col-span-3 space-y-4">
               <div className="flex items-center justify-between">
                 <h3 className="font-bold text-sm text-slate-700">Days</h3>
                 <Button size="sm" variant="outline" className="h-7 text-xs rounded-lg" onClick={() => addDayMut.mutate({})}>
                   <Plus className="w-3 h-3 mr-1" /> Add Day
                 </Button>
               </div>
-              <div className="space-y-2">
+              <div className="space-y-3">
                 {itinerary.days?.map((day: any) => (
-                  <button
+                  <div
                     key={day.id}
                     onClick={() => setSelectedDayId(day.id)}
                     className={cn(
-                      'w-full text-left p-3 rounded-xl border-2 transition-all duration-150',
-                      selectedDayId === day.id ? 'border-primary bg-primary/5 shadow-sm' : 'border-slate-200 hover:border-slate-300 bg-white'
+                      'w-full text-left p-3 rounded-2xl border-2 transition-all duration-200 cursor-pointer group',
+                      selectedDayId === day.id ? 'border-primary bg-primary/5 shadow-md shadow-primary/10' : 'border-slate-200 hover:border-blue-300 bg-white'
                     )}
                   >
-                    <div className="flex items-center justify-between">
-                      <span className="font-bold text-sm text-slate-800">Day {day.dayNumber}</span>
-                      <Button variant="ghost" size="icon" className="h-6 w-6 text-slate-400 hover:text-red-500" onClick={(e) => { e.stopPropagation(); if (confirm('Remove this day?')) removeDayMut.mutate(day.id); }}>
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-center gap-3">
+                        <div className={cn(
+                          'w-10 h-10 rounded-full flex items-center justify-center font-black text-sm transition-colors',
+                          selectedDayId === day.id ? 'bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-sm' : 'bg-slate-100 text-slate-500 group-hover:bg-blue-100 group-hover:text-blue-600'
+                        )}>
+                          {day.dayNumber}
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-1.5">
+                            <span className="font-bold text-sm text-slate-800">Day {day.dayNumber}</span>
+                            <div className="p-1 rounded-md opacity-0 group-hover:opacity-100 transition-opacity bg-slate-100 hover:bg-slate-200 text-slate-500">
+                              <Edit3 className="w-3 h-3" />
+                            </div>
+                          </div>
+                          <p className="text-xs text-muted-foreground mt-0.5 max-w-[120px] truncate">{day.destination?.name || 'No Destination'}</p>
+                        </div>
+                      </div>
+                      
+                      <Button variant="ghost" size="icon" className="h-6 w-6 text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => { e.stopPropagation(); if (confirm('Remove this day?')) removeDayMut.mutate(day.id); }}>
                         <Trash2 className="w-3 h-3" />
                       </Button>
                     </div>
-                    {day.title && <p className="text-xs text-muted-foreground mt-0.5 truncate">{day.title}</p>}
-                    <select
-                      className="w-full mt-2 text-xs h-7 px-2 border rounded-lg bg-background"
-                      value={day.destinationId || ''}
-                      onClick={(e) => e.stopPropagation()}
-                      onChange={(e) => updateDayMut.mutate({ dayId: day.id, data: { destinationId: e.target.value || null } })}
-                    >
-                      <option value="">— Destination —</option>
-                      {destinations.map((d: any) => <option key={d.id} value={d.id}>{d.name}</option>)}
-                    </select>
-                    <Input
-                      placeholder="Day title..."
-                      className="mt-1.5 h-7 text-xs rounded-lg"
-                      defaultValue={day.title || ''}
-                      onClick={(e) => e.stopPropagation()}
-                      onBlur={(e) => { if (e.target.value !== (day.title || '')) updateDayMut.mutate({ dayId: day.id, data: { title: e.target.value } }); }}
-                    />
-                    <div className="text-[10px] text-muted-foreground mt-1">{day.events?.length || 0} events</div>
-                  </button>
-                ))}
-              </div>
 
-              {/* Gallery Section */}
-              <div className="border-t pt-3 mt-4">
-                <div className="flex items-center justify-between mb-2">
-                  <h4 className="font-bold text-xs text-slate-600">Image Gallery</h4>
-                  <Button size="sm" variant="ghost" className="h-6 text-[10px]" onClick={() => galleryRef.current?.click()}>
-                    <Upload className="w-3 h-3 mr-1" /> Upload
-                  </Button>
-                </div>
-                <div className="grid grid-cols-3 gap-1.5">
-                  {itinerary.galleryImages?.map((img: any) => (
-                    <div key={img.id} className="relative group aspect-square rounded-lg overflow-hidden">
-                      <img src={img.imageUrl} alt="" className="w-full h-full object-cover" />
-                      <button
-                        className="absolute top-0.5 right-0.5 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-50"
-                        onClick={async (e) => { 
-                          try {
-                            e.currentTarget.disabled = true;
-                            await api.delete(`/itineraries/gallery/${img.id}`); 
-                            invalidate(); 
-                          } catch (err: any) {
-                            toast.error(err.response?.data?.message || 'Failed to delete image');
-                            e.currentTarget.disabled = false;
-                          }
-                        }}
-                      >
-                        <X className="w-2.5 h-2.5" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
+                    {selectedDayId === day.id && (
+                      <div className="mt-4 space-y-2 animate-in fade-in slide-in-from-top-2 duration-200">
+                        <select
+                          className="w-full text-xs h-8 px-2 border rounded-lg bg-white shadow-sm"
+                          value={day.destinationId || ''}
+                          onClick={(e) => e.stopPropagation()}
+                          onChange={(e) => updateDayMut.mutate({ dayId: day.id, data: { destinationId: e.target.value || null } })}
+                        >
+                          <option value="">— Destination —</option>
+                          {destinations.map((d: any) => <option key={d.id} value={d.id}>{d.name}</option>)}
+                        </select>
+                        <Input
+                          placeholder="Day title..."
+                          className="h-8 text-xs rounded-lg shadow-sm"
+                          defaultValue={day.title || ''}
+                          onClick={(e) => e.stopPropagation()}
+                          onBlur={(e) => { if (e.target.value !== (day.title || '')) updateDayMut.mutate({ dayId: day.id, data: { title: e.target.value } }); }}
+                        />
+                      </div>
+                    )}
+                  </div>
+                ))}
               </div>
             </div>
 
-            {/* Center: Events */}
-            <div className="lg:col-span-6 space-y-3">
+            {/* Center: Events & Day Description */}
+            <div className="lg:col-span-6 space-y-4">
               {selectedDay ? (
                 <>
                   <div className="flex items-center justify-between">
@@ -292,6 +331,25 @@ export default function ItineraryBuilderPage() {
                         </div>
                       )}
                     </div>
+                  </div>
+
+                  {/* Day Description Editor */}
+                  <div className="bg-blue-50/50 border border-blue-100 rounded-xl p-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <FileText className="w-4 h-4 text-blue-500" />
+                      <label className="text-xs font-bold text-blue-800 uppercase tracking-wider">Day Description</label>
+                    </div>
+                    <textarea 
+                      key={`desc-${selectedDay.id}`}
+                      className="w-full min-h-[80px] p-3 text-sm rounded-lg border-blue-200 focus:border-blue-400 focus:ring-blue-400/20 bg-white shadow-sm resize-y"
+                      placeholder="Write a descriptive narrative about what happens on this day..."
+                      defaultValue={selectedDay.description || ''}
+                      onBlur={(e) => {
+                        if (e.target.value !== (selectedDay.description || '')) {
+                          updateDayMut.mutate({ dayId: selectedDay.id, data: { description: e.target.value } });
+                        }
+                      }}
+                    />
                   </div>
 
                   {selectedDay.events?.length === 0 ? (
@@ -354,8 +412,36 @@ export default function ItineraryBuilderPage() {
 
             {/* Right: Suggestions */}
             <div className="lg:col-span-3 space-y-3">
-              <SuggestionsPanel selectedDay={selectedDay} onAddEvent={(data: any) => { if (selectedDayId) addEventMut.mutate({ dayId: selectedDayId, data }); }} />
+              <SuggestionsPanel 
+                selectedDay={selectedDay} 
+                onAddEvent={(data: any) => { if (selectedDayId) addEventMut.mutate({ dayId: selectedDayId, data }); }} 
+                onApplyDayTemplate={async ({ title, description, event }) => {
+                  if (selectedDayId) {
+                    await updateDayMut.mutateAsync({ dayId: selectedDayId, data: { title, description } });
+                    await addEventMut.mutateAsync({ dayId: selectedDayId, data: event });
+                    toast.success('Applied Day Itinerary Template');
+                  }
+                }}
+              />
             </div>
+          </div>
+          
+          {/* Bottom: Terms & Conditions Wrapper */}
+          <div className="mt-8 pt-8 border-t border-slate-200">
+            <div className="flex items-center gap-2 mb-4">
+              <Shield className="w-5 h-5 text-slate-600" />
+              <h3 className="font-bold text-slate-900">Terms & Conditions</h3>
+            </div>
+            <textarea
+              className="w-full min-h-[200px] p-4 text-sm rounded-xl border-slate-200 focus:border-slate-300 focus:ring-0 bg-white shadow-sm resize-y"
+              placeholder="Enter pricing terms, inclusions, exclusions, and general policies here..."
+              defaultValue={itinerary.termsHtml || ''}
+              onBlur={(e) => {
+                if (e.target.value !== (itinerary.termsHtml || '')) {
+                  updateMut.mutate({ termsHtml: e.target.value });
+                }
+              }}
+            />
           </div>
         </TabsContent>
 
@@ -386,24 +472,28 @@ export default function ItineraryBuilderPage() {
    SUB-COMPONENTS
    ═══════════════════════════════════════════════════════════════ */
 
-function SuggestionsPanel({ selectedDay, onAddEvent }: { selectedDay: any; onAddEvent: (data: any) => void }) {
+function SuggestionsPanel({ selectedDay, onAddEvent, onApplyDayTemplate }: { selectedDay: any; onAddEvent: (data: any) => void; onApplyDayTemplate: (data: any) => void }) {
   const [search, setSearch] = useState('');
-  const [category, setCategory] = useState<'hotels' | 'activities' | 'transfers'>('hotels');
+  const [category, setCategory] = useState<'hotels' | 'activities' | 'transfers' | 'dayItinerary'>('hotels');
   const destId = selectedDay?.destinationId;
 
   const { data } = useQuery({
     queryKey: ['suggestions', category, destId, search],
     queryFn: async () => {
       if (!destId) return [];
-      const basePath = category === 'hotels' ? '/masters' : '/masters-v2';
-      const res = await api.get(`${basePath}/${category}`, { params: search ? { search } : {} });
+      let path = '';
+      if (category === 'hotels') path = '/masters/hotels';
+      else if (category === 'dayItinerary') path = '/masters-v2/day-itinerary-templates';
+      else path = `/masters-v2/${category}`;
+      
+      const res = await api.get(path, { params: search ? { search } : {} });
       const items = Array.isArray(res.data?.data) ? res.data.data : (res.data?.data?.items || res.data || []);
       return items.filter((i: any) => i.destinationId === destId);
     },
     enabled: !!destId,
   });
 
-  const typeMap: Record<string, string> = { hotels: 'accommodation', activities: 'activity', transfers: 'transport' };
+  const typeMap: Record<string, string> = { hotels: 'accommodation', activities: 'activity', transfers: 'transport', dayItinerary: 'sightseeing' };
 
   return (
     <div className="space-y-3">
@@ -415,41 +505,52 @@ function SuggestionsPanel({ selectedDay, onAddEvent }: { selectedDay: any; onAdd
         </div>
       ) : (
         <>
-          <div className="flex gap-1">
-            {(['hotels', 'activities', 'transfers'] as const).map(c => (
-              <button key={c} onClick={() => setCategory(c)} className={cn('px-3 py-1.5 rounded-lg text-[10px] font-bold capitalize transition-colors', category === c ? 'bg-primary text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200')}>{c}</button>
+          <div className="flex gap-1 overflow-x-auto pb-1 no-scrollbar">
+            {(['hotels', 'activities', 'transfers', 'dayItinerary'] as const).map(c => (
+              <button key={c} onClick={() => setCategory(c)} className={cn('px-3 py-1.5 rounded-lg text-[10px] whitespace-nowrap font-bold capitalize transition-colors', category === c ? 'bg-primary text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200')}>
+                {c === 'dayItinerary' ? 'Day Itineraries' : c}
+              </button>
             ))}
           </div>
           <div className="relative">
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
-            <Input placeholder="Search..." className="pl-8 h-8 text-xs rounded-lg" value={search} onChange={e => setSearch(e.target.value)} />
+            <Input placeholder="Search..." className="pl-8 h-8 text-xs rounded-lg bg-slate-50 border-slate-200" value={search} onChange={e => setSearch(e.target.value)} />
           </div>
-          <div className="space-y-2 max-h-[400px] overflow-y-auto">
+          <div className="space-y-3 max-h-[500px] overflow-y-auto pr-1">
             {(data || []).map((item: any) => (
-              <div key={item.id} className="flex items-center gap-2 p-2.5 border rounded-xl bg-white hover:shadow-sm transition-shadow">
-                {item.photoUrl && <img src={item.photoUrl} className="w-10 h-8 rounded-lg object-cover" alt="" />}
-                <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-xs truncate">{item.name || item.vehicleType}</p>
-                  {item.category && <p className="text-[10px] text-muted-foreground">{item.category}</p>}
+              <div key={item.id} className="flex gap-3 p-3 border rounded-xl bg-white shadow-sm hover:shadow-md transition-shadow group">
+                {item.photoUrl && <img src={item.photoUrl} className="w-14 h-14 rounded-xl object-cover shadow-sm bg-slate-100" alt="" />}
+                <div className="flex-1 min-w-0 flex flex-col justify-center">
+                  <p className="font-bold text-xs text-slate-800 truncate">{item.title || item.name || item.vehicleType}</p>
+                  {item.category && <p className="text-[10px] text-muted-foreground mt-0.5">{item.category}</p>}
+                  {item.description && <p className="text-[10px] text-slate-500 line-clamp-2 mt-0.5 leading-snug">{item.description}</p>}
                   {(item.basePrice || item.pricePerPerson || item.price) && (
-                    <p className="text-[10px] font-bold text-slate-700">₹{Number(item.basePrice || item.pricePerPerson || item.price).toLocaleString('en-IN')}</p>
+                    <p className="text-[10px] font-bold text-slate-700 mt-1">₹{Number(item.basePrice || item.pricePerPerson || item.price).toLocaleString('en-IN')}</p>
                   )}
                 </div>
-                <Button size="icon" variant="ghost" className="h-7 w-7 text-primary hover:bg-primary/10 rounded-lg flex-shrink-0" onClick={() => {
-                  onAddEvent({
-                    type: typeMap[category],
-                    title: item.name || item.vehicleType || 'Event',
-                    description: item.description || '',
-                    cost: item.basePrice || item.pricePerPerson || item.price || 0,
-                    metadata: { masterType: category, masterId: item.id, ...item },
-                  });
-                  toast.success(`Added ${item.name || item.vehicleType}`);
-                }}>
-                  <Plus className="w-3.5 h-3.5" />
-                </Button>
+                <div className="flex items-center">
+                  <Button size="icon" variant="ghost" className="h-8 w-8 text-primary bg-primary/5 hover:bg-primary/20 rounded-xl flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => {
+                    const eventData = {
+                      type: typeMap[category],
+                      title: item.title || item.name || item.vehicleType || 'Event',
+                      description: category === 'dayItinerary' ? null : (item.description || ''),
+                      cost: item.basePrice || item.pricePerPerson || item.price || 0,
+                      metadata: { masterType: category, masterId: item.id, ...item },
+                      sortOrder: category === 'dayItinerary' ? 0 : undefined,
+                    };
+                    if (category === 'dayItinerary') {
+                      onApplyDayTemplate({ title: item.title, description: item.description, event: eventData });
+                    } else {
+                      onAddEvent(eventData);
+                      toast.success(`Added ${item.title || item.name || item.vehicleType}`);
+                    }
+                  }}>
+                    <Plus className="w-4 h-4" />
+                  </Button>
+                </div>
               </div>
             ))}
-            {data?.length === 0 && <p className="text-center text-xs text-muted-foreground py-4">No {category} found for this destination</p>}
+            {data?.length === 0 && <p className="text-center text-xs text-muted-foreground py-8">No {category} found for this destination</p>}
           </div>
         </>
       )}
@@ -457,11 +558,23 @@ function SuggestionsPanel({ selectedDay, onAddEvent }: { selectedDay: any; onAdd
   );
 }
 
-function EventEditModal({ event, onClose, onSave }: { event: any; onClose: () => void; onSave: (data: any) => void }) {
+function EventEditModal({ event, onClose, onSave, destId }: { event: any; onClose: () => void; onSave: (data: any) => void; destId?: string }) {
   const [form, setForm] = useState({ ...event, metadata: event.metadata || {} });
+  const [accomMode, setAccomMode] = useState<'manual' | 'master'>(event.metadata?.masterId ? 'master' : 'manual');
+  
   const set = (k: string, v: any) => setForm((f: any) => ({ ...f, [k]: v }));
   const setMeta = (k: string, v: any) => setForm((f: any) => ({ ...f, metadata: { ...f.metadata, [k]: v } }));
   const evType = getEventType(form.type);
+
+  const { data: hotels } = useQuery({
+    queryKey: ['hotels', destId],
+    queryFn: async () => {
+      if (!destId) return [];
+      const res = await api.get('/masters/hotels');
+      return res.data.data.filter((h: any) => h.destinationId === destId);
+    },
+    enabled: form.type === 'accommodation' && accomMode === 'master' && !!destId,
+  });
 
   return (
     <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4" onClick={onClose}>
@@ -483,11 +596,62 @@ function EventEditModal({ event, onClose, onSave }: { event: any; onClose: () =>
           <div><label className="text-xs font-medium text-muted-foreground uppercase">Cost (₹)</label><Input type="number" className="mt-1 h-9 rounded-lg" value={form.cost || ''} onChange={e => set('cost', e.target.value)} /></div>
 
           {/* Type-specific fields */}
-          {form.type === 'accommodation' && (<>
-            <div><label className="text-xs font-medium text-muted-foreground uppercase">Hotel Name</label><Input className="mt-1 h-9 rounded-lg" value={form.metadata?.hotelName || ''} onChange={e => setMeta('hotelName', e.target.value)} /></div>
-            <div><label className="text-xs font-medium text-muted-foreground uppercase">Room Type</label><Input className="mt-1 h-9 rounded-lg" value={form.metadata?.roomType || ''} onChange={e => setMeta('roomType', e.target.value)} /></div>
-            <div><label className="text-xs font-medium text-muted-foreground uppercase">Meal Plan</label><Input className="mt-1 h-9 rounded-lg" placeholder="BB, HB, FB" value={form.metadata?.mealPlan || ''} onChange={e => setMeta('mealPlan', e.target.value)} /></div>
-          </>)}
+          {form.type === 'accommodation' && (
+            <div className="space-y-3 pt-2 border-t mt-4">
+              <div className="flex gap-2 bg-slate-100 p-1 rounded-lg">
+                <button 
+                  className={cn('flex-1 text-xs py-1.5 rounded-md font-bold transition-all', accomMode === 'manual' ? 'bg-white shadow-sm text-slate-900' : 'text-slate-500 hover:text-slate-700')}
+                  onClick={() => setAccomMode('manual')}
+                >
+                  Manual Entry
+                </button>
+                <button 
+                  className={cn('flex-1 text-xs py-1.5 rounded-md font-bold transition-all', accomMode === 'master' ? 'bg-white shadow-sm text-slate-900' : 'text-slate-500 hover:text-slate-700')}
+                  onClick={() => setAccomMode('master')}
+                >
+                  From Master
+                </button>
+              </div>
+
+              {accomMode === 'master' && (
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground uppercase">Select Hotel</label>
+                  {!destId ? (
+                    <div className="text-xs text-red-500 mt-1">Please select a destination for this day first.</div>
+                  ) : (
+                    <select 
+                      className="mt-1 w-full h-9 px-3 border rounded-lg text-sm bg-background"
+                      value={form.metadata?.masterId || ''}
+                      onChange={e => {
+                        const h = hotels?.find((ht: any) => ht.id === e.target.value);
+                        if (h) {
+                          set('title', h.name);
+                          set('cost', h.basePrice || 0);
+                          setMeta('masterId', h.id);
+                          setMeta('hotelName', h.name);
+                          setMeta('category', h.category);
+                        } else {
+                          setMeta('masterId', '');
+                        }
+                      }}
+                    >
+                      <option value="">-- Choose Hotel --</option>
+                      {(hotels || []).map((h: any) => (
+                        <option key={h.id} value={h.id}>{h.name} - ₹{h.basePrice}</option>
+                      ))}
+                    </select>
+                  )}
+                </div>
+              )}
+
+              {accomMode === 'manual' && (
+                <div><label className="text-xs font-medium text-muted-foreground uppercase">Hotel Name</label><Input className="mt-1 h-9 rounded-lg" value={form.metadata?.hotelName || ''} onChange={e => setMeta('hotelName', e.target.value)} /></div>
+              )}
+              
+              <div><label className="text-xs font-medium text-muted-foreground uppercase">Room Type</label><Input className="mt-1 h-9 rounded-lg" value={form.metadata?.roomType || ''} onChange={e => setMeta('roomType', e.target.value)} /></div>
+              <div><label className="text-xs font-medium text-muted-foreground uppercase">Meal Plan</label><Input className="mt-1 h-9 rounded-lg" placeholder="BB, HB, FB" value={form.metadata?.mealPlan || ''} onChange={e => setMeta('mealPlan', e.target.value)} /></div>
+            </div>
+          )}
           {form.type === 'flight' && (<>
             <div className="grid grid-cols-2 gap-3">
               <div><label className="text-xs font-medium text-muted-foreground uppercase">Airline</label><Input className="mt-1 h-9 rounded-lg" value={form.metadata?.airline || ''} onChange={e => setMeta('airline', e.target.value)} /></div>
