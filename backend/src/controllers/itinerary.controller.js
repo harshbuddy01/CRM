@@ -102,6 +102,14 @@ const updateDay = async (req, res, next) => {
   } catch (err) { next(err); }
 };
 
+const uploadDayImage = async (req, res, next) => {
+  try {
+    if (!req.file) return res.status(400).json({ success: false, message: 'No file uploaded' });
+    const day = await itineraryService.uploadDayImage(req.params.dayId, req.file);
+    res.json({ success: true, data: day });
+  } catch (err) { next(err); }
+};
+
 const removeDay = async (req, res, next) => {
   try {
     await itineraryService.removeDay(req.params.dayId);

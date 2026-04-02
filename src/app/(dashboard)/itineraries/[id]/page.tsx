@@ -48,7 +48,9 @@ export default function ItineraryBuilderPage() {
   const coverRef = useRef<HTMLInputElement>(null);
   const galleryRef = useRef<HTMLInputElement>(null);
   const eventImgRef = useRef<HTMLInputElement>(null);
+  const dayImgRef = useRef<HTMLInputElement>(null);
   const [eventImgTarget, setEventImgTarget] = useState<string | null>(null);
+  const [editingDayId, setEditingDayId] = useState<string | null>(null);
 
   const { data: itinerary, isLoading } = useQuery({
     queryKey: ['itinerary', id],
@@ -104,6 +106,14 @@ export default function ItineraryBuilderPage() {
     }
   };
 
+  const handleDayImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]; if (!file || !selectedDayId) return;
+    const fd = new FormData(); fd.append('photo', file);
+    try { await api.put(`/itineraries/days/${selectedDayId}/image`, fd, { headers: { 'Content-Type': 'multipart/form-data' } }); toast.success('Day image updated'); invalidate(); }
+    catch { toast.error('Upload failed'); }
+    finally { e.target.value = ''; }
+  };
+
   const handleShare = async () => {
     try {
       const res = await api.post(`/itineraries/${id}/generate-share-link`);
@@ -151,6 +161,7 @@ export default function ItineraryBuilderPage() {
       <input ref={coverRef} type="file" accept="image/*" className="hidden" onChange={handleCoverUpload} />
       <input ref={galleryRef} type="file" accept="image/*" multiple className="hidden" onChange={handleGalleryUpload} />
       <input ref={eventImgRef} type="file" accept="image/*" className="hidden" onChange={handleEventImageUpload} />
+      <input ref={dayImgRef} type="file" accept="image/*" className="hidden" onChange={handleDayImageUpload} />
 
        {/* Header with cover photo */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col min-h-0">
@@ -234,92 +245,69 @@ export default function ItineraryBuilderPage() {
           <TabsContent value="build" className="space-y-0 mt-0 data-[state=inactive]:hidden">
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
               {/* Left: Day List */}
-              <div className="lg:col-span-3 space-y-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="font-bold text-sm text-slate-700">Days</h3>
-                  <Button size="sm" variant="outline" className="h-7 text-xs rounded-lg" onClick={() => addDayMut.mutate({})}>
-                    <Plus className="w-3 h-3 mr-1" /> Add Day
-                  </Button>
+              <div className="lg:col-span-2 space-y-4">
+                <div className="flex items-center justify-between px-1">
+                  <h3 className="font-bold text-[10px] uppercase tracking-widest text-slate-400">Days</h3>
                 </div>
-                <div className="space-y-3">
+                <div className="flex flex-col gap-2">
                   {itinerary.days?.map((day: any) => (
-                    <div
+                    <button
                       key={day.id}
-                      role="button"
-                      tabIndex={0}
                       onClick={() => setSelectedDayId(day.id)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' || e.key === ' ') {
-                          e.preventDefault();
-                          setSelectedDayId(day.id);
-                        }
-                      }}
                       className={cn(
-                        'w-full text-left p-3 rounded-2xl border-2 transition-all duration-200 cursor-pointer group outline-none focus-visible:ring-2 focus-visible:ring-blue-500',
-                        selectedDayId === day.id ? 'border-primary bg-primary/5 shadow-md shadow-primary/10' : 'border-slate-200 hover:border-blue-300 bg-white'
+                        "flex items-center gap-3 p-2 rounded-xl transition-all group text-left",
+                        selectedDayId === day.id 
+                          ? "bg-blue-600 text-white shadow-lg shadow-blue-200 ring-2 ring-blue-100" 
+                          : "hover:bg-slate-100 text-slate-600"
                       )}
                     >
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="flex items-center gap-3">
-                          <div className={cn(
-                            'w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-colors',
-                            selectedDayId === day.id ? 'bg-primary text-white' : 'bg-slate-100 text-slate-500'
-                          )}>
-                            {day.dayNumber}
-                          </div>
-                          <div>
-                            <p className={cn('font-bold text-xs', selectedDayId === day.id ? 'text-primary' : 'text-slate-700')}>Day {day.dayNumber}</p>
-                            <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">{day.destination?.name || 'No Dest'}</p>
-                          </div>
-                        </div>
-                        <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity text-red-400 hover:text-red-600 hover:bg-red-50" onClick={(e) => { e.stopPropagation(); removeDayMut.mutate(day.id); }}>
-                          <Trash2 className="w-3 h-3" />
-                        </Button>
+                      <div className={cn(
+                        "w-8 h-8 rounded-full flex items-center justify-center shrink-0 font-bold text-[10px] transition-colors",
+                        selectedDayId === day.id ? "bg-white text-blue-600" : "bg-slate-200 text-slate-500 group-hover:bg-slate-300"
+                      )}>
+                        {day.dayNumber}
                       </div>
-                      
-                      {/* Day Destination & Title Quick Edit */}
-                      {selectedDayId === day.id && (
-                        <div className="mt-3 space-y-2 pt-3 border-t border-primary/10">
-                          <select 
-                            className="w-full text-[10px] h-7 px-1 rounded border-slate-200 bg-white"
-                            value={day.destinationId || ''}
-                            onChange={(e) => updateDayMut.mutate({ dayId: day.id, data: { destinationId: e.target.value || null } })}
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <option value="">Select Destination</option>
-                            {destinations.map((d: any) => (
-                              <option key={d.id} value={d.id}>{d.name}</option>
-                            ))}
-                          </select>
-                          <input 
-                            className="w-full text-[10px] font-medium h-7 px-2 rounded border border-slate-200 bg-white focus:ring-1 focus:ring-primary outline-none"
-                            placeholder="Brief Title (e.g. Arrival)"
-                            defaultValue={day.title || ''}
-                            onClick={(e) => e.stopPropagation()}
-                            onBlur={(e) => { if (e.target.value !== (day.title || '')) updateDayMut.mutate({ dayId: day.id, data: { title: e.target.value } }); }}
-                          />
-                        </div>
-                      )}
-                    </div>
+                      <div className="flex-1 min-w-0 pr-2">
+                        <div className="font-bold text-xs truncate">{day.destination?.name || 'Day ' + day.dayNumber}</div>
+                      </div>
+                    </button>
                   ))}
+                  
+                  <button 
+                    onClick={() => addDayMut.mutate({ dayNumber: (itinerary.days?.length || 0) + 1 })}
+                    className="flex items-center gap-2 p-2 rounded-xl border-2 border-dashed border-slate-200 text-slate-400 hover:border-blue-400 hover:text-blue-500 hover:bg-blue-50/30 transition-all font-bold text-[10px] uppercase tracking-wider"
+                  >
+                    <Plus className="w-4 h-4 ml-1" /> Add Day
+                  </button>
                 </div>
               </div>
 
               {/* Center: Events & Day Overview */}
-              <div className="lg:col-span-6 space-y-5">
+              <div className="lg:col-span-7 space-y-5">
                 {selectedDay ? (
-                  <>
-                    <div className="flex items-center justify-between mt-1">
-                      <h3 className="font-bold text-sm text-slate-700">
-                        Day {selectedDay.dayNumber} Timeline
-                        {selectedDay.destination?.name && <span className="font-normal text-muted-foreground ml-1">— {selectedDay.destination.name}</span>}
-                      </h3>
+                  <div className="space-y-0">
+                    <div className="flex items-center justify-between mb-6">
+                      <div className="flex items-center gap-2">
+                        <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white font-black text-sm shadow-lg shadow-blue-200">
+                          {selectedDay.dayNumber}
+                        </div>
+                        <div>
+                          <h3 className="text-lg font-black tracking-tight text-slate-800 uppercase">Day {selectedDay.dayNumber} Timeline</h3>
+                          <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none mt-0.5">
+                            <MapPin className="w-3 h-3" /> {selectedDay.destination?.name || 'Destination Unset'}
+                          </div>
+                        </div>
+                      </div>
                       <div className="relative">
-                        <Button size="sm" className="h-8 text-xs rounded-xl font-bold bg-slate-800 hover:bg-slate-900 text-white shadow-sm" onClick={() => setShowEventDropdown(!showEventDropdown)}>
-                          <Plus className="w-3.5 h-3.5 mr-1.5" /> Add Event
+                        <Button 
+                          size="sm" 
+                          className="rounded-xl font-bold text-xs h-9 bg-slate-900 hover:bg-slate-800 text-white shadow-lg shadow-slate-200"
+                          onClick={() => setShowEventDropdown(!showEventDropdown)}
+                        >
+                          <Plus className="w-3.5 h-3.5 mr-1" /> Add Event
                         </Button>
                         {showEventDropdown && (
-                          <div className="absolute right-0 top-full mt-2 z-50 bg-white rounded-2xl border border-slate-100 shadow-xl p-2 w-52 overflow-hidden">
+                          <div className="absolute right-0 top-full mt-2 z-50 bg-white rounded-2xl border border-slate-100 shadow-xl p-2 w-52 overflow-hidden animate-in fade-in zoom-in-95">
                             {EVENT_TYPES.map(type => (
                               <button
                                 key={type.value}
@@ -338,85 +326,118 @@ export default function ItineraryBuilderPage() {
                       </div>
                     </div>
 
-                    <div className="relative space-y-5 before:absolute before:inset-0 before:ml-4 before:-translate-x-px md:before:mx-4 md:before:translate-x-0 before:h-full before:w-[2px] before:bg-slate-100">
-                      {/* Day Headline & Description Intro Section */}
-                      <div className="relative flex items-stretch gap-4 z-10 pl-10">
-                        <div className="absolute left-0 top-0 w-9 h-9 rounded-full border-[4px] border-slate-50 bg-slate-900 flex items-center justify-center shadow-sm z-20">
-                          <FileText className="w-4 h-4 text-white" />
-                        </div>
-                        <Card className="flex-1 bg-white border border-slate-200/80 rounded-3xl overflow-hidden shadow-sm hover:shadow-md transition-shadow p-5">
-                          <Input 
-                             key={`title-${selectedDay.id}`}
-                             className="text-lg md:text-xl font-black text-slate-800 border-none bg-transparent placeholder:text-slate-300 px-0 h-auto focus-visible:ring-0 mb-2 truncate"
-                             placeholder={`DAY ${selectedDay.dayNumber} : Enter Day Headline...`}
-                             defaultValue={selectedDay.title || ''}
-                             onBlur={(e) => {
-                               if (e.target.value !== (selectedDay.title || '')) {
-                                 updateDayMut.mutate({ dayId: selectedDay.id, data: { title: e.target.value } });
-                               }
-                             }}
-                          />
-                          <textarea 
-                            key={`desc-${selectedDay.id}`}
-                            className="w-full min-h-[100px] text-sm text-slate-500 font-medium border-none focus:ring-0 bg-transparent resize-y px-0 leading-relaxed"
-                            placeholder="Write a descriptive narrative about what happens on this day..."
-                            defaultValue={selectedDay.description || ''}
-                            onBlur={(e) => {
-                              if (e.target.value !== (selectedDay.description || '')) {
-                                updateDayMut.mutate({ dayId: selectedDay.id, data: { description: e.target.value } });
-                              }
-                            }}
-                          />
-                        </Card>
-                      </div>
+                    {/* Day Headline Card (Flagship Card Style - Screenshot 2) */}
+                    <div className="relative pl-8 border-l-2 border-slate-100 ml-5 -mt-2 pb-10">
+                      <div className="absolute top-0 -left-[11px] w-5 h-5 rounded-full bg-white border-4 border-slate-200 shadow-sm z-10" />
+                      
+                      <Card className={cn(
+                        "bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300",
+                        editingDayId === selectedDay.id ? "ring-2 ring-blue-500 border-transparent" : ""
+                      )}>
+                        <div className="flex flex-col md:flex-row min-h-[200px]">
+                          {/* Left: Image Area */}
+                          <div className="md:w-1/3 bg-slate-50 border-r border-slate-100 relative group/dayimg overflow-hidden shrink-0 min-h-[160px]">
+                            {selectedDay.imageUrl ? (
+                              <img src={selectedDay.imageUrl} alt="" className="w-full h-full object-cover transition-transform duration-700 group-hover/dayimg:scale-110" />
+                            ) : (
+                              <div className="w-full h-full flex flex-col items-center justify-center text-slate-300">
+                                <ImageIcon className="w-8 h-8 opacity-20 mb-2" />
+                                <span className="text-[9px] font-black uppercase tracking-[0.2em] opacity-40">Add Image</span>
+                              </div>
+                            )}
+                            <button 
+                              className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center opacity-0 group-hover/dayimg:opacity-100 transition-opacity text-white gap-2"
+                              onClick={() => dayImgRef.current?.click()}
+                            >
+                              <Camera className="w-6 h-6" />
+                              <span className="text-[10px] font-bold uppercase tracking-widest">Flagship Photo</span>
+                            </button>
+                          </div>
 
-                      {selectedDay.events.map((ev: any) => {
+                          {/* Right: Text Area */}
+                          <div className="flex-1 p-6 relative">
+                            <button 
+                              className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center bg-slate-50 hover:bg-blue-50 text-slate-400 hover:text-blue-600 rounded-xl transition-all shadow-sm z-10"
+                              onClick={() => setEditingDayId(editingDayId === selectedDay.id ? null : selectedDay.id)}
+                            >
+                              {editingDayId === selectedDay.id ? <Check className="w-4 h-4 text-emerald-600" /> : <Edit3 className="w-4 h-4" />}
+                            </button>
+
+                            {editingDayId === selectedDay.id ? (
+                              <div className="space-y-4 pr-10 animate-in fade-in slide-in-from-top-1">
+                                <div>
+                                  <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1 block">Headline</label>
+                                  <Input 
+                                    className="font-black text-lg bg-slate-50 border-slate-200 h-10 rounded-xl focus:ring-0 focus:border-blue-500"
+                                    value={selectedDay.title || ''}
+                                    onChange={(e) => updateDayMut.mutate({ dayId: selectedDay.id, data: { title: e.target.value } })}
+                                    placeholder="Enter Day Headline..."
+                                  />
+                                </div>
+                                <div>
+                                  <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1 block">Description</label>
+                                  <textarea 
+                                    className="w-full min-h-[100px] p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all resize-none"
+                                    value={selectedDay.description || ''}
+                                    onChange={(e) => updateDayMut.mutate({ dayId: selectedDay.id, data: { description: e.target.value } })}
+                                    placeholder="Write a beautiful description..."
+                                  />
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="pr-8">
+                                <div className="text-[9px] font-black uppercase tracking-widest text-blue-600 mb-2">Editorial Intro</div>
+                                <h2 className="text-xl font-black tracking-tight text-slate-800 leading-tight mb-3">
+                                  {selectedDay.title || `Day ${selectedDay.dayNumber}: Introduction`}
+                                </h2>
+                                <p className="text-[13px] font-medium text-slate-500 leading-relaxed line-clamp-4">
+                                  {selectedDay.description || "Start adding a beautiful description or use a template from the right panel to populate this section."}
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </Card>
+                    </div>
+
+                    {/* Timeline Events */}
+                    <div className="space-y-0">
+                      {selectedDay.events?.map((ev: any) => {
                         const evType = getEventType(ev.type);
                         return (
-                          <div key={ev.id} className="relative flex items-stretch gap-4 z-10 pl-10">
-                            {/* Icon on timeline */}
-                            <div className="absolute left-0 top-4 w-9 h-9 rounded-full border-[4px] border-slate-50 bg-white flex items-center justify-center shadow-sm z-20">
-                              <evType.icon className="w-4 h-4 text-slate-600" />
+                          <div key={ev.id} className="relative pl-8 border-l-2 border-slate-100 ml-5 pb-8">
+                            <div className="absolute top-4 -left-[14px] w-7 h-7 rounded-full border-[3px] border-white bg-slate-100 flex items-center justify-center shadow-sm z-20">
+                              <evType.icon className="w-3.5 h-3.5 text-slate-500" />
                             </div>
-
-                            <Card className="flex-1 bg-white border border-slate-200/80 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow group pb-0">
-                              <div className="flex flex-col sm:flex-row h-full">
-                                {/* Left Side Image */}
-                                <div className="sm:w-32 h-32 sm:h-auto bg-slate-50 border-r border-slate-100 relative group/img flex-shrink-0">
+                            
+                            <Card className="flex-1 bg-white border border-slate-200/80 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow group">
+                              <div className="flex flex-col sm:flex-row min-h-[120px]">
+                                <div className="sm:w-28 h-28 sm:h-auto bg-slate-50 border-r border-slate-100 relative group/img flex-shrink-0">
                                   {ev.imageUrl ? (
                                     <img src={ev.imageUrl} alt="" className="w-full h-full object-cover" />
                                   ) : (
-                                    <div className="w-full h-full flex flex-col items-center justify-center text-slate-300 bg-slate-50">
-                                      <ImageIcon className="w-6 h-6 opacity-30 mb-1" />
-                                      <span className="text-[9px] font-bold uppercase tracking-widest opacity-50">No Image</span>
+                                    <div className="w-full h-full flex flex-col items-center justify-center text-slate-300">
+                                      <ImageIcon className="w-5 h-5 opacity-30" />
                                     </div>
                                   )}
-                                  <button 
-                                    className="absolute bottom-2 left-2 w-7 h-7 bg-white/90 hover:bg-white text-slate-700 shadow-sm rounded-lg flex items-center justify-center opacity-0 group-hover/img:opacity-100 transition-opacity"
-                                    onClick={() => { setEventImgTarget(ev.id); eventImgRef.current?.click(); }}
-                                  >
-                                    <Camera className="w-3.5 h-3.5" />
+                                  <button className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover/img:opacity-100 transition-opacity text-white" onClick={() => { setEventImgTarget(ev.id); eventImgRef.current?.click(); }}>
+                                    <Camera className="w-4 h-4" />
                                   </button>
                                 </div>
-                                
-                                {/* Right Side Details */}
                                 <div className="flex-1 p-4 flex flex-col justify-between">
                                   <div>
                                     <div className="flex justify-between items-start gap-2">
-                                      <h4 className="font-bold text-sm text-slate-800 leading-snug">{ev.title}</h4>
+                                      <h4 className="font-bold text-sm text-slate-800">{ev.title}</h4>
                                       <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                        <button className="h-7 w-7 flex items-center justify-center bg-slate-50 hover:bg-blue-50 hover:text-blue-600 rounded-lg text-slate-400 transition-colors" onClick={() => setEditingEvent(ev)}><Edit3 className="w-3.5 h-3.5" /></button>
-                                        <button className="h-7 w-7 flex items-center justify-center bg-slate-50 hover:bg-red-50 hover:text-red-600 rounded-lg text-slate-400 transition-colors" onClick={() => removeEventMut.mutate(ev.id)}><Trash2 className="w-3.5 h-3.5" /></button>
+                                        <button className="h-7 w-7 flex items-center justify-center bg-slate-50 hover:bg-blue-50 text-slate-400 hover:text-blue-600 rounded-lg" onClick={() => setEditingEvent(ev)}><Edit3 className="w-3.5 h-3.5" /></button>
+                                        <button className="h-7 w-7 flex items-center justify-center bg-slate-50 hover:bg-red-50 text-slate-400 hover:text-red-600 rounded-lg" onClick={() => removeEventMut.mutate(ev.id)}><Trash2 className="w-3.5 h-3.5" /></button>
                                       </div>
                                     </div>
-                                    {ev.description && <p className="text-[11px] font-medium text-slate-500 line-clamp-2 mt-1 leading-relaxed pr-2">{ev.description}</p>}
+                                    {ev.description && <p className="text-[11px] font-medium text-slate-500 mt-1 line-clamp-2">{ev.description}</p>}
                                   </div>
-
-                                  <div className="mt-4 pt-3 border-t border-slate-50 flex flex-wrap items-center gap-x-3 gap-y-2 text-[10px] uppercase font-bold tracking-wider text-slate-500">
-                                    {ev.startTime && <span className="flex items-center gap-1 bg-slate-100/80 px-2 py-1 rounded-md text-slate-600"><Clock className="w-3 h-3" />{ev.startTime}{ev.endTime && ` – ${ev.endTime}`}</span>}
-                                    {ev.metadata?.roomType && <span className="flex items-center gap-1 text-slate-600"><Hotel className="w-3 h-3 text-slate-400" /> {ev.metadata.roomType}</span>}
-                                    {ev.metadata?.mealPlan && <span className="flex items-center gap-1 text-slate-600"><Utensils className="w-3 h-3 text-slate-400" /> {ev.metadata.mealPlan}</span>}
-                                    {ev.cost && <span className="text-emerald-700 bg-emerald-50 px-2 py-1 rounded-md">₹{Number(ev.cost).toLocaleString('en-IN')}</span>}
+                                  <div className="mt-3 flex flex-wrap items-center gap-2 text-[9px] font-bold uppercase tracking-widest text-slate-400">
+                                    {ev.startTime && <span className="flex items-center gap-1 bg-slate-50 px-2 py-1 rounded-md"><Clock className="w-3 h-3" /> {ev.startTime}</span>}
+                                    {ev.cost && <span className="bg-emerald-50 text-emerald-700 px-2 py-1 rounded-md">₹{Number(ev.cost).toLocaleString('en-IN')}</span>}
                                   </div>
                                 </div>
                               </div>
@@ -425,52 +446,52 @@ export default function ItineraryBuilderPage() {
                         );
                       })}
                     </div>
-                  </>
+                  </div>
                 ) : (
-                  <div className="flex flex-col items-center justify-center py-20 text-muted-foreground bg-white rounded-3xl border border-slate-100 shadow-sm h-full">
-                    <ChevronRight className="w-10 h-10 mb-2 opacity-20 text-slate-400" />
-                    <p className="font-bold text-sm text-slate-600">Select a day to manage events</p>
+                  <div className="flex flex-col items-center justify-center py-20 text-slate-300 bg-slate-50/50 rounded-[40px] border-2 border-dashed border-slate-100 h-full">
+                    <ChevronRight className="w-12 h-12 mb-4 opacity-20" />
+                    <p className="font-bold text-sm uppercase tracking-widest">Select a day to build</p>
                   </div>
                 )}
               </div>
 
-            {/* Right: Suggestions */}
-            <div className="lg:col-span-3 space-y-3">
-              <SuggestionsPanel 
-                selectedDay={selectedDay} 
-                onAddEvent={(data: any) => { if (selectedDayId) addEventMut.mutate({ dayId: selectedDayId, data }); }} 
-                onUpdateDay={(data: any) => { if (selectedDayId) updateDayMut.mutate({ dayId: selectedDayId, data }); }}
+              {/* Right: Suggestions */}
+              <div className="lg:col-span-3 space-y-4">
+                <SuggestionsPanel 
+                  selectedDay={selectedDay} 
+                  onAddEvent={(data: any) => { if (selectedDayId) addEventMut.mutate({ dayId: selectedDayId, data }); }} 
+                  onUpdateDay={(data: any) => { if (selectedDayId) updateDayMut.mutate({ dayId: selectedDayId, data }); }}
+                />
+              </div>
+            </div>
+            
+            {/* Terms Area inside BUILD tab but at bottom */}
+            <div className="mt-12 pt-8 border-t border-slate-100">
+              <div className="flex items-center gap-2 mb-4">
+                <Shield className="w-4 h-4 text-slate-400" />
+                <h3 className="font-black text-xs uppercase tracking-widest text-slate-500">Service Terms & Conditions</h3>
+              </div>
+              <textarea
+                className="w-full min-h-[150px] p-6 text-sm font-medium rounded-3xl border-slate-200 focus:border-blue-400 focus:ring-0 bg-white shadow-sm resize-none transition-all"
+                placeholder="List your inclusions, exclusions, and payment policies..."
+                defaultValue={itinerary.termsHtml || ''}
+                onBlur={(e) => {
+                  if (e.target.value !== (itinerary.termsHtml || '')) {
+                    updateMut.mutate({ termsHtml: e.target.value });
+                  }
+                }}
               />
             </div>
-          </div>
-          
-          {/* Bottom: Terms & Conditions Wrapper */}
-          <div className="mt-8 pt-8 border-t border-slate-200">
-            <div className="flex items-center gap-2 mb-4">
-              <Shield className="w-5 h-5 text-slate-600" />
-              <h3 className="font-bold text-slate-900">Terms & Conditions</h3>
-            </div>
-            <textarea
-              className="w-full min-h-[200px] p-4 text-sm rounded-xl border-slate-200 focus:border-slate-300 focus:ring-0 bg-white shadow-sm resize-y"
-              placeholder="Enter pricing terms, inclusions, exclusions, and general policies here..."
-              defaultValue={itinerary.termsHtml || ''}
-              onBlur={(e) => {
-                if (e.target.value !== (itinerary.termsHtml || '')) {
-                  updateMut.mutate({ termsHtml: e.target.value });
-                }
-              }}
-            />
-          </div>
-        </TabsContent>
+          </TabsContent>
 
-        {/* ═══ PRICING TAB ═══ */}
-        <TabsContent value="pricing">
-          <PricingTab itinerary={itinerary} onUpdate={(data: any) => updateMut.mutate(data)} />
-        </TabsContent>
+          {/* ═══ PRICING TAB ═══ */}
+          <TabsContent value="pricing" className="mt-0">
+            <PricingTab itinerary={itinerary} onUpdate={(data: any) => updateMut.mutate(data)} />
+          </TabsContent>
 
-        {/* ═══ FINAL TAB ═══ */}
-        <TabsContent value="final">
-          <FinalPreviewTab itinerary={itinerary} onShare={handleShare} onExport={handleExportPdf} />
+          {/* ═══ FINAL TAB ═══ */}
+          <TabsContent value="final" className="mt-0">
+            <FinalPreviewTab itinerary={itinerary} onShare={handleShare} onExport={handleExportPdf} />
           </TabsContent>
         </div>
       </Tabs>
@@ -563,7 +584,7 @@ function SuggestionsPanel({ selectedDay, onAddEvent, onUpdateDay }: { selectedDa
                   className="h-9 w-9 flex items-center justify-center bg-slate-900 hover:bg-slate-800 text-white rounded-full flex-shrink-0 shadow-lg transition-transform active:scale-90" 
                   onClick={() => {
                     if (category === 'dayItinerary') {
-                      onUpdateDay({ title: item.title, description: item.description });
+                      onUpdateDay({ title: item.title, description: item.description, imageUrl: item.photoUrl });
                       toast.success('Applied Day Template');
                     } else {
                       const eventData = {

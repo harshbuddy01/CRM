@@ -60,6 +60,7 @@ router.delete('/gallery/:imageId', ctrl.removeGalleryImage);
 // Day management
 router.post('/:id/days', ctrl.addDay);
 router.put('/days/:dayId', ctrl.updateDay);
+router.put('/days/:dayId/image', handleSingleUpload('photo'), ctrl.uploadDayImage);
 router.delete('/days/:dayId', ctrl.removeDay);
 
 // Event management

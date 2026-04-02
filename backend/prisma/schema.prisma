@@ -628,6 +628,7 @@ model DayItineraryTemplate {
   title         String
   destinationId String   @map("destination_id")
   description   String?  @db.Text
+  photoUrl      String?  @map("photo_url")
   isActive      Boolean  @default(true) @map("is_active")
   deletedAt     DateTime? @map("deleted_at")
 
@@ -1020,6 +1021,7 @@ model ItineraryDay {
   dayNumber     Int     @map("day_number")
   title         String? /// e.g. 'Gangtok Arrival & Local Sightseeing'
   description   String? @db.Text
+  imageUrl      String? @map("image_url")
   destinationId String? @map("destination_id")
 
   itinerary   Itinerary        @relation(fields: [itineraryId], references: [id], onDelete: Cascade)

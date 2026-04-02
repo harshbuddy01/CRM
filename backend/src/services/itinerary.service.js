@@ -284,17 +284,30 @@ const addDay = async (itineraryId, data) => {
 };
 
 const updateDay = async (dayId, data) => {
-  const day = await prisma.itineraryDay.findUnique({ where: { id: dayId } });
-  if (!day) throw new NotFoundError('Day not found');
-
+  const { title, description, destinationId, imageUrl } = data;
   return prisma.itineraryDay.update({
     where: { id: dayId },
     data: {
-      ...(data.title !== undefined && { title: data.title }),
-      ...(data.description !== undefined && { description: data.description }),
-      ...(data.destinationId !== undefined && { destinationId: data.destinationId || null }),
-      ...(data.dayNumber !== undefined && { dayNumber: data.dayNumber }),
+      ...(title !== undefined && { title }),
+      ...(description !== undefined && { description }),
+      ...(destinationId !== undefined && { destinationId: destinationId || null }),
+      ...(imageUrl !== undefined && { imageUrl }),
     },
+    include: {
+      destination: { select: { id: true, name: true } },
+      events: { orderBy: { sortOrder: 'asc' } },
+    },
+  });
+};
+
+const uploadDayImage = async (dayId, file) => {
+  const day = await prisma.itineraryDay.findUnique({ where: { id: dayId } });
+  if (!day) throw new NotFoundError('Day not found');
+
+  const result = await uploadToCloudinary(file, `days`);
+  return prisma.itineraryDay.update({
+    where: { id: dayId },
+    data: { imageUrl: result.secure_url },
     include: {
       destination: { select: { id: true, name: true } },
       events: { orderBy: { sortOrder: 'asc' } },
