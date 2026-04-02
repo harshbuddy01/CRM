@@ -264,9 +264,10 @@ export default function SharePage() {
               <Shield className="w-5 h-5" />
               <h3 className="font-bold text-sm uppercase tracking-widest text-slate-500">Terms & Conditions</h3>
             </div>
-            <div className="prose prose-sm prose-slate max-w-none text-xs md:text-sm whitespace-pre-wrap leading-relaxed text-slate-600 bg-white p-6 rounded-2xl shadow-sm border border-slate-200/60">
-              {itinerary.termsHtml}
-            </div>
+            <div 
+              className="prose prose-sm prose-slate max-w-none text-xs md:text-sm whitespace-pre-wrap leading-relaxed text-slate-600 bg-white p-6 rounded-2xl shadow-sm border border-slate-200/60"
+              dangerouslySetInnerHTML={{ __html: itinerary.termsHtml }}
+            />
           </motion.div>
         )}
 
