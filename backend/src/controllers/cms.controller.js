@@ -67,7 +67,7 @@ const deleteTestimonial = async (req, res, next) => {
 
 // ─── Gallery ─────────────────────────────────────────────────
 const listGallery = async (req, res, next) => {
-  try { res.json({ success: true, data: await cmsService.listGallery(req.query.category) }); }
+  try { res.json({ success: true, data: await cmsService.listGallery(req.query.category, req.query.search) }); }
   catch (e) { next(e); }
 };
 const createGalleryImage = async (req, res, next) => {

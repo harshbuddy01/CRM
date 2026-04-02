@@ -32,12 +32,20 @@ const getMasters = async (modelName, queryFilters = {}) => {
     dayItineraryTemplate: 'title',
     supplier: 'companyName',
     transfer: 'vehicleType',
+    galleryImage: 'caption',
   };
   const orderField = fieldMapping[modelName] || 'name';
   const where = {};
   if (hasSoftDelete) where.deletedAt = null;
   if (search) {
-    where.OR = [{ [orderField]: { contains: search, mode: 'insensitive' } }];
+    if (modelName === 'galleryImage') {
+      where.OR = [
+        { caption: { contains: search, mode: 'insensitive' } },
+        { category: { contains: search, mode: 'insensitive' } },
+      ];
+    } else {
+      where.OR = [{ [orderField]: { contains: search, mode: 'insensitive' } }];
+    }
   }
 
   const includeDestination = ['activity','transfer','dayItineraryTemplate'].includes(modelName);
@@ -59,7 +67,9 @@ const createMaster = async (modelName, data, photoBuffer) => {
   const d = { ...data };
   if (photoBuffer) {
     const url = await uploadToCloudinary(photoBuffer, `crm-masters/${modelName}s`);
-    if (modelName === 'packageTheme') d.iconUrl = url; else d.photoUrl = url;
+    if (modelName === 'packageTheme') d.iconUrl = url; 
+    else if (modelName === 'galleryImage') d.imageUrl = url;
+    else d.photoUrl = url;
   }
   if (d.pricePerPerson !== undefined) d.pricePerPerson = parseFloat(d.pricePerPerson) || 0;
   if (d.price !== undefined) d.price = parseFloat(d.price) || 0;
@@ -78,7 +88,9 @@ const updateMaster = async (modelName, id, data, photoBuffer) => {
   const d = { ...data };
   if (photoBuffer) {
     const url = await uploadToCloudinary(photoBuffer, `crm-masters/${modelName}s`);
-    if (modelName === 'packageTheme') d.iconUrl = url; else d.photoUrl = url;
+    if (modelName === 'packageTheme') d.iconUrl = url; 
+    else if (modelName === 'galleryImage') d.imageUrl = url;
+    else d.photoUrl = url;
   }
   if (d.pricePerPerson !== undefined) d.pricePerPerson = parseFloat(d.pricePerPerson) || 0;
   if (d.price !== undefined) d.price = parseFloat(d.price) || 0;

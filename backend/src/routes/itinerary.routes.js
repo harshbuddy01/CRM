@@ -55,6 +55,7 @@ router.post('/:id/duplicate', ctrl.duplicate);
 // Cover photo & gallery
 router.post('/:id/cover-photo', handleSingleUpload('photo'), ctrl.uploadCoverPhoto);
 router.post('/:id/gallery', handleArrayUpload('photos', 20), ctrl.uploadGalleryImages);
+router.post('/:id/gallery-bulk', ctrl.uploadGalleryByUrl);
 router.delete('/gallery/:imageId', ctrl.removeGalleryImage);
 
 // Day management

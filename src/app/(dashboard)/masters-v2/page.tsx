@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { toast } from 'sonner';
@@ -24,11 +25,14 @@ const CATEGORIES = [
   { id: 'meal-plans', label: 'Meal Plans', icon: Utensils, color: 'bg-yellow-50 border-yellow-200 text-yellow-700', activeColor: 'bg-yellow-600 border-yellow-600 text-white', desc: 'BB, HB, FB, All Inclusive' },
   { id: 'package-themes', label: 'Themes', icon: Palette, color: 'bg-pink-50 border-pink-200 text-pink-700', activeColor: 'bg-pink-600 border-pink-600 text-white', desc: 'Adventure, Honeymoon, Family' },
   { id: 'day-itinerary-templates', label: 'Day Itinerary', icon: CalendarDays, color: 'bg-teal-50 border-teal-200 text-teal-700', activeColor: 'bg-teal-600 border-teal-600 text-white', desc: 'Reusable day-by-day templates' },
+  { id: 'gallery-images', label: 'Media Gallery', icon: ImageIcon, color: 'bg-zinc-50 border-zinc-200 text-zinc-700', activeColor: 'bg-zinc-800 border-zinc-800 text-white', desc: 'Stock photos, destination assets' },
 ];
 
 export default function MastersV2Page() {
-  const [active, setActive] = useState<string | null>(null);
-  const activeCategory = CATEGORIES.find(c => c.id === active);
+  const searchParams = useSearchParams();
+  const initialCatId = searchParams.get('cat');
+  const [active, setActive] = useState<string | null>(initialCatId || CATEGORIES[0].id);
+  const activeCategory = CATEGORIES.find(c => c.id === active) || CATEGORIES[0];
 
   return (
     <div className="space-y-6">
@@ -170,10 +174,10 @@ function MasterPanel({ category }: { category: typeof CATEGORIES[0] }) {
                         <span className="mt-1 font-medium">{viewItem.destination?.name}</span>
                      </div>
                  )}
-                 {(viewItem.photoUrl || viewItem.iconUrl) && (
+                 {(viewItem.photoUrl || viewItem.iconUrl || viewItem.imageUrl) && (
                      <div className="flex flex-col">
                         <span className="text-xs font-medium text-muted-foreground uppercase mb-2">Photo</span>
-                        <img src={viewItem.photoUrl || viewItem.iconUrl} className="w-32 h-20 object-cover rounded shadow-sm border" alt="Preview" />
+                        <img src={viewItem.photoUrl || viewItem.iconUrl || viewItem.imageUrl} className="w-full h-auto max-h-[300px] object-contain rounded shadow-sm border bg-slate-50" alt="Preview" />
                      </div>
                  )}
               </div>
@@ -187,7 +191,7 @@ function MasterPanel({ category }: { category: typeof CATEGORIES[0] }) {
 function MasterForm({ category, editItem, onClose, onSaved }: { category: typeof CATEGORIES[0]; editItem: any; onClose: () => void; onSaved: () => void; }) {
   const [form, setForm] = useState<Record<string, any>>(editItem ? { ...editItem, destinationId: editItem.destination?.id || editItem.destinationId || '' } : { isActive: true });
   const [photoFile, setPhotoFile] = useState<File | null>(null);
-  const [photoPreview, setPhotoPreview] = useState<string>(editItem?.photoUrl || editItem?.iconUrl || '');
+  const [photoPreview, setPhotoPreview] = useState<string>(editItem?.photoUrl || editItem?.iconUrl || editItem?.imageUrl || '');
   const [saving, setSaving] = useState(false);
   const photoRef = useRef<HTMLInputElement>(null);
 
@@ -222,7 +226,7 @@ function MasterForm({ category, editItem, onClose, onSaved }: { category: typeof
         await (api as any)[method](url, payload);
       } else {
         const fd = new FormData();
-        const skipKeys = ['id', 'createdAt', 'updatedAt', 'deletedAt', 'photoUrl', 'iconUrl', 'destination'];
+        const skipKeys = ['id', 'createdAt', 'updatedAt', 'deletedAt', 'photoUrl', 'iconUrl', 'imageUrl', 'destination'];
         Object.entries(form).forEach(([k, v]) => { 
           if (skipKeys.includes(k) || (typeof v === 'object' && v !== null && !(v instanceof File))) return;
           if (v !== null && v !== undefined && v !== '') fd.append(k, String(v)); 
@@ -313,11 +317,18 @@ function MasterForm({ category, editItem, onClose, onSaved }: { category: typeof
           <Field label="Details / Plan" className="md:col-span-2"><textarea className="w-full min-h-[90px] px-3 py-2 border rounded-md bg-background text-sm resize-none" placeholder="Day plan, places, timings..." value={form.description || ''} onChange={e => set('description', e.target.value)} /></Field>
           <StatusField value={form.isActive} onChange={v => set('isActive', v)} />
         </>)}
+        
+        {category.id === 'gallery-images' && (<>
+          <Field label="Caption / Name *"><Input placeholder="e.g. Tiger Hills at Sunrise" value={form.caption || ''} onChange={e => set('caption', e.target.value)} required /></Field>
+          <Field label="Category / Folder"><Input placeholder="e.g. Darjeeling, Sikkim" value={form.category || ''} onChange={e => set('category', e.target.value)} /></Field>
+          <Field label="Sequence"><Input type="number" value={form.sequence || '0'} onChange={e => set('sequence', e.target.value)} /></Field>
+          <StatusField value={form.isActive} onChange={v => set('isActive', v)} />
+        </>)}
 
-        {hasPhoto && (
+        {(hasPhoto || category.id === 'gallery-images') && (
           <Field label={category.id === 'package-themes' ? 'Theme Icon' : 'Photo'} className="md:col-span-2">
             <div className="flex items-start gap-4">
-              <div className="w-24 h-20 rounded-lg border-2 border-dashed flex items-center justify-center bg-muted/30 shrink-0 overflow-hidden cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => photoRef.current?.click()}>
+              <div className="w-32 h-24 rounded-lg border-2 border-dashed flex items-center justify-center bg-muted/30 shrink-0 overflow-hidden cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => photoRef.current?.click()}>
                 {photoPreview ? <img src={photoPreview} alt="Preview" className="w-full h-full object-cover rounded-lg" /> : <ImageIcon className="w-6 h-6 text-muted-foreground opacity-50" />}
               </div>
               <div>
@@ -350,7 +361,7 @@ function MasterTable({ category, items, onView, onEdit, onDelete, canManage }: {
       <table className="w-full text-sm">
         <thead className="bg-muted/40">
           <tr className="border-b text-muted-foreground text-xs uppercase tracking-wide">
-            <th className="text-left py-3 px-3 font-medium">{category.id === 'day-itinerary-templates' ? 'Title' : (category.id === 'suppliers' ? 'Company Name' : (category.id === 'transfers' ? 'Vehicle Type' : 'Name'))}</th>
+            <th className="text-left py-3 px-3 font-medium">{category.id === 'day-itinerary-templates' ? 'Title' : (category.id === 'suppliers' ? 'Company Name' : (category.id === 'transfers' ? 'Vehicle Type' : (category.id === 'gallery-images' ? 'Caption' : 'Name')))}</th>
             {category.id === 'destinations' && <th className="text-left py-3 px-3 font-medium">Country</th>}
             {category.id === 'hotels' && <><th className="text-left py-3 px-3 font-medium">Destination</th><th className="text-left py-3 px-3 font-medium">Category</th><th className="text-left py-3 px-3 font-medium">Base Price</th></>}
             {category.id === 'suppliers' && <><th className="text-left py-3 px-3 font-medium">Category</th><th className="text-left py-3 px-3 font-medium">City</th><th className="text-left py-3 px-3 font-medium">Phone</th></>}
@@ -358,7 +369,7 @@ function MasterTable({ category, items, onView, onEdit, onDelete, canManage }: {
             {category.id === 'transfers' && <><th className="text-left py-3 px-3 font-medium">Destination</th><th className="text-left py-3 px-3 font-medium">Price</th><th className="text-left py-3 px-3 font-medium">Photo</th></>}
             {category.id === 'meal-plans' && <th className="text-left py-3 px-3 font-medium">Price (₹)</th>}
             {category.id === 'package-themes' && <th className="text-left py-3 px-3 font-medium">Icon</th>}
-            {category.id === 'day-itinerary-templates' && <><th className="text-left py-3 px-3 font-medium">Destination</th><th className="text-left py-3 px-3 font-medium">Description</th></>}
+            {(category.id === 'day-itinerary-templates' || category.id === 'gallery-images') && <><th className="text-left py-3 px-3 font-medium">{category.id === 'gallery-images' ? 'Category' : 'Destination'}</th><th className="text-left py-3 px-3 font-medium">{category.id === 'gallery-images' ? 'Preview' : 'Description'}</th></>}
             <th className="text-left py-3 px-3 font-medium">Status</th>
             <th className="text-right py-3 px-3 font-medium">Actions</th>
           </tr>
@@ -367,7 +378,7 @@ function MasterTable({ category, items, onView, onEdit, onDelete, canManage }: {
           {items.map((item, i) => (
             <tr key={item.id} className={`border-b last:border-0 hover:bg-muted/20 transition-colors ${i % 2 === 0 ? '' : 'bg-muted/10'}`}>
               <td className="py-3 px-3 font-medium">
-                {String(item.title || item.companyName || item.vehicleType || item.name || '')}
+                {String(item.title || item.companyName || item.vehicleType || item.name || item.caption || '')}
                 {item.companyName && category.id !== 'suppliers' && <span className="text-xs text-muted-foreground block">{String(item.companyName)}</span>}
                 {item.category && category.id !== 'suppliers' && <span className="text-xs bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded-full mt-0.5 inline-block">{String(item.category)}</span>}
               </td>
@@ -378,7 +389,18 @@ function MasterTable({ category, items, onView, onEdit, onDelete, canManage }: {
               {category.id === 'transfers' && (<><td className="py-3 px-3 text-muted-foreground text-xs">{String(item.destination?.name || '—')}</td><td className="py-3 px-3 text-muted-foreground text-xs font-medium">₹{Number(item.price || 0).toLocaleString('en-IN')}</td><td className="py-3 px-3">{item.photoUrl ? <img src={item.photoUrl} alt={String(item.name || '')} className="w-14 h-9 object-cover rounded" /> : <span className="text-muted-foreground text-xs">—</span>}</td></>)}
               {category.id === 'meal-plans' && <td className="py-3 px-3 text-muted-foreground text-xs font-medium">₹{Number(item.price || 0).toLocaleString('en-IN')}</td>}
               {category.id === 'package-themes' && <td className="py-3 px-3">{item.iconUrl ? <img src={item.iconUrl} alt={String(item.name || '')} className="w-9 h-9 object-cover rounded-lg" /> : <span className="text-muted-foreground text-xs">—</span>}</td>}
-              {category.id === 'day-itinerary-templates' && (<><td className="py-3 px-3 text-muted-foreground text-xs">{String(item.destination?.name || '—')}</td><td className="py-3 px-3 text-muted-foreground text-xs">{String(item.description || '—').length > 50 ? String(item.description).slice(0, 50) + '...' : String(item.description || '—')}</td></>)}
+              {(category.id === 'day-itinerary-templates' || category.id === 'gallery-images') && (
+                <>
+                  <td className="py-3 px-3 text-muted-foreground text-xs">{String(item.destination?.name || item.category || '—')}</td>
+                  <td className="py-3 px-3 text-muted-foreground text-xs">
+                    {category.id === 'gallery-images' ? (
+                      item.imageUrl ? <img src={item.imageUrl} alt={item.caption} className="w-16 h-10 object-cover rounded shadow-sm border h-8" /> : '—'
+                    ) : (
+                      String(item.description || '—').length > 50 ? String(item.description).slice(0, 50) + '...' : String(item.description || '—')
+                    )}
+                  </td>
+                </>
+              )}
               <td className="py-3 px-3">
                 <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${item.isActive !== false ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
                   {item.isActive !== false ? 'Active' : 'Inactive'}

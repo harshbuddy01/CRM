@@ -21,6 +21,7 @@ import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import DOMPurify from 'dompurify';
+import { MediaLibraryModal } from '@/components/MediaLibraryModal';
 
 const EVENT_TYPES = [
   { value: 'accommodation', label: 'Accommodation', icon: Hotel, color: 'text-blue-600 bg-blue-50' },
@@ -54,6 +55,13 @@ export default function ItineraryBuilderPage() {
   const [activeSection, setActiveSection] = useState<'day' | 'packageTerms' | 'gallery'>('day');
   const [editingDayId, setEditingDayId] = useState<string | null>(null);
   const [eventImgTarget, setEventImgTarget] = useState<string | null>(null);
+  
+  // Media Library State
+  const [isMediaModalOpen, setIsMediaModalOpen] = useState(false);
+  const [mediaModalTarget, setMediaModalTarget] = useState<{ 
+    type: 'cover' | 'day' | 'event' | 'gallery', 
+    id?: string 
+  } | null>(null);
 
   const { data: itinerary, isLoading } = useQuery({
     queryKey: ['itinerary', id],
@@ -141,6 +149,40 @@ export default function ItineraryBuilderPage() {
     } catch { toast.error('PDF export failed'); }
   };
 
+  const openMediaLibrary = (type: 'cover' | 'day' | 'event' | 'gallery', targetId?: string) => {
+    setMediaModalTarget({ type, id: targetId });
+    setIsMediaModalOpen(true);
+  };
+
+  const handleMediaSelect = async (url: string) => {
+    if (!mediaModalTarget) return;
+    const { type, id: targetId } = mediaModalTarget;
+
+    try {
+      if (type === 'cover') {
+        await updateMut.mutateAsync({ coverPhotoUrl: url });
+        toast.success('Cover photo updated from library');
+      } else if (type === 'day' && targetId) {
+        await api.put(`/itineraries/days/${targetId}`, { imageUrl: url });
+        toast.success('Day image updated from library');
+        invalidate();
+      } else if (type === 'event' && targetId) {
+        await api.put(`/itineraries/events/${targetId}`, { imageUrl: url });
+        toast.success('Event image updated from library');
+        invalidate();
+      } else if (type === 'gallery') {
+        await api.post(`/itineraries/${id}/gallery-bulk`, { imageUrls: [url] });
+        toast.success('Image added to itinerary gallery');
+        invalidate();
+      }
+    } catch (err) {
+      toast.error('Failed to update image from library');
+    } finally {
+      setIsMediaModalOpen(false);
+      setMediaModalTarget(null);
+    }
+  };
+
   const handleFinalize = () => {
     updateMut.mutate({ status: 'finalized' }, {
       onSuccess: () => {
@@ -165,6 +207,17 @@ export default function ItineraryBuilderPage() {
       <input ref={galleryRef} type="file" accept="image/*" multiple className="hidden" onChange={handleGalleryUpload} />
       <input ref={eventImgRef} type="file" accept="image/*" className="hidden" onChange={handleEventImageUpload} />
       <input ref={dayImgRef} type="file" accept="image/*" className="hidden" onChange={handleDayImageUpload} />
+
+      <MediaLibraryModal 
+        isOpen={isMediaModalOpen} 
+        onClose={() => setIsMediaModalOpen(false)} 
+        onSelect={handleMediaSelect}
+        title={
+          mediaModalTarget?.type === 'cover' ? 'Select Cover Photo' :
+          mediaModalTarget?.type === 'day' ? 'Select Day Photo' :
+          mediaModalTarget?.type === 'event' ? 'Select Event Photo' : 'Select Gallery Photo'
+        }
+      />
 
        {/* Header with cover photo */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col min-h-0">
@@ -222,8 +275,11 @@ export default function ItineraryBuilderPage() {
                   <TabsTrigger value="final" className="rounded-lg font-bold text-[10px] uppercase tracking-wider text-white/70 data-[state=active]:bg-white data-[state=active]:text-primary px-3 transition-all">Final</TabsTrigger>
                 </TabsList>
 
+                <Button size="sm" variant="secondary" className="rounded-xl font-bold text-xs h-9" onClick={() => openMediaLibrary('cover')}>
+                  <ImageIcon className="w-3.5 h-3.5 mr-1" /> Library
+                </Button>
                 <Button size="sm" variant="secondary" className="rounded-xl font-bold text-xs h-9" onClick={() => coverRef.current?.click()}>
-                  <Camera className="w-3.5 h-3.5 mr-1" /> Cover
+                  <Camera className="w-3.5 h-3.5 mr-1" /> Upload
                 </Button>
                 <Button size="sm" variant="secondary" className="rounded-xl font-bold text-xs h-9" onClick={handleShare}>
                   <Share2 className="w-3.5 h-3.5 mr-1" /> Share
@@ -390,13 +446,27 @@ export default function ItineraryBuilderPage() {
                                     <span className="text-[9px] font-black uppercase tracking-[0.2em] opacity-40">Add Image</span>
                                   </div>
                                 )}
-                                <button 
-                                  className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center opacity-0 group-hover/dayimg:opacity-100 transition-opacity text-white gap-2"
-                                  onClick={() => dayImgRef.current?.click()}
-                                >
-                                  <Camera className="w-6 h-6" />
-                                  <span className="text-[10px] font-bold uppercase tracking-widest">Flagship Photo</span>
-                                </button>
+                                <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center opacity-0 group-hover/dayimg:opacity-100 transition-opacity text-white gap-3 p-4 text-center">
+                                  <p className="text-[10px] font-black uppercase tracking-[0.2em] mb-1">Flagship Photo</p>
+                                  <div className="flex flex-col gap-2 w-full max-w-[120px]">
+                                    <Button 
+                                      size="sm" 
+                                      variant="secondary" 
+                                      className="rounded-xl font-bold text-[10px] h-8 bg-white/20 hover:bg-white/40 border-white/30 text-white" 
+                                      onClick={(e) => { e.stopPropagation(); openMediaLibrary('day', selectedDay.id); }}
+                                    >
+                                      <ImageIcon className="w-3.5 h-3.5 mr-1" /> Library
+                                    </Button>
+                                    <Button 
+                                      size="sm" 
+                                      variant="secondary" 
+                                      className="rounded-xl font-bold text-[10px] h-8 bg-white/20 hover:bg-white/40 border-white/30 text-white"
+                                      onClick={(e) => { e.stopPropagation(); dayImgRef.current?.click(); }}
+                                    >
+                                      <Upload className="w-3.5 h-3.5 mr-1" /> Upload
+                                    </Button>
+                                  </div>
+                                </div>
                               </div>
 
                               <div className="flex-1 p-6 relative">
@@ -454,9 +524,24 @@ export default function ItineraryBuilderPage() {
                                             <span className="text-[8px] font-black uppercase tracking-tighter opacity-30">No Image</span>
                                           </div>
                                         )}
-                                        <button className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover/img:opacity-100 transition-all duration-300 scale-90 group-hover/img:scale-100 text-white" onClick={() => { setEventImgTarget(ev.id); eventImgRef.current?.click(); }}>
-                                          <Camera className="w-5 h-5 drop-shadow-sm" />
-                                        </button>
+                                        <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center opacity-0 group-hover/img:opacity-100 transition-all duration-300 scale-90 group-hover/img:scale-100 text-white gap-2 p-2">
+                                          <Button 
+                                            size="sm" 
+                                            variant="ghost" 
+                                            className="h-7 w-full rounded-xl text-[9px] font-bold text-white hover:bg-white/20 border border-white/20"
+                                            onClick={(e) => { e.stopPropagation(); openMediaLibrary('event', ev.id); }}
+                                          >
+                                            <ImageIcon className="w-3.5 h-3.5 mr-1" /> Library
+                                          </Button>
+                                          <Button 
+                                            size="sm" 
+                                            variant="ghost" 
+                                            className="h-7 w-full rounded-xl text-[9px] font-bold text-white hover:bg-white/20 border border-white/20"
+                                            onClick={(e) => { e.stopPropagation(); setEventImgTarget(ev.id); eventImgRef.current?.click(); }}
+                                          >
+                                            <Upload className="w-3.5 h-3.5 mr-1" /> Upload
+                                          </Button>
+                                        </div>
                                       </div>
                                       
                                       <div className="flex-1 p-5 flex flex-col">
@@ -561,7 +646,7 @@ export default function ItineraryBuilderPage() {
                 ) : activeSection === 'packageTerms' ? (
                   <PackageTermsEditor itinerary={itinerary} onUpdate={(data: any) => updateMut.mutate(data)} />
                 ) : (
-                  <GalleryEditor itinerary={itinerary} />
+                  <GalleryEditor itinerary={itinerary} onOpenLibrary={(type) => openMediaLibrary(type)} />
                 )}
               </div>
 
@@ -1458,12 +1543,92 @@ function TermSection({ title, icon: Icon, value, onSave, color, placeholder }: a
   );
 }
 
-function GalleryEditor({ itinerary }: { itinerary: any }) {
+function GalleryEditor({ itinerary, onOpenLibrary }: { itinerary: any; onOpenLibrary: (type: 'gallery') => void }) {
+  const queryClient = useQueryClient();
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+
+  const removeImg = async (id: string) => {
+    if (!confirm('Remove this photo?')) return;
+    try {
+      await api.delete(`/itineraries/gallery/${id}`);
+      toast.success('Photo removed');
+      queryClient.invalidateQueries({ queryKey: ['itinerary', itinerary.id] });
+    } catch { toast.error('Failed to remove'); }
+  };
+
+  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files?.length) return;
+    
+    setUploading(true);
+    const fd = new FormData();
+    Array.from(files).forEach(f => fd.append('photos', f));
+    
+    try {
+      await api.post(`/itineraries/${itinerary.id}/gallery`, fd);
+      toast.success('Photos uploaded');
+      queryClient.invalidateQueries({ queryKey: ['itinerary', itinerary.id] });
+    } catch { toast.error('Upload failed'); }
+    finally { setUploading(false); if (fileRef.current) fileRef.current.value = ''; }
+  };
+
+  // Re-use Media Library logic from parent scope if needed, or pass it down.
+  // For simplicity here, we assume openMediaLibrary is available in context or passed as prop.
+  // Since this is a nested function, it has access to parent's openMediaLibrary.
+
   return (
-    <div className="flex flex-col items-center justify-center py-20 text-slate-300 bg-white rounded-[40px] border border-slate-200 h-full shadow-sm">
-      <ImageIcon className="w-12 h-12 mb-4 opacity-20" />
-      <p className="font-bold text-sm uppercase tracking-widest">Gallery Image Management</p>
-      <p className="text-xs text-slate-400 mt-1">Add or remove images for this itinerary's public view.</p>
+    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-10">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-black tracking-tight text-slate-800">Itinerary Gallery</h2>
+          <p className="text-xs font-medium text-slate-500 mt-1">These photos will appear in the "Memories" section of the proposal.</p>
+        </div>
+        <div className="flex gap-2">
+          <Button 
+            variant="outline" 
+            className="rounded-2xl font-bold h-11 px-6 border-slate-200 hover:bg-slate-50"
+            onClick={() => onOpenLibrary('gallery')}
+          >
+            <ImageIcon className="w-4 h-4 mr-2 text-blue-500" /> From Library
+          </Button>
+          <Button 
+            className="rounded-2xl font-bold h-11 px-8 bg-slate-900 hover:bg-black text-white shadow-lg shadow-slate-200"
+            onClick={() => fileRef.current?.click()}
+            disabled={uploading}
+          >
+            {uploading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Plus className="w-4 h-4 mr-2" />}
+            Upload Fresh
+          </Button>
+          <input ref={fileRef} type="file" multiple accept="image/*" className="hidden" onChange={handleUpload} />
+        </div>
+      </div>
+
+      {!itinerary.gallery?.length ? (
+        <div className="flex flex-col items-center justify-center py-20 bg-slate-50 rounded-[40px] border-2 border-dashed border-slate-200">
+           <div className="w-16 h-16 rounded-full bg-white flex items-center justify-center shadow-sm mb-4">
+             <ImageIcon className="w-6 h-6 text-slate-300" />
+           </div>
+           <p className="font-bold text-slate-400 text-sm uppercase tracking-widest">No Photos Added</p>
+           <p className="text-[10px] text-slate-400 mt-1">Upload destination photos to win over your client.</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+          {itinerary.gallery.map((img: any) => (
+            <div key={img.id} className="group relative aspect-square rounded-[32px] overflow-hidden border border-slate-100 shadow-sm transition-all hover:shadow-xl">
+              <img src={img.imageUrl} alt="" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
+              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                <button 
+                  onClick={() => removeImg(img.id)}
+                  className="w-12 h-12 rounded-2xl bg-white/20 hover:bg-red-500 backdrop-blur-md text-white flex items-center justify-center transition-all shadow-xl"
+                >
+                  <Trash2 className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

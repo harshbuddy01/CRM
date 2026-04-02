@@ -278,6 +278,7 @@ model Proposal {
   queryId      String    @map("query_id")
   itineraryId  String?   @map("itinerary_id")
   version      Int       @default(1)
+  status       String    @default("pending") @map("status") /// 'pending', 'confirmed', 'rejected'
   totalCost    Decimal?  @map("total_cost") @db.Decimal(12, 2)
   markupPct    Decimal?  @map("markup_pct") @db.Decimal(5, 2)
   sellingPrice Decimal?  @map("selling_price") @db.Decimal(12, 2)

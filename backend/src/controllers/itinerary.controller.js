@@ -71,6 +71,15 @@ const uploadGalleryImages = async (req, res, next) => {
   } catch (err) { next(err); }
 };
 
+const uploadGalleryByUrl = async (req, res, next) => {
+  try {
+    const { imageUrls } = req.body;
+    if (!imageUrls || !Array.isArray(imageUrls)) return res.status(400).json({ success: false, message: 'Invalid payload' });
+    await itineraryService.addGalleryImagesByUrl(req.params.id, imageUrls);
+    res.status(201).json({ success: true, message: 'Images added to gallery' });
+  } catch (err) { next(err); }
+};
+
 const removeGalleryImage = async (req, res, next) => {
   try {
     await itineraryService.removeGalleryImage(req.params.imageId);
@@ -402,6 +411,7 @@ module.exports = {
   duplicate,
   uploadCoverPhoto,
   uploadGalleryImages,
+  uploadGalleryByUrl,
   removeGalleryImage,
   uploadEventImage,
   addDay,

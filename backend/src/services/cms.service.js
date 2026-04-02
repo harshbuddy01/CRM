@@ -49,8 +49,15 @@ const updateTestimonial = async (id, data, file) => {
 const deleteTestimonial = (id) => prisma.testimonial.delete({ where: { id } });
 
 // ─── Gallery ─────────────────────────────────────────────────
-const listGallery = (category) => {
-  const where = category ? { category } : {};
+const listGallery = (category, search) => {
+  const where = { isActive: true };
+  if (category) where.category = category;
+  if (search) {
+    where.OR = [
+      { caption: { contains: search, mode: 'insensitive' } },
+      { category: { contains: search, mode: 'insensitive' } },
+    ];
+  }
   return prisma.galleryImage.findMany({ where, orderBy: { sequence: 'asc' } });
 };
 const createGalleryImage = async (data, file) => {

@@ -399,6 +399,7 @@ module.exports = {
   downloadPdf,
   sendWhatsapp,
   sendEmail,
+  confirmProposal,
   logEvent,
   listAllProposals,
 };

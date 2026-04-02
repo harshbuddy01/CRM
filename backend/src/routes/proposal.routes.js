@@ -26,7 +26,8 @@ router.get('/', can('proposal.view_assigned'), proposalController.listAllProposa
 const multer = require('multer');
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
 
-// Dispatch Notifications (with Idempotency Queue or Sync for custom emails)
+// Dispatch Notifications 
+router.post('/:id/confirm', proposalController.confirmProposal);
 router.post('/:id/send-whatsapp', proposalController.sendWhatsapp);
 router.post('/:id/send-email', upload.single('attachment'), proposalController.sendEmail);
 
