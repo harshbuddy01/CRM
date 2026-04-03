@@ -54,16 +54,19 @@ api.interceptors.response.use(
               })
               .catch((refreshError) => {
                 // Refresh failed — force logout once
-                // If refresh fails, kill all ongoing network requests and clear session
-                logout(); // Ensure logout is still called
+                logout(); 
                 if (typeof window !== 'undefined') {
                   window.stop();
                   localStorage.removeItem('refreshToken');
                   localStorage.removeItem('auth-storage');
                   document.cookie = 'accessToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; secure; samesite=strict';
-                  window.location.href = '/login';
+                  
+                  // Only redirect to login if we are NOT on a public share page
+                  if (!window.location.pathname.startsWith('/share')) {
+                    window.location.href = '/login';
+                  }
                 }
-                return Promise.reject(refreshError); // Reject with the refresh error
+                return Promise.reject(refreshError);
               })
               .finally(() => { refreshPromise = null; });
           }
@@ -83,7 +86,11 @@ api.interceptors.response.use(
           localStorage.removeItem('refreshToken');
           localStorage.removeItem('auth-storage');
           document.cookie = 'accessToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; secure; samesite=strict';
-          window.location.href = '/login';
+          
+          // Only redirect to login if we are NOT on a public share page
+          if (!window.location.pathname.startsWith('/share')) {
+            window.location.href = '/login';
+          }
         }
       }
     }

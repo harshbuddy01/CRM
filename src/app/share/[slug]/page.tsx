@@ -12,6 +12,27 @@ const EVENT_ICONS: Record<string, any> = {
   flight: Plane, meal: Utensils, checkin: LogIn, checkout: LogOut, freeTime: Sun,
 };
 
+function ExpandableText({ text, limit = 400, className = "" }: { text: string; limit?: number; className?: string }) {
+  const [expanded, setExpanded] = useState(false);
+  if (!text) return null;
+  if (text.length <= limit) return <p className={className}>{text}</p>;
+
+  return (
+    <div className="space-y-4">
+      <p className={className}>
+        {expanded ? text : `${text.slice(0, limit)}...`}
+      </p>
+      <button 
+        onClick={() => setExpanded(!expanded)}
+        className="font-handwriting text-2xl text-blue-400 hover:text-blue-500 transition-colors flex items-center gap-2 group"
+      >
+        <span className="w-8 h-px bg-blue-300/30 group-hover:w-12 transition-all" />
+        {expanded ? 'Read less of the story' : 'Read the full story'}
+      </button>
+    </div>
+  );
+}
+
 export default function SharePage() {
   const { slug } = useParams();
   const [itinerary, setItinerary] = useState<any>(null);
@@ -113,9 +134,24 @@ export default function SharePage() {
               </p>
               <h1 className="text-5xl md:text-8xl font-black tracking-tight leading-none mb-8 drop-shadow-lg">{itinerary.title}</h1>
               {itinerary.description && (
-                <p className="text-white/90 max-w-2xl text-xl leading-relaxed font-medium bg-black/10 p-6 rounded-3xl border border-white/5 backdrop-blur-sm italic">
-                  "{itinerary.description}"
-                </p>
+                <div className="relative mt-8 group/intro">
+                  <div className="absolute -left-6 top-1/2 -translate-y-1/2 w-1 h-12 bg-blue-400/50 rounded-full group-hover/intro:h-20 transition-all duration-700" />
+                  
+                  {/* Decorative Hand-drawn Bird Icon */}
+                  <div className="absolute -top-12 -right-6 text-blue-200/40 pointer-events-none group-hover/intro:rotate-12 transition-transform duration-1000">
+                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M16 7c-1.5 0-3-1-3-3s1.5-2 3-2 3 1 3 3-1.5 3-3 3zM2 17c0-3 3-4 5-4s5 1 5 4v3H2v-3z" />
+                      <path d="M7 13c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2z" />
+                      <path d="M12 13c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2z" />
+                    </svg>
+                  </div>
+
+                  <ExpandableText 
+                    text={itinerary.description} 
+                    limit={300} 
+                    className="text-white/90 max-w-2xl text-xl leading-relaxed font-medium italic pl-4"
+                  />
+                </div>
               )}
             </motion.div>
             
@@ -245,10 +281,13 @@ export default function SharePage() {
                       )}
                       
                       {day.description && (
-                         <div className="relative">
-                            <div className={`absolute -left-4 top-0 bottom-0 w-1 bg-slate-100 rounded-full ${isEven ? 'md:hidden' : ''}`} />
-                            <div className={`absolute -right-4 top-0 bottom-0 w-1 bg-slate-100 rounded-full hidden ${isEven ? 'md:block' : ''}`} />
-                            <p className="text-slate-600 text-base leading-[1.8] font-medium italic">{day.description}</p>
+                         <div className="relative mt-6">
+                            <div className={`absolute top-0 bottom-0 w-0.5 bg-slate-100 rounded-full transition-all group-hover:bg-blue-200/50 ${isEven ? 'md:-right-6 md:left-auto -left-6' : '-left-6'}`} />
+                            <ExpandableText 
+                              text={day.description} 
+                              limit={250} 
+                              className="text-slate-600 text-base leading-[1.8] font-medium italic"
+                            />
                          </div>
                       )}
 
