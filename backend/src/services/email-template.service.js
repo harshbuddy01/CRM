@@ -88,7 +88,7 @@ const sendQueryEmail = async ({ queryId, templateId, subject, body, cc, sentBy }
   // 3. Append Company Signature
   const orgSettingsService = require('./org-setting.service');
   const allSettings = await orgSettingsService.getAllSettings();
-  const signature = allSettings.email_signature || '';
+  const signature = allSettings.emailSignature || '';
   
   if (signature) {
     finalBody += `<br><br>${signature}`;

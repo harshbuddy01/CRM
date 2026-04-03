@@ -1120,7 +1120,7 @@ function PricingTab({ itinerary, onUpdate }: { itinerary: any; onUpdate: (data: 
   const [markup, setMarkup] = useState(itinerary.markupPct || 0);
   const [perPerson, setPerPerson] = useState(itinerary.perPersonCost || 0);
 
-  const baseCost = totalEventCost > 0 
+  const baseCost = allEvents.length > 0 
     ? totalEventCost 
     : (Number(adults) * Number(perPerson)) + (Number(children) * (Number(perPerson) * 0.5));
   

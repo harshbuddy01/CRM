@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { Card, CardContent } from '@/components/ui/card';
@@ -24,7 +24,7 @@ export function SupplierCommTab({ queryId }: { queryId: string }) {
   const { data: proposals } = useQuery({ queryKey: ['query-proposals', queryId], queryFn: async () => (await api.get(`/queries/${queryId}/proposals`)).data.data });
   const { data: suppliers, isLoading: loadingSuppliers } = useQuery({ queryKey: ['masters', 'supplier'], queryFn: async () => (await api.get('/masters-v2/supplier')).data.data || [] });
 
-  useMemo(() => {
+  useEffect(() => {
     if (!queryInfo || !proposals || isTemplateGenerated) return;
     const confirmedProposal = proposals.find((p: any) => p.status === 'confirmed') || proposals[0];
     const checkIn = queryInfo.travelDateFrom ? format(new Date(queryInfo.travelDateFrom), 'dd-MM-yyyy') : 'TBD';

@@ -90,7 +90,7 @@ const generateRazorpayLink = async ({ queryId, tourId, amount, description }) =>
       mode: 'razorpay_link',
       paymentDate: new Date(),
       status: 'pending',
-      recordedBy: 'system', // Will replace with user ID if passed, but typically system generates
+      recordedBy: null, // Will replace with user ID if passed, but typically system generates
     }
   });
 
@@ -173,7 +173,7 @@ const handleWebhook = async (body, rawBody, signature) => {
           referenceUtr: razorpayPaymentId,
           paymentDate: new Date(),
           status: 'verified',
-          recordedBy: 'system',
+          recordedBy: null,
           idempotencyKey: razorpayPaymentId
         }
       });

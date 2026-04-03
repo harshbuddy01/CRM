@@ -430,13 +430,18 @@ const confirmProposal = async (req, res, next) => {
       });
 
       // D. Create or link a Tour record (Ops Phase starts)
-      // Robust tour code generation
+      // Robust tour code generation with collision retry
       const crypto = require('crypto');
-      const baseCode = (proposal.query.queryCode && proposal.query.queryCode.trim() !== '')
-        ? proposal.query.queryCode.split('-').pop()
-        : crypto.randomUUID().substring(0, 8).toUpperCase();
-      
-      const tourCode = `TUR-${new Date().getFullYear()}-${baseCode}`;
+      let tourCode;
+      for (let attempt = 0; attempt < 3; attempt++) {
+        const baseCode = (proposal.query.queryCode && proposal.query.queryCode.trim() !== '')
+          ? proposal.query.queryCode.split('-').pop()
+          : crypto.randomUUID().substring(0, 8).toUpperCase();
+        const suffix = attempt > 0 ? `-${crypto.randomUUID().substring(0, 4).toUpperCase()}` : '';
+        tourCode = `TUR-${new Date().getFullYear()}-${baseCode}${suffix}`;
+        const exists = await tx.tour.findUnique({ where: { tourCode } });
+        if (!exists) break;
+      }
       
       // Check if tour already exists for this query
       const existingTour = await tx.tour.findFirst({
@@ -453,7 +458,6 @@ const confirmProposal = async (req, res, next) => {
           where: { id: existingTour.id },
           data: {
             proposalId: id,
-            itineraryId: proposal.itineraryId,
             status: 'upcoming',
             startDate,
             endDate,
@@ -465,7 +469,6 @@ const confirmProposal = async (req, res, next) => {
           data: {
             queryId: proposal.queryId,
             proposalId: id,
-            itineraryId: proposal.itineraryId,
             tourCode: tourCode,
             status: 'upcoming',
             startDate,

@@ -203,6 +203,10 @@ const duplicate = async (id, userId) => {
       adults: source.adults,
       children: source.children,
       markupPct: source.markupPct,
+      inclusionsHtml: source.inclusionsHtml,
+      exclusionsHtml: source.exclusionsHtml,
+      paymentPolicyHtml: source.paymentPolicyHtml,
+      cancellationPolicyHtml: source.cancellationPolicyHtml,
       termsHtml: source.termsHtml,
       createdBy: userId,
       days: {
@@ -484,6 +488,31 @@ const addGalleryImages = async (id, files) => {
   return uploadResults;
 };
 
+const addGalleryImagesByUrl = async (id, imageUrls) => {
+  await getById(id);
+
+  const maxSort = await prisma.itineraryGalleryImage.aggregate({
+    where: { itineraryId: id },
+    _max: { sortOrder: true },
+  });
+  let nextSort = (maxSort._max.sortOrder || 0) + 1;
+
+  const results = [];
+  for (const url of imageUrls) {
+    if (!url || typeof url !== 'string') continue;
+    const image = await prisma.itineraryGalleryImage.create({
+      data: {
+        itineraryId: id,
+        imageUrl: url,
+        caption: null,
+        sortOrder: nextSort++,
+      },
+    });
+    results.push(image);
+  }
+  return results;
+};
+
 const removeGalleryImage = async (imageId) => {
   const image = await prisma.itineraryGalleryImage.findUnique({ where: { id: imageId } });
   if (!image) throw new NotFoundError('Gallery image not found');
@@ -517,6 +546,7 @@ module.exports = {
   uploadCoverPhoto,
   uploadEventImage,
   addGalleryImages,
+  addGalleryImagesByUrl,
   removeGalleryImage,
   getExportData,
 };

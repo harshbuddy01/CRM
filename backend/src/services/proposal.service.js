@@ -90,7 +90,14 @@ const createProposalFromItinerary = async (queryId, userId, itineraryId) => {
   const version = existingProposalsCount + 1;
 
   // 3. Create Proposal linked to this new itinerary
-  // Note: sellingPrice is calculated from itinerary details or perPersonCost
+  // Note: sellingPrice should reflect total package cost, not just per-person
+  const perPerson = Number(newItinerary.perPersonCost) || 0;
+  const adults = Number(newItinerary.adults) || 1;
+  const children = Number(newItinerary.children) || 0;
+  const calculatedTotal = perPerson > 0
+    ? (adults * perPerson) + (children * perPerson * 0.5)
+    : Number(newItinerary.totalCost) || 0;
+
   const proposal = await prisma.proposal.create({
     data: {
       queryId,
@@ -98,7 +105,7 @@ const createProposalFromItinerary = async (queryId, userId, itineraryId) => {
       version,
       totalCost: newItinerary.totalCost || 0,
       markupPct: newItinerary.markupPct || 0,
-      sellingPrice: newItinerary.perPersonCost || 0,
+      sellingPrice: calculatedTotal,
       createdBy: userId,
       pdfStatus: 'pending',
     },
@@ -166,7 +173,19 @@ const getProposalsByQuery = async (queryId) => {
     orderBy: { version: 'desc' },
     include: {
       user: { select: { name: true } },
-      itinerary: { select: { id: true, title: true, coverPhotoUrl: true } }
+      itinerary: {
+        select: {
+          id: true,
+          title: true,
+          coverPhotoUrl: true,
+          days: {
+            orderBy: { dayNumber: 'asc' },
+            include: {
+              events: { orderBy: { sortOrder: 'asc' } },
+            },
+          },
+        },
+      },
     }
   });
 };

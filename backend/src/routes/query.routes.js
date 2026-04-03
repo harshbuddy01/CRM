@@ -260,8 +260,8 @@ router.get('/:id/billing-summary', async (req, res, next) => {
       orderBy: { paymentDate: 'desc' },
     });
     const vendorPaymentSum = vendorPayments.reduce((sum, vp) => sum + Number(vp.amount), 0);
-    // Use Math.max to avoid double-counting if a payment exists in both places
-    const supplierReceived = Math.max(bookingServicePaid, vendorPaymentSum);
+    // Use vendorPayments as the canonical supplier payment source
+    const supplierReceived = vendorPaymentSum || bookingServicePaid;
     const supplierPending = Math.max(0, supplierAmount - supplierReceived);
 
     const grossProfit = totalAmount - supplierAmount;
@@ -273,12 +273,16 @@ router.get('/:id/billing-summary', async (req, res, next) => {
       select: { id: true, invoiceNumber: true, status: true, totalAmount: true },
     });
 
+    // Tag payments with type for frontend discrimination
+    const taggedCustomerPayments = customerPayments.map(p => ({ ...p, _type: 'customer' }));
+    const taggedVendorPayments = vendorPayments.map(p => ({ ...p, _type: 'vendor' }));
+
     res.json({
       success: true,
       data: {
         customer: { totalAmount, totalReceived, totalPending, grossProfit },
         supplier: { supplierAmount, supplierReceived, supplierPending },
-        payments: [...customerPayments, ...vendorPayments], // Combine both for the history timeline
+        payments: [...taggedCustomerPayments, ...taggedVendorPayments],
         invoice,
       },
     });
