@@ -1120,8 +1120,11 @@ function PricingTab({ itinerary, onUpdate }: { itinerary: any; onUpdate: (data: 
   const [markup, setMarkup] = useState(itinerary.markupPct || 0);
   const [perPerson, setPerPerson] = useState(itinerary.perPersonCost || 0);
 
-  const totalWithMarkup = totalEventCost + (totalEventCost * Number(markup) / 100);
-
+  const baseCost = totalEventCost > 0 
+    ? totalEventCost 
+    : (Number(adults) * Number(perPerson)) + (Number(children) * (Number(perPerson) * 0.5));
+  
+  const totalWithMarkup = baseCost + (baseCost * Number(markup) / 100);
   return (
     <div className="max-w-3xl mx-auto space-y-6">
       <Card className="rounded-2xl border-slate-200">

@@ -141,6 +141,13 @@ router.post(
   queryController.sendEmail
 );
 
+// Send Supplier Emails
+router.post(
+  '/:id/supplier-email',
+  can('query.edit_own'),
+  queryController.sendSupplierEmail
+);
+
 // Get Email Logs for Query (Sprint 9/10 Bugfix)
 router.get('/:id/email-logs', async (req, res, next) => {
   try {

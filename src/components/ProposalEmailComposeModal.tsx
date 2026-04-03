@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { useMutation } from '@tanstack/react-query';
+import { useState, useEffect } from 'react';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RichTextEditor } from '@/components/ui/rich-text-editor';
 import { toast } from 'sonner';
-import { Mail, Send } from 'lucide-react';
+import { Mail, Send, Loader2 } from 'lucide-react';
 
 interface ProposalEmailComposeModalProps {
   isOpen: boolean;
@@ -21,9 +21,27 @@ interface ProposalEmailComposeModalProps {
 
 export function ProposalEmailComposeModal({ isOpen, onClose, proposalId, customerName, customerEmail }: ProposalEmailComposeModalProps) {
   const [subject, setSubject] = useState(`Your Travel Proposal - ${customerName}`);
-  const [body, setBody] = useState(`<p>Hi ${customerName},</p><p>Please find your travel proposal attached.</p><p><br></p><p>Best Regards,<br><strong>Team Sikkim Holidays</strong><br>📍 Sikkim Holidays ( A Unit of ETNHO TRAILS HOLIDAY Pvt Ltd.)<br>📞 For Booking: +91 8981510077<br>💳 For Service/Finance: +91 9007762137<br>✉️ Email: sikkimholidays.booking@gmail.com | support@sikkimholidays.in<br>🌐 Website: <a href="https://sikkimholidays.in">sikkimholidays.in</a></p>`);
+  const [body, setBody] = useState(`<p>Hi ${customerName},</p><p>Please find your travel proposal attached.</p><p><br></p><p>Best Regards,<br><strong>Team Sikkim Holidays</strong></p>`);
   const [cc, setCc] = useState('');
   const [file, setFile] = useState<File | null>(null);
+
+  const { data: settings, isLoading: loadingSettings } = useQuery({
+    queryKey: ['org-settings'],
+    queryFn: async () => {
+      const res = await api.get('/settings');
+      return res.data.data;
+    },
+    enabled: isOpen,
+  });
+
+  useEffect(() => {
+    if (settings?.emailSignature && isOpen) {
+      setBody(`<p>Hi ${customerName},</p><p>Please find your travel proposal attached.</p><p><br></p>${settings.emailSignature}`);
+    } else if (isOpen) {
+      // Revert to initial static if no signature configured yet
+      setBody(`<p>Hi ${customerName},</p><p>Please find your travel proposal attached.</p><p><br></p><p>Best Regards,<br><strong>Team Sikkim Holidays</strong><br>📍 Sikkim Holidays ( A Unit of ETNHO TRAILS HOLIDAY Pvt Ltd.)<br>📞 For Booking: +91 8981510077<br>💳 For Service/Finance: +91 9007762137<br>✉️ Email: sikkimholidays.booking@gmail.com | support@sikkimholidays.in<br>🌐 Website: <a href="https://sikkimholidays.in">sikkimholidays.in</a></p>`);
+    }
+  }, [settings, isOpen, customerName]);
 
   const sendMutation = useMutation({
     mutationFn: async () => {

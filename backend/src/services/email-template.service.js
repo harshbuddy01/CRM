@@ -133,6 +133,66 @@ const sendQueryEmail = async ({ queryId, templateId, subject, body, cc, sentBy }
   return log;
 };
 
+const sendSupplierEmail = async ({ queryId, supplierIds, subject, body, cc, sentBy }) => {
+  const query = await prisma.query.findUnique({
+    where: { id: queryId },
+  });
+
+  if (!query) throw new Error('Query not found');
+  if (!supplierIds || !supplierIds.length) throw new Error('No suppliers selected');
+
+  const suppliers = await prisma.supplier.findMany({
+    where: { id: { in: supplierIds } }
+  });
+
+  const queueService = require('./queue.service');
+  
+  const logs = [];
+
+  for (const supplier of suppliers) {
+    if (!supplier.email) continue; // skip suppliers without email
+
+    // Send via SendGrid
+    await queueService.enqueueEmailJob(
+      queryId,
+      supplier.email,
+      subject,
+      body,
+      cc
+    );
+
+    // Log it
+    const log = await prisma.emailLog.create({
+      data: {
+        queryId,
+        to: supplier.email,
+        cc: cc || null,
+        subject: subject,
+        body: body,
+        sentBy,
+        status: 'sent',
+        communicationType: 'supplier',
+      },
+    });
+    logs.push(log);
+  }
+  
+  if (logs.length > 0) {
+    // Create ActivityLog for unified history
+    await prisma.activityLog.create({
+      data: {
+        userId: sentBy,
+        action: 'integration.email.success',
+        entityType: 'query',
+        entityId: queryId,
+        newValue: { target: 'Suppliers', count: logs.length, subject }
+      }
+    });
+  }
+
+  return logs;
+};
+
 module.exports = {
   createTemplate,
   getTemplates,
@@ -141,4 +201,5 @@ module.exports = {
   updateTemplate,
   deleteTemplate,
   sendQueryEmail,
+  sendSupplierEmail,
 };

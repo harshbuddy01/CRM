@@ -160,6 +160,31 @@ const sendEmail = async (req, res, next) => {
   }
 };
 
+const sendSupplierEmail = async (req, res, next) => {
+  try {
+    const { supplierIds, subject, body, cc } = req.body;
+    const queryId = req.params.id;
+
+    if (!supplierIds || !supplierIds.length) {
+      return res.status(400).json({ success: false, message: 'Supplier IDs are required' });
+    }
+
+    const emailTemplateService = require('../services/email-template.service');
+    const result = await emailTemplateService.sendSupplierEmail({
+      queryId,
+      supplierIds,
+      subject,
+      body,
+      cc,
+      sentBy: req.user.id,
+    });
+
+    res.json({ success: true, message: `Dispatched ${result.length} supplier emails`, data: result });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   create,
   createFromWebhook,
@@ -173,4 +198,5 @@ module.exports = {
   addNote,
   deleteNote,
   sendEmail,
+  sendSupplierEmail,
 };
