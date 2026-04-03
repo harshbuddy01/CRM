@@ -39,6 +39,7 @@ const getEventType = (type: string) => EVENT_TYPES.find(t => t.value === type) |
 
 export default function ItineraryBuilderPage() {
   const { id } = useParams();
+  const router = useRouter();
   const searchParams = useSearchParams();
   const qc = useQueryClient();
   const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'build');
@@ -89,6 +90,14 @@ export default function ItineraryBuilderPage() {
   const addEventMut = useMutation({ mutationFn: ({ dayId, data }: any) => api.post(`/itineraries/days/${dayId}/events`, data), onSuccess: invalidate });
   const updateEventMut = useMutation({ mutationFn: ({ eventId, data }: any) => api.put(`/itineraries/events/${eventId}`, data), onSuccess: () => { invalidate(); setEditingEvent(null); } });
   const removeEventMut = useMutation({ mutationFn: (eventId: string) => api.delete(`/itineraries/events/${eventId}`), onSuccess: invalidate });
+  const deleteItineraryMut = useMutation({
+    mutationFn: () => api.delete(`/itineraries/${id}`),
+    onSuccess: () => {
+      toast.success('Itinerary deleted');
+      router.push('/itineraries');
+    },
+    onError: (err: any) => toast.error(err.response?.data?.message || 'Failed to delete'),
+  });
 
   const handleCoverUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]; if (!file) return;
@@ -668,7 +677,13 @@ export default function ItineraryBuilderPage() {
 
           {/* ═══ FINAL TAB ═══ */}
           <TabsContent value="final" className="mt-0">
-            <FinalPreviewTab itinerary={itinerary} onShare={handleShare} onExport={handleExportPdf} />
+            <FinalPreviewTab 
+              itinerary={itinerary} 
+              onShare={handleShare} 
+              onExport={handleExportPdf}
+              onDelete={() => deleteItineraryMut.mutate()}
+              isDeleting={deleteItineraryMut.isPending}
+            />
           </TabsContent>
         </div>
       </Tabs>
@@ -1171,7 +1186,13 @@ function PricingTab({ itinerary, onUpdate }: { itinerary: any; onUpdate: (data: 
   );
 }
 
-function FinalPreviewTab({ itinerary, onShare, onExport }: { itinerary: any; onShare: () => void; onExport: () => void }) {
+function FinalPreviewTab({ itinerary, onShare, onExport, onDelete, isDeleting }: { 
+  itinerary: any; 
+  onShare: () => void; 
+  onExport: () => void;
+  onDelete: () => void;
+  isDeleting: boolean;
+}) {
   const accomEvents = (itinerary.days || []).flatMap((d: any) => (d.events || []).filter((e: any) => e.type === 'accommodation'));
   
   const sanitize = (html: string) => {
@@ -1423,6 +1444,36 @@ function FinalPreviewTab({ itinerary, onShare, onExport }: { itinerary: any; onS
           </motion.div>
         </section>
       )}
+
+      {/* Danger Zone */}
+      <section className="pt-20 border-t border-slate-100">
+        <div className="bg-red-50/50 border border-red-100 rounded-[32px] p-8 md:p-12">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-8">
+            <div className="text-center md:text-left">
+              <div className="flex items-center justify-center md:justify-start gap-2 mb-3">
+                <AlertTriangle className="w-5 h-5 text-red-500" />
+                <h3 className="text-xl font-black text-slate-900 tracking-tight">Danger Zone</h3>
+              </div>
+              <p className="text-sm text-slate-500 max-w-md leading-relaxed">
+                Deleting this itinerary is permanent and cannot be undone. All days, events, and gallery images associated with this itinerary will be removed.
+              </p>
+            </div>
+            <Button 
+              variant="destructive" 
+              className="rounded-2xl h-14 px-10 font-bold shadow-xl shadow-red-200 hover:scale-105 transition-all"
+              onClick={() => {
+                if (window.confirm('Are you absolutely sure you want to delete this itinerary? This action is permanent.')) {
+                  onDelete();
+                }
+              }}
+              disabled={isDeleting}
+            >
+              {isDeleting ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : <Trash2 className="w-5 h-5 mr-2" />}
+              Delete Itinerary
+            </Button>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }
