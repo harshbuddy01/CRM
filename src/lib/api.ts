@@ -1,7 +1,11 @@
 import axios from 'axios';
 import { useAuthStore } from './auth-store';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/v1';
+const DEFAULT_API = typeof window !== 'undefined' && window.location.hostname !== 'localhost'
+  ? 'https://api.imagicaholidays.com/api/v1' 
+  : 'http://localhost:3001/api/v1';
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || DEFAULT_API;
 
 let refreshPromise: Promise<any> | null = null;
 
