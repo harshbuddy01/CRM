@@ -27,7 +27,14 @@ app.set('trust proxy', 1);
 app.use(helmet());
 
 // CORS — allow only whitelisted frontend origins
-const allowedOrigins = [config.frontendUrl, 'https://lightpink-termite-550903.hostingersite.com', 'https://imagicaholidays.com', 'https://www.imagicaholidays.com', 'https://crm.imagicaholidays.com'];
+const allowedOrigins = [
+  config.frontendUrl, 
+  'https://lightpink-termite-550903.hostingersite.com', 
+  'https://imagicaholidays.com', 
+  'https://www.imagicaholidays.com', 
+  'https://crm.imagicaholidays.com',
+  'https://api.imagicaholidays.com'
+];
 app.use(
   cors({
     origin: (origin, callback) => {

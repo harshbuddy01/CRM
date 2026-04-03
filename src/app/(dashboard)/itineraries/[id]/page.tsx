@@ -138,7 +138,11 @@ export default function ItineraryBuilderPage() {
     try {
       const res = await api.post(`/itineraries/${id}/generate-share-link`);
       const slug = res.data.data.shareSlug;
-      const url = `${window.location.origin}/share/${slug}`;
+      // ALWAYS use the production domain for share links unless on a dev build
+      const baseUrl = window.location.hostname === 'localhost' 
+        ? window.location.origin 
+        : 'https://imagicaholidays.com';
+      const url = `${baseUrl}/share/${slug}`;
       await navigator.clipboard.writeText(url);
       toast.success('Share link copied to clipboard!');
       invalidate();
