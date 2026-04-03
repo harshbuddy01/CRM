@@ -1201,7 +1201,14 @@ function FinalPreviewTab({ itinerary, onShare, onExport, onDelete, isDeleting }:
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-12 pb-20">
+    <div className="max-w-4xl mx-auto space-y-12 pb-20 paper-texture p-8 md:p-12 rounded-[40px] shadow-inner border border-slate-100 relative overflow-hidden">
+      {/* Decorative Doodles */}
+      <div className="absolute top-10 right-10 opacity-10 pointer-events-none">
+        <Sun className="w-20 h-20 rotate-12" />
+      </div>
+      <div className="absolute bottom-10 left-10 opacity-10 pointer-events-none">
+        <Mountain className="w-32 h-32 -rotate-12" />
+      </div>
       <div className="flex justify-end gap-3 print:hidden">
         <Button variant="outline" className="rounded-2xl font-bold px-6 h-11 border-slate-200 hover:bg-slate-50 transition-all active:scale-95" onClick={onShare}>
           <Share2 className="w-4 h-4 mr-2 text-slate-500" /> Share Link
@@ -1215,13 +1222,14 @@ function FinalPreviewTab({ itinerary, onShare, onExport, onDelete, isDeleting }:
       {accomEvents.length > 0 && (
         <section className="space-y-6">
           <div className="flex items-center gap-4">
-            <h3 className="font-serif text-3xl text-slate-900 tracking-tight">Accommodation Overview</h3>
-            <div className="h-px flex-1 bg-slate-100" />
+            <h3 className="font-handwriting text-4xl text-slate-900 tracking-tight">Accommodation Overview</h3>
+            <div className="h-[2px] flex-1 bg-slate-900/10 border-b border-dashed border-slate-900/20" />
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {(itinerary.days || []).map((day: any) => (day.events || []).filter((e: any) => e.type === 'accommodation').map((ev: any) => (
               <motion.div key={ev.id} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
-                <Card className="rounded-[32px] border-slate-100 overflow-hidden group shadow-sm hover:shadow-xl transition-all duration-500">
+                <Card className="rounded-[32px] border-none sketchy-border overflow-hidden group shadow-sm hover:shadow-xl transition-all duration-500 bg-white relative">
+                  <div className="washi-tape washi-tape-top-right bg-blue-400/20" />
                   <div className="aspect-[16/10] relative overflow-hidden bg-slate-100">
                     {ev.imageUrl ? (
                       <img src={ev.imageUrl} alt={ev.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
@@ -1278,8 +1286,8 @@ function FinalPreviewTab({ itinerary, onShare, onExport, onDelete, isDeleting }:
       {/* Main Itinerary — High Fidelity Stories */}
       <section className="space-y-10">
         <div className="flex items-center gap-4">
-          <h3 className="font-serif text-3xl text-slate-900 tracking-tight">The Journey</h3>
-          <div className="h-px flex-1 bg-slate-100" />
+          <h3 className="font-handwriting text-5xl text-slate-900 tracking-tight">The Journey</h3>
+          <div className="h-[2px] flex-1 bg-slate-900/10 border-b border-dashed border-slate-900/20" />
         </div>
         
         <div className="space-y-16">
@@ -1296,9 +1304,10 @@ function FinalPreviewTab({ itinerary, onShare, onExport, onDelete, isDeleting }:
                   <div className="inline-flex items-center gap-3">
                     <span className="w-12 h-12 rounded-[20px] bg-slate-900 flex items-center justify-center text-white font-serif text-xl shadow-2xl shadow-slate-200">
                       {day.dayNumber}
+                      <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-400 rounded-full border-2 border-white shadow-sm" />
                     </span>
-                    <div className="h-px w-8 bg-slate-200" />
-                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-600">Day Itinerary</span>
+                    <div className="h-[2px] w-8 bg-slate-900/10 border-b border-dashed border-slate-900/20" />
+                    <span className="font-handwriting text-xl text-blue-600">Day Itinerary</span>
                   </div>
                   
                   <div>
@@ -1342,7 +1351,9 @@ function FinalPreviewTab({ itinerary, onShare, onExport, onDelete, isDeleting }:
                   )}
                 </div>
 
-                <div className={cn("relative aspect-[4/5] rounded-[48px] overflow-hidden shadow-2xl group", idx % 2 === 0 ? 'lg:order-2' : 'lg:order-1')}>
+                <div className={cn("relative aspect-[4/5] rounded-[48px] overflow-hidden sketchy-border shadow-2xl group", idx % 2 === 0 ? 'lg:order-2' : 'lg:order-1')}>
+                  <div className="washi-tape washi-tape-top-right bg-amber-400/30" />
+                  <div className="washi-tape washi-tape-bottom-left bg-emerald-400/30" />
                   {day.imageUrl ? (
                     <img src={day.imageUrl} alt="" className="w-full h-full object-cover transition-all duration-1000 group-hover:scale-110 group-hover:rotate-1" />
                   ) : (

@@ -69,8 +69,7 @@ export default function SharePage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <style jsx global>{`@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap'); body { font-family: 'Inter', sans-serif; }`}</style>
+    <div className="min-h-screen paper-texture">
 
       {/* Hero */}
       <div className="relative bg-slate-900 text-white overflow-hidden min-h-[60vh] flex items-center">
@@ -79,9 +78,9 @@ export default function SharePage() {
         
         <div className="relative max-w-4xl mx-auto px-4 w-full z-10 pt-20 pb-12">
           <div className="backdrop-blur-md bg-white/10 border border-white/20 rounded-3xl p-8 md:p-12 shadow-2xl max-w-3xl">
-            <motion.p initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-xs font-bold uppercase tracking-[0.2em] text-blue-300 mb-3">Travel Proposal</motion.p>
-            <motion.h1 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="text-4xl md:text-6xl font-black tracking-tight leading-tight">{itinerary.title}</motion.h1>
-            {itinerary.description && <motion.p initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="mt-6 text-white/80 max-w-xl text-lg leading-relaxed">{itinerary.description}</motion.p>}
+            <motion.p initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="font-handwriting text-2xl text-blue-300 mb-3">Your Bespoke Journey</motion.p>
+            <motion.h1 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="text-4xl md:text-7xl font-black tracking-tight leading-tight">{itinerary.title}</motion.h1>
+            {itinerary.description && <motion.p initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="mt-6 text-white/80 max-w-xl text-lg leading-relaxed font-medium">{itinerary.description}</motion.p>}
             
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }} className="flex items-center gap-6 mt-8 p-4 bg-black/20 rounded-2xl w-fit flex-wrap">
               <span className="flex items-center gap-2 font-medium"><CalendarRange className="w-5 h-5 text-blue-400" />{itinerary.days?.length || 0} Days</span>
@@ -94,8 +93,13 @@ export default function SharePage() {
       <div className="max-w-4xl mx-auto px-4 py-12 md:py-16 space-y-12">
         {/* Hotel Summary */}
         {itinerary.days?.some((d: any) => d.events?.some((e: any) => e.type === 'accommodation')) && (
-          <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
-            <div className="px-6 py-5 border-b bg-slate-50/50"><h2 className="font-black text-xl text-slate-900 flex items-center gap-2"><Hotel className="w-6 h-6 text-blue-600" /> Accommodation Overview</h2></div>
+          <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="bg-white rounded-[40px] shadow-sm border-none sketchy-border overflow-hidden relative">
+            <div className="washi-tape washi-tape-top-right bg-blue-400/20" />
+            <div className="px-8 py-6 border-b border-dashed border-slate-100 bg-slate-50/30">
+              <h2 className="font-handwriting text-4xl text-slate-900 flex items-center gap-3">
+                <Hotel className="w-8 h-8 text-blue-600" /> Accommodation Overview
+              </h2>
+            </div>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead><tr className="border-b text-xs text-muted-foreground uppercase tracking-widest bg-slate-50">
@@ -118,7 +122,7 @@ export default function SharePage() {
 
         {/* Timeline */}
         <div className="relative">
-          <h2 className="font-black text-3xl text-slate-900 mb-12 text-center">Your Journey</h2>
+          <h2 className="font-handwriting text-6xl text-slate-900 mb-16 text-center">The Experience</h2>
           
           <div ref={containerRef} className="relative max-w-3xl mx-auto">
             {/* Scroll Line */}
@@ -127,10 +131,10 @@ export default function SharePage() {
             
             {/* Moving Car */}
             <motion.div 
-              className="absolute left-6 md:left-1/2 top-0 -translate-x-1/2 -translate-y-1/2 z-20 w-10 h-10 bg-white border-4 border-blue-500 rounded-full flex items-center justify-center shadow-lg shadow-blue-500/20"
+              className="absolute left-6 md:left-1/2 top-0 -translate-x-1/2 -translate-y-1/2 z-20 w-12 h-12 bg-white border-none sketchy-border flex items-center justify-center shadow-lg"
               style={{ top: carY }}
             >
-              <Car className="w-4 h-4 text-blue-600" />
+              <Compass className="w-6 h-6 text-blue-600 animate-spin-slow" />
             </motion.div>
 
             {itinerary.days?.map((day: any, idx: number) => {
@@ -151,9 +155,12 @@ export default function SharePage() {
                   <div className="absolute left-6 top-6 -translate-x-1/2 -translate-y-1/2 w-4 h-4 rounded-full border-4 border-white bg-blue-500 shadow-md z-10 md:hidden" />
                   
                   {/* Desktop Day Number dot */}
-                  <div className={`absolute top-6 -translate-y-1/2 w-4 h-4 rounded-full border-4 border-white bg-blue-500 shadow-md z-10 hidden md:block ${isEven ? 'right-[2px]' : 'left-0'}`} />
+                  <div className={`absolute top-6 -translate-y-1/2 w-5 h-5 rounded-full border-none bg-slate-900 shadow-md z-10 hidden md:block ${isEven ? 'right-[-10px]' : 'left-[-10px]'}`}>
+                    <div className="absolute inset-0 bg-red-400 rounded-full border-2 border-white scale-75" />
+                  </div>
 
-                  <div className="bg-white hover:bg-blue-50/30 transition-colors rounded-3xl shadow-sm border border-slate-200 overflow-hidden w-full group">
+                  <div className="bg-white hover:bg-white/80 transition-all rounded-[40px] shadow-sm border-none sketchy-border overflow-hidden w-full group relative">
+                    <div className="washi-tape washi-tape-top-right bg-amber-400/20" />
                     {/* Day Cards Header Image */}
                     {eventImages.length > 0 && (
                       <div className="relative h-48 w-full overflow-hidden">
@@ -174,7 +181,7 @@ export default function SharePage() {
                         </div>
                       )}
                       
-                      <h3 className="font-black text-slate-900 text-xl">{day.title || `Day ${day.dayNumber}`}</h3>
+                      <h3 className="font-handwriting text-4xl text-slate-900 leading-tight">{day.title || `Day ${day.dayNumber}`}</h3>
                       {day.destination?.name && <p className={`text-sm text-blue-600 font-bold mt-1 max-w-fit ${isEven ? 'md:ml-auto' : ''}`}>{day.destination.name}</p>}
                       
                       {day.description && (

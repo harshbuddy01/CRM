@@ -219,7 +219,7 @@ const generateItineraryHtml = (itinerary) => {
     <head>
       <meta charset="UTF-8">
       <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Caveat:wght@400..700&display=swap');
         
         :root {
           --primary: #1e293b;
@@ -230,13 +230,33 @@ const generateItineraryHtml = (itinerary) => {
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; -webkit-print-color-adjust: exact; }
-        body { font-family: 'Inter', sans-serif; color: var(--primary); line-height: 1.6; background: white; font-size: 13px; }
+        body { font-family: 'Inter', sans-serif; color: var(--primary); line-height: 1.6; background-color: #fdfbf7; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100' height='100' filter='url(%23noise)' opacity='0.05'/%3E%3C/svg%3E"); font-size: 13px; min-height: 100vh; }
         .h-serif { font-family: 'Playfair Display', serif; }
+        .h-handwriting { font-family: 'Caveat', cursive; }
         
-        .container { padding: 40px; }
+        .container { padding: 40px; position: relative; }
         
+        /* Handmade Elements */
+        .sketchy-border {
+          border: 2px solid #334155;
+          border-radius: 255px 15px 225px 15px/15px 225px 15px 255px;
+        }
+        
+        .washi-tape {
+          position: absolute;
+          width: 60px;
+          height: 20px;
+          background: rgba(255, 255, 255, 0.4);
+          backdrop-filter: blur(2px);
+          transform: rotate(-3deg);
+          box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+          z-index: 10;
+        }
+        .tape-tr { top: -5px; right: -15px; transform: rotate(35deg); }
+        .tape-bl { bottom: -5px; left: -15px; transform: rotate(35deg); }
+
         /* Hero Section */
-        .hero { position: relative; height: 350px; border-radius: 20px; overflow: hidden; margin-bottom: 50px; background: #000; }
+        .hero { position: relative; height: 380px; border-radius: 40px; overflow: hidden; margin-bottom: 50px; background: #000; border: 2px solid #334155; }
         .hero-img { width: 100%; height: 100%; object-fit: cover; opacity: 0.6; }
         .hero-content { position: absolute; bottom: 40px; left: 40px; right: 40px; color: white; }
         .hero-title { font-size: 42px; font-weight: 800; margin-bottom: 10px; line-height: 1.1; font-family: 'Playfair Display', serif; }
@@ -244,11 +264,11 @@ const generateItineraryHtml = (itinerary) => {
 
         /* Accommodation Section */
         .section-header { display: flex; align-items: center; gap: 15px; margin-bottom: 25px; margin-top: 40px; }
-        .section-header h2 { font-size: 24px; font-family: 'Playfair Display', serif; white-space: nowrap; }
-        .section-header .line { height: 1px; background: var(--border); width: 100%; }
+        .section-header h2 { font-size: 32px; font-family: 'Caveat', cursive; white-space: nowrap; font-weight: 700; color: #1e293b; }
+        .section-header .line { height: 2px; background: rgba(30, 41, 59, 0.1); width: 100%; border-bottom: 1px dashed rgba(30, 41, 59, 0.2); }
 
         .accom-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
-        .accom-card { border: 1px solid var(--border); border-radius: 16px; overflow: hidden; margin-bottom: 15px; page-break-inside: avoid; }
+        .accom-card { position: relative; border: none; background: white; border-radius: 32px; overflow: hidden; margin-bottom: 15px; page-break-inside: avoid; }
         .accom-img { width: 100%; height: 160px; object-fit: cover; background: #f8fafc; }
         .accom-body { padding: 15px; }
         .accom-title { font-family: 'Playfair Display', serif; font-size: 16px; font-weight: 700; margin-bottom: 4px; }
@@ -261,16 +281,18 @@ const generateItineraryHtml = (itinerary) => {
         .day-img-wrap { width: 250px; height: 320px; border-radius: 24px; overflow: hidden; flex-shrink: 0; background: #f8fafc; }
         .day-img-wrap img { width: 100%; height: 100%; object-fit: cover; }
         
-        .day-num-box { width: 40px; height: 40px; background: var(--primary); color: white; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-family: 'Playfair Display', serif; font-size: 18px; margin-bottom: 15px; }
-        .day-title { font-family: 'Playfair Display', serif; font-size: 28px; line-height: 1.2; margin-bottom: 10px; }
-        .day-desc { font-size: 13px; color: var(--muted); margin-bottom: 20px; text-align: justify; }
+        .day-num-box { position: relative; width: 45px; height: 45px; background: var(--primary); color: white; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-family: 'Playfair Display', serif; font-size: 20px; margin-bottom: 15px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
+        .day-num-box::after { content: ''; position: absolute; top: -2px; right: -2px; width: 8px; height: 8px; background: #fb7185; border-radius: 50%; border: 2px solid white; }
+        .day-title { font-family: 'Caveat', cursive; font-size: 32px; line-height: 1.1; margin-bottom: 5px; color: #1e293b; font-weight: 700; }
+        .day-subtitle { font-family: 'Caveat', cursive; font-size: 18px; color: #2563eb; margin-bottom: 15px; font-weight: 600; }
+        .day-desc { font-size: 13px; color: var(--muted); margin-bottom: 20px; text-align: justify; line-height: 1.7; }
 
-        .event-item { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; font-size: 11px; font-weight: 600; color: #1e293b; background: #f8fafc; padding: 6px 12px; border-radius: 8px; }
+        .event-item { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; font-size: 11px; font-weight: 600; color: #1e293b; background: rgba(248, 250, 252, 0.5); padding: 8px 14px; border-radius: 12px; border: 1px solid rgba(241, 245, 249, 0.8); }
 
         /* Pricing Section */
-        .price-box { margin-top: 60px; text-align: center; border-top: 2px solid var(--border); padding-top: 40px; page-break-inside: avoid; }
-        .price-label { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.2em; color: var(--muted); margin-bottom: 10px; }
-        .price-amount { font-family: 'Playfair Display', serif; font-size: 38px; color: var(--primary); }
+        .price-box { margin-top: 60px; text-align: center; background: white; border-radius: 40px; padding: 40px; page-break-inside: avoid; border: 2px solid #334155; position: relative; }
+        .price-label { font-family: 'Caveat', cursive; font-size: 20px; font-weight: 700; text-transform: none; letter-spacing: 0; color: var(--muted); margin-bottom: 5px; }
+        .price-amount { font-family: 'Playfair Display', serif; font-size: 42px; color: var(--primary); font-weight: 800; }
 
         /* Policy Section */
         .policy-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-top: 40px; page-break-inside: avoid; }
@@ -305,17 +327,18 @@ const generateItineraryHtml = (itinerary) => {
           </div>
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 40px;">
             ${(itinerary.days || []).flatMap(d => (d.events || []).filter(e => e.type === 'accommodation').map(ev => `
-              <div class="accom-card">
-                ${ev.imageUrl ? `<img class="accom-img" src="${getSafeImageUrl(ev.imageUrl)}" />` : '<div class="accom-img"></div>'}
-                <div class="accom-body">
-                  <div class="accom-title">${escapeHtml(ev.metadata?.hotelName || ev.title)}</div>
-                  <div style="font-size: 10px; color: var(--accent); font-weight: 700; margin-bottom: 5px;">DAY ${d.dayNumber} • ${escapeHtml(ev.metadata?.category || 'Standard')}</div>
-                  <div class="accom-meta">
-                    <span>${escapeHtml(ev.metadata?.roomType || 'Standard Room')}</span>
-                    <span>${escapeHtml(ev.metadata?.mealPlan || 'EP Plan')}</span>
+                <div class="accom-card sketchy-border">
+                  <div class="washi-tape tape-tr" style="background: rgba(59, 130, 246, 0.2);"></div>
+                  ${ev.imageUrl ? `<img class="accom-img" src="${getSafeImageUrl(ev.imageUrl)}" />` : '<div class="accom-img"></div>'}
+                  <div class="accom-body">
+                    <div class="accom-title">${escapeHtml(ev.metadata?.hotelName || ev.title)}</div>
+                    <div style="font-family: 'Caveat', cursive; font-size: 14px; color: var(--accent); font-weight: 700; margin-bottom: 5px;">DAY ${d.dayNumber} • ${escapeHtml(ev.metadata?.category || 'Standard')}</div>
+                    <div class="accom-meta">
+                      <span>${escapeHtml(ev.metadata?.roomType || 'Standard Room')}</span>
+                      <span>${escapeHtml(ev.metadata?.mealPlan || 'EP Plan')}</span>
+                    </div>
                   </div>
                 </div>
-              </div>
             `)).join('')}
           </div>
         ` : ''}
@@ -331,7 +354,8 @@ const generateItineraryHtml = (itinerary) => {
             <div class="day-row" style="${idx % 2 !== 0 ? 'flex-direction: row-reverse;' : ''}">
               <div class="day-content">
                 <div class="day-num-box">${day.dayNumber}</div>
-                <h3 class="day-title h-serif">${escapeHtml(day.title || `Exploring ${day.destination?.name || 'Nature'}`)}</h3>
+                <h3 class="day-title">${escapeHtml(day.title || `Day ${day.dayNumber}: Introduction`)}</h3>
+                <div class="day-subtitle">${escapeHtml(day.destination?.name || 'Exploring Nature')}</div>
                 <div class="day-desc">${escapeHtml(day.description || 'Discover the hidden gems and breathtaking landscapes. This day is specially curated to provide an immersive experience into the local culture and natural beauty.')}</div>
                 
                 <div style="display: grid; grid-template-columns: 1fr; gap: 8px;">
@@ -344,7 +368,9 @@ const generateItineraryHtml = (itinerary) => {
                   `).join('')}
                 </div>
               </div>
-              <div class="day-img-wrap">
+              <div class="day-img-wrap sketchy-border" style="position: relative;">
+                <div class="washi-tape tape-tr" style="background: rgba(251, 113, 133, 0.2);"></div>
+                <div class="washi-tape tape-bl" style="background: rgba(52, 211, 153, 0.2);"></div>
                 ${day.imageUrl ? `<img src="${getSafeImageUrl(day.imageUrl)}" />` : '<div style="width:100%; height:100%; background:#f1f5f9;"></div>'}
               </div>
             </div>
@@ -365,10 +391,11 @@ const generateItineraryHtml = (itinerary) => {
 
         <!-- Pricing Summary -->
         ${itinerary.perPersonCost ? `
-          <div class="price-box">
-            <div class="price-label">Estimated Investment</div>
-            <div class="price-amount">₹${Number(itinerary.perPersonCost).toLocaleString('en-IN')} <span style="font-size: 14px; color: var(--muted); font-weight: 400;">/ Person</span></div>
-            ${itinerary.totalCost ? `<div style="font-size: 11px; color: var(--muted); font-weight: 700; margin-top: 5px; letter-spacing: 0.1em;">TOTAL PACKAGE: ₹${Number(itinerary.totalCost).toLocaleString('en-IN')}</div>` : ''}
+          <div class="price-box sketchy-border">
+            <div class="washi-tape tape-tr" style="background: rgba(59, 130, 246, 0.3); width: 80px; height: 25px;"></div>
+            <div class="price-label">Our Bespoke Proposal</div>
+            <div class="price-amount">₹${Number(itinerary.perPersonCost).toLocaleString('en-IN')} <span style="font-size: 16px; color: var(--muted); font-weight: 400; font-family: 'Inter', sans-serif;">/ Person</span></div>
+            ${itinerary.totalCost ? `<div style="font-family: 'Caveat', cursive; font-size: 16px; color: #2563eb; font-weight: 700; margin-top: 10px;">Total Package Value: ₹${Number(itinerary.totalCost).toLocaleString('en-IN')}</div>` : ''}
           </div>
         ` : ''}
 
