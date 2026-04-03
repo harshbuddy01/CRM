@@ -27,6 +27,14 @@ const fullInclude = {
   galleryImages: { orderBy: { sortOrder: 'asc' } },
 };
 
+const formatItinerary = (itinerary) => {
+  if (!itinerary) return null;
+  return {
+    ...itinerary,
+    gallery: itinerary.galleryImages || []
+  };
+};
+
 const sanitizePublicId = (filename) => {
   if (!filename) return undefined;
   const name = String(filename).replace(/\.[^.]+$/, '');
@@ -91,6 +99,7 @@ const create = async (userId, data) => {
     },
     include: fullInclude,
   });
+  return formatItinerary(itinerary);
 };
 
 const list = async (filters = {}) => {
@@ -137,7 +146,8 @@ const getById = async (id) => {
   if (!itinerary || itinerary.deletedAt) {
     throw new NotFoundError('Itinerary not found');
   }
-  return itinerary;
+
+  return formatItinerary(itinerary);
 };
 
 const update = async (id, data) => {
@@ -178,6 +188,7 @@ const update = async (id, data) => {
     },
     include: fullInclude,
   });
+  return formatItinerary(itinerary);
 };
 
 const remove = async (id) => {
@@ -240,6 +251,7 @@ const duplicate = async (id, userId) => {
     },
     include: fullInclude,
   });
+  return formatItinerary(newItinerary);
 };
 
 // ── Share Logic ──────────────────────────────────────────────
@@ -444,11 +456,12 @@ const reorderEvents = async (dayId, eventIds) => {
 const uploadCoverPhoto = async (id, file) => {
   await getById(id);
   const result = await uploadToCloudinary(file, `${id}/cover`);
-  return prisma.itinerary.update({
+  const itinerary = await prisma.itinerary.update({
     where: { id },
     data: { coverPhotoUrl: result.secure_url },
     include: fullInclude,
   });
+  return formatItinerary(itinerary);
 };
 
 const uploadEventImage = async (eventId, file) => {
@@ -489,6 +502,14 @@ const addGalleryImages = async (id, files) => {
 };
 
 const addGalleryImagesByUrl = async (id, imageUrls) => {
+  if (!imageUrls || !Array.isArray(imageUrls)) {
+    return [];
+  }
+
+  // Ensure all elements are strings
+  const validUrls = imageUrls.filter(url => typeof url === 'string' && url.length > 0);
+  if (validUrls.length === 0) return [];
+
   await getById(id);
 
   const maxSort = await prisma.itineraryGalleryImage.aggregate({
@@ -498,8 +519,7 @@ const addGalleryImagesByUrl = async (id, imageUrls) => {
   let nextSort = (maxSort._max.sortOrder || 0) + 1;
 
   const results = [];
-  for (const url of imageUrls) {
-    if (!url || typeof url !== 'string') continue;
+  for (const url of validUrls) {
     const image = await prisma.itineraryGalleryImage.create({
       data: {
         itineraryId: id,

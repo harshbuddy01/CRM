@@ -433,6 +433,7 @@ const confirmProposal = async (req, res, next) => {
       // Robust tour code generation with collision retry
       const crypto = require('crypto');
       let tourCode;
+      let tourCodeFound = false;
       for (let attempt = 0; attempt < 3; attempt++) {
         const baseCode = (proposal.query.queryCode && proposal.query.queryCode.trim() !== '')
           ? proposal.query.queryCode.split('-').pop()
@@ -440,7 +441,14 @@ const confirmProposal = async (req, res, next) => {
         const suffix = attempt > 0 ? `-${crypto.randomUUID().substring(0, 4).toUpperCase()}` : '';
         tourCode = `TUR-${new Date().getFullYear()}-${baseCode}${suffix}`;
         const exists = await tx.tour.findUnique({ where: { tourCode } });
-        if (!exists) break;
+        if (!exists) {
+          tourCodeFound = true;
+          break;
+        }
+      }
+
+      if (!tourCodeFound) {
+        throw new Error('Failed to generate a unique tourCode after 3 attempts. Please try again.');
       }
       
       // Check if tour already exists for this query

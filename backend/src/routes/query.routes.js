@@ -260,8 +260,8 @@ router.get('/:id/billing-summary', async (req, res, next) => {
       orderBy: { paymentDate: 'desc' },
     });
     const vendorPaymentSum = vendorPayments.reduce((sum, vp) => sum + Number(vp.amount), 0);
-    // Use vendorPayments as the canonical supplier payment source
-    const supplierReceived = vendorPaymentSum || bookingServicePaid;
+    // Use vendorPayments as the canonical supplier payment source if present
+    const supplierReceived = (vendorPayments && vendorPayments.length > 0) ? vendorPaymentSum : bookingServicePaid;
     const supplierPending = Math.max(0, supplierAmount - supplierReceived);
 
     const grossProfit = totalAmount - supplierAmount;
