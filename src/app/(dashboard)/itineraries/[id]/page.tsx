@@ -55,6 +55,8 @@ export default function ItineraryBuilderPage() {
   const dayImgRef = useRef<HTMLInputElement>(null);
   const [activeSection, setActiveSection] = useState<'day' | 'packageTerms' | 'gallery'>('day');
   const [editingDayId, setEditingDayId] = useState<string | null>(null);
+  const [editingDuration, setEditingDuration] = useState(false);
+  const [nightsInput, setNightsInput] = useState<number | ''>('');
   const [eventImgTarget, setEventImgTarget] = useState<string | null>(null);
   
   // Media Library State
@@ -234,9 +236,21 @@ export default function ItineraryBuilderPage() {
 
        {/* Header with cover photo */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col min-h-0">
-        <div className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-700 text-white shadow-xl">
-          {itinerary.coverPhotoUrl && <img src={itinerary.coverPhotoUrl} alt="" className="absolute inset-0 w-full h-full object-cover opacity-40 transition-opacity duration-700" />}
-          <div className="relative p-6 md:p-8">
+        <div className={cn(
+          "relative rounded-2xl overflow-hidden shadow-xl min-h-[180px] transition-all duration-700",
+          itinerary.coverPhotoUrl ? "bg-slate-900" : "bg-gradient-to-br from-blue-700 via-indigo-700 to-purple-800"
+        )}>
+          {itinerary.coverPhotoUrl && (
+            <img 
+              src={itinerary.coverPhotoUrl} 
+              alt="" 
+              className="absolute inset-0 w-full h-full object-cover opacity-90 transition-opacity duration-1000" 
+            />
+          )}
+          {/* Subtle Overlay to ensure text readability */}
+          <div className="absolute inset-0 bg-black/30" />
+          
+          <div className="relative p-6 md:p-8 z-10">
             <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
               <div className="flex-1">
                 <Link href="/itineraries" className="inline-flex items-center gap-1 text-white/70 hover:text-white text-xs font-medium mb-3 transition-colors">
@@ -261,22 +275,56 @@ export default function ItineraryBuilderPage() {
                     <Button size="sm" variant="ghost" className="text-white hover:bg-white/20 rounded-xl" onClick={() => setEditingTitle(false)}><X className="w-4 h-4" /></Button>
                   </div>
                 ) : (
-                  <h1 className="text-2xl md:text-3xl font-black tracking-tight flex items-center gap-3 group cursor-pointer" onClick={() => { setTitleInput(itinerary.title); setEditingTitle(true); }}>
+                  <h1 className="text-2xl md:text-3xl font-black tracking-tight flex items-center gap-3 group cursor-pointer text-white" onClick={() => { setTitleInput(itinerary.title); setEditingTitle(true); }}>
                     {itinerary.title}
                     <Pencil className="w-4 h-4 text-white/40 opacity-0 group-hover:opacity-100 transition-opacity" />
                   </h1>
                 )}
                 {allDestinations.length > 0 && (
                   <div className="flex items-center gap-2 mt-2 flex-wrap">
-                    <MapPin className="w-3.5 h-3.5 text-white/60" />
-                    {allDestinations.map((d: string) => <span key={d} className="text-[10px] uppercase tracking-widest bg-white/20 px-2 py-0.5 rounded font-bold">{d}</span>)}
+                    <MapPin className="w-3.5 h-3.5 text-white/70" />
+                    {allDestinations.map((d: string) => <span key={d} className="text-[10px] uppercase tracking-widest bg-white/20 px-2 py-0.5 rounded font-bold text-white shadow-sm border border-white/10">{d}</span>)}
                   </div>
                 )}
                 <div className="flex items-center gap-2 mt-2">
-                  <span className="bg-white/20 px-2 py-1 flex items-center rounded-md font-bold text-[10px] uppercase tracking-wider">
+                  <span className="bg-white/20 px-2 py-1 flex items-center rounded-md font-bold text-[10px] uppercase tracking-wider text-white border border-white/10">
                     {itinerary.status}
                   </span>
-                  <span className="text-white/60 text-xs font-bold uppercase tracking-wider">{itinerary.days?.length || 0} Days</span>
+                  {editingDuration ? (
+                     <div className="flex items-center gap-2">
+                        <Input 
+                          type="number" 
+                          value={nightsInput} 
+                          onChange={e => setNightsInput(e.target.value ? parseInt(e.target.value) : '')}
+                          className="w-16 h-7 bg-white/20 border-white/30 text-white rounded-lg text-xs font-bold"
+                          placeholder="Nights"
+                          autoFocus
+                        />
+                        <button 
+                          className="bg-emerald-500 p-1.5 rounded-lg text-white"
+                          onClick={() => {
+                            updateMut.mutate({ nights: nightsInput === '' ? null : nightsInput }, { onSuccess: () => setEditingDuration(false) });
+                          }}
+                        >
+                          <Check className="w-3 h-3" />
+                        </button>
+                        <button className="text-white/60 hover:text-white" onClick={() => setEditingDuration(false)}><X className="w-3 h-3" /></button>
+                     </div>
+                  ) : (
+                    <span 
+                      className="text-white/80 text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 hover:text-white cursor-pointer group/dur"
+                      onClick={() => {
+                        setNightsInput(itinerary.nights || '');
+                        setEditingDuration(true);
+                      }}
+                    >
+                      {itinerary.days?.length || 0} Days
+                      {itinerary.nights !== null && itinerary.nights !== undefined && (
+                        <> • {itinerary.nights} Nights</>
+                      )}
+                      <Pencil className="w-3 h-3 opacity-0 group-hover/dur:opacity-100 transition-opacity" />
+                    </span>
+                  )}
                 </div>
               </div>
               
@@ -300,12 +348,6 @@ export default function ItineraryBuilderPage() {
                 <Button size="sm" variant="secondary" className="rounded-xl font-bold text-xs h-9" onClick={handleExportPdf}>
                   <Download className="w-3.5 h-3.5 mr-1" /> PDF
                 </Button>
-                
-                {itinerary.status !== 'finalized' && (
-                  <Button size="sm" className="rounded-xl font-bold text-xs h-9 bg-emerald-500 hover:bg-emerald-600 border-none text-white ml-1 shadow-lg shadow-emerald-500/20" onClick={handleFinalize}>
-                    <Check className="w-3.5 h-3.5 mr-1 text-white" /> Finalize
-                  </Button>
-                )}
               </div>
             </div>
           </div>
@@ -323,29 +365,42 @@ export default function ItineraryBuilderPage() {
                 </div>
                 <div className="flex flex-col gap-2">
                   {itinerary.days?.map((day: any) => (
-                    <button
-                      key={day.id}
-                      onClick={() => {
-                        setSelectedDayId(day.id);
-                        setActiveSection('day');
-                      }}
-                      className={cn(
-                        "flex items-center gap-3 p-2 rounded-xl transition-all group text-left",
-                        activeSection === 'day' && selectedDayId === day.id 
-                          ? "bg-blue-600 text-white shadow-lg shadow-blue-200 ring-2 ring-blue-100" 
-                          : "hover:bg-slate-100 text-slate-600"
-                      )}
-                    >
-                      <div className={cn(
-                        "w-8 h-8 rounded-full flex items-center justify-center shrink-0 font-bold text-[10px] transition-colors",
-                        activeSection === 'day' && selectedDayId === day.id ? "bg-white text-blue-600" : "bg-slate-200 text-slate-500 group-hover:bg-slate-300"
-                      )}>
-                        {day.dayNumber}
-                      </div>
-                      <div className="flex-1 min-w-0 pr-2">
-                        <div className="font-bold text-xs truncate">{day.destination?.name || 'Day ' + day.dayNumber}</div>
-                      </div>
-                    </button>
+                    <div key={day.id} className="relative group/dayitem">
+                      <button
+                        onClick={() => {
+                          setSelectedDayId(day.id);
+                          setActiveSection('day');
+                        }}
+                        className={cn(
+                          "w-full flex items-center gap-3 p-2 rounded-xl transition-all group text-left",
+                          activeSection === 'day' && selectedDayId === day.id 
+                            ? "bg-blue-600 text-white shadow-lg shadow-blue-200 ring-2 ring-blue-100" 
+                            : "hover:bg-slate-100 text-slate-600"
+                        )}
+                      >
+                        <div className={cn(
+                          "w-8 h-8 rounded-full flex items-center justify-center shrink-0 font-bold text-[10px] transition-colors",
+                          activeSection === 'day' && selectedDayId === day.id ? "bg-white text-blue-600" : "bg-slate-200 text-slate-500 group-hover:bg-slate-300"
+                        )}>
+                          {day.dayNumber}
+                        </div>
+                        <div className="flex-1 min-w-0 pr-6">
+                          <div className="font-bold text-xs truncate">{day.destination?.name || 'Day ' + day.dayNumber}</div>
+                        </div>
+                      </button>
+                      <button 
+                        className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-lg text-rose-500 opacity-0 group-hover/dayitem:opacity-100 hover:bg-rose-50 transition-all active:scale-75"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (window.confirm(`Delete Day ${day.dayNumber}? All events on this day will be lost.`)) {
+                            removeDayMut.mutate(day.id);
+                          }
+                        }}
+                        title="Delete Day"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
                   ))}
                   
                   <button 

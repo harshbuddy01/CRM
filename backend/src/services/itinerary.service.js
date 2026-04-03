@@ -72,6 +72,7 @@ const create = async (userId, data) => {
     data: {
       title,
       description: description || null,
+      nights: data.nights !== undefined ? Number(data.nights) : null,
       createdBy: userId,
       days: days && days.length
         ? {
@@ -154,7 +155,7 @@ const update = async (id, data) => {
   await getById(id); // ensure exists
   const {
     title, description, status, totalCost, perPersonCost,
-    currency, adults, children, markupPct, 
+    currency, adults, children, nights, markupPct, 
     inclusionsHtml, exclusionsHtml, paymentPolicyHtml, cancellationPolicyHtml, termsHtml,
   } = data;
 
@@ -179,6 +180,7 @@ const update = async (id, data) => {
       ...(currency !== undefined && { currency }),
       ...(adults !== undefined && { adults: validateNum(adults) }),
       ...(children !== undefined && { children: validateNum(children) }),
+      ...(nights !== undefined && { nights: nights !== null ? validateNum(nights) : null }),
       ...(markupPct !== undefined && { markupPct: validateNum(markupPct) }),
       ...(inclusionsHtml !== undefined && { inclusionsHtml }),
       ...(exclusionsHtml !== undefined && { exclusionsHtml }),
