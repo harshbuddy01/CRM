@@ -165,7 +165,17 @@ export default function QueryDetailPage() {
   const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
 
   const [isEditOpen, setIsEditOpen] = useState(false);
-  const [editForm, setEditForm] = useState({ name: '', email: '', phone: '' });
+  const [editForm, setEditForm] = useState({ 
+    name: '', 
+    email: '', 
+    phone: '',
+    destination: '',
+    budget: '',
+    adults: '',
+    children: '',
+    travelDateFrom: '',
+    travelDateTo: ''
+  });
 
   const editMutation = useMutation({
     mutationFn: async (payload: any) => {
@@ -397,7 +407,17 @@ export default function QueryDetailPage() {
                 <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
                   {/* @ts-expect-error shadcn generic trigger issue */}
                   <DialogTrigger asChild>
-                    <Button variant="outline" size="sm" className="h-8" onClick={() => setEditForm({ name: query.name, email: query.email || '', phone: query.phone })}>
+                    <Button variant="outline" size="sm" className="h-8" onClick={() => setEditForm({ 
+                      name: query.name, 
+                      email: query.email || '', 
+                      phone: query.phone,
+                      destination: query.destination || '',
+                      budget: query.budget?.toString() || '',
+                      adults: query.adults?.toString() || '1',
+                      children: query.children?.toString() || '0',
+                      travelDateFrom: query.travelDateFrom ? new Date(query.travelDateFrom).toISOString().split('T')[0] : '',
+                      travelDateTo: query.travelDateTo ? new Date(query.travelDateTo).toISOString().split('T')[0] : '',
+                    })}>
                       <Edit className="w-3.5 h-3.5 mr-2" /> Edit
                     </Button>
                   </DialogTrigger>
@@ -405,7 +425,7 @@ export default function QueryDetailPage() {
                     <DialogHeader>
                       <DialogTitle>Edit Lead Details</DialogTitle>
                     </DialogHeader>
-                    <div className="space-y-4 py-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
                       <div className="space-y-2">
                         <label className="text-sm font-medium">Customer Name</label>
                         <Input value={editForm.name} onChange={e => setEditForm({...editForm, name: e.target.value})} />
@@ -418,10 +438,49 @@ export default function QueryDetailPage() {
                         <label className="text-sm font-medium">Phone Number</label>
                         <Input value={editForm.phone} onChange={e => setEditForm({...editForm, phone: e.target.value})} />
                       </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">Destination</label>
+                        <Input value={editForm.destination} onChange={e => setEditForm({...editForm, destination: e.target.value})} />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">Budget</label>
+                        <div className="relative">
+                          <span className="absolute left-3 top-2.5 text-muted-foreground text-sm">₹</span>
+                          <Input type="number" className="pl-7" value={editForm.budget} onChange={e => setEditForm({...editForm, budget: e.target.value})} />
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium">Adults</label>
+                          <Input type="number" value={editForm.adults} onChange={e => setEditForm({...editForm, adults: e.target.value})} />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium">Children</label>
+                          <Input type="number" value={editForm.children} onChange={e => setEditForm({...editForm, children: e.target.value})} />
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">Travel Date From</label>
+                        <Input type="date" value={editForm.travelDateFrom} onChange={e => setEditForm({...editForm, travelDateFrom: e.target.value})} />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">Travel Date To</label>
+                        <Input type="date" value={editForm.travelDateTo} onChange={e => setEditForm({...editForm, travelDateTo: e.target.value})} />
+                      </div>
                     </div>
                     <div className="flex justify-end gap-3 pt-4 border-t">
                       <Button variant="ghost" onClick={() => setIsEditOpen(false)}>Cancel</Button>
-                      <Button disabled={editMutation.isPending} onClick={() => editMutation.mutate(editForm)}>
+                      <Button disabled={editMutation.isPending} onClick={() => {
+                        const payload = {
+                          ...editForm,
+                          budget: editForm.budget ? Number(editForm.budget) : null,
+                          adults: Number(editForm.adults) || 1,
+                          children: Number(editForm.children) || 0,
+                          travelDateFrom: editForm.travelDateFrom || null,
+                          travelDateTo: editForm.travelDateTo || null,
+                        };
+                        editMutation.mutate(payload);
+                      }}>
                         {editMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                         Save Changes
                       </Button>
