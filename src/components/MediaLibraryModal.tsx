@@ -1,15 +1,16 @@
 'use client';
 
-import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useState, useRef } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { 
   Search, X, Loader2, Image as ImageIcon, 
-  Filter, Check, MousePointer2 
+  Filter, Check, MousePointer2, Upload, Camera
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 
 interface MediaLibraryModalProps {
   isOpen: boolean;
@@ -21,6 +22,9 @@ interface MediaLibraryModalProps {
 export function MediaLibraryModal({ isOpen, onClose, onSelect, title = 'Media Library' }: MediaLibraryModalProps) {
   const [search, setSearch] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const queryClient = useQueryClient();
 
   const { data, isLoading } = useQuery({
     queryKey: ['media-library', search, selectedCategory],
@@ -46,6 +50,37 @@ export function MediaLibraryModal({ isOpen, onClose, onSelect, title = 'Media Li
 
   const categories = Array.from(new Set(allImages.map((img: any) => img.category).filter(Boolean))) as string[];
 
+  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Basic validation
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("File is too large (max 5MB)");
+      return;
+    }
+
+    setIsUploading(true);
+    const formData = new FormData();
+    formData.append('image', file);
+    formData.append('category', selectedCategory || 'General');
+    formData.append('caption', file.name.split('.')[0]);
+
+    try {
+      await api.post('/cms/gallery', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      toast.success('Image uploaded to company library!');
+      queryClient.invalidateQueries({ queryKey: ['media-library'] });
+    } catch (err: any) {
+      console.error('Upload Error:', err);
+      toast.error(err.response?.data?.message || 'Failed to upload. check permissions.');
+    } finally {
+      setIsUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -64,6 +99,15 @@ export function MediaLibraryModal({ isOpen, onClose, onSelect, title = 'Media Li
             <X className="w-5 h-5 text-slate-500" />
           </button>
         </div>
+
+        {/* Hidden File Input */}
+        <input 
+          type="file" 
+          ref={fileInputRef} 
+          className="hidden" 
+          accept="image/*" 
+          onChange={handleUpload} 
+        />
 
         {/* Filters */}
         <div className="p-4 border-b flex flex-col md:flex-row gap-3 bg-white">
@@ -153,11 +197,25 @@ export function MediaLibraryModal({ isOpen, onClose, onSelect, title = 'Media Li
            <p className="text-xs text-slate-400 italic">
              Total {data?.length || 0} assets found in this view
            </p>
-           <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3">
+             <Button 
+               variant="outline" 
+               onClick={() => fileInputRef.current?.click()} 
+               disabled={isUploading}
+               className="rounded-xl text-xs font-bold uppercase tracking-wider border-blue-200 hover:bg-blue-50 text-blue-600 h-10 px-6"
+             >
+               {isUploading ? (
+                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+               ) : (
+                 <Upload className="w-4 h-4 mr-2" />
+               )}
+               {isUploading ? 'Uploading...' : 'Upload New Image'}
+             </Button>
+             <div className="w-px h-6 bg-slate-200 mx-2" />
              <Button variant="ghost" onClick={onClose} className="rounded-xl text-xs font-bold uppercase tracking-wider">
                Cancel
              </Button>
-           </div>
+            </div>
         </div>
       </div>
     </div>
