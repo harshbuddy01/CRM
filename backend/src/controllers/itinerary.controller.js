@@ -482,8 +482,8 @@ const reorderEvents = async (req, res, next) => {
 
 const generateShareLink = async (req, res, next) => {
   try {
-    const slug = await itineraryService.generateShareSlug(req.params.id);
-    res.json({ success: true, data: slug });
+    const itinerary = await itineraryService.generateShareSlug(req.params.id);
+    res.json({ success: true, data: itinerary });
   } catch (err) { next(err); }
 };
 
@@ -491,7 +491,10 @@ const getByShareSlug = async (req, res, next) => {
   try {
     const itinerary = await itineraryService.getByShareSlug(req.params.slug);
     res.json({ success: true, data: itinerary });
-  } catch (err) { next(err); }
+  } catch (err) {
+    console.error(`[ItineraryShareError] Slug: ${req.params.slug}`, err);
+    next(err);
+  }
 };
 
 const exportPdf = async (req, res, next) => {
