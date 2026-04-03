@@ -994,6 +994,8 @@ model Itinerary {
   status         String    @default("draft") /// 'draft', 'published'
   totalCost      Decimal?  @map("total_cost") @db.Decimal(12, 2)
   perPersonCost  Decimal?  @map("per_person_cost") @db.Decimal(12, 2)
+  costingBreakdown Json?   @map("costing_breakdown")
+  sellingPrice   Decimal?  @map("selling_price") @db.Decimal(12, 2)
   currency       String    @default("INR")
   adults         Int       @default(2)
   children       Int       @default(0)

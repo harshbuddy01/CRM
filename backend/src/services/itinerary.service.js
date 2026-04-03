@@ -157,6 +157,7 @@ const update = async (id, data) => {
     title, description, status, totalCost, perPersonCost,
     currency, adults, children, nights, markupPct, 
     inclusionsHtml, exclusionsHtml, paymentPolicyHtml, cancellationPolicyHtml, termsHtml,
+    costingBreakdown, sellingPrice
   } = data;
 
   if (status !== undefined && !['draft', 'published'].includes(status)) {
@@ -169,7 +170,7 @@ const update = async (id, data) => {
     return num;
   };
 
-  return prisma.itinerary.update({
+  const updated = await prisma.itinerary.update({
     where: { id },
     data: {
       ...(title !== undefined && { title }),
@@ -187,10 +188,21 @@ const update = async (id, data) => {
       ...(paymentPolicyHtml !== undefined && { paymentPolicyHtml }),
       ...(cancellationPolicyHtml !== undefined && { cancellationPolicyHtml }),
       ...(termsHtml !== undefined && { termsHtml }),
+      ...(costingBreakdown !== undefined && { costingBreakdown: costingBreakdown !== null ? costingBreakdown : null }),
+      ...(sellingPrice !== undefined && { sellingPrice: validateNum(sellingPrice) }),
     },
     include: fullInclude,
   });
-  return formatItinerary(itinerary);
+
+  // Automatically sync selling price to all pending/active proposals linked to this itinerary.
+  if (sellingPrice !== undefined) {
+    await prisma.proposal.updateMany({
+      where: { itineraryId: id, status: 'pending', deletedAt: null },
+      data: { sellingPrice: validateNum(sellingPrice), totalCost: totalCost !== undefined ? validateNum(totalCost) : updated.totalCost }
+    });
+  }
+
+  return formatItinerary(updated);
 };
 
 const remove = async (id) => {

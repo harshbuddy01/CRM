@@ -15,7 +15,7 @@ import {
   Share2, Download, Copy, Check, GripVertical, Eye,
   Utensils, Car, Plane, Sun, LogIn, LogOut as LogOutIcon,
   Mountain, Compass, IndianRupee, CalendarRange,
-  FileText, BookOpen, Pencil, Shield, CreditCard, XCircle, CheckCircle, AlertTriangle,
+  FileText, BookOpen, Pencil, Shield, CreditCard, XCircle, CheckCircle, AlertTriangle, RefreshCw
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
@@ -1187,60 +1187,185 @@ function EventEditModal({ event, onClose, onSave, onDelete, destId, itinerary }:
 }
 
 function PricingTab({ itinerary, onUpdate }: { itinerary: any; onUpdate: (data: any) => void }) {
-  const allEvents = itinerary.days?.flatMap((d: any) => d.events || []) || [];
-  const totalEventCost = allEvents.reduce((sum: number, ev: any) => sum + (Number(ev.cost) || 0), 0);
   const [adults, setAdults] = useState(itinerary.adults || 2);
   const [children, setChildren] = useState(itinerary.children || 0);
-  const [markup, setMarkup] = useState(itinerary.markupPct || 0);
-  const [perPerson, setPerPerson] = useState(itinerary.perPersonCost || 0);
-
-  const baseCost = allEvents.length > 0 
-    ? totalEventCost 
-    : (Number(adults) * Number(perPerson)) + (Number(children) * (Number(perPerson) * 0.5));
   
-  const totalWithMarkup = baseCost + (baseCost * Number(markup) / 100);
+  // Use markupPct as the global Tax/GST field for simplicity without schema bloat for global GST
+  const [globalGst, setGlobalGst] = useState(Number(itinerary.markupPct) || 0);
+
+  const defaultRows = Array.isArray(itinerary.costingBreakdown) && itinerary.costingBreakdown.length > 0
+    ? itinerary.costingBreakdown
+    : [];
+
+  const [rows, setRows] = useState<any[]>(defaultRows);
+
+  const handleAddRow = () => {
+    setRows([...rows, {
+      id: Math.random().toString(36).substr(2, 9),
+      name: '',
+      type: 'Service',
+      price: 0,
+      isPerPerson: false,
+      markup: 0,
+    }]);
+  };
+
+  const autoPopulate = () => {
+    if (!confirm('This will wipe your current itemized list and rebuild it from the itinerary events. Continue?')) return;
+    
+    const newRows: any[] = [];
+    itinerary.days?.forEach((day: any) => {
+      day.events?.forEach((ev: any) => {
+        if (ev.cost) {
+          newRows.push({
+            id: Math.random().toString(36).substr(2, 9),
+            name: ev.title,
+            type: ev.type,
+            price: Number(ev.cost),
+            isPerPerson: false,
+            markup: 0,
+          });
+        }
+      });
+    });
+    setRows(newRows);
+  };
+
+  const updateRow = (index: number, field: string, value: any) => {
+    const updated = [...rows];
+    updated[index][field] = value;
+    setRows(updated);
+  };
+
+  const removeRow = (index: number) => {
+    setRows(rows.filter((_, i) => i !== index));
+  };
+
+  // Calculations
+  const totalPax = Number(adults) + Number(children); // Simplified pax. Can be split if needed.
+  
+  let subtotal = 0;
+  
+  const calculatedRows = rows.map(r => {
+    const basePriced = r.isPerPerson ? (Number(r.price) * totalPax) : Number(r.price);
+    const markedUp = basePriced + (basePriced * (Number(r.markup) || 0) / 100);
+    subtotal += markedUp;
+    return { ...r, finalTotal: markedUp };
+  });
+
+  const totalTaxAmount = subtotal * (Number(globalGst) / 100);
+  const totalPackagePrice = subtotal + totalTaxAmount;
+
   return (
-    <div className="max-w-3xl mx-auto space-y-6">
-      <Card className="rounded-2xl border-slate-200">
-        <CardContent className="p-6 space-y-6">
-          <h3 className="font-bold text-lg text-slate-900">Cost Breakdown</h3>
-          <div className="border rounded-xl overflow-hidden">
+    <div className="max-w-5xl mx-auto space-y-6 pb-20">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
+        <div><label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Adults</label><Input type="number" className="mt-1 h-10 rounded-xl bg-slate-50" value={adults} onChange={e => setAdults(Number(e.target.value))} /></div>
+        <div><label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Children</label><Input type="number" className="mt-1 h-10 rounded-xl bg-slate-50" value={children} onChange={e => setChildren(Number(e.target.value))} /></div>
+        <div className="md:col-span-2 flex items-end justify-end">
+          <Button variant="outline" className="rounded-xl font-bold border-blue-200 text-blue-600 hover:bg-blue-50" onClick={autoPopulate}>
+            <RefreshCw className="w-4 h-4 mr-2" /> Auto-Fill from Events
+          </Button>
+        </div>
+      </div>
+
+      <Card className="rounded-3xl border-slate-200 shadow-sm overflow-hidden">
+        <CardContent className="p-0">
+          <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="bg-slate-50"><tr>
-                <th className="text-left p-3 font-semibold text-xs text-muted-foreground uppercase">Day</th>
-                <th className="text-left p-3 font-semibold text-xs text-muted-foreground uppercase">Event</th>
-                <th className="text-left p-3 font-semibold text-xs text-muted-foreground uppercase">Type</th>
-                <th className="text-right p-3 font-semibold text-xs text-muted-foreground uppercase">Cost</th>
-              </tr></thead>
-              <tbody>
-                {itinerary.days?.map((day: any) => day.events?.filter((ev: any) => ev.cost).map((ev: any, i: number) => (
-                  <tr key={ev.id} className="border-t">
-                    <td className="p-3 text-xs text-muted-foreground">{i === 0 ? `Day ${day.dayNumber}` : ''}</td>
-                    <td className="p-3 font-medium text-xs">{ev.title}</td>
-                    <td className="p-3"><span className="text-[10px] capitalize bg-slate-100 px-2 py-0.5 rounded-full">{ev.type}</span></td>
-                    <td className="p-3 text-right font-bold text-xs">₹{Number(ev.cost).toLocaleString('en-IN')}</td>
+              <thead className="bg-slate-50 border-b border-slate-100">
+                <tr>
+                  <th className="text-left p-4 font-black text-[10px] text-slate-500 uppercase tracking-widest w-1/3">Item / Service</th>
+                  <th className="text-left p-4 font-black text-[10px] text-slate-500 uppercase tracking-widest w-32">Base Price (₹)</th>
+                  <th className="text-center p-4 font-black text-[10px] text-slate-500 uppercase tracking-widest w-24">Per Person</th>
+                  <th className="text-left p-4 font-black text-[10px] text-slate-500 uppercase tracking-widest w-24">Markup %</th>
+                  <th className="text-right p-4 font-black text-[10px] text-slate-500 uppercase tracking-widest w-32">Total (₹)</th>
+                  <th className="w-12"></th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-50">
+                {calculatedRows.map((r, i) => (
+                  <tr key={r.id} className="hover:bg-slate-50/50 transition-colors">
+                    <td className="p-3">
+                      <Input className="h-9 rounded-lg border-transparent hover:border-slate-200 focus:border-blue-300 focus:bg-white bg-transparent transition-all font-medium" placeholder="e.g. Hotel Stay" value={r.name} onChange={(e) => updateRow(i, 'name', e.target.value)} />
+                    </td>
+                    <td className="p-3">
+                      <Input type="number" className="h-9 rounded-lg border-transparent hover:border-slate-200 focus:border-blue-300 focus:bg-white bg-transparent transition-all" value={r.price} onChange={(e) => updateRow(i, 'price', e.target.value)} />
+                    </td>
+                    <td className="p-3 text-center">
+                      <input type="checkbox" className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-600" checked={r.isPerPerson} onChange={(e) => updateRow(i, 'isPerPerson', e.target.checked)} title="Multiply by Pax" />
+                    </td>
+                    <td className="p-3">
+                      <Input type="number" className="h-9 rounded-lg border-transparent hover:border-slate-200 focus:border-blue-300 focus:bg-white bg-transparent transition-all" value={r.markup} onChange={(e) => updateRow(i, 'markup', e.target.value)} />
+                    </td>
+                    <td className="p-4 text-right font-bold text-slate-700">
+                      ₹{Math.round(r.finalTotal).toLocaleString('en-IN')}
+                    </td>
+                    <td className="p-3 text-center">
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg" onClick={() => removeRow(i)}>
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </td>
                   </tr>
-                )))}
-                <tr className="border-t-2 bg-slate-50"><td colSpan={3} className="p-3 font-bold text-sm">Subtotal</td><td className="p-3 text-right font-black text-sm">₹{totalEventCost.toLocaleString('en-IN')}</td></tr>
+                ))}
+                
+                {rows.length === 0 && (
+                  <tr>
+                    <td colSpan={6} className="p-8 text-center text-slate-400">
+                      No items added yet. Click &quot;Add Row&quot; or &quot;Auto-Fill&quot;.
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
-
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div><label className="text-xs font-medium text-muted-foreground uppercase">Adults</label><Input type="number" className="mt-1 h-10 rounded-xl" value={adults} onChange={e => setAdults(Number(e.target.value))} /></div>
-            <div><label className="text-xs font-medium text-muted-foreground uppercase">Children</label><Input type="number" className="mt-1 h-10 rounded-xl" value={children} onChange={e => setChildren(Number(e.target.value))} /></div>
-            <div><label className="text-xs font-medium text-muted-foreground uppercase">Markup %</label><Input type="number" className="mt-1 h-10 rounded-xl" value={markup} onChange={e => setMarkup(Number(e.target.value))} /></div>
-            <div><label className="text-xs font-medium text-muted-foreground uppercase">Per Person ₹</label><Input type="number" className="mt-1 h-10 rounded-xl" value={perPerson} onChange={e => setPerPerson(Number(e.target.value))} /></div>
-          </div>
-
-          <div className="flex items-center justify-between bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-4 border border-blue-200">
-            <div><p className="text-xs text-blue-600 font-bold uppercase tracking-wider">Total Package</p><p className="text-2xl font-black text-blue-800">₹{totalWithMarkup.toLocaleString('en-IN')}</p></div>
-            <Button className="rounded-xl font-bold" onClick={() => onUpdate({ adults, children, markupPct: markup, perPersonCost: perPerson, totalCost: totalWithMarkup })}>
-              <Check className="w-4 h-4 mr-1" /> Save Pricing
+          
+          <div className="p-4 border-t border-slate-100 bg-slate-50">
+            <Button variant="outline" className="rounded-xl border-dashed border-2 font-bold text-slate-600 hover:bg-white" onClick={handleAddRow}>
+              <Plus className="w-4 h-4 mr-2" /> Add Row
             </Button>
           </div>
         </CardContent>
       </Card>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-end">
+        <div>
+          <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-4">
+            <div className="flex justify-between items-center pb-4 border-b border-slate-100">
+              <span className="text-sm font-bold text-slate-500 uppercase tracking-widest">Subtotal</span>
+              <span className="font-bold text-slate-700">₹{Math.round(subtotal).toLocaleString('en-IN')}</span>
+            </div>
+            <div className="flex justify-between items-center pb-4 border-b border-slate-100">
+              <span className="text-sm font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                Global Taxes / GST % 
+              </span>
+              <Input type="number" className="w-24 h-9 rounded-lg text-right" value={globalGst} onChange={(e) => setGlobalGst(Number(e.target.value))} />
+            </div>
+            <div className="flex justify-between items-center pt-2">
+              <span className="text-xl font-black text-slate-900">Total Selling Price</span>
+              <span className="text-3xl font-black text-blue-600">₹{Math.round(totalPackagePrice).toLocaleString('en-IN')}</span>
+            </div>
+          </div>
+        </div>
+        
+        <div>
+          <Button 
+            className="w-full h-16 rounded-[24px] text-lg font-black bg-slate-900 hover:bg-black text-white shadow-xl shadow-slate-200/50 transition-all active:scale-95" 
+            onClick={() => onUpdate({ 
+              adults, 
+              children, 
+              markupPct: globalGst, 
+              costingBreakdown: rows,
+              sellingPrice: totalPackagePrice,
+              totalCost: subtotal // Saving subtotal as base layout totalCost
+            })}
+          >
+            <Check className="w-6 h-6 mr-3 text-green-400" /> Save Pricing & Sync
+          </Button>
+          <p className="text-center text-[10px] uppercase font-bold tracking-widest text-slate-400 mt-4">
+            Updates will instantly sync to the attached Query Billing
+          </p>
+        </div>
+      </div>
     </div>
   );
 }
