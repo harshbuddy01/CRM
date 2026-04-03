@@ -266,6 +266,30 @@ const generateShareSlug = async (id) => {
   });
 };
 
+const formatPublicItinerary = (itinerary) => {
+  if (!itinerary) return null;
+  
+  // Strip internal financial metadata before sending to customer
+  const { markupPct, ...publicItinerary } = itinerary;
+
+  // Sanitize days and events to remove individual costs
+  if (publicItinerary.days) {
+    publicItinerary.days = publicItinerary.days.map(day => ({
+      ...day,
+      events: day.events ? day.events.map(event => {
+        // Remove 'cost' field from each event to hide internal pricing from customers
+        const { cost, ...safeEvent } = event;
+        return safeEvent;
+      }) : []
+    }));
+  }
+
+  // Ensure gallery images are mapped if needed
+  publicItinerary.gallery = publicItinerary.galleryImages || [];
+
+  return publicItinerary;
+};
+
 const getByShareSlug = async (slug) => {
   const itinerary = await prisma.itinerary.findUnique({
     where: { shareSlug: slug },
@@ -274,7 +298,7 @@ const getByShareSlug = async (slug) => {
   if (!itinerary || itinerary.deletedAt) {
     throw new NotFoundError('Itinerary not found or link expired');
   }
-  return itinerary;
+  return formatPublicItinerary(itinerary);
 };
 
 // ── Day Management ───────────────────────────────────────────
