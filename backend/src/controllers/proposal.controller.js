@@ -486,7 +486,70 @@ const confirmProposal = async (req, res, next) => {
         });
       }
 
-      // E. Log Activity for audit trail
+      // E. Automate Operations Fulfillment — Create BookingServices from Itinerary
+      // Fetch full itinerary with days and events
+      if (proposal.itineraryId) {
+        const fullItinerary = await tx.itinerary.findUnique({
+          where: { id: proposal.itineraryId },
+          include: {
+            days: {
+              orderBy: { dayNumber: 'asc' },
+              include: { events: { orderBy: { sortOrder: 'asc' } } }
+            }
+          }
+        });
+
+        if (fullItinerary && fullItinerary.days) {
+          const adults = updatedQuery.adults || 0;
+          const children = updatedQuery.children || 0;
+          const totalPaxCount = adults + children;
+
+          for (const day of fullItinerary.days) {
+            // Calculate actual date for this day
+            const serviceDate = new Date(startDate);
+            serviceDate.setDate(serviceDate.getDate() + (day.dayNumber - 1));
+
+            for (const event of (day.events || [])) {
+              let serviceType = null;
+              if (event.type === 'accommodation') serviceType = 'hotel';
+              else if (['transport', 'activity', 'sightseeing'].includes(event.type)) serviceType = 'transport';
+
+              if (serviceType) {
+                // Determine check-in/out for hotels
+                let checkIn = null;
+                let checkOut = null;
+                if (serviceType === 'hotel') {
+                  checkIn = serviceDate;
+                  checkOut = new Date(serviceDate);
+                  checkOut.setDate(checkOut.getDate() + 1); 
+                  // Note: In real scenarios, check-out might be multiple days later if it's a multi-night stay event
+                  // But itineraries usually list events per day.
+                }
+
+                await tx.bookingService.create({
+                  data: {
+                    queryId: proposal.queryId,
+                    proposalDayId: null, // Could link to a ProposalDay if they existed
+                    serviceType,
+                    serviceName: event.title || 'Untitled Service',
+                    serviceDate: serviceType === 'transport' ? serviceDate : null,
+                    checkIn,
+                    checkOut,
+                    totalCost: event.cost ? Number(event.cost) : 0,
+                    units: totalPaxCount || 1,
+                    createdBy: req.user.id,
+                    notes: event.description || null,
+                    mailStatus: 'not_sent',
+                    paymentStatus: 'pending',
+                  }
+                });
+              }
+            }
+          }
+        }
+      }
+
+      // F. Log Activity for audit trail
       await tx.activityLog.create({
         data: {
           userId: req.user.id,
