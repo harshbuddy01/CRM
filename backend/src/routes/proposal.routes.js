@@ -21,6 +21,7 @@ router.use(authenticate);
 // or we can structure it here if we mount this file under /v1/proposals. 
 // We will build GET /v1/proposals/:id here:
 router.get('/:id', proposalController.getProposalById);
+router.delete('/:id', proposalController.deleteProposal);
 router.get('/', can('proposal.view_assigned'), proposalController.listAllProposals);
 
 const multer = require('multer');

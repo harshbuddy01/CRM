@@ -732,6 +732,19 @@ function QueryProposalsList({ queryId, queryCode, customerName, customerEmail }:
     }
   });
 
+  const deleteProposalMutation = useMutation({
+    mutationFn: async (id: string) => {
+      await api.delete(`/proposals/${id}`);
+    },
+    onSuccess: () => {
+      toast.success('Proposal deleted');
+      queryClient.invalidateQueries({ queryKey: ['proposals', queryId] });
+    },
+    onError: (err: any) => {
+      toast.error(err.response?.data?.message || 'Failed to delete proposal');
+    }
+  });
+
   const handleWaModalOpen = async (proposalId: string) => {
     setWaModalOpenId(proposalId);
     try {
@@ -923,6 +936,23 @@ function QueryProposalsList({ queryId, queryCode, customerName, customerEmail }:
                     onClick={() => handleWaModalOpen(p.id)}
                   >
                     <MessageCircle className="w-4 h-4" />
+                  </Button>
+                  <Button 
+                    size="sm" 
+                    variant="ghost" 
+                    className="rounded-xl h-10 w-10 p-0 text-slate-400 hover:text-red-500 hover:bg-white hover:shadow-sm"
+                    onClick={() => {
+                      if (window.confirm('Are you sure you want to delete this proposal version?')) {
+                        deleteProposalMutation.mutate(p.id);
+                      }
+                    }}
+                    disabled={deleteProposalMutation.isPending}
+                  >
+                    {deleteProposalMutation.isPending && deleteProposalMutation.variables === p.id ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Trash2 className="w-4 h-4" />
+                    )}
                   </Button>
                 </div>
 

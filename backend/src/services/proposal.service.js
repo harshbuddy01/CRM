@@ -230,6 +230,27 @@ const listAllProposals = async () => {
   });
 };
 
+const removeProposal = async (id, userId, canViewAll = false) => {
+  const proposal = await prisma.proposal.findUnique({
+    where: { id },
+    include: { query: { select: { assignedTo: true } } }
+  });
+
+  if (!proposal || proposal.deletedAt) throw new NotFoundError('Proposal');
+
+  // Authorization: Only assigned user or admin
+  if (userId && !canViewAll) {
+    if (proposal.query.assignedTo !== userId) {
+      throw new BusinessError('You do not have access to delete this proposal');
+    }
+  }
+
+  return await prisma.proposal.update({
+    where: { id },
+    data: { deletedAt: new Date() }
+  });
+};
+
 module.exports = {
   createProposal,
   createProposalFromItinerary,
@@ -237,4 +258,5 @@ module.exports = {
   getProposalsByQuery,
   getProposalById,
   listAllProposals,
+  removeProposal,
 };

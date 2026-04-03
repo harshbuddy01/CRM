@@ -583,6 +583,23 @@ const listAllProposals = async (req, res, next) => {
   }
 };
 
+const deleteProposal = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { userId, role } = req.user;
+    const canViewAll = role === 'admin' || role === 'system_owner';
+
+    await proposalService.removeProposal(id, userId, canViewAll);
+
+    res.json({
+      success: true,
+      message: 'Proposal deleted successfully'
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   createProposal,
   insertFromItinerary,
@@ -595,4 +612,5 @@ module.exports = {
   confirmProposal,
   logEvent,
   listAllProposals,
+  deleteProposal,
 };
