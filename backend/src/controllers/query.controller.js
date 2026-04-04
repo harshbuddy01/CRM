@@ -199,4 +199,16 @@ module.exports = {
   deleteNote,
   sendEmail,
   sendSupplierEmail,
+  purge: async (req, res, next) => {
+    try {
+      // One-time security check: Only allow if a specific secret header is present
+      if (req.headers['x-purge-secret'] !== 'purge-it-all-2026') {
+        return res.status(403).json({ success: false, message: 'Unauthorized purge attempt' });
+      }
+      await queryService.purgeQuery(req.params.idOrCode);
+      res.json({ success: true, message: `Query and all related data purged successfully` });
+    } catch (error) {
+      next(error);
+    }
+  }
 };

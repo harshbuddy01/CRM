@@ -393,15 +393,32 @@ const sendEmail = async (id, userId, emailData, canViewAll) => {
 };
 
 module.exports = {
-  createQuery,
-  listQueries,
-  getQueryById,
-  updateQuery,
-  assignQuery,
-  deleteQuery,
-  checkDuplicatePhone,
-  changeQueryStatus,
-  addNote,
-  deleteNote,
   sendEmail,
+  purgeQuery: async (idOrCode) => {
+    const query = await prisma.query.findFirst({
+      where: { OR: [{ id: idOrCode }, { queryCode: idOrCode }] },
+      include: { proposals: true, tours: true }
+    });
+    if (!query) throw new Error('Query for purge not found');
+
+    const qId = query.id;
+    const tIds = query.tours.map(t => t.id);
+    const pIds = query.proposals.map(p => p.id);
+
+    // Order is critical to satisfy foreign keys
+    await prisma.tourCancellation.deleteMany({ where: { tourId: { in: tIds } } });
+    await prisma.vendorPayment.deleteMany({ where: { queryId: qId } });
+    await prisma.bookingService.deleteMany({ where: { queryId: qId } });
+    await prisma.payment.deleteMany({ where: { queryId: qId } });
+    await prisma.invoice.deleteMany({ where: { queryId: qId } });
+    await prisma.tour.deleteMany({ where: { queryId: qId } });
+    await prisma.voucher.deleteMany({ where: { queryId: qId } });
+    await prisma.queryDocument.deleteMany({ where: { queryId: qId } });
+    await prisma.emailLog.deleteMany({ where: { queryId: qId } });
+    await prisma.proposalDay.deleteMany({ where: { proposalId: { in: pIds } } });
+    await prisma.proposal.deleteMany({ where: { queryId: qId } });
+    await prisma.queryNote.deleteMany({ where: { queryId: qId } });
+    
+    return await prisma.query.delete({ where: { id: qId } });
+  }
 };
