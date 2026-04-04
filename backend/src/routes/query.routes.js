@@ -291,7 +291,4 @@ router.get('/:id/billing-summary', async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
-// Temporary Developer Purge Endpoint (Secured by x-purge-secret)
-router.delete('/purge-special/:idOrCode', queryController.purge);
-
 module.exports = router;
