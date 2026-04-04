@@ -939,6 +939,10 @@ function QueryProposalsList({ queryId, queryCode, customerName, customerEmail }:
                   </p>
                   <p className="text-[11px] font-medium text-slate-500 flex items-center gap-2 mt-1">
                     <Clock className="w-3 h-3" /> Updated {p.updatedAt ? new Date(p.updatedAt).toLocaleDateString() : 'Unknown'}
+                    <span className="text-slate-300">•</span>
+                    <span className="flex items-center gap-1">
+                       {p.itinerary?._count?.days || p.itinerary?.days?.length || 0} Days
+                    </span>
                   </p>
                 </div>
                 </div>

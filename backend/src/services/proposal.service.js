@@ -82,6 +82,15 @@ const createProposalFromItinerary = async (queryId, userId, itineraryId) => {
 
   // 1. Duplicate the Itinerary
   const newItinerary = await itineraryService.duplicate(itineraryId, userId);
+  
+  // 1.1 Clean up the title (remove "(Template)" or messy suffixes)
+  const cleanTitle = newItinerary.title.replace(/\s*\(Template\)/gi, '').trim();
+  if (cleanTitle !== newItinerary.title) {
+    await prisma.itinerary.update({
+      where: { id: newItinerary.id },
+      data: { title: cleanTitle }
+    });
+  }
 
   // 2. Auto-increment version logic
   const existingProposalsCount = await prisma.proposal.count({

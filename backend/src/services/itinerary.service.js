@@ -266,7 +266,7 @@ const duplicate = async (id, userId) => {
       },
       galleryImages: {
         create: source.galleryImages.map((img) => ({
-          url: img.url,
+          imageUrl: img.imageUrl,
           caption: img.caption,
           sortOrder: img.sortOrder,
         })),
