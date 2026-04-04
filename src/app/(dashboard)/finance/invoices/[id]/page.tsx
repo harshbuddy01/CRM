@@ -80,6 +80,31 @@ export default function InvoiceDetailPage() {
               <CheckCircle2 className="w-4 h-4 mr-2" /> Mark as Paid
             </Button>
           )}
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="rounded-lg h-9 border-slate-200 text-slate-600 hover:bg-slate-50"
+            onClick={async () => {
+              try {
+                const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || '/api/v1'}/finance/invoices/${id}/pdf`, {
+                  headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+                });
+                if (!response.ok) throw new Error('Failed to download PDF');
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `Invoice-${invoice.invoiceNumber}.pdf`;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+              } catch (err) {
+                toast.error('Could not generate PDF. Please try again.');
+              }
+            }}
+          >
+            <Download className="w-4 h-4 mr-2" /> Download Bill
+          </Button>
           <Button variant="outline" size="sm" className="rounded-lg h-9" onClick={() => window.print()}>
             <Printer className="w-4 h-4" />
           </Button>
@@ -195,16 +220,35 @@ export default function InvoiceDetailPage() {
               </CardTitle>
             </CardHeader>
             <CardContent className="p-4 space-y-4">
-              <div className="space-y-1">
-                <p className="text-[9px] font-black text-slate-400 uppercase">Received Amount</p>
-                <div className="flex items-end gap-1">
-                  <p className="text-xl font-black text-emerald-600 leading-none">₹{invoice.status === 'paid' ? Number(invoice.totalAmount).toLocaleString('en-IN') : '0'}</p>
-                </div>
-              </div>
-              <div className="space-y-1">
-                <p className="text-[9px] font-black text-slate-400 uppercase">Payment Method</p>
-                <p className="text-sm font-bold text-slate-700 capitalize">{invoice.status === 'paid' ? 'Manual Verification' : 'Not Paid'}</p>
-              </div>
+              {(() => {
+                const totalPaid = (invoice.payments || []).reduce((sum: number, p: any) => sum + Number(p.amount), 0);
+                const balanceDue = Math.max(0, Number(invoice.totalAmount) - totalPaid);
+                return (
+                  <>
+                    <div className="space-y-1">
+                      <p className="text-[9px] font-black text-slate-400 uppercase">Total Received</p>
+                      <p className="text-xl font-black text-emerald-600 leading-none">₹{totalPaid.toLocaleString('en-IN')}</p>
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-[9px] font-black text-slate-400 uppercase">Remaining Balance</p>
+                      <p className={cn("text-xl font-black leading-none", balanceDue > 0 ? "text-red-500" : "text-emerald-500")}>
+                        ₹{balanceDue.toLocaleString('en-IN')}
+                      </p>
+                    </div>
+                    {invoice.payments?.length > 0 && (
+                      <div className="pt-2 border-t border-slate-100 space-y-2">
+                         <p className="text-[9px] font-black text-slate-400 uppercase">Payment History</p>
+                         {invoice.payments.slice(0, 3).map((p: any) => (
+                           <div key={p.id} className="flex justify-between items-center text-[11px]">
+                             <span className="text-slate-500">{format(new Date(p.paymentDate), 'dd MMM')} <span className="uppercase opacity-50 px-1">•</span> {p.mode}</span>
+                             <span className="font-bold text-slate-900">₹{Number(p.amount).toLocaleString('en-IN')}</span>
+                           </div>
+                         ))}
+                      </div>
+                    )}
+                  </>
+                );
+              })()}
             </CardContent>
           </Card>
 

@@ -3,7 +3,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { Card, CardContent } from '@/components/ui/card';
-import { Loader2, IndianRupee, TrendingUp, CreditCard, Copy, ExternalLink, Send, RefreshCw } from 'lucide-react';
+import { Loader2, IndianRupee, TrendingUp, CreditCard, Copy, ExternalLink, Send, RefreshCw, Download } from 'lucide-react';
 import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
@@ -423,12 +423,37 @@ export function BillingTab({ queryId }: { queryId: string }) {
               <Button 
                 variant="outline" 
                 size="sm" 
+                className="gap-1.5 h-8 text-xs bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100"
+                onClick={async () => {
+                  try {
+                    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || '/api/v1'}/finance/invoices/${invoice.id}/pdf`, {
+                      headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+                    });
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `Invoice-${invoice.invoiceNumber}.pdf`;
+                    document.body.appendChild(a);
+                    a.click();
+                    a.remove();
+                  } catch (err) {
+                    toast.error('Could not generate PDF');
+                  }
+                }}
+              >
+                <Download className="w-3 h-3" />
+                Download
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm" 
                 className="gap-1.5 h-8 text-xs bg-blue-50 text-blue-600 border-blue-200 hover:bg-blue-100"
                 onClick={() => regenerateInvoiceMutation.mutate(invoice.id)}
                 disabled={regenerateInvoiceMutation.isPending}
               >
                 {regenerateInvoiceMutation.isPending ? <Loader2 className="w-3 h-3 animate-spin"/> : <RefreshCw className="w-3 h-3" />}
-                Update Invoice
+                Update
               </Button>
             </div>
           </CardContent></Card>

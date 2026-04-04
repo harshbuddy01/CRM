@@ -60,10 +60,22 @@ const listInvoices = async ({ status, queryId, page = 1, limit = 50 }) => {
   return { items, total, page, limit };
 };
 
-const getInvoice = (id) => prisma.invoice.findUnique({
-  where: { id },
-  include: { creator: { select: { id: true, name: true } } },
-});
+const getInvoice = async (id) => {
+  const invoice = await prisma.invoice.findUnique({
+    where: { id },
+    include: { creator: { select: { id: true, name: true } } },
+  });
+  
+  if (invoice?.queryId) {
+    const payments = await prisma.payment.findMany({
+      where: { queryId: invoice.queryId, status: { in: ['verified', 'banked'] }, deletedAt: null },
+      orderBy: { paymentDate: 'desc' }
+    });
+    return { ...invoice, payments };
+  }
+  
+  return { ...invoice, payments: [] };
+};
 
 const createInvoice = async (data) => {
   data.invoiceNumber = await generateInvoiceNumber();
@@ -72,8 +84,7 @@ const createInvoice = async (data) => {
     where: { id: data.queryId },
     include: {
       proposals: {
-        where: { deletedAt: null },
-        orderBy: { version: 'desc' },
+        where: { deletedAt: null, status: 'confirmed' }, // Strictly require finalized
         take: 1
       }
     }
@@ -92,7 +103,7 @@ const createInvoice = async (data) => {
     // Auto-generate from proposal
     if (!proposal) {
       if (!data.totalAmount) {
-        throw new Error('No proposal found to generate invoice from. Please provide a total amount manually.');
+        throw new Error('Please finalise a proposal from the client side before generating a bill.');
       }
       // If totalAmount is provided manually, ensure other fields are initialized
       data.subtotal = data.subtotal || data.totalAmount;
@@ -163,8 +174,7 @@ const regenerateInvoice = async (id) => {
     where: { id: existing.queryId },
     include: {
       proposals: {
-        where: { deletedAt: null },
-        orderBy: { version: 'desc' },
+        where: { deletedAt: null, status: 'confirmed' },
         take: 1
       }
     }
