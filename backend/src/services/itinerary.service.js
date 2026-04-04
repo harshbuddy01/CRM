@@ -194,10 +194,10 @@ const update = async (id, data) => {
     include: fullInclude,
   });
 
-  // Automatically sync selling price to all pending/active proposals linked to this itinerary.
+  // Automatically sync selling price to all proposals linked to this itinerary.
   if (sellingPrice !== undefined) {
     await prisma.proposal.updateMany({
-      where: { itineraryId: id, status: 'pending', deletedAt: null },
+      where: { itineraryId: id, deletedAt: null },
       data: { sellingPrice: validateNum(sellingPrice), totalCost: totalCost !== undefined ? validateNum(totalCost) : updated.totalCost }
     });
   }
@@ -242,6 +242,7 @@ const duplicate = async (id, userId) => {
           dayNumber: day.dayNumber,
           title: day.title,
           description: day.description,
+          imageUrl: day.imageUrl,
           destinationId: day.destinationId,
           events: {
             create: day.events.map((ev) => ({

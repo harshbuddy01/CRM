@@ -21,51 +21,54 @@ const ICONS = {
 };
 
 const generateProposalHtml = (proposal) => {
-  // Use the linked itinerary's rich data for the PDF
+  const escapeHtml = (str) => String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  
+  const getSafeImageUrl = (url) => {
+    if (!url) return '';
+    if (url.startsWith('//')) return `https:${url}`;
+    return url;
+  };
+
   const itinerary = proposal.itinerary;
   const days = itinerary?.days || proposal.days || [];
-  const escapeHtml = (str) => String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  const totalDays = days.length;
+  const destinations = [...new Set(days.map(d => d.destination?.name).filter(Boolean))].join(', ') || proposal.query?.destination || 'Your Journey';
 
   const EVENT_ICONS = {
     accommodation: '🏨', sightseeing: '🗻', activity: '🧭', transport: '🚗',
     flight: '✈️', meal: '🍴', checkin: '🔑', checkout: '👋', freeTime: '☀️',
   };
 
-  const totalDays = days.length;
-  const destinations = [...new Set(days.map(d => d.destination?.name).filter(Boolean))].join(', ') || proposal.query.destination || 'Holiday';
-
   return `
-    <html>
+    <!DOCTYPE html>
+    <html lang="en">
       <head>
+        <meta charset="UTF-8" />
+        <title>Travel Proposal - ${escapeHtml(proposal.query?.name || 'Customer')}</title>
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,600;0,700;0,800;1,600&display=swap" rel="stylesheet" />
         <style>
-          @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Playfair+Display:wght@400;600;700;800&display=swap');
-          * { margin: 0; padding: 0; box-sizing: border-box; }
-          body { font-family: 'Inter', sans-serif; color: #1e293b; line-height: 1.6; background: #f8fafc; }
-          .page { max-width: 800px; margin: 0 auto; background: white; }
-
-          .hero { position: relative; height: 320px; overflow: hidden; background: #1e293b; }
-          .hero img { width: 100%; height: 100%; object-fit: cover; opacity: 0.7; }
-          .hero-overlay { position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.3) 50%, transparent); display: flex; flex-direction: column; justify-content: flex-end; padding: 40px; color: white; }
-          .hero h1 { font-family: 'Playfair Display', serif; font-size: 38px; font-weight: 800; line-height: 1.1; margin-bottom: 8px; }
-          .hero-meta { font-size: 13px; opacity: 0.85; font-weight: 500; display: flex; gap: 16px; align-items: center; }
-          .hero-badge { display: inline-block; background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); border-radius: 20px; padding: 4px 14px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; }
-
-          .info-bar { display: flex; justify-content: space-between; align-items: center; padding: 20px 40px; background: #f8fafc; border-bottom: 1px solid #e2e8f0; }
-          .info-item { text-align: center; }
-          .info-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: #94a3b8; margin-bottom: 4px; }
-          .info-value { font-size: 14px; font-weight: 700; color: #1e293b; }
-
-          .section-title { font-family: 'Playfair Display', serif; font-size: 28px; font-weight: 700; color: #1e293b; text-align: center; margin: 40px 0 8px; }
-          .section-line { width: 60px; height: 2px; background: #3b82f6; margin: 0 auto 30px; }
-
+          *, *::before, *::after { box-sizing: border-box; }
+          body { margin: 0; padding: 0; font-family: 'Inter', sans-serif; color: #334155; background: #f8fafc; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+          .page { width: 100%; max-width: 900px; margin: 0 auto; background: #ffffff; overflow: hidden; }
+          h1, h2, h3 { font-family: 'Playfair Display', serif; color: #0f172a; margin: 0; }
+          .hero { position: relative; height: 500px; width: 100%; background: #1e293b; overflow: hidden; }
+          .hero img { width: 100%; height: 100%; object-fit: cover; opacity: 0.85; mix-blend-mode: multiply; }
+          .hero-overlay { position: absolute; bottom: 0; left: 0; width: 100%; padding: 60px 40px; background: linear-gradient(180deg, transparent 0%, rgba(15, 23, 42, 0.95) 100%); color: white; }
+          .hero-badge { display: inline-block; padding: 6px 14px; background: rgba(255, 255, 255, 0.2); backdrop-filter: blur(8px); border-radius: 20px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 16px; border: 1px solid rgba(255, 255, 255, 0.3); }
+          .hero h1 { color: #ffffff; font-size: 48px; font-weight: 800; line-height: 1.1; margin-bottom: 16px; text-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+          .hero-meta { display: flex; gap: 20px; font-size: 14px; font-weight: 500; opacity: 0.9; }
+          .info-bar { display: flex; justify-content: space-between; padding: 25px 40px; background: #ffffff; border-bottom: 1px solid #e2e8f0; }
+          .info-item { display: flex; flex-direction: column; gap: 4px; }
+          .info-label { font-size: 11px; font-weight: 600; text-transform: uppercase; color: #94a3b8; letter-spacing: 0.05em; }
+          .info-value { font-size: 14px; font-weight: 700; color: #0f172a; }
+          .section-title { font-family: 'Playfair Display', serif; font-size: 28px; font-weight: 700; text-align: center; margin: 40px 0 10px; color: #0f172a; }
+          .section-line { width: 60px; height: 3px; background: #3b82f6; margin: 0 auto 40px; border-radius: 2px; }
           .day-card { margin: 0 30px 30px; border: 1px solid #e2e8f0; border-radius: 16px; overflow: hidden; break-inside: avoid; }
           .day-header { background: linear-gradient(135deg, #1e293b 0%, #334155 100%); color: white; padding: 16px 24px; display: flex; justify-content: space-between; align-items: center; }
           .day-header h3 { font-family: 'Playfair Display', serif; font-size: 20px; font-weight: 700; margin: 0; }
           .day-dest { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; opacity: 0.7; }
-
           .day-body { padding: 20px 24px; }
           .day-desc { color: #475569; font-size: 14px; line-height: 1.7; margin-bottom: 16px; }
-
           .event-row { display: flex; align-items: flex-start; gap: 12px; padding: 10px 0; border-bottom: 1px dashed #f1f5f9; }
           .event-row:last-child { border-bottom: none; }
           .event-icon { width: 36px; height: 36px; border-radius: 10px; background: #f1f5f9; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
@@ -73,34 +76,30 @@ const generateProposalHtml = (proposal) => {
           .event-title { font-size: 14px; font-weight: 700; color: #1e293b; }
           .event-sub { font-size: 11px; color: #94a3b8; font-weight: 500; margin-top: 2px; }
           .event-desc { font-size: 12px; color: #64748b; margin-top: 4px; line-height: 1.5; }
-
           .event-img { width: 100%; max-height: 250px; object-fit: cover; border-radius: 12px; margin-bottom: 16px; }
-
           .price-section { margin: 30px; padding: 30px; background: linear-gradient(135deg, #eff6ff 0%, #f0f9ff 100%); border-radius: 16px; border: 1px solid #bfdbfe; text-align: center; }
           .price-label { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: #3b82f6; margin-bottom: 4px; }
           .price-amount { font-family: 'Playfair Display', serif; font-size: 36px; font-weight: 800; color: #1e40af; }
-
           .policy-section { margin: 0 30px 30px; }
           .policy-box { border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px 24px; margin-bottom: 16px; }
           .policy-title { font-size: 14px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: #1e293b; margin-bottom: 10px; }
           .policy-content { font-size: 13px; color: #475569; line-height: 1.7; }
           .policy-content ul { padding-left: 18px; }
           .policy-content li { margin-bottom: 4px; }
-
           .footer { text-align: center; padding: 30px; font-size: 11px; color: #94a3b8; border-top: 1px solid #e2e8f0; font-weight: 600; text-transform: uppercase; letter-spacing: 0.15em; }
         </style>
       </head>
       <body>
         <div class="page">
           <div class="hero">
-            ${itinerary?.coverPhotoUrl ? `<img src="${itinerary.coverPhotoUrl}" alt="Cover" />` : ''}
+            ${itinerary?.coverPhotoUrl ? `<img src="${getSafeImageUrl(itinerary.coverPhotoUrl)}" alt="Cover" />` : ''}
             <div class="hero-overlay">
-              <div class="hero-badge">${destinations}</div>
-              <h1>${escapeHtml(itinerary?.title || proposal.query.name)}</h1>
+              <div class="hero-badge">${escapeHtml(destinations)}</div>
+              <h1>${escapeHtml(itinerary?.title || proposal.query?.name || 'Proposal')}</h1>
               <div class="hero-meta">
                 <span>${totalDays} Days</span>
                 <span>•</span>
-                <span>Ref: ${proposal.query.queryCode}</span>
+                <span>Ref: ${escapeHtml(proposal.query?.queryCode || 'QRY')}</span>
                 <span>•</span>
                 <span>Version ${proposal.version}</span>
               </div>
@@ -110,15 +109,15 @@ const generateProposalHtml = (proposal) => {
           <div class="info-bar">
             <div class="info-item">
               <div class="info-label">Customer</div>
-              <div class="info-value">${escapeHtml(proposal.query.name)}</div>
+              <div class="info-value">${escapeHtml(proposal.query?.name || 'Customer')}</div>
             </div>
             <div class="info-item">
               <div class="info-label">Travelers</div>
-              <div class="info-value">${proposal.query.adults || 0} Adults${proposal.query.children ? `, ${proposal.query.children} Children` : ''}</div>
+              <div class="info-value">${proposal.query?.adults || 0} Adults${proposal.query?.children ? `, ${proposal.query.children} Children` : ''}</div>
             </div>
             <div class="info-item">
               <div class="info-label">Travel Dates</div>
-              <div class="info-value">${proposal.query.travelDateFrom ? new Date(proposal.query.travelDateFrom).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'TBD'}</div>
+              <div class="info-value">${proposal.query?.travelDateFrom ? new Date(proposal.query.travelDateFrom).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'TBD'}</div>
             </div>
             <div class="info-item">
               <div class="info-label">Destinations</div>
@@ -131,8 +130,7 @@ const generateProposalHtml = (proposal) => {
 
           ${days.map(day => {
             const events = day.events || [];
-            const accomEvent = events.find(e => e.type === 'accommodation');
-            const dayImage = events.find(e => e.imageUrl)?.imageUrl;
+            const dayImage = day.imageUrl || events.find(e => e.imageUrl)?.imageUrl;
             
             return `
             <div class="day-card">
@@ -141,7 +139,7 @@ const generateProposalHtml = (proposal) => {
                 <div class="day-dest">${escapeHtml(day.destination?.name || '')}</div>
               </div>
               <div class="day-body">
-                ${dayImage ? `<img class="event-img" src="${dayImage}" alt="Day ${day.dayNumber}" />` : ''}
+                ${dayImage ? `<img class="event-img" src="${getSafeImageUrl(dayImage)}" alt="Day ${day.dayNumber}" />` : ''}
                 ${day.description ? `<div class="day-desc">${escapeHtml(day.description).replace(/\n/g, '<br/>')}</div>` : ''}
                 
                 ${events.length > 0 ? events.map(ev => `
