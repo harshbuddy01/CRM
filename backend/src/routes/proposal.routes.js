@@ -8,11 +8,19 @@ const proposalController = require('../controllers/proposal.controller');
 const { authenticate } = require('../middlewares/authenticate');
 const { can } = require('../middlewares/can');
 
+const rateLimit = require('express-rate-limit');
+
+const publicLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 50, // limit each IP to 50 public requests per windowMs
+  message: { success: false, message: 'Too many requests, please try again later.' }
+});
+
 // Download PDF (Public — customer needs to open via WhatsApp/Email)
-router.get('/:id/pdf', proposalController.downloadPdf);
+router.get('/:id/pdf', publicLimiter, proposalController.downloadPdf);
 
 // Logging events (like whatsapp_opened - public for customer tracking)
-router.post('/:id/log/:event', proposalController.logEvent);
+router.post('/:id/log/:event', publicLimiter, proposalController.logEvent);
 
 router.use(authenticate);
 

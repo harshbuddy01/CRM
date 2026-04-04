@@ -12,13 +12,7 @@ const config = require('../config');
 const ALLOWED_EVENTS = ['viewed', 'whatsapp_opened', 'email_opened', 'downloaded'];
 const MAX_EVENT_LENGTH = 50;
 
-const ICONS = {
-  destination: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1e3a8a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 4px;"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>`,
-  hotel: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1e3a8a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 4px;"><path d="M10 22v-5a2 2 0 0 1 4 0v5"/><path d="M2 22h20"/><path d="M4 22V4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v18"/><path d="M9 7h1"/><path d="M9 11h1"/><path d="M14 7h1"/><path d="M14 11h1"/></svg>`,
-  meals: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1e3a8a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 4px;"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2v0a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/></svg>`,
-  transport: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1e3a8a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 4px;"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/></svg>`,
-  activity: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1e3a8a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 4px;"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>`,
-};
+// Note: Legacy ICONS constant was removed (dead code). PREMIUM_ICONS inside generateProposalHtml is used instead.
 
 const generateProposalHtml = (proposal) => {
   const escapeHtml = (str) => String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -434,12 +428,8 @@ const downloadPdf = async (req, res, next) => {
 
     res.end(buffer);
   } catch (error) {
-    console.error('PDF Generation Controller Error:', error);
-    res.status(500).json({
-      success: false,
-      message: error.message,
-      details: error.stack
-    });
+    console.error('PDF Generation Controller Error:', error.message);
+    next(error);
   }
 };
 
@@ -567,9 +557,7 @@ const sendEmail = async (req, res, next) => {
 
     res.json({ success: true, message: 'Email sent successfully with proposal attached.' });
   } catch (error) {
-    if (error.response && error.response.body) {
-      console.error('SendGrid Error:', error.response.body);
-    }
+    console.error('Proposal Email Send Error:', error.message);
     next(error);
   }
 };
@@ -824,7 +812,7 @@ const listAllProposals = async (req, res, next) => {
 const deleteProposal = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { userId, role } = req.user;
+    const { id: userId, role } = req.user;
     const canViewAll = role === 'admin' || role === 'system_owner';
 
     // 1. Check if proposal exists and its status

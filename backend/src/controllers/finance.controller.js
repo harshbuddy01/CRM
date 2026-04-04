@@ -158,6 +158,11 @@ const downloadBillingStatementPdf = async (req, res, next) => {
     });
     if (!query) return res.status(404).json({ success: false, message: 'Query not found' });
 
+    // Ownership check: only the assigned user or admins can generate this PDF
+    if (!canViewAll && query.assignedTo !== req.user.id) {
+      return res.status(403).json({ success: false, message: 'You do not have access to this billing statement' });
+    }
+
     const proposal = await prisma.proposal.findFirst({
       where: { queryId, deletedAt: null },
       orderBy: { version: 'desc' },
