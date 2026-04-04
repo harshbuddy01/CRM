@@ -57,6 +57,7 @@ const getBrowser = async () => {
         : '/usr/bin/google-chrome';
     }
 
+    logger.info(`Launching browser with executablePath: ${executablePath || 'default'}`);
     browserInstance = await puppeteer.launch({
       args: isProduction ? [...chromium.args, '--no-sandbox', '--disable-setuid-sandbox'] : [],
       defaultViewport: chromium.defaultViewport,
@@ -86,7 +87,7 @@ const generatePdfFromHtml = async (htmlContent) => {
 
     // Set content and wait for it to be ready
     await page.setContent(htmlContent, {
-      waitUntil: ['networkidle0', 'domcontentloaded'],
+      waitUntil: ['load', 'domcontentloaded'],
       timeout: 30000,
     });
 

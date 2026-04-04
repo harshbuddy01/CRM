@@ -1369,14 +1369,17 @@ function PricingTab({ itinerary, onUpdate }: { itinerary: any; onUpdate: (data: 
         <div>
           <Button 
             className="w-full h-16 rounded-[24px] text-lg font-black bg-slate-900 hover:bg-black text-white shadow-xl shadow-slate-200/50 transition-all active:scale-95" 
-            onClick={() => onUpdate({ 
-              adults, 
-              children, 
-              markupPct: globalGst, 
-              costingBreakdown: rows,
-              sellingPrice: totalPackagePrice,
-              totalCost: subtotal // Saving subtotal as base layout totalCost
-            })}
+            onClick={() => {
+              onUpdate({ 
+                adults, 
+                children, 
+                markupPct: globalGst, 
+                costingBreakdown: rows,
+                sellingPrice: totalPackagePrice,
+                totalCost: subtotal // Saving subtotal as base layout totalCost
+              });
+              toast.success('Pricing saved and synchronized with all active proposals!');
+            }}
           >
             <Check className="w-6 h-6 mr-3 text-green-400" /> Save Pricing & Sync
           </Button>
