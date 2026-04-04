@@ -46,290 +46,310 @@ const getSafeImageUrl = (url) => {
  * Generates the full HTML for the premium handcrafted itinerary PDF.
  */
 const generateItineraryHtml = (itinerary) => {
-  const safeInclusions = itinerary.inclusionsHtml || '';
-  const safeExclusions = itinerary.exclusionsHtml || '';
-
-  // SVG Divider Component (Reusable)
-  const WOBBLY_DIVIDER = `<svg viewBox="0 0 100 2" width="100%" height="3" preserveAspectRatio="none" style="margin: 20px 0;"><path d="M0 1 Q 5 0, 10 1 T 20 1 T 30 1 T 40 1 T 50 1 T 60 1 T 70 1 T 80 1 T 90 1 T 100 1" stroke="#cbd5e1" stroke-width="0.5" fill="none" /></svg>`;
+  const escapeHtml = (str) => String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   
-  // SVG Torn Edge component (Reusable)
-  const TORN_WASHI_TAPE = (color = '#93c5fd', opacity = 0.4) => `
-    <div style="position: absolute; width: 80px; height: 26px; z-index: 10; pointer-events: none;">
-      <svg viewBox="0 0 80 26" width="100%" height="100%" preserveAspectRatio="none">
-        <path d="M0 3 L5 0 L15 2 L25 0 L35 3 L45 0 L55 2 L65 0 L75 3 L80 1 L80 23 L75 26 L65 23 L55 26 L45 23 L35 26 L25 23 L15 26 L5 23 L0 25 Z" fill="${color}" fill-opacity="${opacity}" />
-      </svg>
-    </div>`;
+  const days = itinerary?.days || [];
+  const totalDays = days.length;
+  const destinations = [...new Set(days.map(d => d.destination?.name).filter(Boolean))].join(', ') || 'Your Journey';
+  const gallery = itinerary?.galleryImages || [];
+
+  const EVENT_ICONS = {
+    accommodation: '🏨', sightseeing: '🗻', activity: '🧭', transport: '🚗',
+    flight: '✈️', meal: '🍴', checkin: '🔑', checkout: '👋', freeTime: '☀️',
+  };
 
   return `
     <!DOCTYPE html>
-    <html>
-    <head>
-      <meta charset="UTF-8">
-      <style>
-        @import url('https://fonts.googleapis.com/css2?family=Caveat:wght@400;700&family=Inter:wght@400;500;600;700;900&family=Playfair+Display:ital,wght@0,700;0,900;1,700&display=swap');
-        
-        :root {
-          --paper: #fcf9f2;
-          --ink: #1e293b;
-          --accent: #2563eb;
-          --muted: #64748b;
-          --blue-ink: #3b82f6;
-        }
+    <html lang="en">
+      <head>
+        <meta charset="UTF-8" />
+        <title>Travel Itinerary - ${escapeHtml(itinerary?.title || 'Draft')}</title>
+        <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Dancing+Script:wght@700&family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&display=swap" rel="stylesheet" />
+        <style>
+          *, *::before, *::after { box-sizing: border-box; }
+          @page { margin: 0; size: A4; }
+          body { 
+            margin: 0; padding: 0; 
+            font-family: 'EB Garamond', serif; 
+            color: #2c2c2c; 
+            background: #fdfbf7; 
+            -webkit-print-color-adjust: exact; 
+            print-color-adjust: exact;
+          }
+          .page { 
+            width: 100%; 
+            position: relative;
+            background: #fdfbf7;
+            overflow: hidden;
+            min-height: 100vh;
+          }
+          
+          /* Handcrafted Border */
+          .page-border {
+            position: fixed;
+            top: 20px; left: 20px; right: 20px; bottom: 20px;
+            border: 2px solid #d4af37;
+            pointer-events: none;
+            z-index: 100;
+          }
+          .page-border::after {
+            content: '';
+            position: absolute;
+            top: 5px; left: 5px; right: 5px; bottom: 5px;
+            border: 1px solid #d4af37;
+            opacity: 0.5;
+          }
 
-        body {
-          font-family: 'Inter', sans-serif;
-          margin: 0;
-          padding: 0;
-          color: var(--ink);
-          background-color: #f1f5f9;
-        }
+          h1, h2, h3 { font-family: 'Playfair Display', serif; color: #1a1a1a; margin: 0; }
+          .handwritten { font-family: 'Dancing Script', cursive; color: #8b6e4b; }
 
-        /* Handmade Paper Texture */
-        .paper-bg {
-          background-color: var(--paper);
-          background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100' height='100' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
-        }
+          /* Hero Section */
+          .hero { position: relative; height: 600px; width: 100%; overflow: hidden; background: #2c2c2c; }
+          .hero img { width: 100%; height: 100%; object-fit: cover; opacity: 0.9; }
+          .hero-overlay { 
+            position: absolute; 
+            bottom: 0; left: 0; width: 100%; 
+            padding: 80px 60px; 
+            background: linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.85) 100%); 
+            color: white; 
+          }
+          .hero h1 { color: #ffffff; font-size: 56px; font-weight: 900; margin-bottom: 20px; }
+          .hero-badge { 
+            font-size: 18px; 
+            letter-spacing: 0.2em; 
+            text-transform: uppercase; 
+            margin-bottom: 10px; 
+            display: block;
+            color: #d4af37;
+            font-weight: 600;
+          }
+          .hero-meta { display: flex; gap: 30px; font-size: 16px; font-weight: 500; opacity: 0.9; }
 
-        .page {
-          width: 8.27in;
-          margin: 0 auto;
-          padding: 50px 60px;
-          box-sizing: border-box;
-          position: relative;
-          min-height: 100vh;
-        }
+          /* Info Bar */
+          .info-grid { 
+            display: grid; 
+            grid-template-columns: repeat(3, 1fr); 
+            gap: 20px; 
+            padding: 40px 60px; 
+            background: #fff;
+            border-bottom: 1px solid #eee;
+          }
+          .info-item .label { font-size: 12px; font-weight: 600; text-transform: uppercase; color: #a1a1a1; margin-bottom: 5px; }
+          .info-item .value { font-size: 18px; font-weight: 700; color: #1a1a1a; font-family: 'Playfair Display', serif; }
 
-        .h-serif {
-          font-family: 'Playfair Display', serif;
-          font-weight: 700;
-          margin: 0;
-        }
+          /* Sections */
+          .content-wrap { padding: 40px 60px; }
+          .section-heading { 
+            text-align: center; 
+            margin-bottom: 40px; 
+            position: relative; 
+          }
+          .section-heading h2 { font-size: 36px; margin-bottom: 10px; font-style: italic; }
+          .section-divider { 
+            width: 150px; height: 1px; background: #d4af37; margin: 0 auto; 
+            position: relative;
+          }
+          .section-divider::after {
+            content: '❦';
+            position: absolute;
+            top: -10px; left: 50%;
+            transform: translateX(-50%);
+            background: #fdfbf7;
+            padding: 0 10px;
+            color: #d4af37;
+            font-size: 16px;
+          }
 
-        .font-handwriting {
-          font-family: 'Caveat', cursive;
-        }
+          /* Day Layout */
+          .day-entry { margin-bottom: 60px; break-inside: avoid; }
+          .day-title-wrap { display: flex; align-items: baseline; gap: 15px; margin-bottom: 20px; }
+          .day-number { font-size: 24px; color: #d4af37; font-weight: 900; }
+          .day-content { display: flex; gap: 30px; }
+          .day-text { flex: 1; }
+          .day-photo { width: 45%; flex-shrink: 0; }
+          .day-photo img { width: 100%; border-radius: 4px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); border: 8px solid white; }
+          
+          .day-description { font-size: 18px; line-height: 1.8; color: #444; margin-bottom: 20px; text-align: justify; }
+          
+          .event-item { 
+            padding: 12px 0; 
+            border-bottom: 1px solid #f0f0f0; 
+            display: flex; 
+            gap: 15px; 
+            align-items: flex-start;
+          }
+          .event-symbol { font-size: 20px; }
+          .event-info h4 { font-size: 16px; margin: 0; font-weight: 700; color: #1a1a1a; }
+          .event-info p { font-size: 14px; color: #666; margin: 2px 0 0; }
 
-        /* Marginalia - Notes in the margins */
-        .marginalia {
-          position: absolute;
-          left: 15px;
-          top: 150px;
-          width: 80px;
-          font-family: 'Caveat', cursive;
-          color: var(--blue-ink);
-          font-size: 14px;
-          line-height: 1.1;
-          transform: rotate(-12deg);
-          opacity: 0.7;
-          pointer-events: none;
-        }
+          /* Pricing & Policy */
+          .price-scroll {
+            margin: 40px 0;
+            padding: 40px;
+            background: white;
+            border: 1px solid #eee;
+            text-align: center;
+            box-shadow: inset 0 0 50px rgba(212, 175, 55, 0.05);
+          }
+          .price-scroll h3 { font-size: 22px; color: #8b6e4b; margin-bottom: 10px; font-style: italic; }
+          .grand-total { font-size: 48px; font-weight: 900; color: #1a1a1a; font-family: 'Playfair Display', serif; }
 
-        /* Corner Ornament - Universal Cultural Motif */
-        .corner-motif {
-          position: absolute;
-          top: 20px;
-          right: 20px;
-          width: 60px;
-          height: 60px;
-          opacity: 0.15;
-          pointer-events: none;
-        }
+          .policy-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
+          .policy-card h4 { font-size: 18px; margin-bottom: 10px; color: #d4af37; font-style: italic; }
+          .policy-card { font-size: 14px; line-height: 1.6; color: #555; }
 
-        /* Hero Section */
-        .hero {
-          position: relative;
-          height: 400px;
-          border-radius: 40px 10px 40px 10px; /* Irregular feel */
-          overflow: hidden;
-          margin-bottom: 50px;
-          background: #334155;
-          box-shadow: 0 10px 30px -10px rgba(0,0,0,0.1);
-        }
+          /* Gallery Masonry */
+          .gallery-section { margin-top: 60px; }
+          .gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+          }
+          .gallery-item { height: 200px; border-radius: 4px; overflow: hidden; }
+          .gallery-item img { width: 100%; height: 100%; object-fit: cover; }
 
-        .hero img { width: 100%; height: 100%; object-fit: cover; opacity: 0.6; }
-        .hero-overlay {
-          position: absolute;
-          inset: 0;
-          background: linear-gradient(to top, rgba(0,0,0,0.8), rgba(0,0,0,0.2) 60%, transparent);
-          display: flex;
-          flex-direction: column;
-          justify-content: flex-end;
-          padding: 50px;
-          color: white;
-        }
+          .footer { text-align: center; padding: 60px 0; border-top: 1px solid #eee; margin-top: 60px; }
+          .footer p { font-family: 'Dancing Script', cursive; font-size: 24px; color: #8b6e4b; }
+        </style>
+      </head>
+      <body>
+        <div class="page">
+          <div class="page-border"></div>
 
-        .hero h1 { font-size: 54px; line-height: 1; margin-bottom: 10px; }
-
-        /* Stamp Effect */
-        .stamp {
-          position: absolute;
-          top: 50px;
-          right: 60px;
-          border: 3px solid rgba(37, 99, 235, 0.4);
-          color: rgba(37, 99, 235, 0.4);
-          padding: 8px 15px;
-          font-family: 'Inter', sans-serif;
-          font-weight: 900;
-          font-size: 12px;
-          text-transform: uppercase;
-          transform: rotate(15deg);
-          border-radius: 4px;
-          letter-spacing: 2px;
-          pointer-events: none;
-        }
-
-        /* Day Layout */
-        .day-wrap { margin-bottom: 80px; page-break-inside: avoid; position: relative; }
-        .day-row { display: flex; gap: 50px; align-items: flex-start; }
-        .day-content { flex: 1; }
-        .day-num-box { font-family: 'Caveat', cursive; font-size: 32px; color: var(--accent); margin-bottom: 2px; line-height: 1; }
-        .day-title { font-family: 'Playfair Display', serif; font-size: 34px; margin-bottom: 10px; letter-spacing: -0.02em; }
-        .day-desc { color: #4b5563; font-size: 15px; line-height: 1.8; margin-bottom: 30px; font-weight: 400; }
-
-        .sketchy-border {
-          border: 2px solid #334155;
-          border-radius: 255px 15px 225px 15px/15px 225px 15px 255px; /* Organic/irregular radius */
-        }
-
-        .day-img-wrap {
-          width: 330px;
-          height: 420px;
-          flex-shrink: 0;
-          overflow: hidden;
-          background: #f1f5f9;
-          position: relative;
-        }
-
-        .day-img-wrap img { width: 100%; height: 100%; object-fit: cover; }
-
-        .event-item {
-          display: flex;
-          align-items: flex-start;
-          gap: 15px;
-          padding: 12px 18px;
-          background: white;
-          border-radius: 16px;
-          margin-bottom: 12px;
-          border: 1px solid #e2e8f0;
-          position: relative;
-        }
-
-        /* Price Box */
-        .price-box {
-          margin-top: 80px;
-          background: white;
-          padding: 50px;
-          border-radius: 30px;
-          text-align: center;
-          position: relative;
-          page-break-inside: avoid;
-          border: 1px dashed #cbd5e1;
-        }
-
-        .price-label { font-size: 15px; font-weight: 800; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 20px; }
-        .price-amount { font-size: 52px; font-weight: 900; letter-spacing: -2px; }
-
-        .policy-grid {
-          display: grid; grid-template-columns: 1fr 1fr; gap: 60px;
-          margin-top: 100px; padding-top: 50px; border-top: 1px solid #e2e8f0;
-        }
-        
-        .footer {
-          margin-top: 120px; text-align: center; font-size: 11px; font-weight: 700;
-          color: var(--muted); letter-spacing: 0.4em; opacity: 0.6;
-        }
-      </style>
-    </head>
-    <body class="paper-bg">
-      <div class="page">
-        <!-- Decoration & Marginalia -->
-        <div class="corner-motif">
-          <svg viewBox="0 0 100 100" fill="none" stroke="currentColor">
-            <path d="M20 10 Q 50 10, 50 50 T 80 90 M20 90 Q 50 90, 50 50 T 80 10" stroke-width="2" />
-            <circle cx="50" cy="50" r="4" fill="currentColor" />
-          </svg>
-        </div>
-        <div class="marginalia">“A journey of a thousand miles begins with a single step...”</div>
-        <div class="stamp">Verified Proposal</div>
-
-        <div class="hero">
-          ${itinerary.coverPhotoUrl ? `<img src="${getSafeImageUrl(itinerary.coverPhotoUrl)}" />` : ''}
-          <div class="hero-overlay">
-            <div style="font-family: 'Caveat', cursive; font-size: 32px; color: #93c5fd; transform: rotate(-3deg); transform-origin: left; margin-bottom: 15px;">A uniquely crafted journey for you</div>
-            <h1 class="h-serif">${escapeHtml(itinerary.title)}</h1>
-            <div style="display: flex; gap: 20px; font-size: 14px; opacity: 0.9; margin-top: 10px; font-weight: 600;">
-              <span>• ${itinerary.days?.length || 0} Days</span>
-              <span>• ${itinerary.adults || 0} Adults ${itinerary.children ? `& ${itinerary.children} Children` : ''}</span>
+          <div class="hero">
+            ${itinerary?.coverPhotoUrl ? `<img src="${getSafeImageUrl(itinerary.coverPhotoUrl)}" alt="Cover" />` : ''}
+            <div class="hero-overlay">
+              <span class="hero-badge">A Curated Journey</span>
+              <h1>${escapeHtml(itinerary?.title || 'Handcrafted Itinerary')}</h1>
+              <div class="hero-meta">
+                <span>${totalDays} Days of Discovery</span>
+                <span>❦</span>
+                <span>Created carefully for you</span>
+              </div>
             </div>
           </div>
-        </div>
 
-        <div style="text-align: center; margin: 80px 0 60px;">
-          <h2 class="h-serif" style="font-size: 42px;">The Experience</h2>
-          <div style="width: 120px; height: 1px; background: #334155; margin: 15px auto;"></div>
-        </div>
+          <div class="info-grid">
+            <div class="info-item">
+              <div class="label">Traveling Party</div>
+              <div class="value">${itinerary?.adults || 0} Adults${itinerary?.children ? `, ${itinerary.children} Kids` : ''}</div>
+            </div>
+            <div class="info-item">
+              <div class="label">Destinations</div>
+              <div class="value">${escapeHtml(destinations)}</div>
+            </div>
+            <div class="info-item">
+              <div class="label">Duration</div>
+              <div class="value">${totalDays} Days</div>
+            </div>
+          </div>
 
-        ${(itinerary.days || []).map((day, idx) => `
-          <div class="day-wrap">
-            <div class="day-row" style="${idx % 2 !== 0 ? 'flex-direction: row-reverse;' : ''}">
-              <div class="day-content">
-                <div class="day-num-box">Day ${day.dayNumber}</div>
-                <h3 class="day-title">${escapeHtml(day.title || `The heart of ${day.destination?.name || 'Nature'}`)}</h3>
-                <div style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: var(--accent); letter-spacing: 0.15em; margin-bottom: 25px;">${escapeHtml(day.destination?.name || 'Exploring Handcrafted Paths')}</div>
-                
-                <div class="day-desc">${escapeHtml(day.description || 'Welcome to a day of organic discovery. We have curated these experiences to bring you closer to the cultural heartbeat of the region, ensuring every moment feels personal and hand-picked.')}</div>
-                
-                ${WOBBLY_DIVIDER}
-                
-                <div style="margin-top: 25px;">
-                  ${(day.events || []).filter(e => e.type !== 'accommodation').map(ev => `
-                    <div class="event-item">
-                      <div style="font-size: 20px; line-height: 1;">${EVENT_TYPE_ICONS[ev.type] || '•'}</div>
-                      <div style="flex: 1;">
-                        <div style="font-size: 14px; font-weight: 700; color: #1e293b;">${escapeHtml(ev.title)}</div>
-                        ${ev.startTime ? `<div style="font-size: 10px; font-weight: 700; color: var(--muted); margin-top: 2px;">SCHEDULED: ${escapeHtml(ev.startTime)}</div>` : ''}
-                      </div>
+          <div class="content-wrap">
+            <div class="section-heading">
+              <span class="handwritten">The Itinerary</span>
+              <h2>Your Daily Chronicle</h2>
+              <div class="section-divider"></div>
+            </div>
+
+            ${days.map(day => {
+              const events = day.events || [];
+              const dayImage = day.imageUrl; // Only use explicitly uploaded day images for the side panel
+              
+              return `
+              <div class="day-entry">
+                <div class="day-title-wrap">
+                  <span class="day-number">Day ${day.dayNumber}</span>
+                  <h3>${escapeHtml(day.title || 'In Search of Magic')}</h3>
+                </div>
+                <div class="day-content">
+                  <div class="day-text">
+                    ${day.description ? `<div class="day-description">${escapeHtml(day.description).replace(/\n/g, '<br/>')}</div>` : ''}
+                    
+                    <div class="events-list">
+                      ${events.map(ev => `
+                        <div class="event-item" style="flex-wrap: wrap;">
+                          <span class="event-symbol">${EVENT_ICONS[ev.type] || '•'}</span>
+                          <div class="event-info" style="flex: 1; min-width: 200px;">
+                            <h4>${escapeHtml(ev.title)}</h4>
+                            <p>${ev.type === 'accommodation' && ev.metadata?.hotelName ? `<strong>Staying at ${escapeHtml(ev.metadata.hotelName)}</strong>` : ''}</p>
+                            ${ev.description ? `<p>${escapeHtml(ev.description).replace(/\n/g, '<br/>')}</p>` : ''}
+                            ${ev.startTime ? `<p class="handwritten" style="font-size: 16px; margin-top: 5px;">Scheduled for ${escapeHtml(ev.startTime)}</p>` : ''}
+                          </div>
+                          ${ev.imageUrl ? `
+                            <div style="width: 100%; margin-top: 10px; padding-left: 35px;">
+                              <img src="${getSafeImageUrl(ev.imageUrl)}" alt="Event Photo" style="max-height: 150px; border-radius: 4px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); border: 2px solid white;" />
+                            </div>
+                          ` : ''}
+                        </div>
+                      `).join('')}
                     </div>
-                  `).join('')}
+                  </div>
+                  ${dayImage ? `
+                    <div class="day-photo">
+                      <img src="${getSafeImageUrl(dayImage)}" alt="Scene" />
+                    </div>
+                  ` : ''}
                 </div>
               </div>
+              `;
+            }).join('') || '<p class="handwritten" style="text-align: center; font-size: 28px;">Your custom journey awaits...</p>'}
 
-              <div style="position: relative;">
-                ${idx === 0 ? `
-                  <div style="top: 10px; left: -20px; transform: rotate(-15deg);">${TORN_WASHI_TAPE('#fb7185', 0.5)}</div>
-                  <div style="bottom: 10px; right: -20px; transform: rotate(15deg);">${TORN_WASHI_TAPE('#34d399', 0.5)}</div>
-                ` : `
-                  <div style="top: -15px; right: 10px; transform: rotate(35deg);">${TORN_WASHI_TAPE('#facc15', 0.5)}</div>
-                `}
-                <div class="day-img-wrap sketchy-border">
-                  ${day.imageUrl ? `<img src="${getSafeImageUrl(day.imageUrl)}" />` : `<div style="width:100%; height:100%; background:#f1f5f9; display:flex; align-items:center; justify-content:center; color:#94a3b8; font-family:'Caveat'; font-size:24px;">Captured Moments</div>`}
-                </div>
+            ${(itinerary?.sellingPrice || itinerary?.totalCost || itinerary?.perPersonCost) ? `
+            <div class="price-scroll">
+              <h3 class="handwritten">The Investment</h3>
+              <div class="grand-total">₹${Number(itinerary?.sellingPrice || itinerary?.totalCost || 0).toLocaleString('en-IN')}</div>
+              ${itinerary?.perPersonCost ? `<p class="handwritten" style="font-size: 20px; margin-top: 10px;">Offering at ₹${Number(itinerary.perPersonCost).toLocaleString('en-IN')} per person</p>` : ''}
+            </div>
+            ` : ''}
+
+            ${gallery.length > 0 ? `
+            <div class="gallery-section">
+              <div class="section-heading">
+                <span class="handwritten">Visual Musings</span>
+                <h2>Journey Gallery</h2>
+                <div class="section-divider"></div>
+              </div>
+              <div class="gallery-grid">
+                ${gallery.map(img => `
+                  <div class="gallery-item">
+                    <img src="${getSafeImageUrl(img.imageUrl)}" alt="Gallery Scene" />
+                  </div>
+                `).join('')}
               </div>
             </div>
-          </div>
-        `).join('')}
+            ` : ''}
 
-        <div class="price-box">
-          <div style="top: -12px; left: 50%; transform: translateX(-50%); position: absolute;">${TORN_WASHI_TAPE('#60a5fa', 0.6)}</div>
-          <div class="price-label">Our Curated Proposal</div>
-          <div class="price-amount">₹${Number(itinerary.perPersonCost).toLocaleString('en-IN')} <span style="font-size: 18px; color: var(--muted); font-weight: 500;">/ PERSON</span></div>
-          ${itinerary.totalCost ? `<div style="font-family: 'Caveat', cursive; font-size: 22px; color: var(--accent); margin-top: 15px; font-weight: 700;">Total Package: ₹${Number(itinerary.totalCost).toLocaleString('en-IN')}</div>` : ''}
+            ${(itinerary?.inclusionsHtml || itinerary?.exclusionsHtml) ? `
+            <div class="gallery-section">
+              <div class="section-heading" style="margin-top: 80px;">
+                <span class="handwritten">Fine Print</span>
+                <h2>Guidelines & Grace</h2>
+                <div class="section-divider"></div>
+              </div>
+              <div class="policy-grid">
+                ${itinerary?.inclusionsHtml ? `
+                  <div class="policy-card">
+                    <h4>Inclusions</h4>
+                    <div>${itinerary.inclusionsHtml}</div>
+                  </div>
+                ` : ''}
+                ${itinerary?.exclusionsHtml ? `
+                  <div class="policy-card">
+                    <h4>Exclusions</h4>
+                    <div>${itinerary.exclusionsHtml}</div>
+                  </div>
+                ` : ''}
+              </div>
+            </div>
+            ` : ''}
+
+            <div class="footer">
+              <p>Handcrafted with passion</p>
+              <div style="font-size: 12px; letter-spacing: 0.1em; color: #aaa; margin-top: 10px;">WWW.IMAGICAHOLIDAYS.COM</div>
+            </div>
+          </div>
         </div>
-
-        <div class="policy-grid">
-          <div class="policy-col">
-            <h4 class="h-serif">Inclusions</h4>
-            <div class="policy-content prose">${safeInclusions || 'Personally selected service inclusions.'}</div>
-          </div>
-          <div class="policy-col">
-            <h4 class="h-serif">Exclusions</h4>
-            <div class="policy-content prose">${safeExclusions || 'Personal expenditures.'}</div>
-          </div>
-        </div>
-
-        <div class="footer">IMAGICA HOLIDAYS • CRAFTED WITH CARE</div>
-      </div>
-    </body>
+      </body>
     </html>
   `;
 };

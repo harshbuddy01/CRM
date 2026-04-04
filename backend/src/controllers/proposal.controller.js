@@ -246,7 +246,7 @@ const generateProposalHtml = (proposal) => {
 
             ${days.map(day => {
               const events = day.events || [];
-              const dayImage = day.imageUrl || events.find(e => e.imageUrl)?.imageUrl;
+              const dayImage = day.imageUrl; // Only use explicitly uploaded day images for the side panel
               
               return `
               <div class="day-entry">
@@ -260,13 +260,19 @@ const generateProposalHtml = (proposal) => {
                     
                     <div class="events-list">
                       ${events.map(ev => `
-                        <div class="event-item">
+                        <div class="event-item" style="flex-wrap: wrap;">
                           <span class="event-symbol">${EVENT_ICONS[ev.type] || '•'}</span>
-                          <div class="event-info">
+                          <div class="event-info" style="flex: 1; min-width: 200px;">
                             <h4>${escapeHtml(ev.title)}</h4>
-                            <p>${ev.type === 'accommodation' && ev.metadata?.hotelName ? `Staying at ${escapeHtml(ev.metadata.hotelName)}` : escapeHtml(ev.description || '')}</p>
-                            ${ev.startTime ? `<p class="handwritten" style="font-size: 16px;">Scheduled for ${escapeHtml(ev.startTime)}</p>` : ''}
+                            <p>${ev.type === 'accommodation' && ev.metadata?.hotelName ? `<strong>Staying at ${escapeHtml(ev.metadata.hotelName)}</strong>` : ''}</p>
+                            ${ev.description ? `<p>${escapeHtml(ev.description).replace(/\n/g, '<br/>')}</p>` : ''}
+                            ${ev.startTime ? `<p class="handwritten" style="font-size: 16px; margin-top: 5px;">Scheduled for ${escapeHtml(ev.startTime)}</p>` : ''}
                           </div>
+                          ${ev.imageUrl ? `
+                            <div style="width: 100%; margin-top: 10px; padding-left: 35px;">
+                              <img src="${getSafeImageUrl(ev.imageUrl)}" alt="Event Photo" style="max-height: 150px; border-radius: 4px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); border: 2px solid white;" />
+                            </div>
+                          ` : ''}
                         </div>
                       `).join('')}
                     </div>
