@@ -47,9 +47,6 @@ router.post('/webhook/facebook', webhookController.createFromFacebook); // Faceb
 router.get('/webhook/facebook', webhookController.createFromFacebook);  // Facebook subscription verification
 router.post('/webhook/google', webhookApiKeyGuard, webhookController.createFromGoogle);
 
-// Temporary Developer Purge Endpoint (Secured by x-purge-secret)
-router.delete('/purge-special/:idOrCode', queryController.purge);
-
 // ALL routes from here below are protected and require a valid JWT
 router.use(authenticate);
 
