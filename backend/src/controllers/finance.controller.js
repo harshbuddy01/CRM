@@ -8,6 +8,167 @@ const pdfService = require('../services/pdf.service');
 
 const escapeHtml = (str) => String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
+const generateBillingStatementHtml = (data) => {
+  const { query, customer, supplier, payments } = data;
+  const escape = (str) => escapeHtml(str);
+
+  return `
+  <!DOCTYPE html>
+  <html lang="en">
+    <head>
+      <meta charset="UTF-8" />
+      <title>Billing Statement - ${escape(query.name)}</title>
+      <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=EB+Garamond:wght@400;500;600;700&display=swap" rel="stylesheet" />
+      <style>
+        @page { margin: 0; size: A4; }
+        body { margin: 0; padding: 40px; font-family: 'EB Garamond', serif; color: #333; background: #fff; line-height: 1.4; }
+        .page { padding: 40px; border: 1px solid #eee; }
+        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #8b6e4b; padding-bottom: 20px; margin-bottom: 30px; }
+        .header h1 { font-family: 'Playfair Display', serif; font-size: 32px; margin: 0; color: #1a1a1a; }
+        .internal-tag { background: #8b6e4b; color: #fff; padding: 4px 12px; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; border-radius: 4px; }
+        
+        .section-title { font-family: 'Playfair Display', serif; font-size: 22px; color: #8b6e4b; border-bottom: 1px solid #eee; padding-bottom: 8px; margin: 30px 0 15px 0; }
+        
+        .summary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-bottom: 30px; }
+        .ledger-card { background: #faf9f6; padding: 20px; border: 1px solid #e5e3da; border-radius: 8px; }
+        .ledger-row { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 16px; font-weight: 500; }
+        .ledger-row.total { border-top: 1px solid #d4af37; padding-top: 10px; margin-top: 10px; font-weight: 700; font-size: 18px; }
+        
+        .profit-banner { background: #f0f7f0; color: #166534; padding: 15px 20px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; font-weight: 700; font-size: 20px; border: 1px solid #bbf7d0; margin: 20px 0; }
+
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th { text-align: left; background: #f8f8f8; padding: 12px 10px; font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid #000; }
+        td { padding: 12px 10px; border-bottom: 1px solid #eee; font-size: 15px; }
+        .text-right { text-align: right; }
+        
+        .footer { margin-top: 50px; text-align: center; font-size: 12px; color: #999; }
+      </style>
+    </head>
+    <body>
+      <div class="page">
+        <div class="header">
+          <div>
+            <h1>Billing Statement</h1>
+            <p style="margin:5px 0 0 0; color:#666;">Query: ${escape(query.queryCode || query.id.slice(0,8))} | ${escape(query.name)}</p>
+          </div>
+          <div class="internal-tag">Internal Record</div>
+        </div>
+
+        <div class="summary-grid">
+          <div class="ledger-card">
+            <h3 style="margin:0 0 15px 0; font-family:'Playfair Display'; color:#2c3e50;">Customer Sidebar</h3>
+            <div class="ledger-row"><span>Total Package</span> <span>₹${Number(customer.totalAmount).toLocaleString('en-IN')}</span></div>
+            <div class="ledger-row" style="color:#166534;"><span>Total Received</span> <span>- ₹${Number(customer.totalReceived).toLocaleString('en-IN')}</span></div>
+            <div class="ledger-row total" style="color:${customer.totalPending > 0 ? '#92400e' : '#166534'};">
+              <span>Pending Balance</span> <span>₹${Number(customer.totalPending).toLocaleString('en-IN')}</span>
+            </div>
+          </div>
+
+          <div class="ledger-card">
+            <h3 style="margin:0 0 15px 0; font-family:'Playfair Display'; color:#2c3e50;">Supplier Sidebar</h3>
+            <div class="ledger-row"><span>Total Supplier Cost</span> <span>₹${Number(supplier.supplierAmount).toLocaleString('en-IN')}</span></div>
+            <div class="ledger-row" style="color:#166534;"><span>Paid to Suppliers</span> <span>- ₹${Number(supplier.supplierReceived).toLocaleString('en-IN')}</span></div>
+            <div class="ledger-row total" style="color:${supplier.supplierPending > 0 ? '#92400e' : '#166534'};">
+              <span>Supplier Pending</span> <span>₹${Number(supplier.supplierPending).toLocaleString('en-IN')}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="profit-banner">
+          <span>Gross Profit Margin</span>
+          <span>₹${Number(customer.grossProfit).toLocaleString('en-IN')}</span>
+        </div>
+
+        <h2 class="section-title">Verified Payment History</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Mode</th>
+              <th>Reference Code (UTR)</th>
+              <th class="text-right">Transaction Amnt</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${payments.map(p => `
+              <tr>
+                <td>${new Date(p.paymentDate).toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' })}</td>
+                <td style="text-transform:uppercase;">${escape(p.mode)}</td>
+                <td>${escape(p.referenceUtr || p.referenceId || '-')}</td>
+                <td class="text-right" style="font-weight:600; color:#166534;">₹${Number(p.amount).toLocaleString('en-IN')}</td>
+              </tr>
+            `).join('')}
+            ${payments.length === 0 ? '<tr><td colspan="4" style="text-align:center; padding:30px; color:#999;">No payments recorded yet.</td></tr>' : ''}
+          </tbody>
+        </table>
+
+        <div class="footer">
+          Generated on ${new Date().toLocaleString('en-IN')} • TravelCRM Secure Billing Snapshot
+        </div>
+      </div>
+    </body>
+  </html>
+  `;
+};
+
+const downloadBillingStatementPdf = async (req, res, next) => {
+  try {
+    const queryId = req.params.id;
+    const canViewAll = req.user.permissions['query.view_all'];
+    
+    // 1. Re-calculate billing data precisely as the summary route does
+    const query = await prisma.query.findUnique({ 
+      where: { id: queryId },
+      include: { user: true }
+    });
+    if (!query) return res.status(404).json({ success: false, message: 'Query not found' });
+
+    const proposal = await prisma.proposal.findFirst({
+      where: { queryId, deletedAt: null },
+      orderBy: { version: 'desc' },
+      select: { sellingPrice: true, totalCost: true },
+    });
+
+    const customerPayments = await prisma.payment.findMany({
+      where: { queryId, deletedAt: null, status: { in: ['verified', 'banked'] } },
+      orderBy: { paymentDate: 'desc' },
+    });
+
+    const bookingServices = await prisma.bookingService.findMany({ where: { queryId } });
+    const vendorPayments = await prisma.vendorPayment.findMany({ where: { queryId, deletedAt: null } });
+
+    const totalAmount = Number(proposal?.sellingPrice || 0);
+    const totalReceived = customerPayments.reduce((sum, p) => sum + Number(p.amount), 0);
+    const totalPending = totalAmount - totalReceived;
+
+    const supplierAmount = bookingServices.reduce((sum, bs) => sum + Number(bs.totalCost), 0);
+    const supplierReceived = vendorPayments.length > 0 
+      ? vendorPayments.reduce((sum, vp) => sum + Number(vp.amount), 0)
+      : bookingServices.reduce((sum, bs) => sum + Number(bs.supplierAmountPaid), 0);
+    const supplierPending = Math.max(0, supplierAmount - supplierReceived);
+    const grossProfit = totalAmount - supplierAmount;
+
+    // 2. Generate PDF
+    const html = generateBillingStatementHtml({
+      query,
+      customer: { totalAmount, totalReceived, totalPending, grossProfit },
+      supplier: { supplierAmount, supplierReceived, supplierPending },
+      payments: customerPayments
+    });
+
+    const pdfBuffer = await pdfService.generatePdfFromHtml(html);
+
+    res.set({
+      'Content-Type': 'application/pdf',
+      'Content-Length': pdfBuffer.length,
+      'Content-Disposition': `attachment; filename="Billing-Statement-${query.queryCode || queryId.slice(0,8)}.pdf"`,
+    });
+    res.send(pdfBuffer);
+  } catch (err) {
+    next(err);
+  }
+};
+
 const generateInvoiceHtml = (invoice, payments) => {
   const isPaid = invoice.status === 'paid';
   const totalPaid = payments.reduce((sum, p) => sum + Number(p.amount), 0);
@@ -287,5 +448,5 @@ module.exports = {
   listExpenses, createExpense, updateExpense, deleteExpense,
   listInvoices, getInvoice, createInvoice, updateInvoice, deleteInvoice, regenerateInvoice, downloadInvoicePdf,
   listVendorPayments, createVendorPayment, deleteVendorPayment,
-  getPnlSummary,
+  getPnlSummary, downloadBillingStatementPdf,
 };

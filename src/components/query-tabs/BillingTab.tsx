@@ -132,8 +132,40 @@ export function BillingTab({ queryId }: { queryId: string }) {
   return (
     <div className="space-y-6">
       <div>
+        <div className="flex items-center justify-between mb-3 border-b pb-2">
+          <div className="flex items-center gap-4">
+            <h3 className="font-semibold text-lg uppercase tracking-tight text-slate-900 leading-none">Main Ledger</h3>
+            <Button 
+              size="sm" 
+              variant="outline" 
+              className="gap-2 h-7 text-[10px] uppercase font-black tracking-widest border-slate-200 text-slate-500 hover:bg-slate-900 hover:text-white transition-all shadow-sm"
+              onClick={async () => {
+                try {
+                  const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || '/api/v1'}/queries/${queryId}/billing-statement/pdf`, {
+                    headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+                  });
+                  if (!response.ok) throw new Error('Failed to download billing statement');
+                  const blob = await response.blob();
+                  const url = window.URL.createObjectURL(blob);
+                  const a = document.createElement('a');
+                  a.href = url;
+                  a.download = `Billing-Statement-${queryId.slice(0,8)}.pdf`;
+                  document.body.appendChild(a);
+                  a.click();
+                  a.remove();
+                  toast.success('Successfully downloaded the Billing Statement for your records.');
+                } catch (err) {
+                  toast.error('Could not generate the Billing Statement PDF.');
+                }
+              }}
+            >
+              <Download className="w-3.5 h-3.5" /> Download Statement (PDF)
+            </Button>
+          </div>
+        </div>
+
         <div className="flex items-center justify-between mb-3">
-          <h3 className="font-semibold text-lg">Customer Side</h3>
+          <h3 className="font-semibold text-lg text-slate-700">Customer Side</h3>
           <Dialog open={isPaymentModalOpen} onOpenChange={(open) => {
             setIsPaymentModalOpen(open);
             if (open) {

@@ -8,6 +8,7 @@ const queryController = require('../controllers/query.controller');
 const proposalController = require('../controllers/proposal.controller');
 const queryService = require('../services/query.service');
 const queryValidator = require('../validators/query.validator');
+const financeController = require('../controllers/finance.controller');
 const { authenticate } = require('../middlewares/authenticate');
 const { can } = require('../middlewares/can');
 const config = require('../config');
@@ -219,6 +220,7 @@ router.get('/:id/history', async (req, res, next) => {
 });
 
 // Billing Summary (Sprint 10)
+router.get('/:id/billing-statement/pdf', authenticate, can('payment.view_all'), financeController.downloadBillingStatementPdf);
 router.get('/:id/billing-summary', async (req, res, next) => {
   try {
     const canViewAll = req.user.permissions['query.view_all'];
