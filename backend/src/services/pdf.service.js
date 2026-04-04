@@ -57,7 +57,11 @@ const getBrowser = async () => {
         : '/usr/bin/google-chrome';
     }
 
-    logger.info(`Launching browser with executablePath: ${executablePath || 'default'}`);
+    if (!executablePath && config.nodeEnv === 'production') {
+      logger.warn('No Chromium executable found via native paths or sparticuz. Attempting fallback launch.');
+    }
+
+    logger.info(`Launching browser. Executable: ${executablePath || 'default-bundled'}. Platform: ${process.platform}. Env: ${config.nodeEnv}`);
     browserInstance = await puppeteer.launch({
       args: isProduction 
         ? [...chromium.args, '--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--disable-gpu'] 

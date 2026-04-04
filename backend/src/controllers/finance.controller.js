@@ -13,7 +13,18 @@ const generateBillingStatementHtml = (data) => {
   const escape = (str) => escapeHtml(str);
 
   // Helper to safely format numbers
-  const fmt = (num) => Number(num || 0).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+  const fmt = (num) => {
+    if (num === null || num === undefined || isNaN(Number(num))) return '0';
+    return Number(num).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+  };
+
+  const formatDate = (date) => {
+    try {
+      const d = new Date(date);
+      if (isNaN(d.getTime())) return '-';
+      return d.toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' });
+    } catch (e) { return '-'; }
+  };
 
   return `
   <!DOCTYPE html>
@@ -116,7 +127,7 @@ const generateBillingStatementHtml = (data) => {
         <tbody>
           ${payments.map(p => `
             <tr>
-              <td>${new Date(p.paymentDate).toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' })}</td>
+              <td>${formatDate(p.paymentDate)}</td>
               <td style="text-transform:uppercase;">${escape(p.mode)}</td>
               <td>${escape(p.referenceUtr || p.referenceId || '-')}</td>
               <td class="text-right" style="font-weight:bold; color: #1b5e20;">₹${fmt(p.amount)}</td>
@@ -138,7 +149,7 @@ const generateBillingStatementHtml = (data) => {
 const downloadBillingStatementPdf = async (req, res, next) => {
   try {
     const queryId = req.params.id;
-    const canViewAll = req.user.permissions['query.view_all'];
+    const canViewAll = req.user?.permissions?.['query.view_all'] || false;
     
     // 1. Re-calculate billing data precisely as the summary route does
     const query = await prisma.query.findUnique({ 
@@ -162,13 +173,13 @@ const downloadBillingStatementPdf = async (req, res, next) => {
     const vendorPayments = await prisma.vendorPayment.findMany({ where: { queryId, deletedAt: null } });
 
     const totalAmount = Number(proposal?.sellingPrice || 0);
-    const totalReceived = customerPayments.reduce((sum, p) => sum + Number(p.amount), 0);
-    const totalPending = totalAmount - totalReceived;
+    const totalReceived = customerPayments.reduce((sum, p) => sum + Number(p.amount || 0), 0);
+    const totalPending = Math.max(0, totalAmount - totalReceived);
 
-    const supplierAmount = bookingServices.reduce((sum, bs) => sum + Number(bs.totalCost), 0);
+    const supplierAmount = bookingServices.reduce((sum, bs) => sum + Number(bs.totalCost || 0), 0);
     const supplierReceived = vendorPayments.length > 0 
-      ? vendorPayments.reduce((sum, vp) => sum + Number(vp.amount), 0)
-      : bookingServices.reduce((sum, bs) => sum + Number(bs.supplierAmountPaid), 0);
+      ? vendorPayments.reduce((sum, vp) => sum + Number(vp.amount || 0), 0)
+      : bookingServices.reduce((sum, bs) => sum + Number(bs.supplierAmountPaid || 0), 0);
     const supplierPending = Math.max(0, supplierAmount - supplierReceived);
     const grossProfit = totalAmount - supplierAmount;
 
@@ -188,7 +199,7 @@ const downloadBillingStatementPdf = async (req, res, next) => {
       'Content-Length': buffer.length,
       'Content-Disposition': `attachment; filename="Billing-Statement-${query.queryCode || queryId.slice(0,8)}.pdf"`,
     });
-    res.end(buffer);
+    res.send(buffer);
   } catch (err) {
     next(err);
   }
