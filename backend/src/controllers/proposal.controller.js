@@ -648,14 +648,17 @@ const confirmProposal = async (req, res, next) => {
         data: { status: 'confirmed' }
       });
 
-      // B. Mark all other proposals for this same query as rejected
+      // B. Soft-delete and reject all other proposals for this same query to remove UI clutter
       await tx.proposal.updateMany({
         where: { 
           queryId: proposal.queryId,
           id: { not: id },
-          status: 'pending' // Only reject pending ones to avoid overwriting existing rejections
+          status: 'pending' // Only reject pending ones
         },
-        data: { status: 'rejected' }
+        data: { 
+          status: 'rejected',
+          deletedAt: new Date()
+        }
       });
 
       // C. Move the query to confirmed status

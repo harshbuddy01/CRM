@@ -203,6 +203,31 @@ const update = async (id, data) => {
       where: { itineraryId: id, deletedAt: null },
       data: { sellingPrice: validateNum(sellingPrice), totalCost: totalCost !== undefined ? validateNum(totalCost) : updated.totalCost }
     });
+
+    // Auto-sync with Finance/Billing module if the linked proposal is confirmed
+    const linkedProposals = await prisma.proposal.findMany({
+      where: { itineraryId: id, deletedAt: null, status: 'confirmed' },
+      select: { queryId: true }
+    });
+    
+    for (const prop of linkedProposals) {
+      if (!prop.queryId) continue;
+      // Find active invoices tied to this query
+      const invoices = await prisma.invoice.findMany({
+        where: { queryId: prop.queryId, deletedAt: null }
+      });
+      
+      if (invoices.length > 0) {
+        const financeService = require('./finance.service');
+        for (const inv of invoices) {
+          try {
+            await financeService.regenerateInvoice(inv.id);
+          } catch (err) {
+            console.error('Auto-sync Invoice Error:', err.message);
+          }
+        }
+      }
+    }
   }
 
   return formatItinerary(updated);
