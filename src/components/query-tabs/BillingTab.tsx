@@ -343,13 +343,13 @@ export function BillingTab({ queryId }: { queryId: string }) {
             </DialogContent>
           </Dialog>
         </div>
+      </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <KpiCard label="Total Amount" value={customer.totalAmount} />
-          <KpiCard label="Received" value={customer.totalReceived} color="text-green-600" />
-          <KpiCard label="Pending" value={customer.totalPending} color={customer.totalPending > 0 ? 'text-red-600' : 'text-green-600'} />
-          <KpiCard label="Gross Profit" value={customer.grossProfit} color={customer.grossProfit >= 0 ? 'text-green-600' : 'text-red-600'} icon={TrendingUp} />
-        </div>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <KpiCard label="Total Amount" value={customer.totalAmount} />
+        <KpiCard label="Received" value={customer.totalReceived} color="text-green-600" />
+        <KpiCard label="Pending" value={customer.totalPending} color={customer.totalPending > 0 ? 'text-red-600' : 'text-green-600'} />
+        <KpiCard label="Gross Profit" value={customer.grossProfit} color={customer.grossProfit >= 0 ? 'text-green-600' : 'text-red-600'} icon={TrendingUp} />
       </div>
 
       <div>
