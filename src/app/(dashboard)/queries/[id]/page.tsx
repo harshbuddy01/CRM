@@ -1146,7 +1146,7 @@ function InsertItineraryModal({ isOpen, onClose, onSelect, isInserting }: { isOp
                 <div className="min-w-0 flex-1">
                   <h4 className="font-bold text-slate-900 group-hover:text-primary transition-colors truncate">{it.title}</h4>
                   <p className="text-xs text-muted-foreground font-medium mt-1">
-                    {it.daysCount || 0} Days • {it.destination || 'Global'}
+                    {it.days?.length || it._count?.days || 0} Days • {it.days?.map((d: any) => d.destination?.name).filter(Boolean).join(', ') || 'Global'}
                   </p>
                 </div>
                 <Button size="sm" variant="ghost" className="rounded-lg font-bold group-hover:bg-primary group-hover:text-white transition-all">

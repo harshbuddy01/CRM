@@ -21,98 +21,164 @@ const ICONS = {
 };
 
 const generateProposalHtml = (proposal) => {
+  // Use the linked itinerary's rich data for the PDF
+  const itinerary = proposal.itinerary;
+  const days = itinerary?.days || proposal.days || [];
+  const escapeHtml = (str) => String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+
+  const EVENT_ICONS = {
+    accommodation: '🏨', sightseeing: '🗻', activity: '🧭', transport: '🚗',
+    flight: '✈️', meal: '🍴', checkin: '🔑', checkout: '👋', freeTime: '☀️',
+  };
+
+  const totalDays = days.length;
+  const destinations = [...new Set(days.map(d => d.destination?.name).filter(Boolean))].join(', ') || proposal.query.destination || 'Holiday';
+
   return `
     <html>
       <head>
         <style>
-          @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-          body { font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif; color: #1e293b; line-height: 1.5; padding: 0; margin: 0; background-color: #f1f5f9; }
-          .container { max-width: 800px; margin: 0 auto; background: white; min-height: 100vh; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); padding: 40px; }
-          .header { border-bottom: 2px solid #e2e8f0; padding-bottom: 20px; margin-bottom: 30px; display: flex; justify-content: space-between; align-items: flex-end; }
-          .header h1 { color: #1e3a8a; margin: 0; font-size: 28px; font-weight: 700; }
-          .header-meta { text-align: right; font-size: 14px; color: #64748b; }
-          .price-tag { background: #eff6ff; color: #1e40af; padding: 12px 20px; border-radius: 8px; display: inline-block; margin: 20px 0; font-weight: 600; font-size: 18px; border: 1px solid #bfdbfe; }
-          .day-card { background: white; border: 1px solid #e2e8f0; border-radius: 12px; margin-bottom: 24px; overflow: hidden; }
-          .day-header { background: #f8fafc; padding: 16px 20px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; }
-          .day-header h3 { margin: 0; font-size: 18px; color: #1e3a8a; font-weight: 600; }
-          .day-body { padding: 20px; }
-          .day-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
-          .item { display: flex; align-items: flex-start; font-size: 14px; }
-          .item-icon { margin-top: 2px; flex-shrink: 0; }
-          .item-content { margin-left: 2px; }
-          .item-label { color: #64748b; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; margin-bottom: 2px; }
-          .description { background: #fdfdfd; border-top: 1px dashed #e2e8f0; padding: 16px 20px; font-size: 14px; color: #334155; line-height: 1.6; }
-          .footer { margin-top: 40px; text-align: center; font-size: 12px; color: #94a3b8; border-top: 1px solid #e2e8f0; padding-top: 20px; }
+          @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Playfair+Display:wght@400;600;700;800&display=swap');
+          * { margin: 0; padding: 0; box-sizing: border-box; }
+          body { font-family: 'Inter', sans-serif; color: #1e293b; line-height: 1.6; background: #f8fafc; }
+          .page { max-width: 800px; margin: 0 auto; background: white; }
+
+          .hero { position: relative; height: 320px; overflow: hidden; background: #1e293b; }
+          .hero img { width: 100%; height: 100%; object-fit: cover; opacity: 0.7; }
+          .hero-overlay { position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.3) 50%, transparent); display: flex; flex-direction: column; justify-content: flex-end; padding: 40px; color: white; }
+          .hero h1 { font-family: 'Playfair Display', serif; font-size: 38px; font-weight: 800; line-height: 1.1; margin-bottom: 8px; }
+          .hero-meta { font-size: 13px; opacity: 0.85; font-weight: 500; display: flex; gap: 16px; align-items: center; }
+          .hero-badge { display: inline-block; background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); border-radius: 20px; padding: 4px 14px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; }
+
+          .info-bar { display: flex; justify-content: space-between; align-items: center; padding: 20px 40px; background: #f8fafc; border-bottom: 1px solid #e2e8f0; }
+          .info-item { text-align: center; }
+          .info-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: #94a3b8; margin-bottom: 4px; }
+          .info-value { font-size: 14px; font-weight: 700; color: #1e293b; }
+
+          .section-title { font-family: 'Playfair Display', serif; font-size: 28px; font-weight: 700; color: #1e293b; text-align: center; margin: 40px 0 8px; }
+          .section-line { width: 60px; height: 2px; background: #3b82f6; margin: 0 auto 30px; }
+
+          .day-card { margin: 0 30px 30px; border: 1px solid #e2e8f0; border-radius: 16px; overflow: hidden; break-inside: avoid; }
+          .day-header { background: linear-gradient(135deg, #1e293b 0%, #334155 100%); color: white; padding: 16px 24px; display: flex; justify-content: space-between; align-items: center; }
+          .day-header h3 { font-family: 'Playfair Display', serif; font-size: 20px; font-weight: 700; margin: 0; }
+          .day-dest { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; opacity: 0.7; }
+
+          .day-body { padding: 20px 24px; }
+          .day-desc { color: #475569; font-size: 14px; line-height: 1.7; margin-bottom: 16px; }
+
+          .event-row { display: flex; align-items: flex-start; gap: 12px; padding: 10px 0; border-bottom: 1px dashed #f1f5f9; }
+          .event-row:last-child { border-bottom: none; }
+          .event-icon { width: 36px; height: 36px; border-radius: 10px; background: #f1f5f9; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+          .event-details { flex: 1; }
+          .event-title { font-size: 14px; font-weight: 700; color: #1e293b; }
+          .event-sub { font-size: 11px; color: #94a3b8; font-weight: 500; margin-top: 2px; }
+          .event-desc { font-size: 12px; color: #64748b; margin-top: 4px; line-height: 1.5; }
+
+          .event-img { width: 100%; max-height: 250px; object-fit: cover; border-radius: 12px; margin-bottom: 16px; }
+
+          .price-section { margin: 30px; padding: 30px; background: linear-gradient(135deg, #eff6ff 0%, #f0f9ff 100%); border-radius: 16px; border: 1px solid #bfdbfe; text-align: center; }
+          .price-label { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: #3b82f6; margin-bottom: 4px; }
+          .price-amount { font-family: 'Playfair Display', serif; font-size: 36px; font-weight: 800; color: #1e40af; }
+
+          .policy-section { margin: 0 30px 30px; }
+          .policy-box { border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px 24px; margin-bottom: 16px; }
+          .policy-title { font-size: 14px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: #1e293b; margin-bottom: 10px; }
+          .policy-content { font-size: 13px; color: #475569; line-height: 1.7; }
+          .policy-content ul { padding-left: 18px; }
+          .policy-content li { margin-bottom: 4px; }
+
+          .footer { text-align: center; padding: 30px; font-size: 11px; color: #94a3b8; border-top: 1px solid #e2e8f0; font-weight: 600; text-transform: uppercase; letter-spacing: 0.15em; }
         </style>
       </head>
       <body>
-        <div class="container">
-          <div class="header">
-            <div>
-              <h1>${proposal.query.name}</h1>
-              <div style="margin-top: 4px; color: #64748b;">Exclusive Holiday Proposal</div>
-            </div>
-            <div class="header-meta">
-              <div>Ref: ${proposal.query.queryCode}</div>
-              <div>Version: ${proposal.version}</div>
+        <div class="page">
+          <div class="hero">
+            ${itinerary?.coverPhotoUrl ? `<img src="${itinerary.coverPhotoUrl}" alt="Cover" />` : ''}
+            <div class="hero-overlay">
+              <div class="hero-badge">${destinations}</div>
+              <h1>${escapeHtml(itinerary?.title || proposal.query.name)}</h1>
+              <div class="hero-meta">
+                <span>${totalDays} Days</span>
+                <span>•</span>
+                <span>Ref: ${proposal.query.queryCode}</span>
+                <span>•</span>
+                <span>Version ${proposal.version}</span>
+              </div>
             </div>
           </div>
 
-          <div class="price-tag">
-            Total Package Price: ₹${Number(proposal.sellingPrice).toLocaleString()}
+          <div class="info-bar">
+            <div class="info-item">
+              <div class="info-label">Customer</div>
+              <div class="info-value">${escapeHtml(proposal.query.name)}</div>
+            </div>
+            <div class="info-item">
+              <div class="info-label">Travelers</div>
+              <div class="info-value">${proposal.query.adults || 0} Adults${proposal.query.children ? `, ${proposal.query.children} Children` : ''}</div>
+            </div>
+            <div class="info-item">
+              <div class="info-label">Travel Dates</div>
+              <div class="info-value">${proposal.query.travelDateFrom ? new Date(proposal.query.travelDateFrom).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'TBD'}</div>
+            </div>
+            <div class="info-item">
+              <div class="info-label">Destinations</div>
+              <div class="info-value">${escapeHtml(destinations)}</div>
+            </div>
           </div>
 
-          <h2 style="font-size: 20px; margin: 30px 0 20px 0; color: #1e293b;">Itinerary Overview (${proposal.days.length} Days)</h2>
+          <div class="section-title">Your Journey</div>
+          <div class="section-line"></div>
 
-          ${proposal.days.map(d => `
+          ${days.map(day => {
+            const events = day.events || [];
+            const accomEvent = events.find(e => e.type === 'accommodation');
+            const dayImage = events.find(e => e.imageUrl)?.imageUrl;
+            
+            return `
             <div class="day-card">
               <div class="day-header">
-                <h3>Day ${d.dayNumber}: ${d.destination?.name || 'Destination'}</h3>
+                <h3>Day ${day.dayNumber}: ${escapeHtml(day.title || 'Exploration Day')}</h3>
+                <div class="day-dest">${escapeHtml(day.destination?.name || '')}</div>
               </div>
               <div class="day-body">
-                <div class="day-grid">
-                  <div class="item">
-                    <div class="item-icon">${ICONS.hotel}</div>
-                    <div class="item-content">
-                      <div class="item-label">Accommodation</div>
-                      <div>${d.hotel?.name || 'Self Arrangement'}</div>
+                ${dayImage ? `<img class="event-img" src="${dayImage}" alt="Day ${day.dayNumber}" />` : ''}
+                ${day.description ? `<div class="day-desc">${escapeHtml(day.description).replace(/\n/g, '<br/>')}</div>` : ''}
+                
+                ${events.length > 0 ? events.map(ev => `
+                  <div class="event-row">
+                    <div class="event-icon">${EVENT_ICONS[ev.type] || '📍'}</div>
+                    <div class="event-details">
+                      <div class="event-title">${escapeHtml(ev.title)}</div>
+                      ${ev.startTime ? `<div class="event-sub">⏰ ${escapeHtml(ev.startTime)}${ev.endTime ? ' - ' + escapeHtml(ev.endTime) : ''}</div>` : ''}
+                      ${ev.type === 'accommodation' && ev.metadata?.hotelName ? `<div class="event-sub">🏨 ${escapeHtml(ev.metadata.hotelName)} ${ev.metadata?.roomType ? '• ' + escapeHtml(ev.metadata.roomType) : ''}</div>` : ''}
+                      ${ev.description ? `<div class="event-desc">${escapeHtml(ev.description).replace(/\n/g, '<br/>')}</div>` : ''}
                     </div>
                   </div>
-                  <div class="item">
-                    <div class="item-icon">${ICONS.meals}</div>
-                    <div class="item-content">
-                      <div class="item-label">Meals</div>
-                      <div>${d.mealsIncluded || 'No Meals'}</div>
-                    </div>
-                  </div>
-                  <div class="item">
-                    <div class="item-icon">${ICONS.transport}</div>
-                    <div class="item-content">
-                      <div class="item-label">Transport</div>
-                      <div>${d.transport || 'Internal Transfers'}</div>
-                    </div>
-                  </div>
-                  <div class="item">
-                    <div class="item-icon">${ICONS.activity}</div>
-                    <div class="item-content">
-                      <div class="item-label">Sightseeing</div>
-                      <div>${d.activities || 'At Leisure'}</div>
-                    </div>
-                  </div>
-                </div>
+                `).join('') : '<div class="day-desc">A day reserved for unique experiences and discovery.</div>'}
               </div>
-              ${d.description ? `
-                <div class="description">
-                  <div class="item-label" style="margin-bottom: 8px;">Detailed Itinerary</div>
-                  ${d.description.replace(/\n/g, '<br/>')}
-                </div>
-              ` : ''}
             </div>
-          `).join('')}
+            `;
+          }).join('')}
 
-          <div class="footer">
-            Generated with TravelCRM • Thank you for choosing us!
+          <div class="price-section">
+            <div class="price-label">Total Package Price</div>
+            <div class="price-amount">₹${Number(proposal.sellingPrice || itinerary?.sellingPrice || itinerary?.totalCost || 0).toLocaleString('en-IN')}</div>
+            ${itinerary?.perPersonCost ? `<div style="font-size: 14px; color: #64748b; margin-top: 8px; font-weight: 500;">₹${Number(itinerary.perPersonCost).toLocaleString('en-IN')} per person</div>` : ''}
           </div>
+
+          ${(itinerary?.inclusionsHtml || itinerary?.exclusionsHtml || itinerary?.paymentPolicyHtml || itinerary?.cancellationPolicyHtml || itinerary?.termsHtml) ? `
+          <div class="section-title">Terms & Conditions</div>
+          <div class="section-line"></div>
+          <div class="policy-section">
+            ${itinerary?.inclusionsHtml ? `<div class="policy-box"><div class="policy-title">✅ Inclusions</div><div class="policy-content">${itinerary.inclusionsHtml}</div></div>` : ''}
+            ${itinerary?.exclusionsHtml ? `<div class="policy-box"><div class="policy-title">❌ Exclusions</div><div class="policy-content">${itinerary.exclusionsHtml}</div></div>` : ''}
+            ${itinerary?.paymentPolicyHtml ? `<div class="policy-box"><div class="policy-title">💳 Payment Policy</div><div class="policy-content">${itinerary.paymentPolicyHtml}</div></div>` : ''}
+            ${itinerary?.cancellationPolicyHtml ? `<div class="policy-box"><div class="policy-title">🔄 Cancellation Policy</div><div class="policy-content">${itinerary.cancellationPolicyHtml}</div></div>` : ''}
+            ${itinerary?.termsHtml ? `<div class="policy-box"><div class="policy-title">📋 Terms</div><div class="policy-content">${itinerary.termsHtml}</div></div>` : ''}
+          </div>
+          ` : ''}
+
+          <div class="footer">IMAGICA HOLIDAYS • CRAFTED WITH CARE</div>
         </div>
       </body>
     </html>
@@ -397,11 +463,26 @@ const confirmProposal = async (req, res, next) => {
       });
     }
 
-    // Validate travel dates
-    if (!proposal.query.travelDateFrom || !proposal.query.travelDateTo) {
+    // Validate travel dates — auto-fix travelDateTo if only travelDateFrom is set
+    if (!proposal.query.travelDateFrom) {
       return res.status(400).json({
         success: false,
-        message: 'Cannot confirm proposal: The associated lead (query) must have valid travel dates to create a Tour.'
+        message: 'Cannot confirm proposal: The associated lead (query) must have a valid travel start date. Please edit the lead and set the Travel Date From.'
+      });
+    }
+
+    // Auto-calculate travelDateTo if missing
+    let travelDateTo = proposal.query.travelDateTo;
+    if (!travelDateTo) {
+      // Try to determine trip length from the linked itinerary
+      const daysCount = proposal.itinerary?.days?.length || 7; // Default 7 days
+      const from = new Date(proposal.query.travelDateFrom);
+      travelDateTo = new Date(from);
+      travelDateTo.setDate(travelDateTo.getDate() + daysCount - 1);
+      // Persist the auto-calculated date on the query
+      await prisma.query.update({
+        where: { id: proposal.queryId },
+        data: { travelDateTo }
       });
     }
 

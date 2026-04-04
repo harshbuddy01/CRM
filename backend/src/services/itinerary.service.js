@@ -216,17 +216,20 @@ const remove = async (id) => {
 const duplicate = async (id, userId) => {
   const source = await getById(id);
 
-  return prisma.itinerary.create({
+  const newItinerary = await prisma.itinerary.create({
     data: {
-      title: `${source.title} (Copy)`,
+      title: source.title,
       description: source.description,
       coverPhotoUrl: source.coverPhotoUrl,
       status: 'draft',
       totalCost: source.totalCost,
       perPersonCost: source.perPersonCost,
+      sellingPrice: source.sellingPrice,
+      costingBreakdown: source.costingBreakdown || undefined,
       currency: source.currency,
       adults: source.adults,
       children: source.children,
+      nights: source.nights,
       markupPct: source.markupPct,
       inclusionsHtml: source.inclusionsHtml,
       exclusionsHtml: source.exclusionsHtml,
@@ -267,6 +270,7 @@ const duplicate = async (id, userId) => {
   });
   return formatItinerary(newItinerary);
 };
+
 
 // ── Share Logic ──────────────────────────────────────────────
 
