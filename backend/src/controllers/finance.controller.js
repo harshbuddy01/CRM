@@ -154,7 +154,7 @@ const downloadBillingStatementPdf = async (req, res, next) => {
     // 1. Re-calculate billing data precisely as the summary route does
     const query = await prisma.query.findUnique({ 
       where: { id: queryId },
-      include: { user: true }
+      include: { assignedUser: true }
     });
     if (!query) return res.status(404).json({ success: false, message: 'Query not found' });
 
