@@ -25,8 +25,15 @@ const generateProposalHtml = (proposal) => {
   
   const getSafeImageUrl = (url) => {
     if (!url) return '';
-    if (url.startsWith('//')) return `https:${url}`;
-    return url;
+    let processedUrl = url.startsWith('//') ? `https:${url}` : url;
+    
+    // Cloudinary Optimization for PDF (Smart Compression & Resizing)
+    // Converts high-res originals to optimized versions for email-friendly PDFs
+    if (processedUrl.includes('res.cloudinary.com')) {
+      processedUrl = processedUrl.replace('/upload/', '/upload/q_auto,f_auto,w_900/');
+    }
+    
+    return processedUrl;
   };
 
   const itinerary = proposal.itinerary;
