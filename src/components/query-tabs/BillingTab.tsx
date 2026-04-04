@@ -15,12 +15,70 @@ import { Label } from '@/components/ui/label';
 export function BillingTab({ queryId }: { queryId: string }) {
   const queryClient = useQueryClient();
 
+  const { data: proposals, isLoading: proposalsLoading } = useQuery({
+    queryKey: ['proposals', queryId],
+    queryFn: async () => {
+      const res = await api.get(`/queries/${queryId}/proposals`);
+      return res.data.data;
+    },
+  });
+
   const { data, isLoading } = useQuery({
     queryKey: ['billing-summary', queryId],
     queryFn: async () => {
       const res = await api.get(`/queries/${queryId}/billing-summary`);
       return res.data.data;
     },
+  });
+
+  const hasConfirmedProposal = proposals?.some((p: any) => p.status === 'confirmed');
+
+  if (isLoading || proposalsLoading) return <div className="flex justify-center p-8"><Loader2 className="w-6 h-6 animate-spin" /></div>;
+
+  if (!hasConfirmedProposal) {
+    return (
+      <Card className="border-2 border-dashed border-slate-200 bg-slate-50/50">
+        <CardContent className="p-12 text-center">
+          <div className="bg-white w-16 h-16 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-center mx-auto mb-6">
+            <CreditCard className="w-8 h-8 text-slate-300" />
+          </div>
+          <h3 className="text-xl font-black text-slate-900 mb-2">Billing Section Locked</h3>
+          <p className="text-slate-500 max-w-sm mx-auto font-medium leading-relaxed">
+            Please finalize any proposal from the client side before generating bills or recording payments.
+          </p>
+          <div className="mt-8 flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-400">
+            <div className="w-1.5 h-1.5 rounded-full bg-slate-300" />
+            Awaiting Confirmation
+            <div className="w-1.5 h-1.5 rounded-full bg-slate-300" />
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const [isDownloading, setIsDownloading] = useState(false);
+  const downloadBillingPdf = useMutation({
+    mutationFn: async () => {
+      setIsDownloading(true);
+      const res = await api.get(`/queries/${queryId}/billing-statement/pdf`, { responseType: 'blob' });
+      return res.data;
+    },
+    onSuccess: (blob) => {
+      const url = window.URL.createObjectURL(new Blob([blob]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `Billing-Statement-${queryId}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+      setIsDownloading(false);
+      toast.success('Billing Statement Downloaded');
+    },
+    onError: (err: any) => {
+      setIsDownloading(false);
+      toast.error('Failed to download billing statement', { description: err.response?.data?.message || err.message });
+    }
   });
 
   const generateInvoiceMutation = useMutation({
@@ -131,41 +189,19 @@ export function BillingTab({ queryId }: { queryId: string }) {
 
   return (
     <div className="space-y-6">
-      <div>
-        <div className="flex items-center justify-between mb-3 border-b pb-2">
-          <div className="flex items-center gap-4">
-            <h3 className="font-semibold text-lg uppercase tracking-tight text-slate-900 leading-none">Main Ledger</h3>
-            <Button 
-              size="sm" 
-              variant="outline" 
-              className="gap-2 h-7 text-[10px] uppercase font-black tracking-widest border-slate-200 text-slate-500 hover:bg-slate-900 hover:text-white transition-all shadow-sm"
-              onClick={async () => {
-                try {
-                  const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || '/api/v1'}/queries/${queryId}/billing-statement/pdf`, {
-                    headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-                  });
-                  if (!response.ok) throw new Error('Failed to download billing statement');
-                  const blob = await response.blob();
-                  const url = window.URL.createObjectURL(blob);
-                  const a = document.createElement('a');
-                  a.href = url;
-                  a.download = `Billing-Statement-${queryId.slice(0,8)}.pdf`;
-                  document.body.appendChild(a);
-                  a.click();
-                  a.remove();
-                  toast.success('Successfully downloaded the Billing Statement for your records.');
-                } catch (err) {
-                  toast.error('Could not generate the Billing Statement PDF.');
-                }
-              }}
-            >
-              <Download className="w-3.5 h-3.5" /> Download Statement (PDF)
-            </Button>
-          </div>
-        </div>
-
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="font-semibold text-lg text-slate-700">Customer Side</h3>
+      <div className="flex items-center justify-between mb-2">
+        <h3 className="font-semibold text-lg text-slate-800">Customer Side</h3>
+        <div className="flex items-center gap-3">
+          <Button 
+            size="sm" 
+            variant="outline" 
+            className="gap-2 border-emerald-200 text-emerald-700 hover:bg-emerald-50 hover:border-emerald-500 transition-all font-bold shadow-sm"
+            onClick={() => downloadBillingPdf.mutate()}
+            disabled={isDownloading}
+          >
+            {isDownloading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+            Download Statement
+          </Button>
           <Dialog open={isPaymentModalOpen} onOpenChange={(open) => {
             setIsPaymentModalOpen(open);
             if (open) {

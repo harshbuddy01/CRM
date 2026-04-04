@@ -57,6 +57,10 @@ const generateBillingStatementHtml = (data) => {
         .text-right { text-align: right; }
         
         .footer { margin-top: 40px; text-align: center; font-size: 11px; color: #888; border-top: 1px solid #eee; padding-top: 10px; }
+        @media print {
+          body { zoom: 0.98; } /* Slight downscale for consistent fit */
+          img { max-height: 500px; object-fit: contain; } /* Compress icons/logos */
+        }
       </style>
     </head>
     <body>
@@ -249,6 +253,10 @@ const generateInvoiceHtml = (invoice, payments) => {
         
         .footer { margin-top: 60px; text-align: center; border-top: 1px solid #eee; padding-top: 40px; clear: both;}
         .footer p { font-family: 'Dancing Script', cursive; font-size: 26px; color: #d4af37; margin: 0; }
+        @media print {
+          body { zoom: 0.95; }
+          img { max-height: 500px; object-fit: contain; }
+        }
       </style>
     </head>
     <body>

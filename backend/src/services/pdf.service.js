@@ -59,10 +59,12 @@ const getBrowser = async () => {
 
     logger.info(`Launching browser with executablePath: ${executablePath || 'default'}`);
     browserInstance = await puppeteer.launch({
-      args: isProduction ? [...chromium.args, '--no-sandbox', '--disable-setuid-sandbox'] : [],
-      defaultViewport: chromium.defaultViewport,
+      args: isProduction 
+        ? [...chromium.args, '--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--disable-gpu'] 
+        : ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
+      defaultViewport: { width: 1280, height: 1024, deviceScaleFactor: 1 },
       executablePath: executablePath || undefined,
-      headless: isProduction ? chromium.headless : true,
+      headless: isProduction ? chromium.headless : 'new',
     });
 
     browserInstance.on('disconnected', () => {
@@ -85,17 +87,25 @@ const generatePdfFromHtml = async (htmlContent) => {
     browser = await getBrowser();
     page = await browser.newPage();
 
-    // Set content and wait for it to be ready
+    // Set viewport for consistent A4 scaling
+    await page.setViewport({ width: 1280, height: 1024, deviceScaleFactor: 1 });
+
     await page.setContent(htmlContent, {
-      waitUntil: ['load', 'domcontentloaded'],
-      timeout: 30000,
+      waitUntil: 'networkidle0',
+      timeout: 60000, // Increased to 60s for very slow image/font loading
     });
 
-    const pdfBuffer = await page.pdf({
+    // CRITICAL: Wait for all fonts to be ready before printing to prevent blank text
+    await page.evaluateHandle('document.fonts.ready');
+
+    const pdfOptions = {
       format: 'A4',
       printBackground: true,
-      margin: { top: '20px', right: '20px', bottom: '20px', left: '20px' },
-    });
+      margin: { top: '15mm', right: '15mm', bottom: '20mm', left: '15mm' }, // Slightly larger bottom margin for page numbers/spacing
+      displayHeaderFooter: false,
+    };
+
+    const pdfBuffer = await page.pdf(pdfOptions);
 
     return pdfBuffer;
   } catch (error) {

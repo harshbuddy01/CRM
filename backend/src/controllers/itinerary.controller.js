@@ -87,7 +87,12 @@ const generateItineraryHtml = (itinerary) => {
             background: #fdfbf7;
             overflow: hidden;
             min-height: 100vh;
-            /* Removed the fixed border that was causing overlapping text */
+          }
+
+          @media print {
+            body { zoom: 0.92; } /* Slight downscale for better compression and fit */
+            img { max-height: 600px; object-fit: contain; } /* Compress large gallery photos for PDF */
+            .no-print { display: none; }
           }
 
           h1, h2, h3 { font-family: 'Playfair Display', serif; color: #1a1a1a; margin: 0; }

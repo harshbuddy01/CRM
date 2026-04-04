@@ -888,7 +888,10 @@ function QueryProposalsList({ queryId, queryCode, customerName, customerEmail }:
 
       {!proposals || proposals.length === 0 ? renderEmptyState() : (
         <div className="grid grid-cols-1 gap-4">
-          {proposals.map((p: any) => (
+          {(proposals.some((p: any) => p.status === 'confirmed') 
+            ? proposals.filter((p: any) => p.status === 'confirmed') 
+            : proposals.filter((p: any) => p.status !== 'rejected')
+          ).map((p: any) => (
             <div key={p.id} className={cn(
               "p-5 border rounded-[32px] transition-all bg-white flex justify-between items-center group shadow-sm relative overflow-hidden",
               p.status === 'confirmed' ? "border-emerald-500 ring-4 ring-emerald-50 shadow-emerald-100" : "hover:border-primary/40",
@@ -1000,23 +1003,25 @@ function QueryProposalsList({ queryId, queryCode, customerName, customerEmail }:
                   >
                     <MessageCircle className="w-4 h-4" />
                   </Button>
-                  <Button 
-                    size="sm" 
-                    variant="ghost" 
-                    className="rounded-xl h-10 w-10 p-0 text-slate-400 hover:text-red-500 hover:bg-white hover:shadow-sm"
-                    onClick={() => {
-                      if (window.confirm('Are you sure you want to delete this proposal version?')) {
-                        deleteProposalMutation.mutate(p.id);
-                      }
-                    }}
-                    disabled={deleteProposalMutation.isPending}
-                  >
-                    {deleteProposalMutation.isPending && deleteProposalMutation.variables === p.id ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
-                      <Trash2 className="w-4 h-4" />
+                    {p.status !== 'confirmed' && (
+                      <Button 
+                        size="sm" 
+                        variant="ghost" 
+                        className="rounded-xl h-10 w-10 p-0 text-slate-400 hover:text-red-500 hover:bg-white hover:shadow-sm"
+                        onClick={() => {
+                          if (window.confirm('Are you sure you want to delete this proposal version?')) {
+                            deleteProposalMutation.mutate(p.id);
+                          }
+                        }}
+                        disabled={deleteProposalMutation.isPending}
+                      >
+                        {deleteProposalMutation.isPending && deleteProposalMutation.variables === p.id ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Trash2 className="w-4 h-4" />
+                        )}
+                      </Button>
                     )}
-                  </Button>
                 </div>
 
                 <Dialog open={waModalOpenId === p.id} onOpenChange={(open) => !open && setWaModalOpenId(null)}>

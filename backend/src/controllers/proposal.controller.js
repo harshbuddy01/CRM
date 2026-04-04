@@ -827,6 +827,23 @@ const deleteProposal = async (req, res, next) => {
     const { userId, role } = req.user;
     const canViewAll = role === 'admin' || role === 'system_owner';
 
+    // 1. Check if proposal exists and its status
+    const proposal = await prisma.proposal.findUnique({
+      where: { id },
+      select: { status: true }
+    });
+
+    if (!proposal) {
+      return res.status(404).json({ success: false, message: 'Proposal not found' });
+    }
+
+    if (proposal.status === 'confirmed') {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Cannot delete a confirmed proposal. Please revert the status first if this was a mistake.' 
+      });
+    }
+
     await proposalService.removeProposal(id, userId, canViewAll);
 
     res.json({
