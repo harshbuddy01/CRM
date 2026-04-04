@@ -375,7 +375,14 @@ const remove = async (req, res, next) => {
 const duplicate = async (req, res, next) => {
   try {
     const itinerary = await itineraryService.duplicate(req.params.id, req.user.id);
-    res.json({ success: true, data: itinerary });
+    res.status(201).json({ success: true, data: itinerary });
+  } catch (err) { next(err); }
+};
+
+const publishToTemplates = async (req, res, next) => {
+  try {
+    const itinerary = await itineraryService.publishToTemplates(req.params.id, req.user.id);
+    res.status(201).json({ success: true, data: itinerary, message: "Saved as a new Master Template" });
   } catch (err) { next(err); }
 };
 
@@ -524,6 +531,7 @@ module.exports = {
   update,
   remove,
   duplicate,
+  publishToTemplates,
   uploadCoverPhoto,
   uploadGalleryImages,
   uploadGalleryByUrl,

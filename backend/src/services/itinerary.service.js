@@ -103,15 +103,18 @@ const create = async (userId, data) => {
   return formatItinerary(itinerary);
 };
 
-const list = async (filters = {}) => {
-  const { search, status } = filters;
-  const parsedPage = parseInt(filters.page, 10);
-  const parsedLimit = parseInt(filters.limit, 10);
-  const page = Math.max(1, isNaN(parsedPage) ? 1 : parsedPage);
-  const limit = Math.min(100, Math.max(1, isNaN(parsedLimit) ? 50 : parsedLimit));
+const list = async (options = {}) => {
+  const { status, search, page = 1, limit = 50, isTemplate } = options;
+  const parsedPage = parseInt(page, 10);
+  const parsedLimit = parseInt(limit, 10);
+  const skip = Math.max(1, isNaN(parsedPage) ? 1 : parsedPage);
+  const take = Math.min(100, Math.max(1, isNaN(parsedLimit) ? 50 : parsedLimit));
   const where = { deletedAt: null };
 
   if (status) where.status = status;
+  if (isTemplate !== undefined) {
+    where.isTemplate = isTemplate === 'true' || isTemplate === true;
+  }
   if (search) {
     where.title = { contains: search, mode: 'insensitive' };
   }
@@ -222,6 +225,8 @@ const duplicate = async (id, userId) => {
       description: source.description,
       coverPhotoUrl: source.coverPhotoUrl,
       status: 'draft',
+      isTemplate: false,
+      sourceTemplateId: source.isTemplate ? source.id : source.sourceTemplateId,
       totalCost: source.totalCost,
       perPersonCost: source.perPersonCost,
       sellingPrice: source.sellingPrice,
@@ -261,7 +266,7 @@ const duplicate = async (id, userId) => {
       },
       galleryImages: {
         create: source.galleryImages.map((img) => ({
-          imageUrl: img.imageUrl,
+          url: img.url,
           caption: img.caption,
           sortOrder: img.sortOrder,
         })),
@@ -269,7 +274,69 @@ const duplicate = async (id, userId) => {
     },
     include: fullInclude,
   });
+
   return formatItinerary(newItinerary);
+};
+
+const publishToTemplates = async (id, userId) => {
+  const source = await getById(id);
+
+  const newTemplate = await prisma.itinerary.create({
+    data: {
+      title: source.title + " (Template)",
+      description: source.description,
+      coverPhotoUrl: source.coverPhotoUrl,
+      status: 'published',
+      isTemplate: true,
+      totalCost: source.totalCost,
+      perPersonCost: source.perPersonCost,
+      sellingPrice: source.sellingPrice,
+      costingBreakdown: source.costingBreakdown || undefined,
+      currency: source.currency,
+      adults: source.adults,
+      children: source.children,
+      nights: source.nights,
+      markupPct: source.markupPct,
+      inclusionsHtml: source.inclusionsHtml,
+      exclusionsHtml: source.exclusionsHtml,
+      paymentPolicyHtml: source.paymentPolicyHtml,
+      cancellationPolicyHtml: source.cancellationPolicyHtml,
+      termsHtml: source.termsHtml,
+      createdBy: userId,
+      days: {
+        create: source.days.map((day) => ({
+          dayNumber: day.dayNumber,
+          title: day.title,
+          description: day.description,
+          imageUrl: day.imageUrl,
+          destinationId: day.destinationId,
+          events: {
+            create: day.events.map((ev) => ({
+              type: ev.type,
+              title: ev.title,
+              description: ev.description,
+              startTime: ev.startTime,
+              endTime: ev.endTime,
+              cost: ev.cost,
+              imageUrl: ev.imageUrl,
+              metadata: ev.metadata,
+              sortOrder: ev.sortOrder,
+            })),
+          },
+        })),
+      },
+      galleryImages: {
+        create: source.galleryImages.map((img) => ({
+          url: img.url,
+          caption: img.caption,
+          sortOrder: img.sortOrder,
+        })),
+      },
+    },
+    include: fullInclude,
+  });
+
+  return formatItinerary(newTemplate);
 };
 
 
@@ -596,6 +663,7 @@ module.exports = {
   update,
   remove,
   duplicate,
+  publishToTemplates,
   generateShareSlug,
   getByShareSlug,
   addDay,

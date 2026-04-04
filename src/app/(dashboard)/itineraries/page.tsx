@@ -29,13 +29,16 @@ export default function ItinerariesPage() {
   const [showCreate, setShowCreate] = useState(false);
   const [newTitle, setNewTitle] = useState('');
   const [creating, setCreating] = useState(false);
+  const [viewType, setViewType] = useState<'templates' | 'clients'>('templates');
 
   const router = useRouter();
 
   const { data, isLoading, isError, error } = useQuery({
-    queryKey: ['itineraries', searchTerm],
+    queryKey: ['itineraries', searchTerm, viewType],
     queryFn: async () => {
-      const res = await api.get('/itineraries', { params: searchTerm ? { search: searchTerm } : {} });
+      const params: any = { isTemplate: viewType === 'templates' };
+      if (searchTerm) params.search = searchTerm;
+      const res = await api.get('/itineraries', { params });
       return res.data;
     },
   });
@@ -65,6 +68,7 @@ export default function ItinerariesPage() {
       const res = await api.post('/itineraries', {
         title: newTitle.trim(),
         days: [{ title: 'Day 1' }],
+        isTemplate: true // New ones are templates
       });
       toast.success('Itinerary created');
       setShowCreate(false);
@@ -110,15 +114,37 @@ export default function ItinerariesPage() {
             Itinerary Builder
           </h1>
           <p className="text-muted-foreground mt-2 text-xs md:text-sm font-medium">
-            Create and manage day-by-day travel itineraries with media, pricing and sharing.
+            Create and manage master destination templates and working client drafts.
           </p>
         </div>
         <Button
           className="rounded-xl px-6 font-bold shadow-lg shadow-primary/10"
           onClick={() => setShowCreate(true)}
         >
-          <Plus className="w-4 h-4 mr-2" /> New Itinerary
+          <Plus className="w-4 h-4 mr-2" /> New Template
         </Button>
+      </div>
+
+      {/* View Toggles */}
+      <div className="flex bg-slate-100 p-1.5 rounded-xl w-max">
+        <button
+          onClick={() => setViewType('templates')}
+          className={cn(
+            "px-6 py-2.5 rounded-lg text-sm font-bold transition-all",
+            viewType === 'templates' ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700"
+          )}
+        >
+          Master Templates
+        </button>
+        <button
+          onClick={() => setViewType('clients')}
+          className={cn(
+            "px-6 py-2.5 rounded-lg text-sm font-bold transition-all",
+            viewType === 'clients' ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700"
+          )}
+        >
+          Client Working Copies
+        </button>
       </div>
 
       {/* Stats */}

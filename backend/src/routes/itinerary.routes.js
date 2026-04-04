@@ -51,6 +51,7 @@ router.get('/:id', ctrl.getById);
 router.put('/:id', ctrl.update);
 router.delete('/:id', ctrl.remove);
 router.post('/:id/duplicate', ctrl.duplicate);
+router.post('/:id/publish-template', ctrl.publishToTemplates);
 
 // Cover photo & gallery
 router.post('/:id/cover-photo', handleSingleUpload('photo'), ctrl.uploadCoverPhoto);

@@ -209,6 +209,19 @@ export default function ItineraryBuilderPage() {
     });
   };
 
+  const handlePublishTemplate = async () => {
+    try {
+      const res = await api.post(`/itineraries/${id}/publish-template`);
+      toast.success(res.data.message || 'Saved as a new Master Template!');
+      // Navigate to the newly created template
+      if (res.data?.data?.id) {
+        router.push(`/itineraries/${res.data.data.id}`);
+      }
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Failed to publish template');
+    }
+  };
+
   if (isLoading) return <div className="flex h-[60vh] items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-muted-foreground opacity-50" /></div>;
   if (!itinerary) return <div className="text-center py-20 text-muted-foreground">Itinerary not found</div>;
 
@@ -335,6 +348,12 @@ export default function ItineraryBuilderPage() {
                   <TabsTrigger value="pricing" className="rounded-lg font-bold text-[10px] uppercase tracking-wider text-white/70 data-[state=active]:bg-white data-[state=active]:text-primary px-3 transition-all">Pricing</TabsTrigger>
                   <TabsTrigger value="final" className="rounded-lg font-bold text-[10px] uppercase tracking-wider text-white/70 data-[state=active]:bg-white data-[state=active]:text-primary px-3 transition-all">Final</TabsTrigger>
                 </TabsList>
+
+                {!itinerary.isTemplate && (
+                  <Button size="sm" className="rounded-xl font-bold text-xs h-9 bg-emerald-500 hover:bg-emerald-600 border border-emerald-400 shadow-md shadow-emerald-500/20 text-white" onClick={handlePublishTemplate}>
+                    <Copy className="w-3.5 h-3.5 mr-1" /> Save as Template
+                  </Button>
+                )}
 
                 <Button size="sm" variant="secondary" className="rounded-xl font-bold text-xs h-9" onClick={() => openMediaLibrary('cover')}>
                   <ImageIcon className="w-3.5 h-3.5 mr-1" /> Library
