@@ -45,6 +45,18 @@ const generateProposalHtml = (proposal) => {
     default: '<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#d4af37" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m12 8 4 4-4 4"/><path d="M8 12h8"/></svg>'
   };
 
+  const fromDate = proposal.travelDateFrom || proposal.query?.travelDateFrom;
+  const toDate = proposal.travelDateTo || proposal.query?.travelDateTo;
+  
+  let dateString = 'Season TBD';
+  if (fromDate && toDate) {
+    const fromStr = new Date(fromDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' });
+    const toStr = new Date(toDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' });
+    dateString = `${fromStr} - ${toStr}`;
+  } else if (fromDate) {
+    dateString = new Date(fromDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' });
+  }
+
   return `
     <!DOCTYPE html>
     <html lang="en">
@@ -216,8 +228,8 @@ const generateProposalHtml = (proposal) => {
               <div class="value">${proposal.query?.adults || 0} Adults${proposal.query?.children ? `, ${proposal.query.children} Kids` : ''}</div>
             </div>
             <div class="info-item">
-              <div class="label">Departure</div>
-              <div class="value">${proposal.query?.travelDateFrom ? new Date(proposal.query.travelDateFrom).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' }) : 'Season TBD'}</div>
+              <div class="label">Travel Dates</div>
+              <div class="value">${escapeHtml(dateString)}</div>
             </div>
             <div class="info-item">
               <div class="label">Destinations</div>
@@ -418,7 +430,7 @@ const downloadPdf = async (req, res, next) => {
     // Log Activity (Non-blocking)
     prisma.activityLog.create({
       data: {
-        userId: req.user.id,
+        userId: req.user?.id || null,
         action: 'proposal.pdf_downloaded',
         entityType: 'query',
         entityId: proposal.queryId,
@@ -809,6 +821,44 @@ const listAllProposals = async (req, res, next) => {
   }
 };
 
+const updateProposal = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { id: userId, role } = req.user;
+    const canViewAll = role === 'admin' || role === 'system_owner';
+
+    // 1. Check if proposal exists
+    const proposal = await prisma.proposal.findUnique({
+      where: { id },
+      include: { query: true }
+    });
+
+    if (!proposal) {
+      return res.status(404).json({ success: false, message: 'Proposal not found' });
+    }
+
+    if (!canViewAll && proposal.query.assignedTo !== userId && proposal.createdBy !== userId) {
+      return res.status(403).json({ success: false, message: 'You do not have access to this proposal' });
+    }
+
+    // 2. Update allowed fields
+    const { travelDateFrom, travelDateTo } = req.body;
+    
+    let updateData = {};
+    if (travelDateFrom !== undefined) updateData.travelDateFrom = travelDateFrom ? new Date(travelDateFrom) : null;
+    if (travelDateTo !== undefined) updateData.travelDateTo = travelDateTo ? new Date(travelDateTo) : null;
+
+    const updatedProposal = await prisma.proposal.update({
+      where: { id },
+      data: updateData
+    });
+
+    res.json({ success: true, message: 'Proposal updated successfully', data: updatedProposal });
+  } catch (error) {
+    next(error);
+  }
+};
+
 const deleteProposal = async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -855,5 +905,6 @@ module.exports = {
   confirmProposal,
   logEvent,
   listAllProposals,
+  updateProposal,
   deleteProposal,
 };

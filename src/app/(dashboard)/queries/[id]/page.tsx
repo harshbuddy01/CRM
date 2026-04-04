@@ -694,6 +694,7 @@ function QueryProposalsList({ queryId, queryCode, customerName, customerEmail }:
   const [emailModalOpenId, setEmailModalOpenId] = useState<string | null>(null);
   const [manualWaLink, setManualWaLink] = useState<string | null>(null);
   const [showInsertModal, setShowInsertModal] = useState(false);
+  const [dateModalOpenId, setDateModalOpenId] = useState<string | null>(null);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
@@ -987,6 +988,17 @@ function QueryProposalsList({ queryId, queryCode, customerName, customerEmail }:
                   >
                     {downloadingId === p.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileText className="w-4 h-4" />}
                   </Button>
+                  {p.status === 'pending' && (
+                    <Button 
+                      size="sm" 
+                      variant="ghost" 
+                      className="rounded-xl h-10 w-10 p-0 text-slate-600 hover:text-purple-600 hover:bg-white hover:shadow-sm"
+                      title="Edit Travel Dates"
+                      onClick={() => setDateModalOpenId(p.id)}
+                    >
+                      <CalendarIcon className="w-4 h-4" />
+                    </Button>
+                  )}
                   <Button 
                     size="sm" 
                     variant="ghost" 
@@ -1084,6 +1096,15 @@ function QueryProposalsList({ queryId, queryCode, customerName, customerEmail }:
         isInserting={insertProposalMutation.isPending}
       />
 
+      {dateModalOpenId && (
+        <UpdateProposalDatesModal 
+          isOpen={true}
+          onClose={() => setDateModalOpenId(null)}
+          proposalId={dateModalOpenId}
+          queryId={queryId}
+        />
+      )}
+
       {emailModalOpenId && (
         <ProposalEmailComposeModal 
           isOpen={true}
@@ -1176,6 +1197,102 @@ function InsertItineraryModal({ isOpen, onClose, onSelect, isInserting }: { isOp
     </Dialog>
   );
 }
+
+function UpdateProposalDatesModal({ isOpen, onClose, proposalId, queryId }: { isOpen: boolean, onClose: () => void, proposalId: string, queryId: string }) {
+  const queryClient = useQueryClient();
+  const [fromDate, setFromDate] = useState<string>('');
+  const [toDate, setToDate] = useState<string>('');
+
+  const { data: proposal, isLoading } = useQuery({
+    queryKey: ['proposal_dates', proposalId],
+    queryFn: async () => {
+      const res = await api.get(`/proposals/${proposalId}`);
+      return res.data.data;
+    },
+    enabled: isOpen
+  });
+
+  useEffect(() => {
+    if (proposal) {
+      if (proposal.travelDateFrom) setFromDate(proposal.travelDateFrom.split('T')[0]);
+      if (proposal.travelDateTo) setToDate(proposal.travelDateTo.split('T')[0]);
+    }
+  }, [proposal]);
+
+  const updateMutation = useMutation({
+    mutationFn: async () => {
+      const res = await api.patch(`/proposals/${proposalId}`, {
+        travelDateFrom: fromDate || null,
+        travelDateTo: toDate || null
+      });
+      return res.data;
+    },
+    onSuccess: () => {
+      toast.success('Proposal dates updated. New PDFs will instantly reflect these dates.');
+      queryClient.invalidateQueries({ queryKey: ['proposals', queryId] });
+      onClose();
+    },
+    onError: (err: any) => {
+      toast.error('Failed to update dates', { description: err.response?.data?.message });
+    }
+  });
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <CalendarIcon className="w-5 h-5 text-primary" />
+            Set Independent Dates
+          </DialogTitle>
+          <DialogDescription>
+            These dates will appear on the Proposal PDF. If left blank, it falls back to the Lead's general dates.
+          </DialogDescription>
+        </DialogHeader>
+
+        {isLoading ? (
+          <div className="py-8 flex justify-center"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>
+        ) : (
+          <div className="space-y-4 py-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-bold text-slate-700">From Date</label>
+                <Input 
+                  type="date" 
+                  value={fromDate}
+                  onChange={(e) => setFromDate(e.target.value)}
+                  className="rounded-xl border-slate-200"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-bold text-slate-700">To Date</label>
+                <Input 
+                  type="date" 
+                  value={toDate}
+                  onChange={(e) => setToDate(e.target.value)}
+                  className="rounded-xl border-slate-200"
+                />
+              </div>
+            </div>
+            
+            <div className="flex justify-end gap-3 mt-6">
+              <Button variant="ghost" onClick={onClose} disabled={updateMutation.isPending}>Cancel</Button>
+              <Button 
+                onClick={() => updateMutation.mutate()}
+                disabled={updateMutation.isPending}
+                className="rounded-xl font-bold"
+              >
+                {updateMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                Save Dates
+              </Button>
+            </div>
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 
 function QueryPaymentsSection({ queryId }: { queryId: string }) {
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);

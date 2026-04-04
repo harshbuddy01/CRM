@@ -279,9 +279,11 @@ model Proposal {
   itineraryId  String?   @map("itinerary_id")
   version      Int       @default(1)
   status       String    @default("pending") @map("status") /// 'pending', 'confirmed', 'rejected'
-  totalCost    Decimal?  @map("total_cost") @db.Decimal(12, 2)
-  markupPct    Decimal?  @map("markup_pct") @db.Decimal(5, 2)
-  sellingPrice Decimal?  @map("selling_price") @db.Decimal(12, 2)
+  totalCost      Decimal?  @map("total_cost") @db.Decimal(12, 2)
+  markupPct      Decimal?  @map("markup_pct") @db.Decimal(5, 2)
+  sellingPrice   Decimal?  @map("selling_price") @db.Decimal(12, 2)
+  travelDateFrom DateTime? @map("travel_date_from") @db.Date
+  travelDateTo   DateTime? @map("travel_date_to") @db.Date
   pdfUrl       String?   @map("pdf_url")
   pdfStatus    String    @default("none") @map("pdf_status") /// 'none','pending','ready','failed'
   sentAt       DateTime? @map("sent_at")
