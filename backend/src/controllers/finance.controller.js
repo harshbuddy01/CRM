@@ -12,104 +12,124 @@ const generateBillingStatementHtml = (data) => {
   const { query, customer, supplier, payments } = data;
   const escape = (str) => escapeHtml(str);
 
+  // Helper to safely format numbers
+  const fmt = (num) => Number(num || 0).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+
   return `
   <!DOCTYPE html>
   <html lang="en">
     <head>
       <meta charset="UTF-8" />
-      <title>Billing Statement - ${escape(query.name)}</title>
-      <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=EB+Garamond:wght@400;500;600;700&display=swap" rel="stylesheet" />
+      <title>Statement - ${escape(query.name)}</title>
       <style>
-        @page { margin: 0; size: A4; }
-        body { margin: 0; padding: 40px; font-family: 'EB Garamond', serif; color: #333; background: #fff; line-height: 1.4; }
-        .page { padding: 40px; border: 1px solid #eee; }
-        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #8b6e4b; padding-bottom: 20px; margin-bottom: 30px; }
-        .header h1 { font-family: 'Playfair Display', serif; font-size: 32px; margin: 0; color: #1a1a1a; }
-        .internal-tag { background: #8b6e4b; color: #fff; padding: 4px 12px; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; border-radius: 4px; }
+        @page { margin: 15mm; size: A4; }
+        body { 
+          margin: 0; padding: 0; 
+          font-family: 'Times New Roman', Times, serif; 
+          color: #1a1a1a; background: #fff; 
+          font-size: 14px; line-height: 1.5; 
+        }
+        .header { border-bottom: 2px solid #8b6e4b; padding-bottom: 10px; margin-bottom: 30px; }
+        .header h1 { margin: 0; font-size: 28px; color: #1a1a1a; }
+        .internal-badge { background: #8b6e4b; color: #fff; padding: 3px 8px; font-size: 10px; font-weight: bold; border-radius: 3px; float: right; margin-top: 10px; }
         
-        .section-title { font-family: 'Playfair Display', serif; font-size: 22px; color: #8b6e4b; border-bottom: 1px solid #eee; padding-bottom: 8px; margin: 30px 0 15px 0; }
+        .summary-table { width: 100%; border-collapse: separate; border-spacing: 20px 0; margin-left: -20px; margin-bottom: 30px; }
+        .summary-table td { width: 50%; vertical-align: top; }
         
-        .summary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-bottom: 30px; }
-        .ledger-card { background: #faf9f6; padding: 20px; border: 1px solid #e5e3da; border-radius: 8px; }
-        .ledger-row { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 16px; font-weight: 500; }
-        .ledger-row.total { border-top: 1px solid #d4af37; padding-top: 10px; margin-top: 10px; font-weight: 700; font-size: 18px; }
+        .card { border: 1px solid #e5e3da; background: #faf9f6; padding: 15px; border-radius: 5px; }
+        .card h3 { margin: 0 0 10px 0; font-size: 16px; border-bottom: 1px solid #e5e3da; padding-bottom: 5px; color: #5d4037; }
         
-        .profit-banner { background: #f0f7f0; color: #166534; padding: 15px 20px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; font-weight: 700; font-size: 20px; border: 1px solid #bbf7d0; margin: 20px 0; }
+        .row { display: block; margin-bottom: 5px; overflow: hidden; }
+        .row span:first-child { float: left; color: #666; }
+        .row span:last-child { float: right; font-weight: bold; }
+        
+        .total-row { margin-top: 10px; border-top: 1px solid #d4af37; padding-top: 8px; font-size: 16px; }
+        
+        .profit-box { background: #e8f5e9; padding: 15px; border-radius: 5px; border: 1px solid #c8e6c9; margin: 20px 0; overflow: hidden; }
+        .profit-box span:first-child { font-size: 18px; font-weight: bold; color: #2e7d32; }
+        .profit-box span:last-child { float: right; font-size: 20px; font-weight: bold; color: #1b5e20; }
 
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        th { text-align: left; background: #f8f8f8; padding: 12px 10px; font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid #000; }
-        td { padding: 12px 10px; border-bottom: 1px solid #eee; font-size: 15px; }
+        .section-title { font-size: 18px; margin-top: 30px; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 5px; color: #8b6e4b; }
+        
+        table.ledger { width: 100%; border-collapse: collapse; }
+        table.ledger th { text-align: left; background: #f5f5f5; padding: 8px; border-bottom: 1px solid #333; font-size: 12px; }
+        table.ledger td { padding: 8px; border-bottom: 1px solid #eee; font-size: 13px; }
         .text-right { text-align: right; }
         
-        .footer { margin-top: 50px; text-align: center; font-size: 12px; color: #999; }
+        .footer { margin-top: 40px; text-align: center; font-size: 11px; color: #888; border-top: 1px solid #eee; padding-top: 10px; }
       </style>
     </head>
     <body>
-      <div class="page">
-        <div class="header">
-          <div>
-            <h1>Billing Statement</h1>
-            <p style="margin:5px 0 0 0; color:#666;">Query: ${escape(query.queryCode || query.id.slice(0,8))} | ${escape(query.name)}</p>
-          </div>
-          <div class="internal-tag">Internal Record</div>
-        </div>
+      <div class="internal-badge">INTERNAL AGENT RECORD</div>
+      <div class="header">
+        <h1>Billing Statement</h1>
+        <p style="margin:5px 0 0 0;">
+          <strong>ID:</strong> ${escape(query.queryCode || query.id.slice(0,8))} | 
+          <strong>Client:</strong> ${escape(query.name)}
+        </p>
+      </div>
 
-        <div class="summary-grid">
-          <div class="ledger-card">
-            <h3 style="margin:0 0 15px 0; font-family:'Playfair Display'; color:#2c3e50;">Customer Sidebar</h3>
-            <div class="ledger-row"><span>Total Package</span> <span>₹${Number(customer.totalAmount).toLocaleString('en-IN')}</span></div>
-            <div class="ledger-row" style="color:#166534;"><span>Total Received</span> <span>- ₹${Number(customer.totalReceived).toLocaleString('en-IN')}</span></div>
-            <div class="ledger-row total" style="color:${customer.totalPending > 0 ? '#92400e' : '#166534'};">
-              <span>Pending Balance</span> <span>₹${Number(customer.totalPending).toLocaleString('en-IN')}</span>
+      <table class="summary-table">
+        <tr>
+          <td>
+            <div class="card">
+              <h3>Customer Side</h3>
+              <div class="row"><span>Total Package Cost</span> <span>₹${fmt(customer.totalAmount)}</span></div>
+              <div class="row" style="color: #2e7d32;"><span>Total Received</span> <span>- ₹${fmt(customer.totalReceived)}</span></div>
+              <div class="row total-row" style="color: ${customer.totalPending > 0 ? '#b71c1c' : '#2e7d32'};">
+                <span>Pending Balance</span> <span>₹${fmt(customer.totalPending)}</span>
+              </div>
             </div>
-          </div>
-
-          <div class="ledger-card">
-            <h3 style="margin:0 0 15px 0; font-family:'Playfair Display'; color:#2c3e50;">Supplier Sidebar</h3>
-            <div class="ledger-row"><span>Total Supplier Cost</span> <span>₹${Number(supplier.supplierAmount).toLocaleString('en-IN')}</span></div>
-            <div class="ledger-row" style="color:#166534;"><span>Paid to Suppliers</span> <span>- ₹${Number(supplier.supplierReceived).toLocaleString('en-IN')}</span></div>
-            <div class="ledger-row total" style="color:${supplier.supplierPending > 0 ? '#92400e' : '#166534'};">
-              <span>Supplier Pending</span> <span>₹${Number(supplier.supplierPending).toLocaleString('en-IN')}</span>
+          </td>
+          <td>
+            <div class="card">
+              <h3>Supplier Side</h3>
+              <div class="row"><span>Total Supplier Cost</span> <span>₹${fmt(supplier.supplierAmount)}</span></div>
+              <div class="row" style="color: #2e7d32;"><span>Paid to Suppliers</span> <span>- ₹${fmt(supplier.supplierReceived)}</span></div>
+              <div class="row total-row" style="color: ${supplier.supplierPending > 0 ? '#b71c1c' : '#2e7d32'};">
+                <span>Supplier Pending</span> <span>₹${fmt(supplier.supplierPending)}</span>
+              </div>
             </div>
-          </div>
-        </div>
+          </td>
+        </tr>
+      </table>
 
-        <div class="profit-banner">
-          <span>Gross Profit Margin</span>
-          <span>₹${Number(customer.grossProfit).toLocaleString('en-IN')}</span>
-        </div>
+      <div class="profit-box">
+        <span>GROSS PROFIT MARGIN</span>
+        <span>₹${fmt(customer.grossProfit)}</span>
+      </div>
 
-        <h2 class="section-title">Verified Payment History</h2>
-        <table>
-          <thead>
+      <div class="section-title">Verified Payment History</div>
+      <table class="ledger">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Mode</th>
+            <th>Reference Code (UTR)</th>
+            <th class="text-right">Amount</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${payments.map(p => `
             <tr>
-              <th>Date</th>
-              <th>Mode</th>
-              <th>Reference Code (UTR)</th>
-              <th class="text-right">Transaction Amnt</th>
+              <td>${new Date(p.paymentDate).toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' })}</td>
+              <td style="text-transform:uppercase;">${escape(p.mode)}</td>
+              <td>${escape(p.referenceUtr || p.referenceId || '-')}</td>
+              <td class="text-right" style="font-weight:bold; color: #1b5e20;">₹${fmt(p.amount)}</td>
             </tr>
-          </thead>
-          <tbody>
-            ${payments.map(p => `
-              <tr>
-                <td>${new Date(p.paymentDate).toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' })}</td>
-                <td style="text-transform:uppercase;">${escape(p.mode)}</td>
-                <td>${escape(p.referenceUtr || p.referenceId || '-')}</td>
-                <td class="text-right" style="font-weight:600; color:#166534;">₹${Number(p.amount).toLocaleString('en-IN')}</td>
-              </tr>
-            `).join('')}
-            ${payments.length === 0 ? '<tr><td colspan="4" style="text-align:center; padding:30px; color:#999;">No payments recorded yet.</td></tr>' : ''}
-          </tbody>
-        </table>
+          `).join('')}
+          ${payments.length === 0 ? '<tr><td colspan="4" style="text-align:center; padding:20px; color:#999;">No verified payments recorded yet.</td></tr>' : ''}
+        </tbody>
+      </table>
 
-        <div class="footer">
-          Generated on ${new Date().toLocaleString('en-IN')} • TravelCRM Secure Billing Snapshot
-        </div>
+      <div class="footer">
+        Generated on ${new Date().toLocaleString('en-IN')} • Secure Internal Record • TravelCRM
       </div>
     </body>
   </html>
   `;
 };
+
 
 const downloadBillingStatementPdf = async (req, res, next) => {
   try {
@@ -157,13 +177,14 @@ const downloadBillingStatementPdf = async (req, res, next) => {
     });
 
     const pdfBuffer = await pdfService.generatePdfFromHtml(html);
+    const buffer = Buffer.from(pdfBuffer);
 
     res.set({
       'Content-Type': 'application/pdf',
-      'Content-Length': pdfBuffer.length,
+      'Content-Length': buffer.length,
       'Content-Disposition': `attachment; filename="Billing-Statement-${query.queryCode || queryId.slice(0,8)}.pdf"`,
     });
-    res.send(pdfBuffer);
+    res.end(buffer);
   } catch (err) {
     next(err);
   }
