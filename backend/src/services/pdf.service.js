@@ -11,6 +11,23 @@ const logger = require('../utils/logger');
 
 let browserInstance = null;
 let browserLock = false;
+let idleTimer = null;
+
+const IDLE_TIMEOUT = 10 * 60 * 1000; // 10 minutes
+
+/**
+ * Closes the browser after a period of inactivity to save RAM.
+ */
+const startIdleTimer = () => {
+  if (idleTimer) clearTimeout(idleTimer);
+  idleTimer = setTimeout(async () => {
+    if (browserInstance) {
+      logger.info('Closing Chromium due to inactivity (10m idle).');
+      await browserInstance.close().catch(() => {});
+      browserInstance = null;
+    }
+  }, IDLE_TIMEOUT);
+};
 
 /**
  * Shared browser instance provider.
@@ -110,6 +127,9 @@ const generatePdfFromHtml = async (htmlContent) => {
     };
 
     const pdfBuffer = await page.pdf(pdfOptions);
+
+    // Reset the idle timer on successful use
+    startIdleTimer();
 
     return pdfBuffer;
   } catch (error) {
