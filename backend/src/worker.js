@@ -4,7 +4,10 @@
 
 require('dotenv').config();
 const { Worker } = require('bullmq');
+const cron = require('node-cron');
+const runSnapshot = require('./scripts/backup-db');
 const config = require('./config');
+
 const prisma = require('./config/prisma');
 
 console.log('👷 BullMQ Worker service initialized.');
@@ -133,7 +136,19 @@ Please find your proposal attached.
   }
 }, { connection });
 
+// --- Backup Vault Cron (3 AM Daily) ---
+cron.schedule('0 3 * * *', async () => {
+  console.log('⏰ [Cron] Triggering Daily Safety Vault Snapshot...');
+  try {
+    await runSnapshot();
+    console.log('✅ [Cron] Daily Snapshot successfully locked in Vault.');
+  } catch (err) {
+    console.error('❌ [CronError] Daily Snapshot failed:', err.message);
+  }
+});
+
 // Graceful Shutdown — handle both SIGINT (Ctrl+C) and SIGTERM (Railway/Docker)
+
 const gracefulShutdown = async (signal) => {
   console.log(`\n🛑 Received ${signal}. Shutting down workers gracefully...`);
   if (pdfWorker) await pdfWorker.close();
