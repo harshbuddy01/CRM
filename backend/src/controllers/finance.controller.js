@@ -5,6 +5,7 @@
 const financeService = require('../services/finance.service');
 const prisma = require('../config/prisma');
 const pdfService = require('../services/pdf.service');
+const { getArtisanalTemplate } = require('../templates/billingStatement.template');
 
 const escapeHtml = (str) => String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
@@ -188,12 +189,13 @@ const downloadBillingStatementPdf = async (req, res, next) => {
     const supplierPending = Math.max(0, supplierAmount - supplierReceived);
     const grossProfit = totalAmount - supplierAmount;
 
-    // 2. Generate PDF
-    const html = generateBillingStatementHtml({
+    // 2. Generate PDF using Artisanal Template
+    const html = getArtisanalTemplate({
       query,
       customer: { totalAmount, totalReceived, totalPending, grossProfit },
       supplier: { supplierAmount, supplierReceived, supplierPending },
-      payments: customerPayments
+      payments: customerPayments,
+      date: new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
     });
 
     const pdfBuffer = await pdfService.generatePdfFromHtml(html);
