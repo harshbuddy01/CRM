@@ -92,10 +92,17 @@ const sendQueryEmail = async ({ queryId, templateId, subject, body, cc, sentBy }
   const signature = allSettings.emailSignature || '';
   
   // 4. Wrap in Artisanal Frame
+  const isProposal = finalSubject.toLowerCase().includes('proposal') || finalSubject.toLowerCase().includes('itinerary');
+  
+  if (isProposal) {
+    finalBody = `<p style="font-size: 20px; font-weight: 700; color: #a5813b; margin-bottom: 20px;">A handcrafted invitation for your mountain escape awaits...</p>${finalBody}`;
+  }
+
   const wrappedBody = getArtisanalEmailFrame({
     subject: finalSubject,
     bodyContent: finalBody,
-    agentSignature: signature
+    agentSignature: signature,
+    inviteType: isProposal ? 'proposal' : 'general'
   });
 
   // 5. Send via SendGrid (Queue it)
