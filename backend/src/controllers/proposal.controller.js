@@ -7,6 +7,51 @@ const pdfService = require('../services/pdf.service');
 const queueService = require('../services/queue.service');
 const prisma = require('../config/prisma');
 const config = require('../config');
+const cloudinary = require('../config/cloudinary');
+const logger = require('../utils/logger');
+
+// ── PDF Cache Helpers ──────────────────────────────────────────
+const { uploadPdfToVault, getPdfStreamFromVault } = require('../utils/vault');
+
+/**
+ * Generate PDF for a proposal, cache it in MinIO Vault, and return the buffer.
+ * If a cached PDF exists (pdfUrl is set), skip regeneration.
+ */
+const getOrGeneratePdf = async (proposal) => {
+  // Use cached PDF if available
+  if (proposal.pdfUrl && proposal.pdfStatus === 'ready' && proposal.pdfUrl.startsWith('minio://')) {
+    try {
+      // Extract filename from 'minio://bucket-name/pdfs/filename.pdf'
+      const parts = proposal.pdfUrl.split('/');
+      const filename = parts[parts.length - 1];
+      
+      const stream = await getPdfStreamFromVault(filename);
+      const chunks = [];
+      for await (const chunk of stream) chunks.push(chunk);
+      return Buffer.concat(chunks);
+    } catch (err) {
+      logger.warn(`[PDF Cache] Failed to fetch cached PDF for ${proposal.id} from Vault, regenerating...`);
+    }
+  }
+
+  // Generate fresh PDF
+  const htmlContent = generateProposalHtml(proposal);
+  const pdfBuffer = await pdfService.generatePdfFromHtml(htmlContent);
+  const buffer = Buffer.from(pdfBuffer);
+  const filename = `proposal-${proposal.id}.pdf`;
+
+  // Cache to MinIO (non-blocking — don't hold up the response)
+  uploadPdfToVault(filename, buffer)
+    .then((url) => {
+      prisma.proposal.update({
+        where: { id: proposal.id },
+        data: { pdfUrl: url, pdfStatus: 'ready' }
+      }).catch(e => logger.error('[PDF Cache] DB update failed:', e.message));
+    })
+    .catch(e => logger.error('[PDF Cache] Vault upload failed:', e.message));
+
+  return buffer;
+};
 
 // Constants for input validation
 const ALLOWED_EVENTS = ['viewed', 'whatsapp_opened', 'email_opened', 'downloaded'];
@@ -248,10 +293,20 @@ const generateProposalHtml = (proposal) => {
               const events = day.events || [];
               const dayImage = day.imageUrl;
               
+              let dateText = '';
+              if (itinerary?.travelDateFrom) {
+                const dateObj = new Date(itinerary.travelDateFrom);
+                dateObj.setDate(dateObj.getDate() + day.dayNumber - 1);
+                dateText = dateObj.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+              }
+              
               return `
               <div class="day-entry">
                 <div class="day-title-wrap">
-                  <span class="day-number">Day ${day.dayNumber}</span>
+                  <div style="display: flex; flex-direction: column;">
+                    <span class="day-number">Day ${day.dayNumber}</span>
+                    ${dateText ? `<span style="font-family: 'EB Garamond', serif; color: #a1a1a1; font-size: 14px; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 5px;">${dateText}</span>` : ''}
+                  </div>
                   <h3>${escapeHtml(day.title || 'In Search of Magic')}</h3>
                 </div>
                 <div class="day-content">
@@ -410,18 +465,12 @@ const getProposalById = async (req, res, next) => {
   }
 };
 
-// TODO: Consider moving PDF generation to BullMQ worker for better scalability.
-//       This would change the flow to async: API returns a job ID, frontend polls for result.
-//       For now, synchronous generation is kept for simpler UX (instant download).
+// PDF download with Cloudinary caching — first download generates, subsequent ones are instant.
 const downloadPdf = async (req, res, next) => {
   try {
     const proposal = await proposalService.getProposalById(req.params.id);
     
-    // Use the premium HTML generator
-    const htmlContent = generateProposalHtml(proposal);
-
-    const pdfBuffer = await pdfService.generatePdfFromHtml(htmlContent);
-    const buffer = Buffer.from(pdfBuffer);
+    const buffer = await getOrGeneratePdf(proposal);
 
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Length', buffer.length);
@@ -436,11 +485,11 @@ const downloadPdf = async (req, res, next) => {
         entityId: proposal.queryId,
         newValue: { version: proposal.version }
       }
-    }).catch(err => console.error('History Log Error:', err));
+    }).catch(err => logger.error('History Log Error:', err));
 
     res.end(buffer);
   } catch (error) {
-    console.error('PDF Generation Controller Error:', error.message);
+    logger.error('PDF Generation Controller Error:', error.message);
     next(error);
   }
 };
@@ -507,16 +556,15 @@ const sendEmail = async (req, res, next) => {
       return res.status(429).json({ success: false, message: 'Please wait 30 seconds before sending again' });
     }
 
-    const { to, cc, subject, body } = req.body;
+    // Accept both 'body' and 'bodyRichText' from frontend (fixes field mismatch)
+    const { to, cc, subject, body, bodyRichText } = req.body;
     const finalTo = to || proposal.query.email;
     if (!finalTo) {
       return res.status(400).json({ success: false, message: 'No recipient email provided.' });
     }
 
-    // Use the premium HTML generator
-    const proposalHtmlContent = generateProposalHtml(proposal);
-    const generatedPdfBuffer = await pdfService.generatePdfFromHtml(proposalHtmlContent);
-    const pdfBuffer = Buffer.from(generatedPdfBuffer);
+    // Use cached PDF instead of regenerating (30s → instant)
+    const pdfBuffer = await getOrGeneratePdf(proposal);
 
     // Prepare Attachments for Nodemailer
     const attachments = [
@@ -536,7 +584,7 @@ const sendEmail = async (req, res, next) => {
     }
 
     const finalSubject = subject || 'Your Travel Proposal is Ready!';
-    const htmlContent = body || `<p>Hi ${proposal.query.name}, your travel proposal is ready.</p>`;
+    const htmlContent = body || bodyRichText || `<p>Hi ${proposal.query.name}, your travel proposal is ready.</p>`;
 
     // Prepare Nodemailer Message
     const msg = {
@@ -550,7 +598,7 @@ const sendEmail = async (req, res, next) => {
       msg.cc = cc.split(',').map(e => e.trim()).filter(Boolean).join(',');
     }
 
-    // Send Email Synchronously
+    // Send Email via connection pool (fast with reused connections)
     await sendMail(msg);
 
     // Update lastSentAt
@@ -569,7 +617,7 @@ const sendEmail = async (req, res, next) => {
 
     res.json({ success: true, message: 'Email sent successfully with proposal attached.' });
   } catch (error) {
-    console.error('Proposal Email Send Error:', error.message);
+    logger.error('Proposal Email Send Error:', error.message);
     next(error);
   }
 };

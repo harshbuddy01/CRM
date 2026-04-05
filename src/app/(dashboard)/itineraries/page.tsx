@@ -270,6 +270,14 @@ export default function ItinerariesPage() {
                 {/* Content */}
                 <div className="p-4 space-y-3">
                   <div>
+                    {viewType === 'clients' && item.proposals?.[0]?.query && (
+                      <div className="mb-2">
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-bold bg-blue-50 text-blue-700 border border-blue-100">
+                          <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
+                          For: {item.proposals[0].query.name} <span className="opacity-60 text-[10px] uppercase font-black tracking-wider ml-1">{item.proposals[0].query.queryCode}</span>
+                        </span>
+                      </div>
+                    )}
                     <h3 className="font-bold text-slate-900 text-base leading-tight line-clamp-1">{item.title}</h3>
                     {destinations?.length > 0 && (
                       <div className="flex items-center gap-1 mt-1.5 flex-wrap">

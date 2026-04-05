@@ -21,6 +21,7 @@ import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import DOMPurify from 'dompurify';
+import { format, addDays } from 'date-fns';
 import { MediaLibraryModal } from '@/components/MediaLibraryModal';
 
 const EVENT_TYPES = [
@@ -227,6 +228,7 @@ export default function ItineraryBuilderPage() {
 
   const selectedDay = itinerary.days?.find((d: any) => d.id === selectedDayId);
   const allDestinations = Array.from(new Set(itinerary.days?.map((d: any) => d.destination?.name).filter(Boolean))) as string[];
+  const clientQuery = itinerary.proposals?.[0]?.query;
 
   return (
     <div className="space-y-4 pb-24 md:pb-8">
@@ -269,6 +271,16 @@ export default function ItineraryBuilderPage() {
                 <Link href="/itineraries" className="inline-flex items-center gap-1 text-white/70 hover:text-white text-xs font-medium mb-3 transition-colors">
                   <ArrowLeft className="w-3.5 h-3.5" /> Back to Itineraries
                 </Link>
+                
+                {clientQuery && (
+                  <div className="mb-2">
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-bold bg-blue-50 text-blue-700 shadow-xl border border-blue-400/30">
+                      <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></span>
+                      Draft Working Copy For: {clientQuery.name} 
+                      <span className="opacity-60 text-[10px] uppercase font-black tracking-wider ml-1">({clientQuery.queryCode})</span>
+                    </span>
+                  </div>
+                )}
                 {editingTitle ? (
                   <div className="flex items-center gap-2 max-w-xl">
                     <Input 
@@ -299,6 +311,28 @@ export default function ItineraryBuilderPage() {
                     {allDestinations.map((d: string) => <span key={d} className="text-[10px] uppercase tracking-widest bg-white/20 px-2 py-0.5 rounded font-bold text-white shadow-sm border border-white/10">{d}</span>)}
                   </div>
                 )}
+
+                {/* Travel Date Pickers */}
+                <div className="flex items-center gap-3 mt-4">
+                  <div className="flex items-center gap-2 bg-black/20 p-1.5 rounded-lg border border-white/10 backdrop-blur-sm">
+                    <CalendarRange className="w-4 h-4 text-white/70 ml-1" />
+                    <input 
+                      type="date"
+                      value={itinerary.travelDateFrom ? format(new Date(itinerary.travelDateFrom), 'yyyy-MM-dd') : ''}
+                      onChange={(e) => updateMut.mutate({ travelDateFrom: e.target.value || null })}
+                      className="bg-transparent text-xs font-bold text-white outline-none [&::-webkit-calendar-picker-indicator]:filter [&::-webkit-calendar-picker-indicator]:invert cursor-pointer"
+                      title="Travel Date (From)"
+                    />
+                    <span className="text-white/40 font-bold px-1">→</span>
+                    <input 
+                      type="date"
+                      value={itinerary.travelDateTo ? format(new Date(itinerary.travelDateTo), 'yyyy-MM-dd') : ''}
+                      onChange={(e) => updateMut.mutate({ travelDateTo: e.target.value || null })}
+                      className="bg-transparent text-xs font-bold text-white outline-none [&::-webkit-calendar-picker-indicator]:filter [&::-webkit-calendar-picker-indicator]:invert cursor-pointer"
+                      title="Travel Date (To)"
+                    />
+                  </div>
+                </div>
                 <div className="flex items-center gap-2 mt-2">
                   <span className="bg-white/20 px-2 py-1 flex items-center rounded-md font-bold text-[10px] uppercase tracking-wider text-white border border-white/10">
                     {itinerary.status}
@@ -404,7 +438,14 @@ export default function ItineraryBuilderPage() {
                           {day.dayNumber}
                         </div>
                         <div className="flex-1 min-w-0 pr-6">
-                          <div className="font-bold text-xs truncate">{day.destination?.name || 'Day ' + day.dayNumber}</div>
+                          <div className="font-bold text-xs truncate">
+                            {day.destination?.name || 'Day ' + day.dayNumber}
+                          </div>
+                          {itinerary.travelDateFrom && (
+                            <div className="text-[10px] text-slate-400 font-medium mt-0.5">
+                              {format(addDays(new Date(itinerary.travelDateFrom), day.dayNumber - 1), 'MMM d, yyyy')}
+                            </div>
+                          )}
                         </div>
                       </button>
                       <button 
@@ -482,8 +523,18 @@ export default function ItineraryBuilderPage() {
                             </div>
                             <div>
                               <h3 className="text-lg font-black tracking-tight text-slate-800 uppercase">Day {selectedDay.dayNumber} Timeline</h3>
-                              <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none mt-0.5">
-                                <MapPin className="w-3 h-3" /> {selectedDay.destination?.name || 'Destination Unset'}
+                              <div className="flex items-center gap-2 mt-1">
+                                <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">
+                                  <MapPin className="w-3 h-3" /> {selectedDay.destination?.name || 'Destination Unset'}
+                                </div>
+                                {itinerary.travelDateFrom && (
+                                  <>
+                                    <span className="text-slate-300">•</span>
+                                    <div className="flex items-center gap-1 text-[10px] font-bold text-slate-500 uppercase tracking-widest leading-none">
+                                      {format(addDays(new Date(itinerary.travelDateFrom), selectedDay.dayNumber - 1), 'EEEE, MMM d yyyy')}
+                                    </div>
+                                  </>
+                                )}
                               </div>
                             </div>
                           </div>

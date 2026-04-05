@@ -31,7 +31,7 @@ const createExpense = (data) => {
 };
 
 const updateExpense = (id, data) => {
-  if (data.amount) data.amount = parseFloat(data.amount);
+  if (data.amount !== undefined) data.amount = parseFloat(data.amount);
   if (data.expenseDate) data.expenseDate = new Date(data.expenseDate);
   return prisma.expense.update({ where: { id }, data });
 };
@@ -149,10 +149,11 @@ const createInvoice = async (data) => {
 };
 
 const updateInvoice = (id, data) => {
-  if (data.subtotal) data.subtotal = parseFloat(data.subtotal);
-  if (data.taxPercent) data.taxPercent = parseFloat(data.taxPercent);
-  if (data.taxAmount) data.taxAmount = parseFloat(data.taxAmount);
-  if (data.totalAmount) data.totalAmount = parseFloat(data.totalAmount);
+  if (data.subtotal !== undefined) data.subtotal = parseFloat(data.subtotal);
+  if (data.taxPercent !== undefined) data.taxPercent = parseFloat(data.taxPercent);
+  if (data.taxAmount !== undefined) data.taxAmount = parseFloat(data.taxAmount);
+  if (data.totalAmount !== undefined) data.totalAmount = parseFloat(data.totalAmount);
+  if (data.discountAmount !== undefined) data.discountAmount = parseFloat(data.discountAmount);
   if (data.dueDate) data.dueDate = new Date(data.dueDate);
   if (typeof data.items === 'string') data.items = JSON.parse(data.items);
   if (data.status === 'sent' && !data.sentAt) data.sentAt = new Date();
@@ -275,7 +276,7 @@ const getPnlSummary = async (year, month) => {
     }),
     // Vendor payouts
     prisma.vendorPayment.aggregate({
-      where: { paymentDate: { gte: startDate, lte: endDate } },
+      where: { paymentDate: { gte: startDate, lte: endDate }, deletedAt: null },
       _sum: { amount: true },
     }),
   ]);

@@ -66,6 +66,7 @@ export function EmailComposeModal({ isOpen, onClose, queryId, customerName, cust
         templateId: templateId !== 'none' ? templateId : undefined,
         subject,
         bodyRichText,
+        body: bodyRichText,
         cc: cc || undefined,
       });
     },

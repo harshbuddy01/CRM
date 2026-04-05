@@ -102,17 +102,18 @@ const listQueries = async ({
   }
 
   const offset = (page - 1) * limit;
-  const queries = await prisma.query.findMany({
-    where,
-    skip: offset,
-    take: parseInt(limit, 10),
-    orderBy: { createdAt: 'desc' },
-    include: {
-      assignedUser: { select: { name: true } },
-    },
-  });
-
-  const total = await prisma.query.count({ where });
+  const [queries, total] = await Promise.all([
+    prisma.query.findMany({
+      where,
+      skip: offset,
+      take: parseInt(limit, 10),
+      orderBy: { createdAt: 'desc' },
+      include: {
+        assignedUser: { select: { name: true } },
+      },
+    }),
+    prisma.query.count({ where }),
+  ]);
 
   return { queries, total, page, totalPages: Math.ceil(total / limit) };
 };

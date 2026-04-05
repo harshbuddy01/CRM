@@ -27,6 +27,16 @@ const fullInclude = {
     },
   },
   galleryImages: { orderBy: { sortOrder: 'asc' } },
+  proposals: {
+    where: { deletedAt: null },
+    orderBy: { version: 'desc' },
+    take: 1,
+    select: {
+      id: true,
+      version: true,
+      query: { select: { id: true, queryCode: true, name: true, travelDateFrom: true, travelDateTo: true, destination: true } },
+    },
+  },
 };
 
 const formatItinerary = (itinerary) => {
@@ -75,6 +85,8 @@ const create = async (userId, data) => {
       title,
       description: description || null,
       nights: data.nights !== undefined ? Number(data.nights) : null,
+      travelDateFrom: data.travelDateFrom ? new Date(data.travelDateFrom) : null,
+      travelDateTo: data.travelDateTo ? new Date(data.travelDateTo) : null,
       createdBy: userId,
       days: days && days.length
         ? {
@@ -139,8 +151,8 @@ const list = async (options = {}) => {
     prisma.itinerary.findMany({
       where,
       orderBy: { createdAt: 'desc' },
-      skip: (page - 1) * limit,
-      take: limit,
+      skip: (skip - 1) * take,
+      take: take,
       include: {
         creator: { select: { id: true, name: true } },
         days: {
@@ -150,6 +162,16 @@ const list = async (options = {}) => {
           },
         },
         _count: { select: { days: true, galleryImages: true } },
+        proposals: {
+          where: { deletedAt: null },
+          orderBy: { version: 'desc' },
+          take: 1,
+          select: {
+            id: true,
+            version: true,
+            query: { select: { id: true, queryCode: true, name: true } },
+          },
+        },
       },
     }),
     prisma.itinerary.count({ where }),
@@ -176,7 +198,8 @@ const update = async (id, data) => {
     title, description, status, totalCost, perPersonCost,
     currency, adults, children, nights, markupPct, 
     inclusionsHtml, exclusionsHtml, paymentPolicyHtml, cancellationPolicyHtml, termsHtml,
-    costingBreakdown, sellingPrice
+    costingBreakdown, sellingPrice, travelDateFrom, travelDateTo,
+    coverPhotoUrl
   } = data;
 
   if (status !== undefined && !['draft', 'published'].includes(status)) {
@@ -195,6 +218,9 @@ const update = async (id, data) => {
       ...(title !== undefined && { title }),
       ...(description !== undefined && { description }),
       ...(status !== undefined && { status }),
+      ...(coverPhotoUrl !== undefined && { coverPhotoUrl }),
+      ...(travelDateFrom !== undefined && { travelDateFrom: travelDateFrom ? new Date(travelDateFrom) : null }),
+      ...(travelDateTo !== undefined && { travelDateTo: travelDateTo ? new Date(travelDateTo) : null }),
       ...(totalCost !== undefined && { totalCost: validateNum(totalCost) }),
       ...(perPersonCost !== undefined && { perPersonCost: validateNum(perPersonCost) }),
       ...(currency !== undefined && { currency }),
@@ -387,7 +413,7 @@ const publishToTemplates = async (id, userId) => {
       },
       galleryImages: {
         create: source.galleryImages.map((img) => ({
-          url: img.url,
+          imageUrl: img.imageUrl,
           caption: img.caption,
           sortOrder: img.sortOrder,
         })),

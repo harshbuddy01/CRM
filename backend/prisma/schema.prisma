@@ -1002,6 +1002,8 @@ model Itinerary {
   adults         Int       @default(2)
   children       Int       @default(0)
   nights         Int?      @map("nights")
+  travelDateFrom DateTime? @map("travel_date_from") @db.Date
+  travelDateTo   DateTime? @map("travel_date_to") @db.Date
   markupPct      Decimal?  @map("markup_pct") @db.Decimal(5, 2)
   inclusionsHtml         String?   @map("inclusions_html") @db.Text
   exclusionsHtml         String?   @map("exclusions_html") @db.Text
