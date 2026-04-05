@@ -168,8 +168,11 @@ apiRouter.use('/', require('./routes/voucher.routes'));
 apiRouter.use('/', require('./routes/query-document.routes'));
 // Itinerary Builder System
 apiRouter.use('/itineraries', require('./routes/itinerary.routes'));
+// System Admin (Backups, Logs)
+apiRouter.use('/admin', require('./routes/admin.routes'));
 
 // Mount the router under both prefixes
+
 app.use('/v1', apiRouter);
 app.use('/api/v1', apiRouter);
 
