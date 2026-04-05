@@ -7,6 +7,8 @@ const prisma = require('../config/prisma');
 const cloudinary = require('../config/cloudinary');
 const { nanoid } = require('nanoid');
 const { NotFoundError, ValidationError } = require('../utils/AppError');
+const { syncToMeili, removeFromMeili } = require('../utils/meilisearch');
+
 
 // ── Helpers ──────────────────────────────────────────────────
 
@@ -68,7 +70,7 @@ const create = async (userId, data) => {
   const { title, description, days } = data;
   if (!title) throw new ValidationError('Title is required');
 
-  return prisma.itinerary.create({
+  const itinerary = await prisma.itinerary.create({
     data: {
       title,
       description: description || null,
@@ -100,7 +102,21 @@ const create = async (userId, data) => {
     },
     include: fullInclude,
   });
+
+  // MeiliSync
+  syncToMeili('itineraries', [{
+    id: itinerary.id,
+    title: itinerary.title,
+    description: itinerary.description,
+    image: itinerary.coverPhotoUrl,
+    totalDays: itinerary.days.length,
+    sellingPrice: Number(itinerary.sellingPrice || itinerary.totalCost || 0),
+    destinations: [...new Set(itinerary.days.map(d => d.destination?.name).filter(Boolean))],
+    createdAt: itinerary.createdAt
+  }]);
+
   return formatItinerary(itinerary);
+
 };
 
 const list = async (options = {}) => {
@@ -230,15 +246,34 @@ const update = async (id, data) => {
     }
   }
 
+  // MeiliSync
+  syncToMeili('itineraries', [{
+    id: updated.id,
+    title: updated.title,
+    description: updated.description,
+    image: updated.coverPhotoUrl,
+    totalDays: updated.days.length,
+    sellingPrice: Number(updated.sellingPrice || updated.totalCost || 0),
+    destinations: [...new Set(updated.days.map(d => d.destination?.name).filter(Boolean))],
+    createdAt: updated.createdAt
+  }]);
+
   return formatItinerary(updated);
+
 };
 
 const remove = async (id) => {
   await getById(id);
-  return prisma.itinerary.update({
+  const result = await prisma.itinerary.update({
     where: { id },
     data: { deletedAt: new Date() },
   });
+
+  // MeiliSync (Remove from search index)
+  removeFromMeili('itineraries', id);
+
+  return result;
+
 };
 
 const duplicate = async (id, userId) => {

@@ -4,6 +4,8 @@
 
 const prisma = require('../config/prisma');
 const { NotFoundError, ValidationError } = require('../utils/AppError');
+const { syncToMeili, removeFromMeili } = require('../utils/meilisearch');
+
 
 // --- DESTINATIONS ---
 
@@ -16,7 +18,7 @@ const listDestinations = async (isActiveOnly = false) => {
 };
 
 const createDestination = async (data) => {
-  return await prisma.destination.create({
+  const dest = await prisma.destination.create({
     data: {
       name: data.name,
       country: data.country,
@@ -24,13 +26,25 @@ const createDestination = async (data) => {
       isActive: data.isActive !== undefined ? data.isActive : true,
     },
   });
+
+  // MeiliSync
+  syncToMeili('destinations', [{
+    id: dest.id,
+    name: dest.name,
+    country: dest.country,
+    description: dest.description,
+    isActive: dest.isActive
+  }]);
+
+  return dest;
+
 };
 
 const updateDestination = async (id, data) => {
   const existing = await prisma.destination.findUnique({ where: { id } });
   if (!existing) throw new NotFoundError('Destination');
 
-  return await prisma.destination.update({
+  const updated = await prisma.destination.update({
     where: { id },
     data: {
       name: data.name,
@@ -39,13 +53,30 @@ const updateDestination = async (id, data) => {
       isActive: data.isActive !== undefined ? data.isActive : existing.isActive,
     },
   });
+
+  // MeiliSync
+  syncToMeili('destinations', [{
+    id: updated.id,
+    name: updated.name,
+    country: updated.country,
+    description: updated.description,
+    isActive: updated.isActive
+  }]);
+
+  return updated;
+
 };
 
 const deleteDestination = async (id) => {
   const existing = await prisma.destination.findUnique({ where: { id } });
   if (!existing) throw new NotFoundError('Destination');
   await prisma.destination.delete({ where: { id } });
+
+  // MeiliSync
+  removeFromMeili('destinations', id);
+
   return true;
+
 };
 
 // --- HOTELS ---
