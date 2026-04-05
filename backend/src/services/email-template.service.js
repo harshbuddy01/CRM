@@ -1,4 +1,5 @@
 const prisma = require('../config/prisma');
+const { getArtisanalEmailFrame } = require('../templates/artisanalEmail.template');
 
 const createTemplate = async (data) => {
   return await prisma.emailTemplate.create({
@@ -90,17 +91,20 @@ const sendQueryEmail = async ({ queryId, templateId, subject, body, cc, sentBy }
   const allSettings = await orgSettingsService.getAllSettings();
   const signature = allSettings.emailSignature || '';
   
-  if (signature) {
-    finalBody += `<br><br>${signature}`;
-  }
+  // 4. Wrap in Artisanal Frame
+  const wrappedBody = getArtisanalEmailFrame({
+    subject: finalSubject,
+    bodyContent: finalBody,
+    agentSignature: signature
+  });
 
-  // 4. Send via SendGrid (Queue it)
+  // 5. Send via SendGrid (Queue it)
   const queueService = require('./queue.service');
   await queueService.enqueueEmailJob(
     queryId,
     query.email,
     finalSubject,
-    finalBody,
+    wrappedBody,
     cc
   );
 
