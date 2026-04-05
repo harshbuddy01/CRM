@@ -15,15 +15,15 @@ import { Label } from '@/components/ui/label';
 export function BillingTab({ queryId }: { queryId: string }) {
   const queryClient = useQueryClient();
 
-  const { data: proposals, isLoading: proposalsLoading } = useQuery({
+  const { data: proposals, isLoading: proposalsLoading, isError: proposalsError } = useQuery({
     queryKey: ['proposals', queryId],
     queryFn: async () => {
       const res = await api.get(`/queries/${queryId}/proposals`);
-      return res.data.data;
+      return res.data.data || [];
     },
   });
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError: billingError } = useQuery({
     queryKey: ['billing-summary', queryId],
     queryFn: async () => {
       const res = await api.get(`/queries/${queryId}/billing-summary`);
@@ -31,9 +31,30 @@ export function BillingTab({ queryId }: { queryId: string }) {
     },
   });
 
-  const hasConfirmedProposal = proposals?.some((p: any) => p.status === 'confirmed');
+  if (isLoading || proposalsLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center p-12 space-y-4">
+        <Loader2 className="w-8 h-8 animate-spin text-primary/40" />
+        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest animate-pulse">Synchronizing Ledger...</p>
+      </div>
+    );
+  }
 
-  if (isLoading || proposalsLoading) return <div className="flex justify-center p-8"><Loader2 className="w-6 h-6 animate-spin" /></div>;
+  if (proposalsError || billingError) {
+    return (
+      <Card className="border-red-100 bg-red-50/30">
+        <CardContent className="p-8 text-center">
+          <p className="text-red-600 font-bold mb-2">Sync Connection Interrupted</p>
+          <p className="text-xs text-red-400">We couldn't retrieve the latest billing data. Please try again.</p>
+          <Button variant="outline" size="sm" className="mt-4" onClick={() => queryClient.invalidateQueries({ queryKey: [queryId] })}>
+            Retry Connection
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const hasConfirmedProposal = Array.isArray(proposals) && proposals.some((p: any) => p.status === 'confirmed');
 
   if (!hasConfirmedProposal) {
     return (

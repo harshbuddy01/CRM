@@ -230,54 +230,49 @@ router.get('/:id/billing-summary', async (req, res, next) => {
     const prisma = require('../config/prisma');
     const queryId = req.params.id;
 
-    // Get the latest proposal selling price
-    const proposal = await prisma.proposal.findFirst({
-      where: { queryId, deletedAt: null },
-      orderBy: { version: 'desc' },
-      select: { sellingPrice: true, totalCost: true },
-    });
+    // Parallelize all independent DB fetches for maximum 'Bill' tab speed
+    const [proposal, customerPayments, bookingServices, vendorPayments, invoice] = await Promise.all([
+      prisma.proposal.findFirst({
+        where: { queryId, deletedAt: null },
+        orderBy: { version: 'desc' },
+        select: { sellingPrice: true, totalCost: true },
+      }),
+      prisma.payment.findMany({
+        where: { queryId, deletedAt: null },
+        include: { user: { select: { id: true, name: true } } },
+        orderBy: { paymentDate: 'desc' },
+      }),
+      prisma.bookingService.findMany({ where: { queryId } }),
+      prisma.vendorPayment.findMany({
+        where: { queryId, deletedAt: null },
+        include: { user: { select: { id: true, name: true } } },
+        orderBy: { paymentDate: 'desc' },
+      }),
+      prisma.invoice.findFirst({
+        where: { queryId, deletedAt: null },
+        orderBy: { createdAt: 'desc' },
+        select: { id: true, invoiceNumber: true, status: true, totalAmount: true },
+      })
+    ]);
 
-    // Customer payments
-    const customerPayments = await prisma.payment.findMany({
-      where: { queryId, deletedAt: null },
-      include: { user: { select: { id: true, name: true } } },
-      orderBy: { paymentDate: 'desc' },
-    });
-
+    // Financial Safety Guards — Ensure no NaN or undefined enters the ledger
     const totalAmount = Number(proposal?.sellingPrice || 0);
-    const totalReceived = customerPayments
+    const totalReceived = (customerPayments || [])
       .filter(p => p.status === 'verified' || p.status === 'banked')
-      .reduce((sum, p) => sum + Number(p.amount), 0);
-    const totalPending = totalAmount - totalReceived;
+      .reduce((sum, p) => sum + Number(p.amount || 0), 0);
+    const totalPending = Math.max(0, totalAmount - totalReceived);
 
-    // Supplier side — from BookingServices + VendorPayments
-    const bookingServices = await prisma.bookingService.findMany({ where: { queryId } });
-    const supplierAmount = bookingServices.reduce((sum, bs) => sum + Number(bs.totalCost), 0);
-    const bookingServicePaid = bookingServices.reduce((sum, bs) => sum + Number(bs.supplierAmountPaid), 0);
-
-    // Supplier payments recorded directly against this query
-    const vendorPayments = await prisma.vendorPayment.findMany({
-      where: { queryId, deletedAt: null },
-      include: { user: { select: { id: true, name: true } } },
-      orderBy: { paymentDate: 'desc' },
-    });
-    const vendorPaymentSum = vendorPayments.reduce((sum, vp) => sum + Number(vp.amount), 0);
-    // Use vendorPayments as the canonical supplier payment source if present
+    const supplierAmount = (bookingServices || []).reduce((sum, bs) => sum + Number(bs.totalCost || 0), 0);
+    const bookingServicePaid = (bookingServices || []).reduce((sum, bs) => sum + Number(bs.supplierAmountPaid || 0), 0);
+    const vendorPaymentSum = (vendorPayments || []).reduce((sum, vp) => sum + Number(vp.amount || 0), 0);
+    
     const supplierReceived = (vendorPayments && vendorPayments.length > 0) ? vendorPaymentSum : bookingServicePaid;
     const supplierPending = Math.max(0, supplierAmount - supplierReceived);
-
     const grossProfit = totalAmount - supplierAmount;
 
-    // Check if invoice exists (exclude soft-deleted)
-    const invoice = await prisma.invoice.findFirst({
-      where: { queryId, deletedAt: null },
-      orderBy: { createdAt: 'desc' },
-      select: { id: true, invoiceNumber: true, status: true, totalAmount: true },
-    });
-
-    // Tag payments with type for frontend discrimination
-    const taggedCustomerPayments = customerPayments.map(p => ({ ...p, _type: 'customer' }));
-    const taggedVendorPayments = vendorPayments.map(p => ({ ...p, _type: 'vendor' }));
+    // Tag payments for frontend categorization
+    const taggedCustomerPayments = (customerPayments || []).map(p => ({ ...p, _type: 'customer' }));
+    const taggedVendorPayments = (vendorPayments || []).map(p => ({ ...p, _type: 'vendor' }));
 
     res.json({
       success: true,
