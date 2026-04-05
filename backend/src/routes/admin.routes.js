@@ -6,14 +6,16 @@
 const express = require('express');
 const router = express.Router();
 const runSnapshot = require('../scripts/backup-db');
-const { protect, restrictTo } = require('../middlewares/auth');
+const { authenticate } = require('../middlewares/authenticate');
+const { can } = require('../middlewares/can');
 
 /**
  * @route   POST /api/v1/admin/backup/trigger
  * @desc    Manually trigger a Safety Vault backup
  * @access  Admin Only
  */
-router.post('/backup/trigger', protect, restrictTo('admin'), async (req, res, next) => {
+router.post('/backup/trigger', authenticate, can('system.backup'), async (req, res, next) => {
+
   console.log(`🚀 [Admin] Backup triggered by ${req.user.email}`);
 
   try {
