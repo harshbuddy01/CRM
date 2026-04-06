@@ -203,13 +203,35 @@ export default function SharePage() {
                 <tbody className="divide-y divide-slate-50">
                   {itinerary.days?.map((day: any) => day.events?.filter((e: any) => e.type === 'accommodation').map((ev: any, idx: number) => (
                     <tr key={ev.id ?? `day-${day.dayNumber}-accom-${idx}`} className="hover:bg-slate-50/70 transition-all duration-300 group/row">
-                      <td className="py-8 px-4"><span className="bg-slate-100 px-4 py-2 rounded-2xl font-black text-xs text-slate-500">Day {day.dayNumber}</span></td>
-                      <td className="py-8 px-4 font-black text-xl text-slate-800 flex items-center gap-3">
-                         {ev.metadata?.hotelName || ev.title}
+                      <td className="py-8 px-4">
+                        <span className="bg-slate-100 px-4 py-2 rounded-2xl font-black text-xs text-slate-500">Day {day.dayNumber}</span>
+                        {(ev.metadata?.checkInDate || ev.metadata?.checkOutDate) && (
+                          <div className="mt-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-2">
+                             {ev.metadata.checkInDate && <div>In: {ev.metadata.checkInDate}</div>}
+                             {ev.metadata.checkOutDate && <div>Out: {ev.metadata.checkOutDate}</div>}
+                          </div>
+                        )}
                       </td>
-                      <td className="py-8 px-4 text-slate-600 font-bold font-handwriting text-2xl drop-shadow-sm">{ev.metadata?.roomType || 'Standard Comfort'}</td>
+                      <td className="py-8 px-4 font-black text-xl text-slate-800 flex flex-col gap-1 items-start">
+                         {ev.metadata?.hotelName || ev.title}
+                         {ev.metadata?.checkInTime && (
+                           <span className="flex items-center gap-1 text-[10px] text-blue-400 uppercase tracking-widest font-black">
+                             <LogIn className="w-3 h-3" /> Arriving {ev.metadata.checkInTime}
+                           </span>
+                         )}
+                      </td>
+                      <td className="py-8 px-4 text-slate-600 font-bold font-handwriting text-2xl drop-shadow-sm">
+                        {ev.metadata?.roomType || 'Standard Comfort'}
+                        {ev.metadata?.category && (
+                          <div className="flex gap-0.5 mt-2">
+                            {Array.from({ length: parseInt(ev.metadata.category) || 3 }).map((_, i) => (
+                              <Sun key={i} className="w-3 h-3 text-amber-400 fill-amber-400" />
+                            ))}
+                          </div>
+                        )}
+                      </td>
                       <td className="py-8 px-4 text-right">
-                        <span className="inline-flex items-center gap-2 bg-blue-50 text-blue-700 px-4 py-2 rounded-full font-bold text-xs border border-blue-100">
+                        <span className="inline-flex items-center gap-2 bg-blue-50 text-blue-700 px-4 py-2 rounded-full font-bold text-xs border border-blue-100 uppercase tracking-widest">
                           <Utensils className="w-3 h-3" /> {ev.metadata?.mealPlan || 'Plan Included'}
                         </span>
                       </td>
@@ -302,6 +324,17 @@ export default function SharePage() {
                                 </div>
                                 <div className={`flex-1 ${isEven ? 'md:text-right' : ''}`}>
                                   <p className="text-sm font-black text-slate-900 uppercase tracking-tighter">{ev.title}</p>
+                                  
+                                  {ev.type === 'accommodation' && (
+                                    <div className={`flex flex-wrap gap-2 mt-3 mb-3 ${isEven ? 'md:justify-end' : ''}`}>
+                                       {ev.metadata?.hotelName && <span className="bg-slate-900 text-white px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border border-slate-700 shadow-md">Stay: {ev.metadata.hotelName}</span>}
+                                       {ev.metadata?.roomType && <span className="bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border border-blue-100 shadow-sm">Room: {ev.metadata.roomType}</span>}
+                                       {ev.metadata?.mealPlan && <span className="bg-emerald-50 text-emerald-700 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border border-emerald-100 shadow-sm">Plan: {ev.metadata.mealPlan}</span>}
+                                       {ev.metadata?.checkInDate && <span className="bg-white text-slate-600 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border border-slate-200 shadow-sm">In: {ev.metadata.checkInDate}</span>}
+                                       {ev.metadata?.checkOutDate && <span className="bg-white text-slate-600 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border border-slate-200 shadow-sm">Out: {ev.metadata.checkOutDate}</span>}
+                                    </div>
+                                  )}
+
                                   {ev.description && <p className="text-xs text-slate-500 mt-1 font-medium">{ev.description}</p>}
                                   {ev.startTime && <p className="font-handwriting text-lg text-blue-400 mt-2">{ev.startTime}{ev.endTime && ` — ${ev.endTime}`}</p>}
                                 </div>
