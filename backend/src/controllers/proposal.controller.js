@@ -344,9 +344,24 @@ const generateProposalHtml = (proposal) => {
                             <div class="meta-row">
                               ${ev.type === 'accommodation' && ev.metadata?.hotelName ? `<div class="meta-badge">Stay: ${escapeHtml(ev.metadata.hotelName)}</div>` : ''}
                               ${ev.type === 'accommodation' && ev.metadata?.roomCategory ? `<div class="meta-badge">${escapeHtml(ev.metadata.roomCategory)}</div>` : ''}
+                              ${ev.type === 'accommodation' && ev.metadata?.roomType ? `<div class="meta-badge">Room: ${escapeHtml(ev.metadata.roomType)}</div>` : ''}
+                              ${ev.type === 'accommodation' && ev.metadata?.mealPlan ? `<div class="meta-badge">Plan: ${escapeHtml(ev.metadata.mealPlan)}</div>` : ''}
+                              
+                              ${ev.type === 'accommodation' && ev.metadata?.checkInDate ? `
+                                <div class="meta-badge" style="background: rgba(212,175,55,0.05); border-color: rgba(212,175,55,0.3);">
+                                  In: ${escapeHtml(ev.metadata.checkInDate)} ${ev.metadata.checkInTime ? `• ${escapeHtml(ev.metadata.checkInTime)}` : ''}
+                                </div>
+                              ` : ''}
+                              
+                              ${ev.type === 'accommodation' && ev.metadata?.checkOutDate ? `
+                                <div class="meta-badge" style="background: rgba(212,175,55,0.05); border-color: rgba(212,175,55,0.3);">
+                                  Out: ${escapeHtml(ev.metadata.checkOutDate)} ${ev.metadata.checkOutTime ? `• ${escapeHtml(ev.metadata.checkOutTime)}` : ''}
+                                </div>
+                              ` : ''}
+
                               ${ev.type === 'transport' && ev.metadata?.vehicleType ? `<div class="meta-badge">Vehicle: ${escapeHtml(ev.metadata.vehicleType)}</div>` : ''}
                               ${ev.type === 'transport' && ev.description ? `<div class="meta-badge">Route: ${escapeHtml(ev.description)}</div>` : ''}
-                              ${ev.startTime ? `<div class="meta-badge">Time: ${escapeHtml(ev.startTime)}</div>` : ''}
+                              ${ev.startTime && ev.type !== 'accommodation' ? `<div class="meta-badge">Time: ${escapeHtml(ev.startTime)}</div>` : ''}
                             </div>
                             ${ev.description && ev.type !== 'transport' ? `<div class="soft-note">${escapeHtml(ev.description).replace(/\n/g, '<br/>')}</div>` : ''}
                           </div>

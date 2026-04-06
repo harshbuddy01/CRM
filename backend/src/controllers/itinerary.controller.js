@@ -178,7 +178,18 @@ const generateItineraryHtml = (itinerary) => {
           .event-symbol { position: absolute; left: -32px; top: 22px; background: #fdfbf7; padding: 5px 0; }
           .event-info { display: flex; flex-direction: column; gap: 6px; }
           .event-info h4 { font-size: 22px; margin: 0; color: #000; letter-spacing: -0.02em; }
-          .event-info .meta-title { font-size: 16px; font-weight: 600; color: #2c2c2c; text-transform: uppercase; letter-spacing: 0.05em; font-family: 'EB Garamond', serif; }
+          .meta-row { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 8px; }
+          .meta-badge { 
+            background: #fff; 
+            border: 1px solid #d4af37; 
+            color: #8b6e4b; 
+            padding: 4px 12px; 
+            border-radius: 4px; 
+            font-size: 11px; 
+            font-weight: 700; 
+            text-transform: uppercase; 
+            letter-spacing: 0.05em;
+          }
           .event-info .soft-note { font-family: 'Dancing Script', cursive; font-size: 22px; color: #8b6e4b; margin: 4px 0; }
           .event-image { margin-top: 15px; }
           .event-image img { max-width: 80%; border-radius: 8px; border: 4px solid white; box-shadow: 0 4px 15px rgba(0,0,0,0.08); max-height: 250px; object-fit: cover; }
@@ -276,9 +287,30 @@ const generateItineraryHtml = (itinerary) => {
                           <span class="event-symbol">${PREMIUM_ICONS[ev.type] || PREMIUM_ICONS.default}</span>
                           <div class="event-info">
                             <h4>${escapeHtml(ev.title)}</h4>
-                            ${ev.type === 'accommodation' && ev.metadata?.hotelName ? `<div class="meta-title">STAYING AT ${escapeHtml(ev.metadata.hotelName)}</div>` : ''}
-                            ${ev.description ? `<div class="soft-note">${escapeHtml(ev.description).replace(/\n/g, '<br/>')}</div>` : ''}
-                            ${ev.startTime ? `<div class="soft-note">Scheduled for ${escapeHtml(ev.startTime)}</div>` : ''}
+                            <div class="meta-row">
+                              ${ev.type === 'accommodation' && ev.metadata?.hotelName ? `<div class="meta-badge">Stay: ${escapeHtml(ev.metadata.hotelName)}</div>` : ''}
+                              ${ev.type === 'accommodation' && ev.metadata?.roomCategory ? `<div class="meta-badge">${escapeHtml(ev.metadata.roomCategory)}</div>` : ''}
+                              ${ev.type === 'accommodation' && ev.metadata?.roomType ? `<div class="meta-badge">Room: ${escapeHtml(ev.metadata.roomType)}</div>` : ''}
+                              ${ev.type === 'accommodation' && ev.metadata?.mealPlan ? `<div class="meta-badge">Plan: ${escapeHtml(ev.metadata.mealPlan)}</div>` : ''}
+                              
+                              ${ev.type === 'accommodation' && ev.metadata?.checkInDate ? `
+                                <div class="meta-badge" style="background: rgba(212,175,55,0.05); border-color: rgba(212,175,55,0.3);">
+                                  In: ${escapeHtml(ev.metadata.checkInDate)} ${ev.metadata.checkInTime ? `• ${escapeHtml(ev.metadata.checkInTime)}` : ''}
+                                </div>
+                              ` : ''}
+                              
+                              ${ev.type === 'accommodation' && ev.metadata?.checkOutDate ? `
+                                <div class="meta-badge" style="background: rgba(212,175,55,0.05); border-color: rgba(212,175,55,0.3);">
+                                  Out: ${escapeHtml(ev.metadata.checkOutDate)} ${ev.metadata.checkOutTime ? `• ${escapeHtml(ev.metadata.checkOutTime)}` : ''}
+                                </div>
+                              ` : ''}
+
+                              ${ev.type === 'transport' && ev.metadata?.vehicleType ? `<div class="meta-badge">Vehicle: ${escapeHtml(ev.metadata.vehicleType)}</div>` : ''}
+                              ${ev.type === 'transport' && ev.description ? `<div class="meta-badge">Route: ${escapeHtml(ev.description)}</div>` : ''}
+                              ${ev.startTime && ev.type !== 'accommodation' ? `<div class="meta-badge">Time: ${escapeHtml(ev.startTime)}</div>` : ''}
+                            </div>
+                            
+                            ${ev.description && ev.type !== 'transport' ? `<div class="soft-note">${escapeHtml(ev.description).replace(/\n/g, '<br/>')}</div>` : ''}
                           </div>
                           ${ev.imageUrl ? `
                             <div class="event-image">
