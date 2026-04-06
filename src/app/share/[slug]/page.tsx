@@ -2,8 +2,8 @@
 
 import { useEffect, useState, useRef } from 'react';
 import { useParams } from 'next/navigation';
-import { MapPin, Hotel, Utensils, Car, Plane, Sun, Mountain, Compass, LogIn, LogOut, CalendarRange, Loader2, Shield, CheckCircle, XCircle, CreditCard, AlertTriangle } from 'lucide-react';
-import { motion, useScroll, useTransform, useSpring } from 'framer-motion';
+import { MapPin, Hotel, Utensils, Car, Plane, Sun, Mountain, Compass, LogIn, LogOut, CalendarRange, Loader2, Shield, CheckCircle, XCircle, CreditCard, AlertTriangle, Mail } from 'lucide-react';
+import { motion, useScroll, useTransform, useSpring, AnimatePresence } from 'framer-motion';
 import DOMPurify from 'dompurify';
 import { api } from '@/lib/api';
 
@@ -38,6 +38,7 @@ export default function SharePage() {
   const [itinerary, setItinerary] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [isUnboxed, setIsUnboxed] = useState(false);
   
   const containerRef = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({
@@ -98,7 +99,67 @@ export default function SharePage() {
   };
 
   return (
-    <div className="min-h-screen paper-texture pb-20 selection:bg-blue-100 selection:text-blue-900">
+    <>
+      <AnimatePresence>
+        {!isUnboxed && itinerary && (
+          <motion.div 
+            initial={{ opacity: 1 }}
+            exit={{ opacity: 0, scale: 1.05, filter: "blur(10px)", transition: { duration: 1.2, ease: "easeInOut", delay: 0.2 } }}
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900 overflow-hidden"
+          >
+            {/* Background Texture for the Landing */}
+            <div className="absolute inset-0 paper-texture opacity-30 mix-blend-overlay"></div>
+            
+            {/* The Envelope */}
+            <motion.div 
+              initial={{ y: 50, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: -50, opacity: 0, transition: { duration: 0.8 } }}
+              transition={{ duration: 1.5, ease: "easeOut" }}
+              className="relative max-w-md w-full px-6 flex flex-col items-center text-center"
+            >
+              <motion.div 
+                whileHover={{ rotate: [0, -5, 5, 0], scale: 1.05, transition: { duration: 0.5 } }}
+                whileTap={{ scale: 0.95 }}
+                className="w-24 h-24 rounded-full bg-slate-800 border-2 border-[#d4af37]/30 flex items-center justify-center mb-8 shadow-2xl relative cursor-pointer"
+                onClick={() => setIsUnboxed(true)}
+              >
+                <div className="absolute inset-0 rounded-full border border-[#d4af37]/20 blur-[2px]"></div>
+                <Mail className="w-10 h-10 text-[#d4af37]" strokeWidth={1} />
+              </motion.div>
+              
+              <h2 className="font-handwriting text-5xl text-[#d4af37] mb-4 tracking-wide drop-shadow-lg">A Handcrafted Journey</h2>
+              <p className="text-slate-300 font-serif tracking-widest uppercase text-xs mb-12 opacity-80 decoration-amber-900/50 underline underline-offset-8">Prepared Exclusively For You</p>
+              
+              <motion.button 
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => setIsUnboxed(true)}
+                className="group relative px-8 py-4 bg-transparent border border-[#d4af37]/50 rounded-full overflow-hidden transition-all duration-500 hover:border-[#d4af37] hover:shadow-[0_0_40px_-10px_rgba(212,175,55,0.4)]"
+              >
+                <div className="absolute inset-0 bg-[#d4af37]/10 scale-x-0 group-hover:scale-x-100 origin-left transition-transform duration-500"></div>
+                <span className="relative z-10 flex items-center justify-center gap-3 font-serif text-[#d4af37] tracking-widest text-sm uppercase">
+                  Break the Seal <span className="font-handwriting text-2xl lowercase italic text-[#f4d068]">to open</span>
+                </span>
+              </motion.button>
+            </motion.div>
+
+            {/* Floral Accents */}
+            <div className="absolute bottom-0 left-0 opacity-20 pointer-events-none">
+              <svg width="250" height="250" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ transform: 'rotate(180deg)' }}>
+                <path d="M10 110C30 90 40 60 40 40C40 20 20 10 10 10M10 10C20 20 40 30 60 30C80 30 100 20 110 10M40 40C50 50 70 60 90 60C110 60 120 50 120 40" stroke="#d4af37" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" opacity="0.4"/>
+              </svg>
+            </div>
+            <div className="absolute top-0 right-0 opacity-20 pointer-events-none">
+              <svg width="250" height="250" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M10 110C30 90 40 60 40 40C40 20 20 10 10 10M10 10C20 20 40 30 60 30C80 30 100 20 110 10M40 40C50 50 70 60 90 60C110 60 120 50 120 40" stroke="#d4af37" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" opacity="0.4"/>
+              </svg>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <div className={`min-h-screen paper-texture pb-20 selection:bg-blue-100 selection:text-blue-900 ${!isUnboxed ? 'h-screen overflow-hidden' : ''}`}>
       
       {/* Handcrafted Header Ornament */}
       <div className="h-2 w-full bg-gradient-to-r from-transparent via-blue-200/30 to-transparent absolute top-0 z-50 pointer-events-none" />
@@ -489,7 +550,8 @@ export default function SharePage() {
         </div>
 
       </div>
-    </div>
+      </div>
+    </>
   );
 }
 
