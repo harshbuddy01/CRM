@@ -162,14 +162,15 @@ apiRouter.use('/cms', require('./routes/cms.routes'));
 apiRouter.use('/finance', require('./routes/finance.routes'));
 apiRouter.use('/branches', require('./routes/branch.routes'));
 apiRouter.use('/integrations', require('./routes/sheet-sync.routes'));
-// Sprint 10 — Post Sales, Vouchers, Documents
-apiRouter.use('/', require('./routes/booking-service.routes'));
-apiRouter.use('/', require('./routes/voucher.routes'));
-apiRouter.use('/', require('./routes/query-document.routes'));
 // Itinerary Builder System
 apiRouter.use('/itineraries', require('./routes/itinerary.routes'));
 // System Admin (Backups, Logs)
 apiRouter.use('/admin', require('./routes/admin.routes'));
+
+// Sprint 10 — Post Sales, Vouchers, Documents
+apiRouter.use('/', require('./routes/booking-service.routes'));
+apiRouter.use('/', require('./routes/voucher.routes'));
+apiRouter.use('/', require('./routes/query-document.routes'));
 
 // Mount the router under both prefixes
 
