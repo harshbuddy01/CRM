@@ -12,6 +12,8 @@ const logger = require('../utils/logger');
 
 // ── PDF Cache Helpers ──────────────────────────────────────────
 const { uploadPdfToVault, getPdfStreamFromVault } = require('../utils/vault');
+const { getArtisanalEmailFrame } = require('../templates/artisanalEmail.template');
+
 
 /**
  * Generate PDF for a proposal, cache it in MinIO Vault, and return the buffer.
@@ -217,6 +219,21 @@ const generateProposalHtml = (proposal) => {
           .event-image { margin-top: 15px; }
           .event-image img { max-width: 80%; border-radius: 8px; border: 4px solid white; box-shadow: 0 4px 15px rgba(0,0,0,0.08); max-height: 250px; object-fit: cover; }
 
+          /* Enhanced Meta Badges */
+          .meta-row { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 5px; }
+          .meta-badge { 
+            font-size: 11px; 
+            font-weight: 700; 
+            text-transform: uppercase; 
+            letter-spacing: 0.1em; 
+            background: #f4efdf; 
+            color: #8b6e4b; 
+            padding: 4px 10px; 
+            border-radius: 4px;
+            border: 1px solid rgba(139, 110, 75, 0.2);
+          }
+
+
           /* Pricing & Policy */
           .price-scroll {
             margin: 60px 0;
@@ -324,10 +341,16 @@ const generateProposalHtml = (proposal) => {
                           <span class="event-symbol">${PREMIUM_ICONS[ev.type] || PREMIUM_ICONS.default}</span>
                           <div class="event-info">
                             <h4>${escapeHtml(ev.title)}</h4>
-                            ${ev.type === 'accommodation' && ev.metadata?.hotelName ? `<div class="meta-title">STAYING AT ${escapeHtml(ev.metadata.hotelName)}</div>` : ''}
-                            ${ev.description ? `<div class="soft-note">${escapeHtml(ev.description).replace(/\n/g, '<br/>')}</div>` : ''}
-                            ${ev.startTime ? `<div class="soft-note">Scheduled for ${escapeHtml(ev.startTime)}</div>` : ''}
+                            <div class="meta-row">
+                              ${ev.type === 'accommodation' && ev.metadata?.hotelName ? `<div class="meta-badge">Stay: ${escapeHtml(ev.metadata.hotelName)}</div>` : ''}
+                              ${ev.type === 'accommodation' && ev.metadata?.roomCategory ? `<div class="meta-badge">${escapeHtml(ev.metadata.roomCategory)}</div>` : ''}
+                              ${ev.type === 'transport' && ev.metadata?.vehicleType ? `<div class="meta-badge">Vehicle: ${escapeHtml(ev.metadata.vehicleType)}</div>` : ''}
+                              ${ev.type === 'transport' && ev.description ? `<div class="meta-badge">Route: ${escapeHtml(ev.description)}</div>` : ''}
+                              ${ev.startTime ? `<div class="meta-badge">Time: ${escapeHtml(ev.startTime)}</div>` : ''}
+                            </div>
+                            ${ev.description && ev.type !== 'transport' ? `<div class="soft-note">${escapeHtml(ev.description).replace(/\n/g, '<br/>')}</div>` : ''}
                           </div>
+
                           ${ev.imageUrl ? `
                             <div class="event-image">
                               <img src="${getSafeImageUrl(ev.imageUrl)}" alt="Event Detail" />
@@ -584,7 +607,14 @@ const sendEmail = async (req, res, next) => {
     }
 
     const finalSubject = subject || 'Your Travel Proposal is Ready!';
-    const htmlContent = body || bodyRichText || `<p>Hi ${proposal.query.name}, your travel proposal is ready.</p>`;
+    const rawContent = body || bodyRichText || `<p>Hi ${proposal.query.name}, your travel proposal is ready.</p>`;
+
+    // Wrap in Artisanal V3 Frame
+    const htmlContent = getArtisanalEmailFrame({
+      subject: finalSubject,
+      bodyContent: rawContent,
+      inviteType: 'proposal'
+    });
 
     // Prepare Nodemailer Message
     const msg = {
@@ -593,6 +623,7 @@ const sendEmail = async (req, res, next) => {
       html: htmlContent,
       attachments
     };
+
     
     if (cc) {
       msg.cc = cc.split(',').map(e => e.trim()).filter(Boolean).join(',');
