@@ -144,7 +144,7 @@ export default function ItineraryBuilderPage() {
       // ALWAYS use the production domain for share links unless on a dev build
       const baseUrl = window.location.hostname === 'localhost' 
         ? window.location.origin 
-        : 'https://imagicaholidays.com';
+        : 'https://crm.imagicaholidays.com';
       const url = `${baseUrl}/share/${slug}`;
       await navigator.clipboard.writeText(url);
       toast.success('Share link copied to clipboard!');
