@@ -66,6 +66,8 @@ export default function ItineraryBuilderPage() {
     type: 'cover' | 'day' | 'event' | 'gallery', 
     id?: string 
   } | null>(null);
+  const [isPdfExporting, setIsPdfExporting] = useState(false);
+  const [isSharing, setIsSharing] = useState(false);
 
   const { data: itinerary, isLoading } = useQuery({
     queryKey: ['itinerary', id],
@@ -138,6 +140,7 @@ export default function ItineraryBuilderPage() {
   };
 
   const handleShare = async () => {
+    setIsSharing(true);
     try {
       const res = await api.post(`/itineraries/${id}/generate-share-link`);
       const slug = res.data.data.shareSlug;
@@ -149,10 +152,11 @@ export default function ItineraryBuilderPage() {
       await navigator.clipboard.writeText(url);
       toast.success('Share link copied to clipboard!');
       invalidate();
-    } catch { toast.error('Failed to generate link'); }
+    } catch { toast.error('Failed to generate link'); } finally { setIsSharing(false); }
   };
 
   const handleExportPdf = async () => {
+    setIsPdfExporting(true);
     try {
       const res = await api.get(`/itineraries/${id}/export-pdf`, { responseType: 'blob' });
       const blob = new Blob([res.data], { type: 'application/pdf' });
@@ -162,7 +166,7 @@ export default function ItineraryBuilderPage() {
       document.body.appendChild(link); link.click(); link.remove();
       window.URL.revokeObjectURL(url);
       toast.success('PDF downloaded');
-    } catch { toast.error('PDF export failed'); }
+    } catch { toast.error('PDF export failed'); } finally { setIsPdfExporting(false); }
   };
 
   const openMediaLibrary = (type: 'cover' | 'day' | 'event' | 'gallery', targetId?: string) => {
@@ -395,11 +399,11 @@ export default function ItineraryBuilderPage() {
                 <Button size="sm" variant="secondary" className="rounded-xl font-bold text-xs h-9" onClick={() => coverRef.current?.click()}>
                   <Camera className="w-3.5 h-3.5 mr-1" /> Upload
                 </Button>
-                <Button size="sm" variant="secondary" className="rounded-xl font-bold text-xs h-9" onClick={handleShare}>
-                  <Share2 className="w-3.5 h-3.5 mr-1" /> Share
+                <Button size="sm" variant="secondary" className="rounded-xl font-bold text-xs h-9" onClick={handleShare} disabled={isSharing}>
+                  {isSharing ? <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" /> : <Share2 className="w-3.5 h-3.5 mr-1" />} {isSharing ? 'Sharing...' : 'Share'}
                 </Button>
-                <Button size="sm" variant="secondary" className="rounded-xl font-bold text-xs h-9" onClick={handleExportPdf}>
-                  <Download className="w-3.5 h-3.5 mr-1" /> PDF
+                <Button size="sm" variant="secondary" className="rounded-xl font-bold text-xs h-9" onClick={handleExportPdf} disabled={isPdfExporting}>
+                  {isPdfExporting ? <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" /> : <Download className="w-3.5 h-3.5 mr-1" />} {isPdfExporting ? 'Exporting...' : 'PDF'}
                 </Button>
               </div>
             </div>
@@ -812,6 +816,8 @@ export default function ItineraryBuilderPage() {
               onExport={handleExportPdf}
               onDelete={() => deleteItineraryMut.mutate()}
               isDeleting={deleteItineraryMut.isPending}
+              isPdfExporting={isPdfExporting}
+              isSharing={isSharing}
             />
           </TabsContent>
         </div>
@@ -944,7 +950,7 @@ function SuggestionsPanel({ selectedDay, onAddEvent, onUpdateDay }: { selectedDa
                  </div>
               )}
               <div className="flex-1 min-w-0 flex flex-col justify-center">
-                <p className="font-black text-xs text-slate-800 truncate leading-tight">{item.title || item.name || item.vehicleType}</p>
+                <p className="font-black text-[11px] text-slate-800 leading-tight break-words">{item.title || item.name || item.vehicleType}</p>
                 {item.category && <p className="text-[10px] text-slate-400 font-bold mt-1 uppercase tracking-wider">{item.category}</p>}
                 {(item.basePrice || item.pricePerPerson || item.price) && (
                   <p className="text-[11px] font-black text-slate-900 mt-1.5">₹{Number(item.basePrice || item.pricePerPerson || item.price).toLocaleString('en-IN')}</p>
@@ -1443,12 +1449,14 @@ function PricingTab({ itinerary, onUpdate }: { itinerary: any; onUpdate: (data: 
   );
 }
 
-function FinalPreviewTab({ itinerary, onShare, onExport, onDelete, isDeleting }: { 
+function FinalPreviewTab({ itinerary, onShare, onExport, onDelete, isDeleting, isPdfExporting, isSharing }: { 
   itinerary: any; 
   onShare: () => void; 
   onExport: () => void;
   onDelete: () => void;
   isDeleting: boolean;
+  isPdfExporting: boolean;
+  isSharing: boolean;
 }) {
   const accomEvents = (itinerary.days || []).flatMap((d: any) => (d.events || []).filter((e: any) => e.type === 'accommodation'));
   
@@ -1467,11 +1475,11 @@ function FinalPreviewTab({ itinerary, onShare, onExport, onDelete, isDeleting }:
         <Mountain className="w-32 h-32 -rotate-12" />
       </div>
       <div className="flex justify-end gap-3 print:hidden">
-        <Button variant="outline" className="rounded-2xl font-bold px-6 h-11 border-slate-200 hover:bg-slate-50 transition-all active:scale-95" onClick={onShare}>
-          <Share2 className="w-4 h-4 mr-2 text-slate-500" /> Share Link
+        <Button variant="outline" className="rounded-2xl font-bold px-6 h-11 border-slate-200 hover:bg-slate-50 transition-all active:scale-95" onClick={onShare} disabled={isSharing}>
+          {isSharing ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Share2 className="w-4 h-4 mr-2 text-slate-500" />} {isSharing ? 'Sharing...' : 'Share Link'}
         </Button>
-        <Button className="rounded-2xl font-bold px-8 h-11 bg-slate-900 hover:bg-black text-white shadow-xl shadow-slate-200 active:scale-95 transition-all" onClick={onExport}>
-          <Download className="w-4 h-4 mr-2" /> Export Premium PDF
+        <Button className="rounded-2xl font-bold px-8 h-11 bg-slate-900 hover:bg-black text-white shadow-xl shadow-slate-200 active:scale-95 transition-all" onClick={onExport} disabled={isPdfExporting}>
+          {isPdfExporting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Download className="w-4 h-4 mr-2" />} {isPdfExporting ? 'Generating...' : 'Export Premium PDF'}
         </Button>
       </div>
 

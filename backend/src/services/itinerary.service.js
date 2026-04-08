@@ -603,6 +603,7 @@ const updateEvent = async (eventId, data) => {
       ...(data.endTime !== undefined && { endTime: data.endTime }),
       ...(data.cost !== undefined && { cost: data.cost !== null && data.cost !== undefined ? Number(data.cost) : null }),
       ...(data.metadata !== undefined && { metadata: data.metadata }),
+      ...(data.imageUrl !== undefined && { imageUrl: data.imageUrl }),
       ...(data.sortOrder !== undefined && { sortOrder: data.sortOrder }),
     },
   });
