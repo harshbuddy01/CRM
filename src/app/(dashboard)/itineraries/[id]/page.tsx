@@ -68,6 +68,7 @@ export default function ItineraryBuilderPage() {
   } | null>(null);
   const [isPdfExporting, setIsPdfExporting] = useState(false);
   const [isSharing, setIsSharing] = useState(false);
+  const [destDropdownDayId, setDestDropdownDayId] = useState<string | null>(null);
 
   const { data: itinerary, isLoading } = useQuery({
     queryKey: ['itinerary', id],
@@ -445,15 +446,65 @@ export default function ItineraryBuilderPage() {
                           <div className="font-bold text-xs truncate">
                             {day.destination?.name || 'Day ' + day.dayNumber}
                           </div>
+                          <div className="flex items-center gap-1 mt-0.5">
+                            {day.destination?.name ? (
+                              <button
+                                onClick={(e) => { e.stopPropagation(); setDestDropdownDayId(destDropdownDayId === day.id ? null : day.id); }}
+                                className={cn(
+                                  "text-[9px] font-bold flex items-center gap-1 hover:underline",
+                                  activeSection === 'day' && selectedDayId === day.id ? "text-blue-200" : "text-slate-400"
+                                )}
+                              >
+                                <MapPin className="w-2.5 h-2.5" /> {day.destination.name}
+                              </button>
+                            ) : (
+                              <button
+                                onClick={(e) => { e.stopPropagation(); setDestDropdownDayId(destDropdownDayId === day.id ? null : day.id); }}
+                                className={cn(
+                                  "text-[9px] font-bold flex items-center gap-1 hover:underline italic",
+                                  activeSection === 'day' && selectedDayId === day.id ? "text-blue-200" : "text-amber-500"
+                                )}
+                              >
+                                <MapPin className="w-2.5 h-2.5" /> Set destination
+                              </button>
+                            )}
+                          </div>
                           {itinerary.travelDateFrom && (
-                            <div className="text-[10px] text-slate-400 font-medium mt-0.5">
+                            <div className={cn("text-[10px] font-medium mt-0.5", activeSection === 'day' && selectedDayId === day.id ? "text-blue-200" : "text-slate-400")}>
                               {format(addDays(new Date(itinerary.travelDateFrom), day.dayNumber - 1), 'MMM d, yyyy')}
                             </div>
                           )}
                         </div>
                       </button>
+                      {/* Destination Quick-Select Dropdown */}
+                      {destDropdownDayId === day.id && (
+                        <div className="absolute left-0 top-full mt-1 z-50 bg-white rounded-2xl border border-slate-200 shadow-xl p-2 w-48 max-h-52 overflow-y-auto animate-in fade-in zoom-in-95 no-scrollbar">
+                          <div className="px-2 py-1 text-[8px] font-black uppercase tracking-widest text-slate-300">Select Destination</div>
+                          {day.destinationId && (
+                            <button
+                              className="w-full text-left px-3 py-1.5 rounded-xl text-xs font-bold text-rose-400 hover:bg-rose-50 transition-colors"
+                              onClick={(e) => { e.stopPropagation(); updateDayMut.mutate({ dayId: day.id, data: { destinationId: null } }); setDestDropdownDayId(null); }}
+                            >
+                              ✕ Clear destination
+                            </button>
+                          )}
+                          {destinations.map((dest: any) => (
+                            <button
+                              key={dest.id}
+                              className={cn(
+                                "w-full text-left px-3 py-1.5 rounded-xl text-xs font-bold transition-colors",
+                                dest.id === day.destinationId ? "bg-blue-50 text-blue-600" : "text-slate-700 hover:bg-slate-50"
+                              )}
+                              onClick={(e) => { e.stopPropagation(); updateDayMut.mutate({ dayId: day.id, data: { destinationId: dest.id } }); setDestDropdownDayId(null); }}
+                            >
+                              {dest.name}
+                            </button>
+                          ))}
+                          {destinations.length === 0 && <p className="text-[10px] text-slate-300 text-center py-2">No destinations found</p>}
+                        </div>
+                      )}
                       <button 
-                        className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-lg text-rose-500 opacity-0 group-hover/dayitem:opacity-100 hover:bg-rose-50 transition-all active:scale-75"
+                        className="absolute right-2 top-3 p-1.5 rounded-lg text-rose-500 opacity-0 group-hover/dayitem:opacity-100 hover:bg-rose-50 transition-all active:scale-75"
                         onClick={(e) => {
                           e.stopPropagation();
                           if (window.confirm(`Delete Day ${day.dayNumber}? All events on this day will be lost.`)) {
@@ -528,9 +579,15 @@ export default function ItineraryBuilderPage() {
                             <div>
                               <h3 className="text-lg font-black tracking-tight text-slate-800 uppercase">Day {selectedDay.dayNumber} Timeline</h3>
                               <div className="flex items-center gap-2 mt-1">
-                                <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">
-                                  <MapPin className="w-3 h-3" /> {selectedDay.destination?.name || 'Destination Unset'}
-                                </div>
+                                <button 
+                                  onClick={() => setDestDropdownDayId(destDropdownDayId === selectedDay.id ? null : selectedDay.id)}
+                                  className={cn(
+                                    "flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest leading-none transition-colors",
+                                    selectedDay.destination?.name ? "text-slate-400 hover:text-blue-500" : "text-amber-500 hover:text-amber-600 italic"
+                                  )}
+                                >
+                                  <MapPin className="w-3 h-3" /> {selectedDay.destination?.name || 'Click to set destination'}
+                                </button>
                                 {itinerary.travelDateFrom && (
                                   <>
                                     <span className="text-slate-300">•</span>
