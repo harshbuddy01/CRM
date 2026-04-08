@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef } from 'react';
 import { useParams } from 'next/navigation';
-import { MapPin, Hotel, Utensils, Car, Plane, Sun, Mountain, Compass, LogIn, LogOut, CalendarRange, Loader2, Shield, CheckCircle, XCircle, CreditCard, AlertTriangle, Mail, ChevronDown, Sparkles } from 'lucide-react';
+import { MapPin, Hotel, Utensils, Car, Plane, Sun, Mountain, Compass, LogIn, LogOut, CalendarRange, Loader2, Shield, CheckCircle, XCircle, CreditCard, AlertTriangle, Mail } from 'lucide-react';
 import { motion, useScroll, useTransform, useSpring, AnimatePresence } from 'framer-motion';
 import DOMPurify from 'dompurify';
 import { api } from '@/lib/api';
@@ -12,34 +12,24 @@ const EVENT_ICONS: Record<string, any> = {
   flight: Plane, meal: Utensils, checkin: LogIn, checkout: LogOut, freeTime: Sun,
 };
 
-// Elegant Unfold Component for reducing text fatigue
-function UnfoldableContent({ children, label = "Unfold Chapter", className = "" }: { children: React.ReactNode; label?: string; className?: string }) {
-  const [isOpen, setIsOpen] = useState(false);
+function ExpandableText({ text, limit = 400, className = "" }: { text: string; limit?: number; className?: string }) {
+  const [expanded, setExpanded] = useState(false);
+  if (!text) return null;
+  if (text.length <= limit) return <p className={className}>{text}</p>;
+
   return (
-    <motion.div layout className={`mt-8 ${className}`}>
-      <motion.button 
-        layout
-        onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-3 text-[#d4af37] font-serif uppercase tracking-[0.2em] text-xs hover:text-[#b49127] transition-colors"
+    <div className="space-y-4">
+      <p className={className}>
+        {expanded ? text : `${text.slice(0, limit)}...`}
+      </p>
+      <button 
+        onClick={() => setExpanded(!expanded)}
+        className="font-handwriting text-2xl text-blue-400 hover:text-blue-500 transition-colors flex items-center gap-2 group"
       >
-        <Sparkles className="w-4 h-4" />
-        {isOpen ? 'Close Chapter' : label}
-        <motion.div animate={{ rotate: isOpen ? 180 : 0 }}><ChevronDown className="w-4 h-4" /></motion.div>
-      </motion.button>
-      <AnimatePresence>
-        {isOpen && (
-          <motion.div 
-            initial={{ opacity: 0, height: 0, y: -10 }}
-            animate={{ opacity: 1, height: 'auto', y: 0 }}
-            exit={{ opacity: 0, height: 0, y: -10 }}
-            transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-            className="overflow-hidden mt-8"
-          >
-            {children}
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </motion.div>
+        <span className="w-8 h-px bg-blue-300/30 group-hover:w-12 transition-all" />
+        {expanded ? 'Read less of the story' : 'Read the full story'}
+      </button>
+    </div>
   );
 }
 
@@ -50,10 +40,14 @@ export default function SharePage() {
   const [error, setError] = useState('');
   const [isUnboxed, setIsUnboxed] = useState(false);
   
-  // Parallax Scroll Tracking
-  const { scrollY } = useScroll();
-  const heroY = useTransform(scrollY, [0, 1000], [0, 350]);
-  const heroOpacity = useTransform(scrollY, [0, 600], [0.8, 0]);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const { scrollYProgress } = useScroll({
+    target: containerRef,
+    offset: ["start center", "end center"]
+  });
+
+  const smoothProgress = useSpring(scrollYProgress, { stiffness: 100, damping: 30, restDelta: 0.001 });
+  const carY = useTransform(smoothProgress, [0, 1], ["0%", "100%"]);
 
   useEffect(() => {
     if (!slug || Array.isArray(slug)) {
@@ -67,6 +61,7 @@ export default function SharePage() {
         const res = await api.get(`/itineraries/share/${slug}`);
         if (res.data.success) {
           setItinerary(res.data.data);
+          // Set page title dynamically
           document.title = `${res.data.data.title} | Travel Itinerary`;
         } else {
           setError('Itinerary not found');
@@ -78,16 +73,20 @@ export default function SharePage() {
         setLoading(false);
       }
     };
+
     loadData();
   }, [slug]);
 
-  if (loading) return <div className="flex h-screen items-center justify-center bg-slate-900"><Loader2 className="w-8 h-8 animate-spin text-[#d4af37]" /></div>;
+  if (loading) return <div className="flex h-screen items-center justify-center bg-slate-50"><Loader2 className="w-8 h-8 animate-spin text-blue-400" /></div>;
   if (error || !itinerary) return (
-    <div className="flex h-screen items-center justify-center bg-slate-900 text-center p-4">
-      <div className="bg-white/5 border border-white/10 p-12 rounded-[40px] shadow-2xl max-w-sm backdrop-blur-xl">
-        <Compass className="w-12 h-12 mx-auto text-slate-500 mb-4 animate-pulse" />
-        <h1 className="text-2xl font-handwriting text-[#d4af37]">Journey Not Found</h1>
-        <p className="text-sm text-slate-400 mt-4">The path you seek has expired or vanished.</p>
+    <div className="flex h-screen items-center justify-center bg-slate-50 text-center p-4">
+      <div className="bg-white p-12 rounded-[40px] shadow-sm sketchy-border max-w-sm">
+        <CalendarRange className="w-12 h-12 mx-auto text-slate-300 mb-4" />
+        <h1 className="text-2xl font-handwriting text-slate-800">Itinerary Not Found</h1>
+        <p className="text-sm text-slate-500 mt-4">This link may have expired or is invalid.</p>
+        <div className="mt-8 pt-8 border-t border-dashed border-slate-100">
+          <p className="text-[10px] text-slate-300 uppercase tracking-widest font-bold">TravelCRM Artisanal System</p>
+        </div>
       </div>
     </div>
   );
@@ -105,11 +104,13 @@ export default function SharePage() {
         {!isUnboxed && itinerary && (
           <motion.div 
             initial={{ opacity: 1 }}
-            exit={{ opacity: 0, scale: 1.05, filter: "blur(20px)", transition: { duration: 1.5, ease: [0.16, 1, 0.3, 1], delay: 0.2 } }}
-            className="fixed inset-0 z-[100] flex items-center justify-center bg-[#0a0f12] overflow-hidden"
+            exit={{ opacity: 0, scale: 1.05, filter: "blur(10px)", transition: { duration: 1.2, ease: "easeInOut", delay: 0.2 } }}
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900 overflow-hidden"
           >
-            <div className="absolute inset-0 paper-texture opacity-10 mix-blend-overlay"></div>
+            {/* Background Texture for the Landing */}
+            <div className="absolute inset-0 paper-texture opacity-30 mix-blend-overlay"></div>
             
+            {/* The Envelope */}
             <motion.div 
               initial={{ y: 50, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
@@ -120,348 +121,437 @@ export default function SharePage() {
               <motion.div 
                 whileHover={{ rotate: [0, -5, 5, 0], scale: 1.05, transition: { duration: 0.5 } }}
                 whileTap={{ scale: 0.95 }}
-                className="w-24 h-24 rounded-full bg-[#111820] border border-[#d4af37]/30 flex items-center justify-center mb-8 shadow-[0_0_50px_-10px_rgba(212,175,55,0.3)] relative cursor-pointer"
+                className="w-24 h-24 rounded-full bg-slate-800 border-2 border-[#d4af37]/30 flex items-center justify-center mb-8 shadow-2xl relative cursor-pointer"
                 onClick={() => setIsUnboxed(true)}
               >
+                <div className="absolute inset-0 rounded-full border border-[#d4af37]/20 blur-[2px]"></div>
                 <Mail className="w-10 h-10 text-[#d4af37]" strokeWidth={1} />
               </motion.div>
               
-              <h2 className="font-handwriting text-5xl text-[#d4af37] mb-4 tracking-wide drop-shadow-2xl">{itinerary.title || 'A Handcrafted Journey'}</h2>
-              <p className="text-white/40 font-serif tracking-widest uppercase text-xs mb-12 decoration-[#d4af37]/30 underline underline-offset-8">Curated By Imagica Holidays</p>
+              <h2 className="font-handwriting text-5xl text-[#d4af37] mb-4 tracking-wide drop-shadow-lg">A Handcrafted Journey</h2>
+              <p className="text-slate-300 font-serif tracking-widest uppercase text-xs mb-12 opacity-80 decoration-amber-900/50 underline underline-offset-8">Prepared Exclusively For You</p>
               
               <motion.button 
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={() => setIsUnboxed(true)}
-                className="group relative px-10 py-5 bg-transparent border border-[#d4af37]/30 rounded-full overflow-hidden transition-all duration-700 hover:border-[#d4af37]/80 hover:shadow-[0_0_40px_-5px_rgba(212,175,55,0.2)]"
+                className="group relative px-8 py-4 bg-transparent border border-[#d4af37]/50 rounded-full overflow-hidden transition-all duration-500 hover:border-[#d4af37] hover:shadow-[0_0_40px_-10px_rgba(212,175,55,0.4)]"
               >
-                <div className="absolute inset-0 bg-[#d4af37]/10 scale-x-0 group-hover:scale-x-100 origin-left transition-transform duration-700 ease-[0.16,1,0.3,1]"></div>
+                <div className="absolute inset-0 bg-[#d4af37]/10 scale-x-0 group-hover:scale-x-100 origin-left transition-transform duration-500"></div>
                 <span className="relative z-10 flex items-center justify-center gap-3 font-serif text-[#d4af37] tracking-widest text-sm uppercase">
-                  Break the Seal <span className="font-handwriting text-2xl lowercase italic text-[#f4d068] ml-2">to unveil</span>
+                  Break the Seal <span className="font-handwriting text-2xl lowercase italic text-[#f4d068]">to open</span>
                 </span>
               </motion.button>
             </motion.div>
+
+            {/* Floral Accents */}
+            <div className="absolute bottom-0 left-0 opacity-20 pointer-events-none">
+              <svg width="250" height="250" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ transform: 'rotate(180deg)' }}>
+                <path d="M10 110C30 90 40 60 40 40C40 20 20 10 10 10M10 10C20 20 40 30 60 30C80 30 100 20 110 10M40 40C50 50 70 60 90 60C110 60 120 50 120 40" stroke="#d4af37" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" opacity="0.4"/>
+              </svg>
+            </div>
+            <div className="absolute top-0 right-0 opacity-20 pointer-events-none">
+              <svg width="250" height="250" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M10 110C30 90 40 60 40 40C40 20 20 10 10 10M10 10C20 20 40 30 60 30C80 30 100 20 110 10M40 40C50 50 70 60 90 60C110 60 120 50 120 40" stroke="#d4af37" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" opacity="0.4"/>
+              </svg>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      <div className={`min-h-screen bg-[#06090a] pb-32 text-slate-200 selection:bg-[#d4af37]/30 selection:text-white ${!isUnboxed ? 'h-screen overflow-hidden' : ''}`}>
+      <div className={`min-h-screen paper-texture pb-20 selection:bg-blue-100 selection:text-blue-900 ${!isUnboxed ? 'h-screen overflow-hidden' : ''}`}>
+      
+      {/* Handcrafted Header Ornament */}
+      <div className="h-2 w-full bg-gradient-to-r from-transparent via-blue-200/30 to-transparent absolute top-0 z-50 pointer-events-none" />
+
+      {/* Hero */}
+      <div className="relative bg-slate-900 text-white overflow-hidden min-h-[70vh] flex items-center">
+        {itinerary.coverPhotoUrl && (
+          <motion.img 
+            initial={{ scale: 1.1, opacity: 0 }}
+            animate={{ scale: 1, opacity: 0.6 }}
+            transition={{ duration: 1.5 }}
+            src={itinerary.coverPhotoUrl} 
+            alt="" 
+            className="absolute inset-0 w-full h-full object-cover" 
+          />
+        )}
+        <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/60 to-transparent" />
         
-        {/* PARALLAX HERO */}
-        <div className="relative h-[85vh] w-full overflow-hidden flex items-end pb-24">
-          <motion.div style={{ y: heroY, opacity: heroOpacity }} className="absolute inset-0 w-full h-full">
-            <img src={itinerary.coverPhotoUrl || 'https://images.unsplash.com/photo-1469854523086-cc02fe5d8800'} alt="Cover" className="w-full h-[120%] object-cover object-center grayscale-[0.2]" />
-            <div className="absolute inset-0 bg-gradient-to-t from-[#06090a] via-[#06090a]/60 to-transparent" />
-          </motion.div>
-          
-          <div className="relative z-10 w-full max-w-6xl mx-auto px-6 md:px-12">
-            <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1, delay: 1 }}>
-              <div className="flex items-center gap-4 mb-6">
-                <span className="h-px w-16 bg-[#d4af37]/50" />
-                <span className="text-[#d4af37] font-serif uppercase tracking-[0.3em] text-[10px] font-bold">The Artisanal Collection</span>
+        <div className="relative max-w-5xl mx-auto px-4 w-full z-10 py-24">
+          <div className="backdrop-blur-xl bg-white/10 border border-white/20 rounded-[60px] p-8 md:p-16 shadow-2xl max-w-4xl relative overflow-hidden">
+            {/* SVG Botanical Ornament */}
+            <div className="absolute top-8 right-8 text-white/20 pointer-events-none hidden md:block">
+              <svg width="120" height="120" viewBox="0 0 100 100" fill="currentColor">
+                <path d="M50 0 C60 20 80 30 100 30 Q80 50 100 70 C80 70 70 90 50 100 Q30 80 0 70 Q20 50 0 30 C20 30 40 20 50 0" />
+              </svg>
+            </div>
+
+            <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.3 }}>
+              <p className="font-handwriting text-3xl text-blue-300 mb-6 flex items-center gap-4">
+                <span className="h-px w-12 bg-blue-300/30" />
+                Crafted specifically for you
+                <span className="h-px w-12 bg-blue-300/30" />
+              </p>
+              <h1 className="text-5xl md:text-8xl font-black tracking-tight leading-none mb-8 drop-shadow-lg">{itinerary.title}</h1>
+              {itinerary.description && (
+                <div className="relative mt-8 group/intro">
+                  <div className="absolute -left-6 top-1/2 -translate-y-1/2 w-1 h-12 bg-blue-400/50 rounded-full group-hover/intro:h-20 transition-all duration-700" />
+                  
+                  {/* Decorative Hand-drawn Bird Icon */}
+                  <div className="absolute -top-12 -right-6 text-blue-200/40 pointer-events-none group-hover/intro:rotate-12 transition-transform duration-1000">
+                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M16 7c-1.5 0-3-1-3-3s1.5-2 3-2 3 1 3 3-1.5 3-3 3zM2 17c0-3 3-4 5-4s5 1 5 4v3H2v-3z" />
+                      <path d="M7 13c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2z" />
+                      <path d="M12 13c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2z" />
+                    </svg>
+                  </div>
+
+                  <ExpandableText 
+                    text={itinerary.description} 
+                    limit={300} 
+                    className="text-white/90 max-w-2xl text-xl leading-relaxed font-medium italic pl-4"
+                  />
+                </div>
+              )}
+            </motion.div>
+            
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6 }} className="flex items-center gap-8 mt-12 p-6 bg-white/5 rounded-3xl w-fit flex-wrap border border-white/10">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center border border-blue-400/30"><CalendarRange className="w-5 h-5 text-blue-400" /></div>
+                <div><p className="text-[10px] uppercase tracking-widest text-white/40 font-bold">Duration</p><p className="font-bold text-lg">{itinerary.days?.length || 0} Enchanting Days</p></div>
               </div>
-              <h1 className="text-6xl md:text-8xl lg:text-9xl font-black text-white tracking-tighter leading-[0.9] drop-shadow-2xl">{itinerary.title}</h1>
+              {destinations.length > 0 && (
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center border border-emerald-400/30"><MapPin className="w-5 h-5 text-emerald-400" /></div>
+                  <div><p className="text-[10px] uppercase tracking-widest text-white/40 font-bold">Regions</p><p className="font-bold text-lg">{destinations.join(' • ')}</p></div>
+                </div>
+              )}
             </motion.div>
           </div>
         </div>
+      </div>
 
-        <div className="max-w-6xl mx-auto px-6 md:px-12 space-y-32">
-          
-          {/* FLOATING INFO METRICS */}
-          <motion.div 
-            initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1, delay: 1.3 }}
-            className="flex flex-wrap gap-6 -mt-12 relative z-20"
-          >
-            <div className="bg-white/5 backdrop-blur-xl border border-white/10 p-6 rounded-3xl flex-1 min-w-[200px]">
-              <p className="text-[10px] uppercase tracking-widest text-white/50 font-bold mb-2">Duration</p>
-              <p className="text-2xl font-serif text-[#d4af37]">{itinerary.days?.length || 0} Enchanting Days</p>
+      <div className="max-w-5xl mx-auto px-4 py-20 space-y-24">
+        
+        {/* Handcrafted Intro Scroll */}
+        <div className="text-center max-w-2xl mx-auto">
+          <div className="w-20 h-1 bg-slate-200 mx-auto mb-8 rounded-full" />
+          <h2 className="font-handwriting text-5xl text-slate-800 mb-4 italic leading-tight">Every mile a story, every day a memory in the making.</h2>
+          <div className="w-20 h-1 bg-slate-200 mx-auto mt-8 rounded-full" />
+        </div>
+
+        {/* Hotel Summary */}
+        {itinerary.days?.some((d: any) => d.events?.some((e: any) => e.type === 'accommodation')) && (
+          <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="bg-white rounded-[50px] shadow-xl border-none sketchy-border overflow-hidden relative group">
+            <div className="washi-tape washi-tape-top-right bg-blue-400/40 w-24 h-10 -rotate-12" />
+            <div className="washi-tape washi-tape-bottom-left bg-emerald-400/40 w-24 h-10 rotate-12" />
+            
+            <div className="px-12 py-10 border-b border-dashed border-slate-200 bg-slate-50/50">
+              <h2 className="font-handwriting text-5xl text-slate-900 flex items-center justify-center gap-4">
+                <Hotel className="w-10 h-10 text-blue-600 drop-shadow-sm" /> Residential Sanctuary
+              </h2>
             </div>
-            <div className="bg-white/5 backdrop-blur-xl border border-white/10 p-6 rounded-3xl flex-1 min-w-[200px]">
-              <p className="text-[10px] uppercase tracking-widest text-white/50 font-bold mb-2">Destinations</p>
-              <p className="text-2xl font-serif text-[#d4af37] truncate">{destinations.join(' — ') || 'Custom Traverse'}</p>
+            
+            <div className="overflow-x-auto p-8">
+              <table className="w-full">
+                <thead><tr className="text-[11px] text-slate-400 uppercase tracking-[0.3em] font-black border-b border-slate-100">
+                  <th className="text-left py-6 px-4">Timeline</th>
+                  <th className="text-left py-6 px-4">The Retreat</th>
+                  <th className="text-left py-6 px-4">Accommodations</th>
+                  <th className="text-right py-6 px-4">Dining Experience</th>
+                </tr></thead>
+                <tbody className="divide-y divide-slate-50">
+                  {itinerary.days?.map((day: any) => day.events?.filter((e: any) => e.type === 'accommodation').map((ev: any, idx: number) => (
+                    <tr key={ev.id ?? `day-${day.dayNumber}-accom-${idx}`} className="hover:bg-slate-50/70 transition-all duration-300 group/row">
+                      <td className="py-8 px-4">
+                        <span className="bg-slate-100 px-4 py-2 rounded-2xl font-black text-xs text-slate-500">Day {day.dayNumber}</span>
+                        {(ev.metadata?.checkInDate || ev.metadata?.checkOutDate) && (
+                          <div className="mt-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-2">
+                             {ev.metadata.checkInDate && <div>In: {ev.metadata.checkInDate}</div>}
+                             {ev.metadata.checkOutDate && <div>Out: {ev.metadata.checkOutDate}</div>}
+                          </div>
+                        )}
+                      </td>
+                      <td className="py-8 px-4 font-black text-xl text-slate-800 flex flex-col gap-1 items-start">
+                         {ev.metadata?.hotelName || ev.title}
+                         {ev.metadata?.checkInTime && (
+                           <span className="flex items-center gap-1 text-[10px] text-blue-400 uppercase tracking-widest font-black">
+                             <LogIn className="w-3 h-3" /> Arriving {ev.metadata.checkInTime}
+                           </span>
+                         )}
+                      </td>
+                      <td className="py-8 px-4 text-slate-600 font-bold font-handwriting text-2xl drop-shadow-sm">
+                        {ev.metadata?.roomType || 'Standard Comfort'}
+                        {ev.metadata?.category && (
+                          <div className="flex gap-0.5 mt-2">
+                            {Array.from({ length: parseInt(ev.metadata.category) || 3 }).map((_, i) => (
+                              <Sun key={i} className="w-3 h-3 text-amber-400 fill-amber-400" />
+                            ))}
+                          </div>
+                        )}
+                      </td>
+                      <td className="py-8 px-4 text-right">
+                        <span className="inline-flex items-center gap-2 bg-blue-50 text-blue-700 px-4 py-2 rounded-full font-bold text-xs border border-blue-100 uppercase tracking-widest">
+                          <Utensils className="w-3 h-3" /> {ev.metadata?.mealPlan || 'Plan Included'}
+                        </span>
+                      </td>
+                    </tr>
+                  )))}
+                </tbody>
+              </table>
             </div>
           </motion.div>
+        )}
 
-          {/* INTRO DESCRIPTION (MINIMIZED) */}
-          {itinerary.description && (
-             <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} transition={{ duration: 1 }} className="max-w-3xl">
-                <div className="border-l-2 border-[#d4af37]/30 pl-8">
-                  <p className="text-xl md:text-2xl font-serif italic text-white/80 leading-relaxed font-light">
-                    {itinerary.description}
-                  </p>
-                </div>
-             </motion.div>
-          )}
-
-          {/* HORIZONTAL ACCOMMODATION CARDS (Replacing Table) */}
-          {itinerary.days?.some((d: any) => d.events?.some((e: any) => e.type === 'accommodation')) && (
-            <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} transition={{ duration: 1 }}>
-              <div className="mb-12 flex items-end justify-between">
-                <div>
-                  <h2 className="font-handwriting text-5xl md:text-7xl text-white mb-2">Sanctuaries & Stays</h2>
-                  <p className="text-[#d4af37] font-serif uppercase tracking-[0.2em] text-[10px]">Your refined accommodations</p>
-                </div>
-              </div>
-              
-              <div className="flex overflow-x-auto pb-10 gap-6 snap-x snap-mandatory hide-scrollbar -mx-6 px-6 md:-mx-12 md:px-12">
-                {itinerary.days?.map((day: any) => day.events?.filter((e: any) => e.type === 'accommodation').map((ev: any, idx: number) => (
-                  <motion.div 
-                    whileHover={{ y: -10 }}
-                    key={ev.id ?? `day-${day.dayNumber}-accom-${idx}`} 
-                    className="snap-center shrink-0 w-[85vw] md:w-[400px] bg-white/5 border border-white/10 rounded-[30px] p-8 backdrop-blur-md relative overflow-hidden group"
-                  >
-                    <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:opacity-20 transition-opacity"><Hotel className="w-24 h-24 text-white" /></div>
-                    
-                    <div className="relative z-10 box-border h-full flex flex-col justify-between">
-                      <div>
-                        <span className="inline-block bg-[#d4af37]/20 text-[#d4af37] font-black text-[10px] uppercase tracking-widest px-3 py-1 rounded-full mb-6">
-                           Day {day.dayNumber}
-                        </span>
-                        <h3 className="font-serif text-3xl text-white mb-4 leading-tight">{ev.metadata?.hotelName || ev.title}</h3>
-                        <p className="font-handwriting text-2xl text-white/60 mb-8">{ev.metadata?.roomType || 'Standard Comfort'}</p>
-                      </div>
-                      
-                      <div className="space-y-4 pt-6 border-t border-white/10 mt-auto">
-                        {ev.metadata?.mealPlan && (
-                          <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center"><Utensils className="w-4 h-4 text-white/50" /></div>
-                            <span className="text-white/80 font-medium text-sm">{ev.metadata.mealPlan}</span>
-                          </div>
-                        )}
-                        {(ev.metadata?.checkInDate || ev.metadata?.checkInTime) && (
-                          <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center"><LogIn className="w-4 h-4 text-white/50" /></div>
-                            <span className="text-white/80 font-medium text-sm">{ev.metadata.checkInDate} {ev.metadata.checkInTime}</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </motion.div>
-                )))}
-              </div>
+        {/* Timeline */}
+        <div className="relative pt-12">
+          <div className="flex flex-col items-center mb-24">
+            <h2 className="font-handwriting text-8xl text-slate-900 mb-4 drop-shadow-sm leading-none">Journal Entry</h2>
+            <p className="text-[11px] font-black uppercase tracking-[0.5em] text-blue-500 bg-blue-50 px-8 py-3 rounded-full border border-blue-100">Chronological Progression</p>
+          </div>
+          
+          <div ref={containerRef} className="relative max-w-4xl mx-auto">
+            {/* Artistic Scroll Line */}
+            <div className="absolute left-6 md:left-1/2 top-0 bottom-0 w-px border-l-2 border-dashed border-slate-300 shrink-0 -translate-x-1/2 hidden md:block" />
+            <div className="absolute left-6 top-0 bottom-0 w-px border-l-2 border-dashed border-slate-300 shrink-0 -translate-x-1/2 md:hidden" />
+            
+            {/* Moving Ink Compass */}
+            <motion.div 
+              className="absolute left-6 md:left-1/2 top-0 -translate-x-1/2 -translate-y-1/2 z-20 w-16 h-16 bg-white border-2 border-slate-900 flex items-center justify-center shadow-xl rotate-12 rounded-3xl overflow-hidden"
+              style={{ top: carY }}
+            >
+              <div className="absolute inset-0 bg-paper-texture opacity-30" />
+              <Compass className="w-8 h-8 text-slate-900 relative z-10 animate-spin-slow" />
             </motion.div>
-          )}
 
-          {/* THE CHRONICLE (Days Timeline with Unfold) */}
-          <div className="relative pt-20">
-            <div className="mb-24">
-              <h2 className="font-handwriting text-6xl md:text-8xl text-white mb-2">The Chronicle</h2>
-              <div className="w-24 h-px bg-[#d4af37]/50 mt-6" />
-            </div>
+            {itinerary.days?.map((day: any, idx: number) => {
+              const eventImages = day.events?.filter((e: any) => e.imageUrl).map((e:any) => e.imageUrl) || [];
+              const isEven = idx % 2 === 0;
 
-            <div className="space-y-16">
-              {itinerary.days?.map((day: any, idx: number) => {
-                const eventImages = day.events?.filter((e: any) => e.imageUrl).map((e:any) => e.imageUrl) || [];
-                
-                return (
-                  <motion.div 
-                    initial={{ opacity: 0, y: 50 }} 
-                    whileInView={{ opacity: 1, y: 0 }} 
-                    viewport={{ once: true, margin: "-100px" }}
-                    transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-                    key={day.dayNumber}
-                    className="grid grid-cols-1 lg:grid-cols-12 gap-8 md:gap-16 items-start"
-                  >
-                    {/* Day Number Marker */}
-                    <div className="lg:col-span-2 pt-4">
-                      <div className="font-serif text-[10px] uppercase tracking-[0.3em] text-[#d4af37] font-bold mb-2">Chapter</div>
-                      <div className="font-black text-6xl text-white/20 leading-none">0{day.dayNumber}</div>
-                    </div>
+              return (
+                <motion.div 
+                  key={day.id ?? `day-${idx}`} 
+                  initial={{ opacity: 0, scale: 0.95 }} 
+                  whileInView={{ opacity: 1, scale: 1 }} 
+                  viewport={{ once: true, margin: "-100px" }}
+                  transition={{ duration: 0.6, type: "spring" }}
+                  className={`relative flex md:w-1/2 mb-20 clear-both ${isEven ? 'md:float-left md:pr-16 md:text-right' : 'md:float-right md:pl-16 md:text-left'} pl-16 md:pl-0`}
+                >
+                  <div className={`absolute top-8 w-12 h-12 rounded-full bg-slate-900 border-4 border-white shadow-lg z-10 flex items-center justify-center text-white font-black text-sm hidden md:flex ${isEven ? 'right-[-24px]' : 'left-[-24px]'} rotate-[-5deg]`}>
+                    D{day.dayNumber}
+                  </div>
 
-                    {/* Content Block */}
-                    <div className="lg:col-span-10 bg-white/5 backdrop-blur-sm border border-white/5 rounded-[40px] p-8 md:p-12">
-                      <h3 className="font-handwriting text-4xl md:text-5xl text-white mb-6">{day.title || 'In search of wonder'}</h3>
-                      
+                  <div className="bg-white hover:shadow-2xl transition-all duration-500 rounded-[50px] shadow-sm border-none sketchy-border overflow-hidden w-full group relative">
+                    <div className={`washi-tape ${idx % 3 === 0 ? 'bg-amber-400/30' : idx % 3 === 1 ? 'bg-rose-400/30' : 'bg-blue-400/30'} washi-tape-top-right w-16 h-8`} />
+                    
+                    {eventImages.length > 0 && (
+                      <div className="relative h-64 w-full overflow-hidden">
+                        <img src={eventImages[0]} alt="" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000 saturate-[0.8] contrast-[1.1]" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 via-transparent to-transparent" />
+                        <div className={`absolute bottom-6 ${isEven ? 'md:right-8 left-8' : 'left-8'}`}>
+                           <p className="font-handwriting text-3xl text-white drop-shadow-md">Captured Moment</p>
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="p-10">
+                      <h3 className="font-handwriting text-5xl text-slate-900 leading-tight mb-2">{day.title || `Chapter ${day.dayNumber}`}</h3>
                       {day.destination?.name && (
-                         <div className="flex items-center gap-2 text-[#d4af37] font-bold text-[10px] uppercase tracking-[0.2em] mb-8">
-                           <MapPin className="w-3 h-3" /> {day.destination.name}
+                        <div className={`flex items-center gap-2 text-blue-600 font-black text-[10px] uppercase tracking-[0.2em] mb-6 ${isEven ? 'justify-end' : ''}`}>
+                          <MapPin className="w-3 h-3" /> {day.destination.name}
+                        </div>
+                      )}
+                      
+                      {day.description && (
+                         <div className="relative mt-6">
+                            <div className={`absolute top-0 bottom-0 w-0.5 bg-slate-100 rounded-full transition-all group-hover:bg-blue-200/50 ${isEven ? 'md:-right-6 md:left-auto -left-6' : '-left-6'}`} />
+                            <ExpandableText 
+                              text={day.description} 
+                              limit={250} 
+                              className="text-slate-600 text-base leading-[1.8] font-medium italic"
+                            />
                          </div>
                       )}
 
-                      {eventImages.length > 0 && (
-                        <div className="w-full h-64 md:h-96 rounded-3xl overflow-hidden mb-8 relative group">
-                           <img src={eventImages[0]} alt="" className="w-full h-full object-cover transition-transform duration-[2s] group-hover:scale-110 filter grayscale-[0.2]" />
+                      {day.events?.length > 0 && (
+                        <div className={`mt-10 space-y-6 pt-10 border-t border-dashed border-slate-100`}>
+                          {day.events.map((ev: any, evIdx: number) => { 
+                            const Icon = EVENT_ICONS[ev.type] || MapPin; 
+                            return (
+                              <div key={ev.id ?? `event-${evIdx}`} className={`flex items-start gap-4 ${isEven ? 'md:flex-row-reverse' : ''}`}>
+                                <div className="w-10 h-10 bg-slate-50 rounded-2xl flex-shrink-0 flex items-center justify-center border border-slate-100 group-hover:bg-white group-hover:shadow-md transition-all">
+                                  <Icon className="w-5 h-5 text-slate-900" />
+                                </div>
+                                <div className={`flex-1 ${isEven ? 'md:text-right' : ''}`}>
+                                  <p className="text-sm font-black text-slate-900 uppercase tracking-tighter">{ev.title}</p>
+                                  
+                                  {ev.type === 'accommodation' && (
+                                    <div className={`flex flex-wrap gap-2 mt-3 mb-3 ${isEven ? 'md:justify-end' : ''}`}>
+                                       {ev.metadata?.hotelName && <span className="bg-slate-900 text-white px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border border-slate-700 shadow-md">Stay: {ev.metadata.hotelName}</span>}
+                                       {ev.metadata?.roomType && <span className="bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border border-blue-100 shadow-sm">Room: {ev.metadata.roomType}</span>}
+                                       {ev.metadata?.mealPlan && <span className="bg-emerald-50 text-emerald-700 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border border-emerald-100 shadow-sm">Plan: {ev.metadata.mealPlan}</span>}
+                                       {ev.metadata?.checkInDate && <span className="bg-white text-slate-600 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border border-slate-200 shadow-sm">In: {ev.metadata.checkInDate}</span>}
+                                       {ev.metadata?.checkOutDate && <span className="bg-white text-slate-600 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border border-slate-200 shadow-sm">Out: {ev.metadata.checkOutDate}</span>}
+                                    </div>
+                                  )}
+
+                                  {ev.description && <p className="text-xs text-slate-500 mt-1 font-medium">{ev.description}</p>}
+                                  {ev.startTime && <p className="font-handwriting text-lg text-blue-400 mt-2">{ev.startTime}{ev.endTime && ` — ${ev.endTime}`}</p>}
+                                </div>
+                              </div>
+                            ); 
+                          })}
                         </div>
                       )}
-
-                      {/* Unfoldable Core Content */}
-                      <UnfoldableContent>
-                        {day.description && (
-                          <p className="text-white/70 text-lg md:text-xl font-serif italic leading-relaxed mb-10">
-                            {day.description}
-                          </p>
-                        )}
-                        
-                        {day.events?.length > 0 && (
-                          <div className="space-y-8 pl-4 border-l border-white/10">
-                            {day.events.map((ev: any, evIdx: number) => { 
-                              const Icon = EVENT_ICONS[ev.type] || MapPin; 
-                              if (ev.type === 'accommodation') return null; // We showed hotels above
-                              
-                              return (
-                                <motion.div 
-                                  initial={{ opacity: 0, x: -20 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ delay: evIdx * 0.1 }}
-                                  key={ev.id ?? evIdx} className="relative pl-8"
-                                >
-                                  <div className="absolute -left-[17px] top-1 w-8 h-8 rounded-full bg-[#111820] border border-white/20 flex items-center justify-center">
-                                    <Icon className="w-3 h-3 text-[#d4af37]" />
-                                  </div>
-                                  <h4 className="text-lg font-bold text-white tracking-tight uppercase">{ev.title}</h4>
-                                  <div className="flex items-center gap-4 mt-2">
-                                     {ev.startTime && <span className="font-serif text-[#d4af37] text-sm">{ev.startTime}{ev.endTime && ` — ${ev.endTime}`}</span>}
-                                     {ev.metadata?.vehicleType && <span className="bg-white/10 px-2 py-1 rounded text-[10px] font-bold uppercase tracking-widest text-white/50">{ev.metadata.vehicleType}</span>}
-                                  </div>
-                                  {ev.description && <p className="text-sm text-white/60 mt-3 font-medium leading-relaxed">{ev.description}</p>}
-                                </motion.div>
-                              ); 
-                            })}
-                          </div>
-                        )}
-                      </UnfoldableContent>
-
                     </div>
-                  </motion.div>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* STAGGERED GALLERY */}
-          {itinerary.galleryImages?.length > 0 && (
-             <div className="pt-20">
-                <div className="text-center mb-16">
-                  <h2 className="font-handwriting text-6xl text-white mb-4">Visual Essence</h2>
-                  <p className="text-[#d4af37] font-serif uppercase tracking-[0.2em] text-[10px]">Glimpses of what awaits</p>
-                </div>
-                
-                <div className="columns-1 md:columns-2 lg:columns-3 gap-6 space-y-6">
-                  {itinerary.galleryImages.map((img: any, idx: number) => (
-                    <motion.div 
-                      key={img.id ?? idx}
-                      initial={{ opacity: 0, y: 50 }}
-                      whileInView={{ opacity: 1, y: 0 }}
-                      viewport={{ once: true, margin: "-50px" }}
-                      transition={{ duration: 0.8, delay: (idx % 3) * 0.2 }}
-                      className="break-inside-avoid relative group rounded-[30px] overflow-hidden"
-                    >
-                      <div className="relative w-full h-full">
-                        <img src={img.imageUrl} alt={img.caption || ''} className="w-full h-auto object-cover transition-transform duration-[2s] ease-out group-hover:scale-[1.03] grayscale-[0.3] hover:grayscale-0" />
-                        <div className="absolute inset-0 bg-gradient-to-t from-[#06090a]/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
-                      </div>
-                      {img.caption && (
-                        <div className="absolute bottom-6 left-6 right-6 translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-700">
-                          <p className="text-[10px] text-white font-black uppercase tracking-widest">{img.caption}</p>
-                        </div>
-                      )}
-                    </motion.div>
-                  ))}
-                </div>
-             </div>
-          )}
-
-          {/* GLOWING PRICING SHEET */}
-          {itinerary.perPersonCost && (
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.95, filter: "blur(10px)" }} 
-              whileInView={{ opacity: 1, scale: 1, filter: "blur(0px)" }} 
-              viewport={{ once: true }} 
-              transition={{ duration: 1.5, ease: [0.16, 1, 0.3, 1] }}
-              className="relative rounded-[60px] p-12 md:p-24 text-center overflow-hidden border border-[#d4af37]/20"
-            >
-              <div className="absolute inset-0 bg-[#0a0f12] z-0" />
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-[#d4af37]/10 via-[#0a0f12]/0 to-[#0a0f12] z-0" />
-              
-              <div className="relative z-10">
-                <span className="font-handwriting text-4xl text-[#d4af37] block mb-8">The Investment</span>
-                <p className="text-7xl md:text-9xl font-black tracking-tighter text-white drop-shadow-[0_0_30px_rgba(212,175,55,0.1)]">
-                  {(() => {
-                    try {
-                      return new Intl.NumberFormat('en-IN', { style: 'currency', currency: itinerary.currency || 'INR', maximumFractionDigits: 0 }).format(Number(itinerary.perPersonCost));
-                    } catch (e) {
-                      return `${itinerary.currency || 'INR'} ${Number(itinerary.perPersonCost).toLocaleString('en-IN')}`;
-                    }
-                  })()}
-                </p>
-                <p className="text-[10px] text-white/50 mt-6 font-bold uppercase tracking-[0.5em]">Extracted Per Explorer</p>
-                
-                {itinerary.totalCost && (
-                  <div className="mt-16 pt-12 border-t border-white/5 w-full max-w-lg mx-auto flex flex-col items-center">
-                    <span className="text-[10px] font-bold text-white/30 uppercase tracking-[0.3em] mb-4">Total Voyage Value</span>
-                    <span className="text-3xl font-serif text-white/90 italic">
-                      {(() => {
-                        try {
-                          return new Intl.NumberFormat('en-IN', { style: 'currency', currency: itinerary.currency || 'INR', maximumFractionDigits: 0 }).format(Number(itinerary.totalCost));
-                        } catch (e) {
-                          return `${itinerary.currency || 'INR'} ${Number(itinerary.totalCost).toLocaleString('en-IN')}`;
-                        }
-                      })()}
-                    </span>
-                    <p className="text-[10px] text-white/20 mt-4 font-bold tracking-[0.2em] uppercase">
-                      Curated for {itinerary.adults} Adults {itinerary.children > 0 && `& ${itinerary.children} Children`}
-                    </p>
                   </div>
-                )}
-              </div>
-            </motion.div>
-          )}
-
-          {/* REFINED POLICIES */}
-          {(itinerary.inclusionsHtml || itinerary.exclusionsHtml || itinerary.paymentPolicyHtml || itinerary.cancellationPolicyHtml || itinerary.termsHtml) && (
-             <div className="pt-20">
-                <div className="mb-16">
-                  <h2 className="font-handwriting text-5xl md:text-7xl text-white mb-2">Provisions</h2>
-                  <div className="h-px w-20 bg-[#d4af37]/30 mt-6" />
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-16">
-                  {itinerary.inclusionsHtml && (
-                    <div className="bg-white/5 border border-white/5 p-10 rounded-[40px] backdrop-blur-sm">
-                      <h4 className="font-serif text-xl text-[#d4af37] mb-6 flex items-center gap-3"><CheckCircle className="w-5 h-5" /> Included Essence</h4>
-                      <div className="text-sm text-white/70 leading-[2] pl-2 prose prose-invert prose-p:font-light font-sans max-w-none" dangerouslySetInnerHTML={{ __html: sanitize(itinerary.inclusionsHtml) }} />
-                    </div>
-                  )}
-                  {itinerary.exclusionsHtml && (
-                    <div className="bg-white/5 border border-white/5 p-10 rounded-[40px] backdrop-blur-sm">
-                      <h4 className="font-serif text-xl text-[#d4af37]/60 mb-6 flex items-center gap-3"><XCircle className="w-5 h-5" /> Independent Obligations</h4>
-                      <div className="text-sm text-white/50 leading-[2] pl-2 prose prose-invert prose-p:font-light font-sans max-w-none" dangerouslySetInnerHTML={{ __html: sanitize(itinerary.exclusionsHtml) }} />
-                    </div>
-                  )}
-                </div>
-
-                {(itinerary.paymentPolicyHtml || itinerary.cancellationPolicyHtml || itinerary.termsHtml) && (
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-16">
-                    {itinerary.paymentPolicyHtml && (
-                      <div className="p-8 bg-white/[0.02] border border-white/5 rounded-3xl group hover:bg-white/5 transition-all duration-500">
-                        <div className="flex items-center gap-3 text-white/40 mb-6"><CreditCard className="w-4 h-4" /><span className="text-[10px] font-bold uppercase tracking-widest">Financial Protocol</span></div>
-                        <div className="text-xs text-white/60 leading-relaxed font-light" dangerouslySetInnerHTML={{ __html: sanitize(itinerary.paymentPolicyHtml) }} />
-                      </div>
-                    )}
-                    {itinerary.cancellationPolicyHtml && (
-                      <div className="p-8 bg-white/[0.02] border border-white/5 rounded-3xl group hover:bg-white/5 transition-all duration-500">
-                        <div className="flex items-center gap-3 text-white/40 mb-6"><AlertTriangle className="w-4 h-4" /><span className="text-[10px] font-bold uppercase tracking-widest">Amendment Policy</span></div>
-                        <div className="text-xs text-white/60 leading-relaxed font-light" dangerouslySetInnerHTML={{ __html: sanitize(itinerary.cancellationPolicyHtml) }} />
-                      </div>
-                    )}
-                    {itinerary.termsHtml && (
-                      <div className="p-8 bg-white/[0.02] border border-white/5 rounded-3xl group hover:bg-white/5 transition-all duration-500">
-                        <div className="flex items-center gap-3 text-white/40 mb-6"><Shield className="w-4 h-4" /><span className="text-[10px] font-bold uppercase tracking-widest">Formal Terms</span></div>
-                        <div className="text-xs text-white/60 leading-relaxed font-light" dangerouslySetInnerHTML={{ __html: sanitize(itinerary.termsHtml) }} />
-                      </div>
-                    )}
-                  </div>
-                )}
-             </div>
-          )}
-
-          {/* SIGNATURE */}
-          <div className="text-center pt-32 pb-12">
-            <Compass className="w-8 h-8 text-[#d4af37]/20 mx-auto mb-6" />
-            <p className="font-handwriting text-3xl md:text-5xl text-white/80 italic">Curated with untethered passion.</p>
-            <p className="text-[9px] text-[#d4af37]/50 font-black uppercase tracking-[0.5em] mt-8">Imagica Holidays Elite</p>
+                </motion.div>
+              );
+            })}
+            <div className="clear-both" />
           </div>
-
         </div>
+
+        {/* Gallery */}
+        {itinerary.galleryImages?.length > 0 && (
+          <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="bg-white rounded-[60px] shadow-2xl border-none p-12 relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-amber-500/5 rounded-full blur-3xl" />
+            <div className="flex flex-col items-center mb-12">
+               <h2 className="font-handwriting text-6xl text-slate-900 mb-2">Artistic Album</h2>
+               <div className="h-1 w-24 bg-slate-200 rounded-full" />
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+              {itinerary.galleryImages.map((img: any, idx: number) => (
+                <motion.div 
+                  whileHover={{ scale: 1.05, rotate: idx % 2 === 0 ? 3 : -3 }}
+                  key={img.id ?? img.imageUrl ?? idx} 
+                  className="relative group overflow-hidden rounded-[30px] aspect-[4/5] shadow-lg border-2 border-white"
+                >
+                   <img src={img.imageUrl} alt={img.caption || ''} className="w-full h-full object-cover grayscale-[0.3] hover:grayscale-0 transition-all duration-700" />
+                   {img.caption && (
+                     <div className="absolute bottom-0 left-0 right-0 p-4 bg-black/40 backdrop-blur-sm transform translate-y-full group-hover:translate-y-0 transition-transform">
+                        <p className="text-[10px] text-white font-bold text-center uppercase tracking-widest">{img.caption}</p>
+                     </div>
+                   )}
+                </motion.div>
+              ))}
+            </div>
+          </motion.div>
+        )}
+
+        {/* Pricing */}
+        {itinerary.perPersonCost && (
+          <motion.div initial={{ opacity: 0, scale: 0.95 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }} className="bg-slate-900 rounded-[60px] p-12 md:p-20 text-white text-center shadow-[0_35px_60px_-15px_rgba(0,0,0,0.5)] relative overflow-hidden">
+            <div className="absolute right-0 top-0 w-96 h-96 bg-blue-500 rounded-full blur-[120px] opacity-20 -translate-y-1/2 translate-x-1/2" />
+            <div className="absolute left-0 bottom-0 w-96 h-96 bg-emerald-500 rounded-full blur-[120px] opacity-10 translate-y-1/2 -translate-x-1/2" />
+            
+            <div className="relative z-10">
+              <span className="font-handwriting text-4xl text-blue-300 block mb-6 italic underline underline-offset-8 decoration-blue-500/30">Investment for Experience</span>
+              <p className="text-6xl md:text-8xl font-black mt-8 tracking-tighter drop-shadow-2xl">
+                {(() => {
+                  try {
+                    return new Intl.NumberFormat(undefined, { style: 'currency', currency: itinerary.currency || 'INR', maximumFractionDigits: 0 }).format(Number(itinerary.perPersonCost));
+                  } catch (e) {
+                    return `${itinerary.currency || 'INR'} ${Number(itinerary.perPersonCost).toLocaleString('en-IN')}`;
+                  }
+                })()}
+              </p>
+              <p className="text-xs text-white/40 mt-4 font-black uppercase tracking-[0.5em]">Reserved per individual</p>
+              
+              {itinerary.totalCost && (
+                <div className="mt-12 pt-12 border-t border-white/10 w-full max-w-md mx-auto">
+                  <div className="flex justify-between items-center bg-white/5 py-4 px-8 rounded-3xl border border-white/5">
+                    <span className="text-xs font-bold text-white/50 uppercase tracking-widest">Total Voyage Cost</span>
+                    <span className="text-3xl font-black text-white italic">
+                    {(() => {
+                      try {
+                        return new Intl.NumberFormat(undefined, { style: 'currency', currency: itinerary.currency || 'INR', maximumFractionDigits: 0 }).format(Number(itinerary.totalCost));
+                      } catch (e) {
+                        return `${itinerary.currency || 'INR'} ${Number(itinerary.totalCost).toLocaleString('en-IN')}`;
+                      }
+                    })()}
+                    </span>
+                  </div>
+                  <motion.p initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} className="text-[10px] text-white/30 mt-6 font-bold tracking-[0.2em] uppercase">
+                    Including {itinerary.adults} Adults {itinerary.children > 0 && `& ${itinerary.children} Children`}
+                  </motion.p>
+                </div>
+              )}
+            </div>
+          </motion.div>
+        )}
+
+        {/* Package Policies */}
+        {(itinerary.inclusionsHtml || itinerary.exclusionsHtml || itinerary.paymentPolicyHtml || itinerary.cancellationPolicyHtml || itinerary.termsHtml) && (
+          <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="bg-white rounded-[60px] shadow-sm border-none p-16 space-y-16 relative">
+            <div className="absolute top-10 left-10 text-slate-100 pointer-events-none">
+              <Shield className="w-32 h-32 opacity-20" />
+            </div>
+            
+            <div className="text-center relative z-10">
+              <h2 className="font-handwriting text-6xl text-slate-900 mb-2 italic">Provisions & Promises</h2>
+              <div className="h-1 w-20 bg-slate-100 mx-auto" />
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-16 relative z-10">
+              {itinerary.inclusionsHtml && (
+                <div className="space-y-6">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-[20px] bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-100 shadow-sm"><CheckCircle className="w-6 h-6" /></div>
+                    <span className="font-black text-xs uppercase tracking-[0.3em] text-slate-400">Included Essence</span>
+                  </div>
+                  <div className="text-sm text-slate-600 leading-relaxed pl-2 prose prose-slate max-w-none whitespace-pre-wrap font-medium font-handwriting text-2xl" dangerouslySetInnerHTML={{ __html: sanitize(itinerary.inclusionsHtml) }} />
+                </div>
+              )}
+              {itinerary.exclusionsHtml && (
+                <div className="space-y-6">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-[20px] bg-rose-50 text-rose-600 flex items-center justify-center border border-rose-100 shadow-sm"><XCircle className="w-6 h-6" /></div>
+                    <span className="font-black text-xs uppercase tracking-[0.3em] text-slate-400">Personal Responsibility</span>
+                  </div>
+                  <div className="text-sm text-slate-600 leading-relaxed pl-2 prose prose-slate max-w-none whitespace-pre-wrap font-medium italic opacity-70" dangerouslySetInnerHTML={{ __html: sanitize(itinerary.exclusionsHtml) }} />
+                </div>
+              )}
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-10 pt-16 border-t border-dashed border-slate-100 relative z-10">
+              {itinerary.paymentPolicyHtml && (
+                <div className="p-8 bg-slate-50/50 rounded-[40px] border border-slate-100/50 group hover:bg-white hover:shadow-xl transition-all duration-500">
+                  <div className="flex items-center gap-3 text-blue-600 mb-6"><CreditCard className="w-5 h-5" /><span className="text-[10px] font-black uppercase tracking-widest">Financial Protocol</span></div>
+                  <div className="text-xs text-slate-500 leading-relaxed font-medium" dangerouslySetInnerHTML={{ __html: sanitize(itinerary.paymentPolicyHtml) }} />
+                </div>
+              )}
+              {itinerary.cancellationPolicyHtml && (
+                <div className="p-8 bg-slate-50/50 rounded-[40px] border border-slate-100/50 group hover:bg-white hover:shadow-xl transition-all duration-500">
+                  <div className="flex items-center gap-3 text-amber-600 mb-6"><AlertTriangle className="w-5 h-5" /><span className="text-[10px] font-black uppercase tracking-widest">Change Policy</span></div>
+                  <div className="text-xs text-slate-500 leading-relaxed font-medium" dangerouslySetInnerHTML={{ __html: sanitize(itinerary.cancellationPolicyHtml) }} />
+                </div>
+              )}
+              {itinerary.termsHtml && (
+                <div className="p-8 bg-slate-50/50 rounded-[40px] border border-slate-100/50 group hover:bg-white hover:shadow-xl transition-all duration-500">
+                  <div className="flex items-center gap-3 text-slate-600 mb-6"><Shield className="w-5 h-5" /><span className="text-[10px] font-black uppercase tracking-widest">Formal Terms</span></div>
+                  <div className="text-xs text-slate-500 leading-relaxed font-medium" dangerouslySetInnerHTML={{ __html: sanitize(itinerary.termsHtml) }} />
+                </div>
+              )}
+            </div>
+          </motion.div>
+        )}
+
+        {/* Handcrafted Signature */}
+        <div className="text-center pt-20">
+          <div className="inline-block relative">
+             <div className="absolute -top-12 -right-12 text-blue-500/10 rotate-12 pointer-events-none">
+                <Compass className="w-24 h-24" />
+             </div>
+             <p className="font-handwriting text-4xl text-slate-900 relative z-10 italic">Your journey, curated with passion.</p>
+             <p className="text-[10px] text-slate-400 font-black uppercase tracking-[0.5em] mt-6">Handcrafted by TravelCRM Elite</p>
+          </div>
+        </div>
+
+      </div>
       </div>
     </>
   );
 }
+
