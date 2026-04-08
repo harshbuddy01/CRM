@@ -15,21 +15,26 @@ const EVENT_ICONS: Record<string, any> = {
 function ExpandableText({ text, limit = 400, className = "" }: { text: string; limit?: number; className?: string }) {
   const [expanded, setExpanded] = useState(false);
   if (!text) return null;
-  if (text.length <= limit) return <p className={className}>{text}</p>;
+  const isLong = text.length > limit;
 
   return (
-    <div className="space-y-4">
-      <p className={className}>
-        {expanded ? text : `${text.slice(0, limit)}...`}
-      </p>
-      <button 
-        onClick={() => setExpanded(!expanded)}
-        className="font-handwriting text-2xl text-blue-400 hover:text-blue-500 transition-colors flex items-center gap-2 group"
-      >
-        <span className="w-8 h-px bg-blue-300/30 group-hover:w-12 transition-all" />
-        {expanded ? 'Read less of the story' : 'Read the full story'}
-      </button>
-    </div>
+    <motion.div layout className="space-y-4">
+      <motion.div layout initial={false} animate={{ height: "auto" }} className="overflow-hidden">
+        <p className={className}>
+          {expanded || !isLong ? text : `${text.slice(0, limit)}...`}
+        </p>
+      </motion.div>
+      {isLong && (
+        <motion.button 
+          layout
+          onClick={() => setExpanded(!expanded)}
+          className="font-handwriting text-2xl text-blue-400 hover:text-blue-500 transition-colors flex items-center gap-2 group mt-2"
+        >
+          <span className="w-8 h-px bg-blue-300/30 group-hover:w-12 transition-all" />
+          {expanded ? 'Read less of the story' : 'Read the full story'}
+        </motion.button>
+      )}
+    </motion.div>
   );
 }
 
@@ -263,7 +268,14 @@ export default function SharePage() {
                 </tr></thead>
                 <tbody className="divide-y divide-slate-50">
                   {itinerary.days?.map((day: any) => day.events?.filter((e: any) => e.type === 'accommodation').map((ev: any, idx: number) => (
-                    <tr key={ev.id ?? `day-${day.dayNumber}-accom-${idx}`} className="hover:bg-slate-50/70 transition-all duration-300 group/row">
+                    <motion.tr 
+                      initial={{ opacity: 0, x: -20 }}
+                      whileInView={{ opacity: 1, x: 0 }}
+                      viewport={{ once: true }}
+                      transition={{ duration: 0.4, delay: idx * 0.1 }}
+                      key={ev.id ?? `day-${day.dayNumber}-accom-${idx}`} 
+                      className="hover:bg-slate-50/70 transition-all duration-300 group/row"
+                    >
                       <td className="py-8 px-4">
                         <span className="bg-slate-100 px-4 py-2 rounded-2xl font-black text-xs text-slate-500">Day {day.dayNumber}</span>
                         {(ev.metadata?.checkInDate || ev.metadata?.checkOutDate) && (
@@ -296,7 +308,7 @@ export default function SharePage() {
                           <Utensils className="w-3 h-3" /> {ev.metadata?.mealPlan || 'Plan Included'}
                         </span>
                       </td>
-                    </tr>
+                    </motion.tr>
                   )))}
                 </tbody>
               </table>
@@ -379,27 +391,34 @@ export default function SharePage() {
                           {day.events.map((ev: any, evIdx: number) => { 
                             const Icon = EVENT_ICONS[ev.type] || MapPin; 
                             return (
-                              <div key={ev.id ?? `event-${evIdx}`} className={`flex items-start gap-4 ${isEven ? 'md:flex-row-reverse' : ''}`}>
-                                <div className="w-10 h-10 bg-slate-50 rounded-2xl flex-shrink-0 flex items-center justify-center border border-slate-100 group-hover:bg-white group-hover:shadow-md transition-all">
+                              <motion.div 
+                                initial={{ opacity: 0, x: isEven ? 20 : -20 }}
+                                whileInView={{ opacity: 1, x: 0 }}
+                                viewport={{ once: true }}
+                                transition={{ duration: 0.5, delay: evIdx * 0.1, type: "spring" }}
+                                key={ev.id ?? `event-${evIdx}`} 
+                                className={`flex items-start gap-4 ${isEven ? 'md:flex-row-reverse' : ''} group`}
+                              >
+                                <div className="w-10 h-10 bg-slate-50 rounded-2xl flex-shrink-0 flex items-center justify-center border border-slate-100 group-hover:bg-white group-hover:shadow-md transition-all group-hover:scale-110 duration-500">
                                   <Icon className="w-5 h-5 text-slate-900" />
                                 </div>
                                 <div className={`flex-1 ${isEven ? 'md:text-right' : ''}`}>
-                                  <p className="text-sm font-black text-slate-900 uppercase tracking-tighter">{ev.title}</p>
+                                  <p className="text-sm font-black text-slate-900 uppercase tracking-tighter group-hover:text-blue-600 transition-colors">{ev.title}</p>
                                   
                                   {ev.type === 'accommodation' && (
                                     <div className={`flex flex-wrap gap-2 mt-3 mb-3 ${isEven ? 'md:justify-end' : ''}`}>
-                                       {ev.metadata?.hotelName && <span className="bg-slate-900 text-white px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border border-slate-700 shadow-md">Stay: {ev.metadata.hotelName}</span>}
-                                       {ev.metadata?.roomType && <span className="bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border border-blue-100 shadow-sm">Room: {ev.metadata.roomType}</span>}
-                                       {ev.metadata?.mealPlan && <span className="bg-emerald-50 text-emerald-700 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border border-emerald-100 shadow-sm">Plan: {ev.metadata.mealPlan}</span>}
-                                       {ev.metadata?.checkInDate && <span className="bg-white text-slate-600 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border border-slate-200 shadow-sm">In: {ev.metadata.checkInDate}</span>}
-                                       {ev.metadata?.checkOutDate && <span className="bg-white text-slate-600 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border border-slate-200 shadow-sm">Out: {ev.metadata.checkOutDate}</span>}
+                                       {ev.metadata?.hotelName && <span className="bg-slate-900 text-white px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border border-slate-700 shadow-md transform hover:scale-105 transition-transform cursor-default">Stay: {ev.metadata.hotelName}</span>}
+                                       {ev.metadata?.roomType && <span className="bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border border-blue-100 shadow-sm cursor-default">Room: {ev.metadata.roomType}</span>}
+                                       {ev.metadata?.mealPlan && <span className="bg-emerald-50 text-emerald-700 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border border-emerald-100 shadow-sm cursor-default">Plan: {ev.metadata.mealPlan}</span>}
+                                       {ev.metadata?.checkInDate && <span className="bg-white text-slate-600 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border border-slate-200 shadow-sm cursor-default">In: {ev.metadata.checkInDate}</span>}
+                                       {ev.metadata?.checkOutDate && <span className="bg-white text-slate-600 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border border-slate-200 shadow-sm cursor-default">Out: {ev.metadata.checkOutDate}</span>}
                                     </div>
                                   )}
 
                                   {ev.description && <p className="text-xs text-slate-500 mt-1 font-medium">{ev.description}</p>}
                                   {ev.startTime && <p className="font-handwriting text-lg text-blue-400 mt-2">{ev.startTime}{ev.endTime && ` — ${ev.endTime}`}</p>}
                                 </div>
-                              </div>
+                              </motion.div>
                             ); 
                           })}
                         </div>
