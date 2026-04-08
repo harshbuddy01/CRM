@@ -324,7 +324,20 @@ export default function ItineraryBuilderPage() {
                     <input 
                       type="date"
                       value={itinerary.travelDateFrom ? format(new Date(itinerary.travelDateFrom), 'yyyy-MM-dd') : ''}
-                      onChange={(e) => updateMut.mutate({ travelDateFrom: e.target.value || null })}
+                      onChange={(e) => {
+                        const fromVal = e.target.value;
+                        if (!fromVal) {
+                          updateMut.mutate({ travelDateFrom: null, travelDateTo: null });
+                        } else {
+                          const daysCount = itinerary?.days?.length || 1;
+                          const toDate = new Date(fromVal);
+                          toDate.setDate(toDate.getDate() + (daysCount - 1));
+                          updateMut.mutate({
+                            travelDateFrom: fromVal,
+                            travelDateTo: toDate.toISOString().split('T')[0]
+                          });
+                        }
+                      }}
                       className="bg-transparent text-xs font-bold text-white outline-none [&::-webkit-calendar-picker-indicator]:filter [&::-webkit-calendar-picker-indicator]:invert cursor-pointer"
                       title="Travel Date (From)"
                     />
@@ -385,14 +398,8 @@ export default function ItineraryBuilderPage() {
                 <TabsList className="bg-white/10 border border-white/20 rounded-xl p-1 h-9 mr-2">
                   <TabsTrigger value="build" className="rounded-lg font-bold text-[10px] uppercase tracking-wider text-white/70 data-[state=active]:bg-white data-[state=active]:text-primary px-3 transition-all">Build</TabsTrigger>
                   <TabsTrigger value="pricing" className="rounded-lg font-bold text-[10px] uppercase tracking-wider text-white/70 data-[state=active]:bg-white data-[state=active]:text-primary px-3 transition-all">Pricing</TabsTrigger>
-                  <TabsTrigger value="final" className="rounded-lg font-bold text-[10px] uppercase tracking-wider text-white/70 data-[state=active]:bg-white data-[state=active]:text-primary px-3 transition-all">Final</TabsTrigger>
+                  <TabsTrigger value="final" className="rounded-lg font-bold text-[10px] uppercase tracking-wider text-white/70 data-[state=active]:bg-white data-[state=active]:text-primary px-3 transition-all">Preview & Share</TabsTrigger>
                 </TabsList>
-
-                {!itinerary.isTemplate && (
-                  <Button size="sm" className="rounded-xl font-bold text-xs h-9 bg-emerald-500 hover:bg-emerald-600 border border-emerald-400 shadow-md shadow-emerald-500/20 text-white" onClick={handlePublishTemplate}>
-                    <Copy className="w-3.5 h-3.5 mr-1" /> Save as Template
-                  </Button>
-                )}
 
                 <Button size="sm" variant="secondary" className="rounded-xl font-bold text-xs h-9" onClick={() => openMediaLibrary('cover')}>
                   <ImageIcon className="w-3.5 h-3.5 mr-1" /> Library

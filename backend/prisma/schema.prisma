@@ -295,7 +295,7 @@ model Proposal {
 
   query     Query      @relation(fields: [queryId], references: [id], onDelete: Cascade)
   user      User       @relation(fields: [createdBy], references: [id])
-  itinerary Itinerary? @relation(fields: [itineraryId], references: [id])
+  itinerary Itinerary? @relation(fields: [itineraryId], references: [id], onDelete: SetNull)
   days      ProposalDay[]
   tours     Tour[]
 

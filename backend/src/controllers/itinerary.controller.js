@@ -190,7 +190,7 @@ const generateItineraryHtml = (itinerary) => {
             text-transform: uppercase; 
             letter-spacing: 0.05em;
           }
-          .event-info .soft-note { font-family: 'Dancing Script', cursive; font-size: 22px; color: #8b6e4b; margin: 4px 0; }
+          .event-info .soft-note { font-family: 'EB Garamond', serif; font-size: 16px; color: #555; margin: 4px 0; font-style: italic; }
           .event-image { margin-top: 15px; }
           .event-image img { max-width: 80%; border-radius: 8px; border: 4px solid white; box-shadow: 0 4px 15px rgba(0,0,0,0.08); max-height: 250px; object-fit: cover; }
 
@@ -266,11 +266,22 @@ const generateItineraryHtml = (itinerary) => {
               const events = day.events || [];
               const dayImage = day.imageUrl;
               
+              let dayDateStr = '';
+              if (itinerary.travelDateFrom) {
+                const dayDate = new Date(itinerary.travelDateFrom);
+                dayDate.setDate(dayDate.getDate() + (day.dayNumber - 1));
+                const opts = { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' };
+                dayDateStr = dayDate.toLocaleDateString('en-US', opts);
+              }
+
               return `
               <div class="day-entry">
                 <div class="day-title-wrap">
                   <span class="day-number">Day ${day.dayNumber}</span>
-                  <h3>${escapeHtml(day.title || 'In Search of Magic')}</h3>
+                  <div style="display: flex; flex-direction: column;">
+                    <h3>${escapeHtml(day.title || 'In Search of Magic')}</h3>
+                    ${dayDateStr ? `<div style="color: #666; font-size: 13px; margin-top: 4px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; font-family: sans-serif;">${dayDateStr}</div>` : ''}
+                  </div>
                 </div>
                 <div class="day-content">
                   ${dayImage ? `

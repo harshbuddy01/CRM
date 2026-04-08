@@ -442,7 +442,16 @@ const formatPublicItinerary = (itinerary) => {
   if (!itinerary) return null;
   
   // Strip internal financial metadata before sending to customer
-  const { markupPct, ...publicItinerary } = itinerary;
+  const { 
+    markupPct, 
+    totalCost, 
+    sellingPrice, 
+    perPersonCost, 
+    costingBreakdown, 
+    createdBy, 
+    creator, 
+    ...publicItinerary 
+  } = itinerary;
 
   // Sanitize days and events to remove individual costs
   if (publicItinerary.days) {
