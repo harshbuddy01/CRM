@@ -261,7 +261,11 @@ const generateProposalHtml = (proposal) => {
                   <div class="mini-card-data">
                     <span class="mini-type">Sanctuary</span>
                     <h4 class="mini-title">${escapeHtml(stay.title || stay.metadata?.hotelName)}</h4>
-                    <span class="mini-meta">${escapeHtml(stay.metadata?.roomCategory || 'Executive Room')} • Confirmed Arrival</span>
+                    <span class="mini-meta">
+                      ${escapeHtml(stay.metadata?.roomCategory || 'Executive Room')}
+                      ${stay.metadata?.checkInDate ? `<br/>Check-In: ${escapeHtml(stay.metadata.checkInDate)}` : ''}
+                      ${stay.metadata?.checkOutDate ? ` | Check-Out: ${escapeHtml(stay.metadata.checkOutDate)}` : ''}
+                    </span>
                   </div>
                 </div>
                 ` : ''}
@@ -280,6 +284,32 @@ const generateProposalHtml = (proposal) => {
             </div>
             `;
           }).join('')}
+
+          ${(itinerary?.inclusionsHtml || itinerary?.exclusionsHtml) ? `
+            <div style="margin-top: 40px; page-break-inside: avoid; border-top: 2px solid #111; padding-top: 20px;">
+              <div style="display: flex; gap: 30px;">
+                <div style="width: 50%;">
+                  <h4 style="color:#8b6e4b; font-size:10px; text-transform:uppercase; letter-spacing:2px; margin-bottom:10px;">Inclusions</h4>
+                  <div style="font-size: 8.5px; line-height: 1.4; color: #555;">${itinerary.inclusionsHtml}</div>
+                </div>
+                <div style="width: 50%;">
+                  <h4 style="color:#999; font-size:10px; text-transform:uppercase; letter-spacing:2px; margin-bottom:10px;">Exclusions</h4>
+                  <div style="font-size: 8.5px; line-height: 1.4; color: #555;">${itinerary.exclusionsHtml}</div>
+                </div>
+              </div>
+            </div>
+          ` : ''}
+
+          ${(itinerary?.paymentPolicyHtml || itinerary?.cancellationPolicyHtml || itinerary?.termsHtml) ? `
+            <div style="margin-top: 25px; page-break-inside: avoid; border-top: 1px solid #ddd; padding-top: 15px;">
+              <h4 style="color:#111; font-size:10px; text-transform:uppercase; letter-spacing:2px; margin-bottom:10px;">Policies & General Terms</h4>
+              <div style="font-size: 8px; line-height: 1.4; color: #777;">
+                ${itinerary.paymentPolicyHtml ? `<div style="margin-bottom:8px;"><strong>Payment Policy:</strong> ${itinerary.paymentPolicyHtml}</div>` : ''}
+                ${itinerary.cancellationPolicyHtml ? `<div style="margin-bottom:8px;"><strong>Cancellation Policy:</strong> ${itinerary.cancellationPolicyHtml}</div>` : ''}
+                ${itinerary.termsHtml ? `<div style="margin-bottom:8px;"><strong>General Terms:</strong> ${itinerary.termsHtml}</div>` : ''}
+              </div>
+            </div>
+          ` : ''}
 
           <div class="price-block">
             <div class="price-val">₹${Number(proposal.sellingPrice || 0).toLocaleString('en-IN')}</div>
