@@ -24,6 +24,7 @@ import DOMPurify from 'dompurify';
 import { format, addDays } from 'date-fns';
 import { MediaLibraryModal } from '@/components/MediaLibraryModal';
 import { ImageCropperModal } from '@/components/ImageCropperModal';
+import { BrochureView } from '@/components/BrochureView';
 
 const EVENT_TYPES = [
   { value: 'accommodation', label: 'Accommodation', icon: Hotel, color: 'text-blue-600 bg-blue-50' },
@@ -1554,23 +1555,9 @@ function FinalPreviewTab({ itinerary, onShare, onExport, onDelete, isDeleting, i
   isPdfExporting: boolean;
   isSharing: boolean;
 }) {
-  const accomEvents = (itinerary.days || []).flatMap((d: any) => (d.events || []).filter((e: any) => e.type === 'accommodation'));
-  
-  const sanitize = (html: string) => {
-    if (typeof window === 'undefined') return html;
-    return DOMPurify.sanitize(html);
-  };
-
   return (
-    <div className="max-w-4xl mx-auto space-y-12 pb-20 paper-texture p-8 md:p-12 rounded-[40px] shadow-inner border border-slate-100 relative overflow-hidden">
-      {/* Decorative Doodles */}
-      <div className="absolute top-10 right-10 opacity-10 pointer-events-none">
-        <Sun className="w-20 h-20 rotate-12" />
-      </div>
-      <div className="absolute bottom-10 left-10 opacity-10 pointer-events-none">
-        <Mountain className="w-32 h-32 -rotate-12" />
-      </div>
-      <div className="flex justify-end gap-3 print:hidden">
+    <div className="space-y-6 w-full pb-20">
+      <div className="flex justify-end gap-3 print:hidden max-w-[1200px] mx-auto px-4 md:px-0">
         <Button variant="outline" className="rounded-2xl font-bold px-6 h-11 border-slate-200 hover:bg-slate-50 transition-all active:scale-95" onClick={onShare} disabled={isSharing}>
           {isSharing ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Share2 className="w-4 h-4 mr-2 text-slate-500" />} {isSharing ? 'Sharing...' : 'Share Link'}
         </Button>
@@ -1579,246 +1566,12 @@ function FinalPreviewTab({ itinerary, onShare, onExport, onDelete, isDeleting, i
         </Button>
       </div>
 
-      {/* Hotel Summary — Premium Grid */}
-      {accomEvents.length > 0 && (
-        <section className="space-y-6">
-          <div className="flex items-center gap-4">
-            <h3 className="font-handwriting text-4xl text-slate-900 tracking-tight">Accommodation Overview</h3>
-            <div className="h-[2px] flex-1 bg-slate-900/10 border-b border-dashed border-slate-900/20" />
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {(itinerary.days || []).map((day: any) => (day.events || []).filter((e: any) => e.type === 'accommodation').map((ev: any) => (
-              <motion.div key={ev.id} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
-                <Card className="rounded-[32px] border-none sketchy-border overflow-hidden group shadow-sm hover:shadow-xl transition-all duration-500 bg-white relative">
-                  <div className="washi-tape washi-tape-top-right bg-blue-400/20" />
-                  <div className="aspect-[16/10] relative overflow-hidden bg-slate-100">
-                    {ev.imageUrl ? (
-                      <img src={ev.imageUrl} alt={ev.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
-                    ) : (
-                      <div className="w-full h-full flex flex-col items-center justify-center text-slate-300">
-                        <Hotel className="w-10 h-10 mb-2 opacity-20" />
-                        <span className="text-[10px] font-black uppercase tracking-widest opacity-30">No Image Preview</span>
-                      </div>
-                    )}
-                    <div className="absolute top-4 left-4">
-                      <span className="px-3 py-1 rounded-full bg-white/90 backdrop-blur-md text-[10px] font-black uppercase tracking-widest text-slate-800 shadow-sm border border-white">
-                        Day {day.dayNumber}
-                      </span>
-                    </div>
-                  </div>
-                  <CardContent className="p-6">
-                    <div className="flex justify-between items-start mb-4">
-                      <div>
-                        <h4 className="font-serif text-xl text-slate-900 mb-1">{ev.metadata?.hotelName || ev.title}</h4>
-                        <div className="flex items-center gap-1">
-                          {Array.from({ length: parseInt(ev.metadata?.category) || 3 }).map((_, i) => (
-                            <Sun key={i} className="w-3 h-3 text-amber-400 fill-amber-400" />
-                          ))}
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <span className="text-[10px] font-black uppercase tracking-tighter text-blue-600 bg-blue-50 px-2 py-1 rounded-lg">
-                          {ev.metadata?.hotelOption || 'Standard'}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-4 pt-4 border-t border-slate-50">
-                      <div className="space-y-1">
-                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Room Type</span>
-                        <div className="flex items-center gap-2 text-xs font-bold text-slate-700">
-                          <Hotel className="w-3.5 h-3.5 text-slate-400" /> {ev.metadata?.roomType || '—'}
-                        </div>
-                      </div>
-                      <div className="space-y-1">
-                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Meal Plan</span>
-                        <div className="flex items-center gap-2 text-xs font-bold text-slate-700">
-                          <Utensils className="w-3.5 h-3.5 text-slate-400" /> {ev.metadata?.mealPlan || '—'}
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            )))}
-          </div>
-        </section>
-      )}
-
-      {/* Main Itinerary — High Fidelity Stories */}
-      <section className="space-y-10">
-        <div className="flex items-center gap-4">
-          <h3 className="font-handwriting text-5xl text-slate-900 tracking-tight">The Journey</h3>
-          <div className="h-[2px] flex-1 bg-slate-900/10 border-b border-dashed border-slate-900/20" />
-        </div>
-        
-        <div className="space-y-16">
-          {(itinerary.days || []).map((day: any, idx: number) => (
-            <motion.div 
-              key={day.id} 
-              initial={{ opacity: 0, x: idx % 2 === 0 ? -20 : 20 }} 
-              whileInView={{ opacity: 1, x: 0 }} 
-              viewport={{ once: true }}
-              className="group"
-            >
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
-                <div className={cn("space-y-6", idx % 2 === 0 ? 'lg:order-1' : 'lg:order-2')}>
-                  <div className="inline-flex items-center gap-3">
-                    <span className="w-12 h-12 rounded-[20px] bg-slate-900 flex items-center justify-center text-white font-serif text-xl shadow-2xl shadow-slate-200">
-                      {day.dayNumber}
-                      <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-400 rounded-full border-2 border-white shadow-sm" />
-                    </span>
-                    <div className="h-[2px] w-8 bg-slate-900/10 border-b border-dashed border-slate-900/20" />
-                    <span className="font-handwriting text-xl text-blue-600">Day Itinerary</span>
-                  </div>
-                  
-                  <div>
-                    <h4 className="font-serif text-4xl text-slate-900 leading-tight mb-4 group-hover:text-blue-600 transition-colors duration-500">
-                      {day.title || `Exploring ${day.destination?.name || 'the Unknown'}`}
-                    </h4>
-                    {day.destination?.name && (
-                      <div className="flex items-center gap-2 text-slate-400 mb-6">
-                        <MapPin className="w-4 h-4" />
-                        <span className="text-xs font-bold uppercase tracking-widest">{day.destination.name}</span>
-                      </div>
-                    )}
-                    <p className="text-slate-500 leading-relaxed text-sm max-w-lg mb-8">
-                      {day.description || "Every journey is a story waiting to be told. This day is reserved for unique experiences and breathtaking moments captured across local landscapes."}
-                    </p>
-                  </div>
-
-                  {(day.events || []).length > 0 && (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      {day.events.map((ev: any) => {
-                        const evType = getEventType(ev.type);
-                        return (
-                          <div key={ev.id} className="flex items-center gap-3 p-3 rounded-2xl bg-slate-50/50 border border-slate-100/50 transition-all hover:bg-white hover:shadow-md group/ev">
-                            <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center shadow-sm transition-transform group-hover/ev:scale-110", evType.color)}>
-                              <evType.icon className="w-4 h-4" />
-                            </div>
-                            <div>
-                              <div className="text-[11px] font-bold text-slate-800 leading-none mb-1">{ev.title}</div>
-                              <div className="flex items-center gap-1.5 text-[9px] font-black text-slate-400 uppercase tracking-tighter">
-                                {ev.startTime ? (
-                                  <span className="flex items-center gap-1"><Clock className="w-2.5 h-2.5" /> {ev.startTime}</span>
-                                ) : (
-                                  <span>{evType.label}</span>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-
-                <div className={cn("relative aspect-[4/5] rounded-[48px] overflow-hidden sketchy-border shadow-2xl group", idx % 2 === 0 ? 'lg:order-2' : 'lg:order-1')}>
-                  <div className="washi-tape washi-tape-top-right bg-amber-400/30" />
-                  <div className="washi-tape washi-tape-bottom-left bg-emerald-400/30" />
-                  {day.imageUrl ? (
-                    <img src={day.imageUrl} alt="" className="w-full h-full object-cover transition-all duration-1000 group-hover:scale-110 group-hover:rotate-1" />
-                  ) : (
-                    <div className="w-full h-full bg-slate-100 flex flex-col items-center justify-center text-slate-200">
-                      <ImageIcon className="w-20 h-20 opacity-20 mb-4" />
-                      <span className="font-black text-xs uppercase tracking-[0.3em] opacity-30">The View Awaits</span>
-                    </div>
-                  )}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
-                </div>
-              </div>
-            </motion.div>
-          ))}
-        </div>
-      </section>
-
-      {/* Policies — Artisanal Layout */}
-      {(itinerary.inclusionsHtml || itinerary.exclusionsHtml || itinerary.paymentPolicyHtml || itinerary.cancellationPolicyHtml || itinerary.termsHtml) && (
-        <section className="pt-10 border-t border-slate-100">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-16">
-            {itinerary.inclusionsHtml && (
-              <div className="space-y-6">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-100 shadow-sm shadow-emerald-100/50">
-                    <CheckCircle className="w-6 h-6" />
-                  </div>
-                  <h4 className="font-serif text-2xl text-slate-900">Inclusions</h4>
-                </div>
-                <div className="text-sm text-slate-600 leading-relaxed prose prose-slate prose-sm max-w-none whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: sanitize(itinerary.inclusionsHtml) }} />
-              </div>
-            )}
-            {itinerary.exclusionsHtml && (
-              <div className="space-y-6">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center border border-rose-100 shadow-sm shadow-rose-100/50">
-                    <XCircle className="w-6 h-6" />
-                  </div>
-                  <h4 className="font-serif text-2xl text-slate-900">Exclusions</h4>
-                </div>
-                <div className="text-sm text-slate-600 leading-relaxed prose prose-slate prose-sm max-w-none whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: sanitize(itinerary.exclusionsHtml) }} />
-              </div>
-            )}
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-10 mt-16 pt-16 border-t border-slate-100">
-            {itinerary.paymentPolicyHtml && (
-              <div className="space-y-4">
-                <div className="flex items-center gap-2 mb-4">
-                  <CreditCard className="w-4 h-4 text-blue-600" />
-                  <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Payment</span>
-                </div>
-                <div className="text-xs text-slate-500 leading-relaxed whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: sanitize(itinerary.paymentPolicyHtml) }} />
-              </div>
-            )}
-            {itinerary.cancellationPolicyHtml && (
-              <div className="space-y-4">
-                <div className="flex items-center gap-2 mb-4">
-                  <AlertTriangle className="w-4 h-4 text-amber-600" />
-                  <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Cancellation</span>
-                </div>
-                <div className="text-xs text-slate-500 leading-relaxed whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: sanitize(itinerary.cancellationPolicyHtml) }} />
-              </div>
-            )}
-            {itinerary.termsHtml && (
-              <div className="space-y-4">
-                <div className="flex items-center gap-2 mb-4">
-                  <Shield className="w-4 h-4 text-slate-600" />
-                  <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Security</span>
-                </div>
-                <div className="text-xs text-slate-500 leading-relaxed whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: sanitize(itinerary.termsHtml) }} />
-              </div>
-            )}
-          </div>
-        </section>
-      )}
-
-      {/* Pricing Summary — Minimalist Elegance */}
-      {itinerary.perPersonCost !== null && itinerary.perPersonCost !== undefined && (
-        <section className="py-20 text-center">
-          <motion.div 
-            initial={{ opacity: 0, scale: 0.95 }} 
-            whileInView={{ opacity: 1, scale: 1 }} 
-            viewport={{ once: true }}
-            className="inline-block relative"
-          >
-            <div className="absolute inset-0 blur-3xl opacity-20 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 -m-10" />
-            <div className="relative bg-white border border-slate-100 rounded-[48px] px-16 py-12 shadow-2xl shadow-slate-200">
-              <span className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-400 mb-4 block">Final Investment</span>
-              <div className="flex items-baseline justify-center gap-2">
-                <span className="font-serif text-5xl text-slate-900 tracking-tighter">₹{Number(itinerary.perPersonCost).toLocaleString('en-IN')}</span>
-                <span className="text-sm font-bold text-slate-400">/ Person</span>
-              </div>
-              {itinerary.totalCost && (
-                <div className="mt-4 pt-4 border-t border-slate-50">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Total Package: ₹{Number(itinerary.totalCost).toLocaleString('en-IN')}</span>
-                </div>
-              )}
-            </div>
-          </motion.div>
-        </section>
-      )}
+      <div className="w-full flex justify-center">
+        <BrochureView itinerary={itinerary} />
+      </div>
 
       {/* Danger Zone */}
-      <section className="pt-20 border-t border-slate-100">
+      <section className="pt-20 border-t border-slate-100 max-w-[1200px] mx-auto px-4 md:px-0">
         <div className="bg-red-50/50 border border-red-100 rounded-[32px] p-8 md:p-12">
           <div className="flex flex-col md:flex-row items-center justify-between gap-8">
             <div className="text-center md:text-left">
