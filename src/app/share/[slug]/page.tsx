@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef } from 'react';
 import { useParams } from 'next/navigation';
-import { MapPin, Hotel, Utensils, Car, Plane, Sun, Mountain, Compass, LogIn, LogOut, Loader2, Shield, CheckCircle, XCircle, CreditCard, AlertTriangle, ArrowRight } from 'lucide-react';
+import { MapPin, Hotel, Utensils, Car, Plane, Sun, Mountain, Compass, LogIn, LogOut, Loader2, Shield, CheckCircle, XCircle, CreditCard, AlertTriangle, ArrowRight, CalendarRange, Clock } from 'lucide-react';
 import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion';
 import DOMPurify from 'dompurify';
 import { api } from '@/lib/api';
@@ -13,17 +13,35 @@ const EVENT_ICONS: Record<string, any> = {
 };
 
 const fadeUp = {
-  hidden: { opacity: 0, y: 40 },
-  visible: { opacity: 1, y: 0, transition: { duration: 1 } }
+  hidden: { opacity: 0, y: 30 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.8 } }
 };
 
-const staggerContainer = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: { staggerChildren: 0.2 }
-  }
-};
+function ExpandableText({ text, limit = 400, className = "" }: { text: string; limit?: number; className?: string }) {
+  const [expanded, setExpanded] = useState(false);
+  if (!text) return null;
+  const isLong = text.length > limit;
+
+  return (
+    <motion.div layout className="space-y-2">
+      <motion.div layout initial={false} animate={{ height: "auto" }} className="overflow-hidden">
+        <p className={className}>
+          {expanded || !isLong ? text : `${text.slice(0, limit)}...`}
+        </p>
+      </motion.div>
+      {isLong && (
+        <motion.button 
+          layout
+          onClick={() => setExpanded(!expanded)}
+          className="text-sm font-semibold text-blue-500 hover:text-blue-600 flex items-center gap-2 group mt-2"
+        >
+          <span className="w-6 h-px bg-blue-200 group-hover:w-10 transition-all" />
+          {expanded ? 'Read less' : 'Read full description'}
+        </motion.button>
+      )}
+    </motion.div>
+  );
+}
 
 export default function SharePage() {
   const { slug } = useParams();
@@ -33,8 +51,8 @@ export default function SharePage() {
   const [isUnboxed, setIsUnboxed] = useState(false);
   
   const { scrollY } = useScroll();
-  const heroY = useTransform(scrollY, [0, 1000], [0, 300]);
-  const heroOpacity = useTransform(scrollY, [0, 800], [1, 0]);
+  const heroY = useTransform(scrollY, [0, 800], [0, 250]);
+  const heroScale = useTransform(scrollY, [0, 800], [1, 1.1]);
 
   useEffect(() => {
     if (!slug || Array.isArray(slug)) {
@@ -48,7 +66,7 @@ export default function SharePage() {
         const res = await api.get(`/itineraries/share/${slug}`);
         if (res.data.success) {
           setItinerary(res.data.data);
-          document.title = `${res.data.data.title} | Exclusive Journey`;
+          document.title = `${res.data.data.title} | Imagica Holidays`;
         } else {
           setError('Itinerary not found');
         }
@@ -62,13 +80,13 @@ export default function SharePage() {
     loadData();
   }, [slug]);
 
-  if (loading) return <div className="flex h-screen items-center justify-center bg-[#fafafa]"><Loader2 className="w-8 h-8 animate-spin text-slate-800" /></div>;
+  if (loading) return <div className="flex h-screen items-center justify-center bg-slate-50"><Loader2 className="w-8 h-8 animate-spin text-blue-500" /></div>;
   if (error || !itinerary) return (
-    <div className="flex h-screen items-center justify-center bg-[#fafafa] text-center p-4">
-      <div className="max-w-sm">
-        <Compass className="w-8 h-8 mx-auto text-slate-300 mb-6" />
-        <h1 className="text-xl font-serif text-slate-900 tracking-wide uppercase">Journey Not Found</h1>
-        <p className="text-xs tracking-widest uppercase text-slate-400 mt-4 leading-loose">The requested dossier has expired or is unavailable.</p>
+    <div className="flex h-screen items-center justify-center bg-slate-50 text-center p-4">
+      <div className="bg-white p-10 rounded-[32px] shadow-sm max-w-sm border border-slate-100">
+        <AlertTriangle className="w-12 h-12 mx-auto text-rose-300 mb-6" />
+        <h1 className="text-xl font-bold text-slate-800 tracking-tight">Proposal Not Found</h1>
+        <p className="text-sm text-slate-500 mt-2">This link may have expired or is invalid.</p>
       </div>
     </div>
   );
@@ -86,187 +104,233 @@ export default function SharePage() {
         {!isUnboxed && itinerary && (
           <motion.div 
             initial={{ opacity: 1 }}
-            exit={{ opacity: 0, transition: { duration: 1.5 } }}
-            className="fixed inset-0 z-[100] flex items-center justify-center bg-[#fafafa] overflow-hidden"
+            exit={{ opacity: 0, scale: 1.02, filter: "blur(10px)", transition: { duration: 1, ease: "easeOut" } }}
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900 overflow-hidden"
           >
+            {/* Background Image with heavy blur */}
+            {itinerary.coverPhotoUrl && (
+              <img src={itinerary.coverPhotoUrl} alt="" className="absolute inset-0 w-full h-full object-cover opacity-20 blur-3xl scale-110" />
+            )}
+            <div className="absolute inset-0 bg-gradient-to-b from-slate-900/50 to-slate-900" />
+
             <motion.div 
-              initial={{ y: 20, opacity: 0 }}
+              initial={{ y: 30, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
-              exit={{ y: -40, opacity: 0, transition: { duration: 0.8 } }}
-              transition={{ duration: 1.2, ease: "easeOut" }}
-              className="relative max-w-lg w-full px-8 flex flex-col items-center text-center"
+              exit={{ y: -50, opacity: 0, transition: { duration: 0.6 } }}
+              transition={{ duration: 1, delay: 0.2 }}
+              className="relative max-w-md w-full px-8 flex flex-col items-center text-center"
             >
-              <h2 className="font-serif text-2xl md:text-3xl text-slate-900 mb-6 tracking-wide leading-relaxed">
-                Your Exclusive Dossier<br />Is Ready For Viewing
+              <div className="w-20 h-20 bg-white/10 backdrop-blur-xl rounded-full flex items-center justify-center mb-8 border border-white/20 shadow-2xl">
+                 <Compass className="w-8 h-8 text-blue-300" />
+              </div>
+              <h2 className="text-3xl md:text-4xl font-bold text-white mb-4 tracking-tight drop-shadow-md">
+                {itinerary.title}
               </h2>
-              <div className="w-12 h-[1px] bg-slate-300 mb-8" />
-              <p className="text-slate-400 font-sans tracking-[0.3em] uppercase text-[9px] mb-16 leading-loose">
-                Prepared by Imagica Holidays<br />For {itinerary.title}
+              <p className="text-blue-200 font-medium mb-12 tracking-wide uppercase text-xs">
+                Your Exclusive Proposal
               </p>
               
               <motion.button 
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
                 onClick={() => setIsUnboxed(true)}
-                className="group flex flex-col items-center gap-4 transition-all"
+                className="group relative px-8 py-4 bg-white text-slate-900 rounded-full font-bold shadow-[0_0_40px_-10px_rgba(255,255,255,0.3)] hover:shadow-[0_0_60px_-10px_rgba(255,255,255,0.5)] transition-all overflow-hidden"
               >
-                <div className="w-16 h-16 rounded-full border border-slate-200 flex items-center justify-center group-hover:border-slate-800 transition-colors duration-700">
-                  <ArrowRight className="w-5 h-5 text-slate-400 group-hover:text-slate-900 transition-colors duration-700" strokeWidth={1} />
-                </div>
-                <span className="font-sans text-slate-500 tracking-[0.2em] text-[10px] uppercase group-hover:text-slate-900 transition-colors duration-700">Enter The Journey</span>
+                <div className="absolute inset-0 bg-blue-50 scale-x-0 group-hover:scale-x-100 origin-left transition-transform duration-500 ease-out" />
+                <span className="relative z-10 flex items-center gap-2">
+                  View Proposal <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                </span>
               </motion.button>
             </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      <div className={`min-h-screen bg-[#fafafa] text-slate-800 selection:bg-slate-200 selection:text-slate-900 ${!isUnboxed ? 'h-screen overflow-hidden' : ''}`}>
+      <div className={`min-h-screen bg-slate-50 text-slate-800 font-sans selection:bg-blue-200 selection:text-blue-900 ${!isUnboxed ? 'h-screen overflow-hidden' : ''}`}>
         
-        {/* PARALLAX HERO - EDGE TO EDGE */}
-        <div className="relative h-screen w-full overflow-hidden flex items-end">
-          <motion.div style={{ y: heroY, opacity: heroOpacity }} className="absolute inset-0 w-full h-[120%] -top-[10%]">
-            <img src={itinerary.coverPhotoUrl || 'https://images.unsplash.com/photo-1469854523086-cc02fe5d8800'} alt="Cover" className="w-full h-full object-cover object-center" />
-            <div className="absolute inset-0 bg-black/20" />
-            <div className="absolute inset-0 bg-gradient-to-t from-[#fafafa] via-transparent to-transparent" />
+        {/* PARALLAX HERO OVERLAY */}
+        <div className="relative h-[85vh] w-full overflow-hidden flex items-end">
+          <motion.div style={{ y: heroY, scale: heroScale }} className="absolute inset-0 w-full h-[120%] -top-[10%] origin-bottom">
+            <img src={itinerary.coverPhotoUrl || 'https://images.unsplash.com/photo-1469854523086-cc02fe5d8800'} alt="Cover" className="w-full h-full object-cover" />
+            <div className="absolute inset-0 bg-black/30" />
+            <div className="absolute inset-0 bg-gradient-to-t from-slate-50 via-slate-50/20 to-transparent" />
           </motion.div>
           
-          <div className="relative z-10 w-full px-6 md:px-16 pb-16 md:pb-24">
-            <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1.5, delay: 1 }}>
-              <div className="flex items-center gap-6 mb-8">
-                <span className="h-[1px] w-12 bg-slate-400" />
-                <span className="text-slate-100 uppercase tracking-[0.4em] text-[9px] font-bold">Curated Expedition</span>
+          <div className="relative z-10 w-full max-w-6xl mx-auto px-6 md:px-12 pb-12">
+            <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1, delay: 0.5 }}>
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/20 backdrop-blur-md border border-white/30 text-white text-xs font-bold uppercase tracking-widest mb-6 shadow-xl">
+                 Imagica Holidays
               </div>
-              <h1 className="text-5xl md:text-8xl lg:text-[10rem] font-serif text-slate-900 tracking-tighter leading-[0.9] drop-shadow-sm max-w-6xl">{itinerary.title}</h1>
+              <h1 className="text-5xl md:text-7xl font-black text-white tracking-tight leading-tight drop-shadow-xl mb-6 max-w-4xl">{itinerary.title}</h1>
+              
+              <div className="flex flex-wrap items-center gap-4 text-white/90 font-medium">
+                 {itinerary.days?.length > 0 && (
+                   <div className="flex items-center gap-2 bg-black/40 backdrop-blur-md px-4 py-2 rounded-2xl border border-white/10">
+                     <CalendarRange className="w-4 h-4 text-blue-300" /> {itinerary.days.length} Days
+                   </div>
+                 )}
+                 {destinations.length > 0 && (
+                   <div className="flex items-center gap-2 bg-black/40 backdrop-blur-md px-4 py-2 rounded-2xl border border-white/10">
+                     <MapPin className="w-4 h-4 text-emerald-300" /> {destinations.join(' • ')}
+                   </div>
+                 )}
+              </div>
             </motion.div>
           </div>
         </div>
 
-        <div className="max-w-7xl mx-auto px-6 md:px-16 space-y-32 pb-32">
+        <div className="max-w-6xl mx-auto px-4 md:px-12 space-y-32 pb-32 -mt-10 relative z-20">
           
-          {/* SYNOPSIS & METRICS */}
-          <motion.div 
-            initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-100px" }} variants={fadeUp}
-            className="grid grid-cols-1 lg:grid-cols-12 gap-16 items-start -mt-16"
-          >
-            <div className="lg:col-span-8">
-              {itinerary.description && (
-                <p className="text-xl md:text-3xl font-serif leading-relaxed text-slate-600">
-                  {itinerary.description}
-                </p>
-              )}
-            </div>
-            <div className="lg:col-span-4 flex flex-col gap-12">
-              <div className="border-t border-slate-200 pt-6">
-                <p className="text-[9px] uppercase tracking-[0.3em] text-slate-400 font-bold mb-3">Duration</p>
-                <p className="text-2xl font-serif text-slate-900">{itinerary.days?.length || 0} Distinct Days</p>
+          {/* OVERVIEW CARD (GLASS) */}
+          {itinerary.description && (
+            <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-50px" }} variants={fadeUp}>
+              <div className="bg-white/80 backdrop-blur-xl rounded-[2rem] p-8 md:p-12 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-white w-full">
+                 <h2 className="text-slate-800 text-2xl font-bold mb-6 flex items-center gap-3">
+                   <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600"><Compass className="w-4 h-4" /></div>
+                   Trip Overview
+                 </h2>
+                 <p className="text-slate-600 text-lg md:text-xl leading-relaxed font-medium">
+                   {itinerary.description}
+                 </p>
               </div>
-              <div className="border-t border-slate-200 pt-6">
-                <p className="text-[9px] uppercase tracking-[0.3em] text-slate-400 font-bold mb-3">Destinations</p>
-                <p className="text-xl font-serif text-slate-900 leading-snug">{destinations.join(' — ') || 'Custom Traverse'}</p>
-              </div>
-            </div>
-          </motion.div>
+            </motion.div>
+          )}
 
-          {/* MINIMAL ACCOMMODATION LIST */}
+          {/* HORIZONTAL GLASS HOTEL CARDS ("Use UI/UX") */}
           {itinerary.days?.some((d: any) => d.events?.some((e: any) => e.type === 'accommodation')) && (
-            <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-100px" }} variants={fadeUp}>
-              <div className="mb-16">
-                <h2 className="font-serif text-4xl md:text-6xl text-slate-900">Residences</h2>
-                <div className="h-[1px] w-24 bg-slate-900 mt-8" />
+            <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp}>
+              <div className="mb-10 flex items-center gap-4">
+                <div className="w-12 h-12 bg-white shadow-sm rounded-2xl flex items-center justify-center border border-slate-100">
+                  <Hotel className="w-6 h-6 text-indigo-500" />
+                </div>
+                <h2 className="text-4xl font-bold text-slate-800 tracking-tight">Accommodations</h2>
               </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-12 gap-y-16">
+              <div className="flex overflow-x-auto gap-6 pb-12 snap-x snap-mandatory hide-scrollbar -mx-4 px-4 md:mx-0 md:px-0">
                 {itinerary.days?.map((day: any) => day.events?.filter((e: any) => e.type === 'accommodation').map((ev: any, idx: number) => (
-                  <motion.div key={ev.id ?? `day-${day.dayNumber}-accom-${idx}`} className="group cursor-default">
-                    <span className="inline-block text-[9px] uppercase tracking-[0.3em] text-slate-400 font-bold mb-4">Day {day.dayNumber}</span>
-                    <h3 className="font-serif text-2xl text-slate-900 mb-2 leading-tight group-hover:text-slate-500 transition-colors duration-500">{ev.metadata?.hotelName || ev.title}</h3>
-                    <p className="text-slate-500 font-serif italic mb-6">{ev.metadata?.roomType || 'Standard Comfort'}</p>
-                    
-                    <ul className="space-y-3 pt-6 border-t border-slate-200">
-                      {ev.metadata?.mealPlan && (
-                        <li className="flex items-center gap-4 text-xs text-slate-500"><Utensils className="w-3 h-3 text-slate-400" /> <span className="tracking-wide">{ev.metadata.mealPlan}</span></li>
-                      )}
-                      {(ev.metadata?.checkInDate || ev.metadata?.checkInTime) && (
-                        <li className="flex items-center gap-4 text-xs text-slate-500"><LogIn className="w-3 h-3 text-slate-400" /> <span className="tracking-wide uppercase text-[10px]">{ev.metadata.checkInDate} — {ev.metadata.checkInTime}</span></li>
-                      )}
-                    </ul>
+                  <motion.div 
+                    key={ev.id ?? `day-${day.dayNumber}-accom-${idx}`} 
+                    whileHover={{ y: -5, scale: 1.02 }}
+                    className="flex-none w-[340px] snap-center bg-white/70 backdrop-blur-xl rounded-[2rem] p-8 shadow-lg border border-white/80 group overflow-hidden relative"
+                  >
+                    <div className="absolute top-0 left-0 w-full h-1/2 bg-gradient-to-b from-indigo-50/50 to-transparent pointer-events-none" />
+                    <div className="relative z-10">
+                      <span className="inline-block bg-indigo-100 text-indigo-700 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-widest mb-6">Day {day.dayNumber}</span>
+                      
+                      <h3 className="text-2xl font-bold text-slate-800 mb-2 leading-tight group-hover:text-indigo-600 transition-colors">{ev.metadata?.hotelName || ev.title}</h3>
+                      <p className="text-slate-500 font-medium text-sm mb-8">{ev.metadata?.roomType || 'Standard Room'}</p>
+                      
+                      <div className="space-y-4 pt-6 border-t border-slate-100/80">
+                        {ev.metadata?.mealPlan && (
+                          <div className="flex items-center gap-3 text-sm font-medium text-slate-600 bg-white shadow-sm rounded-xl px-4 py-3 border border-slate-50">
+                            <Utensils className="w-4 h-4 text-emerald-500" /> {ev.metadata.mealPlan}
+                          </div>
+                        )}
+                        {(ev.metadata?.checkInDate || ev.metadata?.checkInTime) && (
+                          <div className="flex items-center gap-3 text-sm font-medium text-slate-600 bg-white shadow-sm rounded-xl px-4 py-3 border border-slate-50">
+                            <LogIn className="w-4 h-4 text-blue-500" /> 
+                            <span>{ev.metadata.checkInDate} <span className="text-slate-400 mx-1">•</span> {ev.metadata.checkInTime}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   </motion.div>
                 )))}
               </div>
             </motion.div>
           )}
 
-          {/* THE CHRONICLE (Days Timeline) */}
-          <div className="pt-16">
-            <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} className="mb-24">
-              <h2 className="font-serif text-4xl md:text-6xl text-slate-900">The Itinerary</h2>
-              <div className="h-[1px] w-24 bg-slate-900 mt-8" />
+          {/* THE ITINERARY JOURNEY (Fix missing photos) */}
+          <div className="pt-8">
+            <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} className="mb-16 flex items-center gap-4">
+               <div className="w-12 h-12 bg-white shadow-sm rounded-2xl flex items-center justify-center border border-slate-100">
+                  <Compass className="w-6 h-6 text-rose-500" />
+                </div>
+              <h2 className="text-4xl font-bold text-slate-800 tracking-tight">The Journey</h2>
             </motion.div>
 
-            <div className="space-y-0">
+            <div className="space-y-12">
               {itinerary.days?.map((day: any, idx: number) => {
-                const eventImages = day.events?.filter((e: any) => e.imageUrl).map((e:any) => e.imageUrl) || [];
+                // Find all unique event images in the day
+                const rawImages = day.events?.filter((e: any) => e.imageUrl).map((e:any) => e.imageUrl) || [];
+                const dayImages = Array.from(new Set(rawImages)) as string[];
                 
                 return (
                   <motion.div 
                     initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-100px" }} variants={fadeUp}
                     key={day.dayNumber}
-                    className="py-16 md:py-24 border-t border-slate-200"
                   >
-                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 md:gap-16">
-                      
-                      {/* Left: Day & Image Focus */}
-                      <div className="lg:col-span-5 flex flex-col">
-                        <div className="flex items-baseline gap-4 mb-8">
-                          <span className="font-sans text-[10px] uppercase tracking-[0.4em] font-bold text-slate-400">Chapter</span>
-                          <span className="font-serif text-6xl text-slate-900 leading-none">{day.dayNumber < 10 ? `0${day.dayNumber}` : day.dayNumber}</span>
-                        </div>
-                        
-                        {eventImages.length > 0 && (
-                          <div className="w-full aspect-[4/5] overflow-hidden mt-auto">
-                             <img src={eventImages[0]} alt="" className="w-full h-full object-cover transition-transform duration-[3s] hover:scale-105 filter grayscale-[0.2]" />
-                          </div>
-                        )}
+                    <div className="bg-white rounded-[2rem] shadow-sm border border-slate-200/60 overflow-hidden relative">
+                      {/* Day Header */}
+                      <div className="bg-slate-50 border-b border-slate-100 p-6 md:p-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                         <div className="flex items-center gap-4">
+                           <div className="w-14 h-14 bg-white rounded-2xl shadow-sm border border-slate-200 flex flex-col items-center justify-center shrink-0">
+                             <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest leading-none">Day</span>
+                             <span className="text-2xl font-black text-slate-800 leading-none mt-1">{day.dayNumber}</span>
+                           </div>
+                           <div>
+                             <h3 className="text-2xl font-bold text-slate-800 leading-tight">{day.title || `Day ${day.dayNumber}`}</h3>
+                             {day.destination?.name && (
+                               <div className="flex items-center gap-1.5 text-blue-600 font-bold text-xs uppercase tracking-wide mt-1">
+                                 <MapPin className="w-3 h-3" /> {day.destination.name}
+                               </div>
+                             )}
+                           </div>
+                         </div>
                       </div>
 
-                      {/* Right: Narrative & Events */}
-                      <div className="lg:col-span-7 pt-4">
-                        <h3 className="font-serif text-4xl leading-tight text-slate-900 mb-6">{day.title || 'A day of discovery'}</h3>
+                      {/* Day Body */}
+                      <div className="p-6 md:p-8">
+                        {day.description && (
+                           <div className="mb-10 p-6 bg-slate-50/50 rounded-2xl border border-slate-100">
+                             <ExpandableText text={day.description} limit={300} className="text-slate-600 text-base leading-relaxed font-medium" />
+                           </div>
+                        )}
                         
-                        {day.destination?.name && (
-                           <div className="flex items-center gap-3 text-slate-500 font-sans text-[9px] uppercase tracking-[0.3em] mb-12">
-                             <MapPin className="w-3 h-3" /> {day.destination.name}
+                        {/* Render all photos for the day to solve "Missing Photos" */}
+                        {dayImages.length > 0 && (
+                           <div className="mb-10 flex overflow-x-auto hide-scrollbar gap-4 -mx-6 px-6 md:mx-0 md:px-0">
+                             {dayImages.map((img: string, imgIdx: number) => (
+                               <div key={imgIdx} className="flex-none w-64 md:w-80 aspect-[4/3] rounded-2xl overflow-hidden shadow-sm shrink-0">
+                                 <img src={img} alt="Day highlight" className="w-full h-full object-cover transition-transform duration-700 hover:scale-105" />
+                               </div>
+                             ))}
                            </div>
                         )}
 
-                        {day.description && (
-                           <p className="text-slate-500 text-lg md:text-xl font-serif italic leading-loose mb-16">
-                             {day.description}
-                           </p>
-                        )}
-                        
-                        {/* Event Flow */}
+                        {/* Events List */}
                         {day.events?.length > 0 && (
-                          <div className="space-y-12">
+                          <div className="space-y-8 relative before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-slate-200 before:to-transparent">
                             {day.events.map((ev: any, evIdx: number) => { 
-                              if (ev.type === 'accommodation') return null; // Displayed above
+                              if (ev.type === 'accommodation') return null; // Displayed in cards
+                              const Icon = EVENT_ICONS[ev.type] || Compass;
 
                               return (
                                 <motion.div 
-                                  initial={{ opacity: 0, y: 10 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.1 }}
+                                  initial={{ opacity: 0, y: 10 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.1 * evIdx }}
                                   key={ev.id ?? evIdx} 
-                                  className="group"
+                                  className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active"
                                 >
-                                  <div className="flex items-baseline gap-4 mb-2">
-                                    <span className="font-sans text-[9px] uppercase tracking-[0.3em] font-bold text-slate-400 w-24 shrink-0">
-                                      {ev.startTime ? ev.startTime : EVENT_ICONS[ev.type] ? ev.type : 'Event'}
-                                    </span>
-                                    <h4 className="text-2xl font-serif text-slate-900 group-hover:text-slate-500 transition-colors">{ev.title}</h4>
+                                  {/* Timeline dot */}
+                                  <div className="flex items-center justify-center w-10 h-10 rounded-full border-4 border-white bg-blue-100 text-blue-600 shadow-sm shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 group-hover:scale-110 transition-transform z-10">
+                                    <Icon className="w-4 h-4" />
                                   </div>
 
-                                  <div className="ml-28">
-                                    {ev.metadata?.vehicleType && <p className="text-[9px] uppercase tracking-widest text-slate-400 mb-2">{ev.metadata.vehicleType}</p>}
-                                    {ev.description && <p className="text-sm text-slate-500 leading-relaxed max-w-xl">{ev.description}</p>}
+                                  {/* Event Card */}
+                                  <div className="w-[calc(100%-4rem)] md:w-[calc(50%-3rem)] bg-white border border-slate-100 shadow-sm hover:shadow-md transition-shadow rounded-2xl p-6">
+                                    <div className="flex items-center justify-between mb-2">
+                                       <h4 className="text-xl font-bold text-slate-800">{ev.title}</h4>
+                                       {ev.startTime && <span className="bg-slate-50 text-slate-500 text-xs font-bold px-2 py-1 rounded-lg border border-slate-100 flex items-center gap-1.5"><Clock className="w-3 h-3" /> {ev.startTime}</span>}
+                                    </div>
+                                    
+                                    {ev.description && <p className="text-sm text-slate-500 leading-relaxed max-w-sm mt-3">{ev.description}</p>}
+                                    
+                                    {/* Fix: Render individual event metadata/images if necessary */}
+                                    {ev.imageUrl && dayImages.length === 0 && (
+                                       <div className="mt-4 rounded-xl overflow-hidden aspect-video bg-slate-100">
+                                         <img src={ev.imageUrl} className="w-full h-full object-cover" alt="" />
+                                       </div>
+                                    )}
                                   </div>
                                 </motion.div>
                               ); 
@@ -282,121 +346,139 @@ export default function SharePage() {
             </div>
           </div>
 
-          {/* GALLERY - HIGH FASHION MASONRY */}
+          {/* GALLERY - MASONRY/GRID ANIMATED */}
           {itinerary.galleryImages?.length > 0 && (
-             <div className="pt-16 pb-16">
-                <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} className="mb-20 text-center">
-                  <h2 className="font-serif text-5xl md:text-7xl text-slate-900 mb-6">Visuals</h2>
-                  <div className="h-[1px] w-12 bg-slate-400 mx-auto" />
+             <div className="pt-16">
+                <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} className="mb-12 flex items-center gap-4">
+                  <div className="w-12 h-12 bg-white shadow-sm rounded-2xl flex items-center justify-center border border-slate-100">
+                    <Sun className="w-6 h-6 text-amber-500" />
+                  </div>
+                  <h2 className="text-4xl font-bold text-slate-800 tracking-tight">Gallery</h2>
                 </motion.div>
                 
-                <motion.div variants={staggerContainer} initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-50px" }} className="columns-1 md:columns-2 lg:columns-3 gap-8 space-y-8">
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
                   {itinerary.galleryImages.map((img: any, idx: number) => (
-                    <motion.div key={img.id ?? idx} variants={fadeUp} className="break-inside-avoid relative group overflow-hidden">
-                      <div className="relative w-full h-full">
-                        <img src={img.imageUrl} alt={img.caption || ''} className="w-full h-auto object-cover transition-transform duration-[3s] ease-out group-hover:scale-105" />
-                      </div>
+                    <motion.div 
+                      key={img.id ?? idx} 
+                      initial={{ opacity: 0, scale: 0.95 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }} transition={{ duration: 0.5, delay: idx * 0.1 }}
+                      className="relative group overflow-hidden rounded-2xl md:rounded-[2rem] shadow-sm aspect-square"
+                    >
+                      <img src={img.imageUrl} alt={img.caption || ''} className="w-full h-full object-cover transition-transform duration-[2s] ease-out group-hover:scale-110" />
                       {img.caption && (
-                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-700 flex items-end p-8">
-                          <p className="text-[9px] text-white font-sans uppercase tracking-[0.3em] font-bold">{img.caption}</p>
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-6">
+                          <p className="text-sm font-bold text-white tracking-wide">{img.caption}</p>
                         </div>
                       )}
                     </motion.div>
                   ))}
-                </motion.div>
+                </div>
              </div>
           )}
 
-          {/* INVESTMENT / PRICING */}
+          {/* PRICING CARD - UI/UX GLASS */}
           {itinerary.perPersonCost && (
             <motion.div 
               initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} 
-              className="py-32 border-y border-slate-200 text-center"
+              className="py-12"
             >
-              <span className="font-sans text-[10px] uppercase tracking-[0.4em] font-bold text-slate-400 block mb-8">The Investment</span>
-              <p className="text-6xl md:text-[8rem] font-serif tracking-tighter text-slate-900 leading-none">
-                {(() => {
-                  try {
-                    return new Intl.NumberFormat('en-IN', { style: 'currency', currency: itinerary.currency || 'INR', maximumFractionDigits: 0 }).format(Number(itinerary.perPersonCost));
-                  } catch (e) {
-                    return `${itinerary.currency || 'INR'} ${Number(itinerary.perPersonCost).toLocaleString('en-IN')}`;
-                  }
-                })()}
-              </p>
-              <p className="text-xs text-slate-500 mt-12 font-serif italic">Per individual explorer</p>
-              
-              {itinerary.totalCost && (
-                <div className="mt-16 flex flex-col items-center">
-                  <span className="text-3xl font-serif text-slate-800">
-                    {(() => {
-                      try {
-                        return new Intl.NumberFormat('en-IN', { style: 'currency', currency: itinerary.currency || 'INR', maximumFractionDigits: 0 }).format(Number(itinerary.totalCost));
-                      } catch (e) {
-                        return `${itinerary.currency || 'INR'} ${Number(itinerary.totalCost).toLocaleString('en-IN')}`;
-                      }
-                    })()}
-                  </span>
-                  <span className="text-[9px] uppercase tracking-[0.3em] font-bold text-slate-400 mt-4">
-                    Total voyage value for {itinerary.adults} Adults {itinerary.children > 0 && `& ${itinerary.children} Children`}
-                  </span>
-                </div>
-              )}
+              <div className="bg-gradient-to-br from-indigo-600 to-blue-700 rounded-[3rem] p-10 md:p-16 text-center text-white shadow-2xl relative overflow-hidden">
+                 {/* Decorative elements */}
+                 <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
+                    <div className="absolute -top-[50%] -left-[10%] w-[50%] h-[150%] bg-white/10 rotate-12 blur-3xl rounded-full" />
+                    <div className="absolute top-[20%] -right-[20%] w-[60%] h-[120%] bg-blue-400/20 -rotate-12 blur-3xl rounded-full" />
+                 </div>
+
+                 <div className="relative z-10">
+                   <span className="inline-block bg-white/20 backdrop-blur-md px-4 py-2 rounded-full text-xs font-bold uppercase tracking-widest text-blue-50 mb-8 border border-white/10 shadow-sm">Your Investment</span>
+                   <p className="text-5xl md:text-7xl font-black tracking-tighter leading-none mb-6 drop-shadow-lg">
+                     {(() => {
+                       try {
+                         return new Intl.NumberFormat('en-IN', { style: 'currency', currency: itinerary.currency || 'INR', maximumFractionDigits: 0 }).format(Number(itinerary.perPersonCost));
+                       } catch (e) {
+                         return `${itinerary.currency || 'INR'} ${Number(itinerary.perPersonCost).toLocaleString('en-IN')}`;
+                       }
+                     })()}
+                   </p>
+                   <p className="text-sm text-blue-200 font-medium">Per individual explorer</p>
+                   
+                   {itinerary.totalCost && (
+                     <div className="mt-12 pt-12 border-t border-white/10 flex flex-col items-center">
+                       <span className="text-2xl md:text-3xl font-bold mb-2">
+                         {(() => {
+                           try {
+                             return new Intl.NumberFormat('en-IN', { style: 'currency', currency: itinerary.currency || 'INR', maximumFractionDigits: 0 }).format(Number(itinerary.totalCost));
+                           } catch (e) {
+                             return `${itinerary.currency || 'INR'} ${Number(itinerary.totalCost).toLocaleString('en-IN')}`;
+                           }
+                         })()}
+                       </span>
+                       <span className="text-[10px] uppercase tracking-widest font-bold text-blue-300">
+                         Total package for {itinerary.adults} Adults {itinerary.children > 0 && `& ${itinerary.children} Children`}
+                       </span>
+                     </div>
+                   )}
+                 </div>
+              </div>
             </motion.div>
           )}
 
-          {/* POLICIES */}
+          {/* POLICIES / TERMS - CLEAN UI GRIDS */}
           {(itinerary.inclusionsHtml || itinerary.exclusionsHtml || itinerary.paymentPolicyHtml || itinerary.cancellationPolicyHtml || itinerary.termsHtml) && (
-             <div className="pt-16">
-                <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} className="mb-20">
-                  <h2 className="font-serif text-4xl text-slate-900">Provisions & Terms</h2>
-                  <div className="h-[1px] w-24 bg-slate-900 mt-8" />
-                </motion.div>
+             <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} className="pt-8">
+                <div className="mb-10 flex items-center gap-4">
+                  <div className="w-12 h-12 bg-white shadow-sm rounded-2xl flex items-center justify-center border border-slate-100">
+                    <CheckCircle className="w-6 h-6 text-emerald-500" />
+                  </div>
+                  <h2 className="text-3xl font-bold text-slate-800 tracking-tight">Provisions & Terms</h2>
+                </div>
                 
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-24">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                   {itinerary.inclusionsHtml && (
-                    <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp}>
-                      <h4 className="font-sans text-[10px] uppercase tracking-[0.3em] font-bold text-slate-900 mb-8 pb-4 border-b border-slate-200">Included</h4>
+                    <div className="bg-white rounded-[2rem] p-8 shadow-sm border border-slate-100">
+                      <h4 className="text-sm uppercase tracking-widest font-black text-emerald-600 mb-6 flex items-center gap-2"><CheckCircle className="w-4 h-4" /> Included</h4>
                       <div className="text-sm text-slate-600 leading-loose prose prose-slate max-w-none" dangerouslySetInnerHTML={{ __html: sanitize(itinerary.inclusionsHtml) }} />
-                    </motion.div>
+                    </div>
                   )}
                   {itinerary.exclusionsHtml && (
-                    <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp}>
-                      <h4 className="font-sans text-[10px] uppercase tracking-[0.3em] font-bold text-slate-400 mb-8 pb-4 border-b border-slate-200">Excluded</h4>
+                    <div className="bg-white rounded-[2rem] p-8 shadow-sm border border-slate-100">
+                      <h4 className="text-sm uppercase tracking-widest font-black text-rose-500 mb-6 flex items-center gap-2"><XCircle className="w-4 h-4" /> Excluded</h4>
                       <div className="text-sm text-slate-500 leading-loose prose prose-slate max-w-none" dangerouslySetInnerHTML={{ __html: sanitize(itinerary.exclusionsHtml) }} />
-                    </motion.div>
+                    </div>
                   )}
                 </div>
 
                 {(itinerary.paymentPolicyHtml || itinerary.cancellationPolicyHtml || itinerary.termsHtml) && (
-                  <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} className="grid grid-cols-1 md:grid-cols-3 gap-16 pt-24 mt-24 border-t border-slate-200">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-8">
                     {itinerary.paymentPolicyHtml && (
-                      <div>
-                        <h4 className="font-sans text-[9px] uppercase tracking-[0.3em] font-bold text-slate-900 mb-6 flex items-center gap-2"><CreditCard className="w-3 h-3 text-slate-400" /> Payment Policy</h4>
-                        <div className="text-[11px] text-slate-500 leading-loose" dangerouslySetInnerHTML={{ __html: sanitize(itinerary.paymentPolicyHtml) }} />
+                      <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100">
+                        <h4 className="text-xs uppercase tracking-widest font-bold text-slate-800 mb-4 flex items-center gap-2"><CreditCard className="w-4 h-4 text-blue-500" /> Payment Policy</h4>
+                        <div className="text-xs text-slate-500 leading-relaxed" dangerouslySetInnerHTML={{ __html: sanitize(itinerary.paymentPolicyHtml) }} />
                       </div>
                     )}
                     {itinerary.cancellationPolicyHtml && (
-                      <div>
-                        <h4 className="font-sans text-[9px] uppercase tracking-[0.3em] font-bold text-slate-900 mb-6 flex items-center gap-2"><AlertTriangle className="w-3 h-3 text-slate-400" /> Cancellation Policy</h4>
-                        <div className="text-[11px] text-slate-500 leading-loose" dangerouslySetInnerHTML={{ __html: sanitize(itinerary.cancellationPolicyHtml) }} />
+                      <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100">
+                        <h4 className="text-xs uppercase tracking-widest font-bold text-slate-800 mb-4 flex items-center gap-2"><AlertTriangle className="w-4 h-4 text-amber-500" /> Cancellation</h4>
+                        <div className="text-xs text-slate-500 leading-relaxed" dangerouslySetInnerHTML={{ __html: sanitize(itinerary.cancellationPolicyHtml) }} />
                       </div>
                     )}
                     {itinerary.termsHtml && (
-                      <div>
-                        <h4 className="font-sans text-[9px] uppercase tracking-[0.3em] font-bold text-slate-900 mb-6 flex items-center gap-2"><Shield className="w-3 h-3 text-slate-400" /> Terms</h4>
-                        <div className="text-[11px] text-slate-500 leading-loose" dangerouslySetInnerHTML={{ __html: sanitize(itinerary.termsHtml) }} />
+                      <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100">
+                        <h4 className="text-xs uppercase tracking-widest font-bold text-slate-800 mb-4 flex items-center gap-2"><Shield className="w-4 h-4 text-emerald-500" /> Terms</h4>
+                        <div className="text-xs text-slate-500 leading-relaxed" dangerouslySetInnerHTML={{ __html: sanitize(itinerary.termsHtml) }} />
                       </div>
                     )}
-                  </motion.div>
+                  </div>
                 )}
-             </div>
+             </motion.div>
           )}
 
           {/* SIGNATURE */}
-          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} className="text-center pt-32 pb-16">
-            <p className="font-serif text-2xl md:text-3xl text-slate-400 italic">Anticipate the extraordinary.</p>
-            <div className="h-[1px] w-12 bg-slate-300 mx-auto my-8" />
-            <p className="text-[9px] text-slate-900 font-sans uppercase tracking-[0.4em] font-bold">Imagica Holidays Elite</p>
+          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} className="text-center pt-24 pb-12">
+            <div className="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg shadow-blue-500/30">
+               <span className="text-white font-black text-xl">IH</span>
+            </div>
+            <p className="font-bold text-xl text-slate-800 mb-2">Imagica Holidays</p>
+            <p className="text-sm text-slate-500 font-medium">Extraordinary journeys crafted with care.</p>
           </motion.div>
 
         </div>
