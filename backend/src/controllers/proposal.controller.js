@@ -59,8 +59,6 @@ const getOrGeneratePdf = async (proposal) => {
 const ALLOWED_EVENTS = ['viewed', 'whatsapp_opened', 'email_opened', 'downloaded'];
 const MAX_EVENT_LENGTH = 50;
 
-// Note: Legacy ICONS constant was removed (dead code). PREMIUM_ICONS inside generateProposalHtml is used instead.
-
 const generateProposalHtml = (proposal) => {
   const escapeHtml = (str) => String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   
@@ -75,9 +73,8 @@ const generateProposalHtml = (proposal) => {
 
   const itinerary = proposal.itinerary;
   const days = itinerary?.days || proposal.days || [];
-  const totalDays = days.length;
-  const destinations = [...new Set(days.map(d => d.destination?.name).filter(Boolean))].join(', ') || proposal.query?.destination || 'TBD';
   const gallery = itinerary?.galleryImages || [];
+  const destinations = [...new Set(days.map(d => d.destination?.name).filter(Boolean))].join(', ') || proposal.query?.destination || 'TBD';
 
   const fromDate = proposal.travelDateFrom || proposal.query?.travelDateFrom;
   const toDate = proposal.travelDateTo || proposal.query?.travelDateTo;
@@ -87,11 +84,8 @@ const generateProposalHtml = (proposal) => {
     const fromStr = new Date(fromDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' });
     const toStr = new Date(toDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' });
     dateString = `${fromStr} - ${toStr}`;
-  } else if (fromDate) {
-    dateString = new Date(fromDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' });
   }
 
-  // Cover image fallback
   const coverImageUrl = itinerary?.coverPhotoUrl 
     ? getSafeImageUrl(itinerary.coverPhotoUrl) 
     : 'https://images.unsplash.com/photo-1436491865332-7a61a109cc05?q=80&w=2674&auto=format&fit=crop';
@@ -102,7 +96,7 @@ const generateProposalHtml = (proposal) => {
       <head>
         <meta charset="UTF-8" />
         <title>Travel Proposal - ${escapeHtml(proposal.query?.name || 'Customer')}</title>
-        <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Dancing+Script:wght@700&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet" />
+        <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Dancing+Script:wght@700&family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
         <style>
           *, *::before, *::after { box-sizing: border-box; }
           @page { margin: 0; size: A4; }
@@ -113,333 +107,188 @@ const generateProposalHtml = (proposal) => {
             background: #ffffff; 
             -webkit-print-color-adjust: exact; 
             print-color-adjust: exact;
-            font-size: 11px; /* Scaled down to prevent bleeding/overlapping of long texts */
-          }
-          
-          h1, h2, h3 { font-family: 'Playfair Display', serif; color: #1a1a1a; margin: 0; }
-          .handwritten { font-family: 'Dancing Script', cursive; color: #8b6e4b; font-size: 24px; }
-
-          /* COVER PAGE */
-          .cover-page { 
-            width: 100%; height: 100vh; position: relative; overflow: hidden;
-            page-break-after: always;
-            display: flex;
-            flex-direction: column;
-          }
-          .cover-image-wrapper {
-            height: 60vh;
-            width: 100%;
-            position: relative;
-            background: #e2dfd8;
-          }
-          .cover-image-wrapper.has-bg {
-            background-image: url('${coverImageUrl}');
-            background-size: cover;
-            background-position: center;
-          }
-          .cover-title-box {
-            position: absolute;
-            top: 50%; left: 50%; transform: translate(-50%, -50%);
-            text-align: center;
-            padding: 24px 48px;
-            background: rgba(255, 255, 255, 0.95);
-            box-shadow: 0 10px 40px rgba(0,0,0,0.15);
-            border: 2px solid #222;
-          }
-          .cover-title-box h1 {
-            font-size: 40px;
-            font-weight: 900;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            color: #000;
-          }
-          .cover-title-box .subtitle {
-            font-size: 13px;
-            letter-spacing: 4px;
-            text-transform: uppercase;
-            color: #555;
-            margin-top: 10px;
-            display: block;
-          }
-          
-          /* Cover Info Block - Two Sections Design */
-          .cover-details-container {
-            padding: 40px 60px;
-            flex-grow: 1;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-          }
-          .cover-metrics {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: space-between;
-          }
-          .metric-block {
-            width: 45%;
-            margin-bottom: 30px;
-          }
-          .metric-label {
             font-size: 10px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            color: #888;
-            margin-bottom: 8px;
-            display: block;
           }
-          .metric-val {
-            font-size: 18px;
-            font-weight: 700;
-            color: #111;
-            font-family: 'Playfair Display', serif;
-            border-bottom: 2px solid #eaeaea;
-            padding-bottom: 8px;
-            display: block;
-          }
+          
+          h1, h2, h3, h4 { font-family: 'Playfair Display', serif; color: #1a1a1a; margin: 0; }
+          .handwritten { font-family: 'Dancing Script', cursive; color: #8b6e4b; font-size: 20px; }
 
-          /* PAGE CONTENT WRAPPER */
-          .content-page { padding: 40px 60px; }
-          
-          /* DAY LAYOUT (FLEXBOX LEFT/RIGHT) */
-          .day-entry {
-            margin-bottom: 60px;
-            display: flex;
-            flex-direction: row;
-            justify-content: space-between;
-            align-items: flex-start;
-            border-bottom: 1px solid #eaeaea;
-            padding-bottom: 40px;
-            page-break-inside: avoid;
-            break-inside: avoid;
-          }
-          
-          .day-left {
-            width: 35%;
-            padding-right: 30px;
-          }
-          .arch-image {
-            width: 100%;
-            height: 300px;
-            object-fit: cover;
-            border-radius: 120px 120px 0 0;
-            box-shadow: 0 15px 30px rgba(0,0,0,0.08);
-            border: 4px solid #fff;
-          }
-          
-          .day-right {
-            width: 65%;
-            display: flex;
-            flex-direction: column;
-          }
-          
-          .day-header {
-            display: flex;
-            align-items: baseline;
-            gap: 15px;
-            text-transform: uppercase;
-            border-bottom: 2px solid #d4af37;
-            padding-bottom: 10px;
-            margin-bottom: 15px;
-          }
-          .day-header h3 { font-size: 18px; font-weight: 700; letter-spacing: 2px; color: #222; }
-          
-          .day-description {
-            font-size: 12px;
-            line-height: 1.6;
-            color: #444;
-            text-align: justify;
-            margin-bottom: 15px;
-          }
-          
-          .events-grid { display: flex; flex-direction: column; gap: 10px; margin-bottom: 15px; }
-          
-          /* ACCOMMODATION / TRANSPORT BLOCKS */
-          .highlight-block {
-            background: #fdfaf5;
-            border-left: 3px solid #d4af37;
-            padding: 12px 18px;
-            margin-bottom: 10px;
-            border-radius: 0 4px 4px 0;
-            box-shadow: 0 1px 5px rgba(0,0,0,0.02);
-            page-break-inside: avoid;
-            break-inside: avoid;
-          }
-          .highlight-title { font-weight: 700; color: #8b6e4b; font-size: 10px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
-          .highlight-body { font-size: 12px; color: #222; line-height: 1.5; }
-          .highlight-body strong { font-family: 'Playfair Display', serif; font-size: 15px; display: block; margin-bottom: 3px; color: #000; }
-          
-          .event-item { font-size: 12px; color: #444; line-height: 1.5; }
+          /* DESIGNER HEADER */
+          .designer-header { text-align: center; padding: 40px 0; background: #fff; border-bottom: 1px solid #f0f0f0; }
+          .crafted-text { font-size: 10px; letter-spacing: 0.8em; text-transform: uppercase; color: #8b6e4b; margin-bottom: 12px; display: block; }
+          .tour-main-title { font-size: 32px; font-weight: 700; text-transform: uppercase; letter-spacing: 2px; margin: 10px 0; color: #111; }
+          .itinerary-label { font-size: 13px; letter-spacing: 0.4em; color: #666; text-transform: uppercase; border-top: 1px solid #eee; border-bottom: 1px solid #eee; padding: 10px 0; display: inline-block; margin-top: 5px; }
 
-          /* PRICING */
-          .price-box { margin-top: 50px; padding: 40px; text-align: center; background: #faf9f5; border-radius: 8px; border: 1px dashed #d4af37; break-inside: avoid; page-break-inside: avoid; }
-          .price-box h3 { font-size: 24px; margin-bottom: 15px; color: #8b6e4b; font-style: italic; }
-          .price-amount { font-size: 42px; font-weight: 700; color: #1a1a1a; font-family: 'Playfair Display', serif; }
-          
-          /* GALLERY */
+          /* COVER */
+          .cover-page { width: 100%; height: 100vh; position: relative; page-break-after: always; display: flex; flex-direction: column; }
+          .cover-image-full { height: 75vh; width: 100%; background-image: url('${coverImageUrl}'); background-size: cover; background-position: center; border-bottom: 5px solid #111; }
+          .cover-info { flex: 1; padding: 40px 60px; display: flex; justify-content: space-between; align-items: center; background: #fafafa; }
+          .metric { width: 22%; border-left: 2px solid #d4af37; padding-left: 20px; }
+          .metric-lbl { font-size: 9px; text-transform: uppercase; letter-spacing: 2.5px; color: #999; margin-bottom: 5px; display: block; }
+          .metric-val { font-size: 15px; font-weight: 700; color: #1a1a1a; font-family: 'Playfair Display', serif; }
+
+          /* CONTENT */
+          .page-content { padding: 40px 60px; }
+          .day-card { margin-bottom: 60px; page-break-inside: avoid; position: relative; border-bottom: 1px solid #f0f0f0; padding-bottom: 40px; }
+          .day-num { font-size: 40px; font-weight: 900; color: #d4af37; opacity: 0.15; position: absolute; left: -40px; top: -10px; }
+          .day-title-row { margin-bottom: 25px; }
+          .day-text-title { font-size: 22px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: #111; }
+
+          .day-split { display: flex; gap: 40px; align-items: flex-start; }
+          .day-left-visual { width: 38%; }
+          .day-right-content { width: 62%; }
+          .arch-img-designed { width: 100%; height: 350px; object-fit: cover; border-radius: 175px 175px 0 0; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+
+          .day-desc { font-size: 11px; line-height: 1.7; color: #444; margin-bottom: 20px; text-align: justify; border-left: 2px solid #eee; padding-left: 15px; }
+
+          /* ACTIVITIES TWO SECTION */
+          .activities-split { display: flex; justify-content: space-between; margin-top: 20px; border-top: 1px solid #f0f0f0; padding-top: 20px; }
+          .activity-column { width: 47%; }
+          .activity-column h4 { font-size: 9px; text-transform: uppercase; letter-spacing: 3px; color: #8b6e4b; margin-bottom: 12px; border-bottom: 2px solid #f9f9f9; padding-bottom: 6px; display: block; }
+
+          /* VISUAL CARDS */
+          .visual-card { display: flex; margin-bottom: 15px; background: #fff; border: 1px solid #eee; border-radius: 4px; overflow: hidden; page-break-inside: avoid; transition: transform 0.3s ease; }
+          .visual-card-img { width: 110px; height: 110px; object-fit: cover; border-right: 1px solid #eee; }
+          .visual-card-data { flex: 1; padding: 15px; display: flex; flex-direction: column; justify-content: center; }
+          .card-type { font-size: 8px; text-transform: uppercase; color: #d4af37; font-weight: 800; letter-spacing: 1.5px; margin-bottom: 4px; }
+          .card-title { font-size: 14px; font-weight: 700; font-family: 'Playfair Display', serif; color: #111; margin: 4px 0; }
+          .card-meta { font-size: 9px; color: #777; line-height: 1.5; }
+
+          /* PRICING & FOOTER */
+          .price-designed { margin-top: 40px; padding: 40px; background: #111; color: #fff; text-align: center; border-radius: 8px; page-break-inside: avoid; }
+          .price-designed h3 { color: #d4af37; font-size: 12px; text-transform: uppercase; letter-spacing: 6px; margin-bottom: 20px; }
+          .total-amt { font-size: 48px; font-weight: 900; font-family: 'Playfair Display', serif; letter-spacing: 1px; }
+          .pricing-label { font-size: 10px; text-transform: uppercase; letter-spacing: 2px; opacity: 0.6; margin-top: 15px; }
+
           .gallery-header { margin-top: 60px; text-align: center; margin-bottom: 30px; page-break-before: always; }
-          .gallery-grid { display: flex; flex-wrap: wrap; gap: 15px; justify-content: space-between; }
-          .gallery-item { width: 31%; height: 200px; border-radius: 6px; overflow: hidden; margin-bottom: 15px; }
+          .gallery-grid { display: flex; flex-wrap: wrap; gap: 15px; justify-content: space-between; padding: 0 40px; }
+          .gallery-item { width: 31%; height: 220px; border-radius: 4px; overflow: hidden; margin-bottom: 15px; border: 1px solid #eee; }
           .gallery-item img { width: 100%; height: 100%; object-fit: cover; }
-          
-          .summary-grid {
-            margin-top: 40px;
-            display: flex;
-            justify-content: space-between;
-            gap: 40px;
-            page-break-inside: avoid;
-          }
-          .summary-col { width: 48%; }
-          .summary-col h4 { color: #d4af37; border-bottom: 1px solid #eee; padding-bottom: 8px; font-size: 14px; margin-bottom: 10px; }
-          .summary-col-body { font-size: 11px; line-height: 1.5; color: #555; }
 
-          .footer { text-align: center; padding: 30px; color: #888; font-size: 10px; margin-top: 40px; border-top: 1px solid #eee; page-break-inside: avoid; }
+          .footer-final { text-align: center; padding: 40px 0; margin-top: 60px; border-top: 1px solid #eee; }
+          .footer-logo { font-size: 16px; letter-spacing: 8px; text-transform: uppercase; color: #ccc; font-weight: 300; }
         </style>
       </head>
       <body>
 
-        <!-- COVER PAGE -->
+        <div class="designer-header">
+          <span class="crafted-text">C U S T O M &nbsp; C R A F T E D &nbsp; J O U R N E Y</span>
+          <h1 class="tour-main-title">${escapeHtml(itinerary?.title || destinations + ' Tour')}</h1>
+          <div class="itinerary-label">TRAVEL ITINERARY</div>
+        </div>
+
         <div class="cover-page">
-          <div class="cover-image-wrapper has-bg">
-            <div class="cover-title-box">
-              <h1>TRAVEL<br/>ITINERARY</h1>
-              <span class="subtitle">Custom Crafted Journey</span>
-            </div>
-          </div>
-          
-          <div class="cover-details-container">
-            <div class="cover-metrics">
-              <div class="metric-block">
-                <span class="metric-label">Departure</span>
-                <span class="metric-val">${escapeHtml(proposal.query?.pickupLocation || proposal.query?.leadSource || 'Your Origin')}</span>
-              </div>
-              <div class="metric-block">
-                <span class="metric-label">Destination</span>
-                <span class="metric-val">${escapeHtml(destinations)}</span>
-              </div>
-              <div class="metric-block">
-                <span class="metric-label">Date</span>
-                <span class="metric-val">${escapeHtml(dateString)}</span>
-              </div>
-              <div class="metric-block">
-                <span class="metric-label">Travelers</span>
-                <span class="metric-val">${proposal.query?.adults || 0} Adults${proposal.query?.children ? `, ${proposal.query.children} Kids` : ''}</span>
-              </div>
-            </div>
+          <div class="cover-image-full"></div>
+          <div class="cover-info">
+            <div class="metric"><span class="metric-lbl">Departure</span><span class="metric-val">${escapeHtml(proposal.query?.pickupLocation || 'Your City')}</span></div>
+            <div class="metric"><span class="metric-lbl">Duration</span><span class="metric-val">${days.length} Days</span></div>
+            <div class="metric"><span class="metric-lbl">Dates</span><span class="metric-val">${escapeHtml(dateString)}</span></div>
+            <div class="metric"><span class="metric-lbl">Travelers</span><span class="metric-val">${proposal.query?.adults || 0} Adults</span></div>
           </div>
         </div>
 
-        <!-- ITINERARY DAYS -->
-        <div class="content-page">
+        <div class="page-content">
           ${days.map(day => {
             const events = day.events || [];
-            
-            // Arch Image Selection
-            let archImageUrl = day.imageUrl;
-            if (!archImageUrl) {
-              const eventWithImage = events.find(e => e.imageUrl);
-              if (eventWithImage) archImageUrl = eventWithImage.imageUrl;
-            }
+            let archImageUrl = day.imageUrl || (events.find(e => e.imageUrl)?.imageUrl);
             archImageUrl = archImageUrl ? getSafeImageUrl(archImageUrl) : 'https://images.unsplash.com/photo-1506012787146-f92b2d7d6d96?q=80&w=800&auto=format&fit=crop';
             
-            // Categorize events
-            const hotels = events.filter(e => e.type === 'accommodation');
+            const activities = events.filter(e => e.type !== 'accommodation' && e.type !== 'transport');
+            const morning = activities.slice(0, Math.ceil(activities.length / 2));
+            const afternoon = activities.slice(Math.ceil(activities.length / 2));
+            
+            const accommodations = events.filter(e => e.type === 'accommodation');
             const transports = events.filter(e => e.type === 'transport');
-            const others = events.filter(e => e.type !== 'accommodation' && e.type !== 'transport');
 
             return `
-            <div class="day-entry">
-              <div class="day-left">
-                <img class="arch-image" src="${archImageUrl}" alt="Day Visual" />
+            <div class="day-card">
+              <span class="day-num">${day.dayNumber}</span>
+              <div class="day-title-row">
+                <h2 class="day-text-title">DAY ${day.dayNumber}: ${escapeHtml(day.title || destinations)}</h2>
               </div>
-              <div class="day-right">
-                <div class="day-header">
-                  <h3>DAY ${day.dayNumber} : ${escapeHtml(day.title || destinations)}</h3>
+
+              <div class="day-split">
+                <div class="day-left-visual">
+                  <img src="${archImageUrl}" class="arch-img-designed" />
                 </div>
-                
-                ${day.description ? `<div class="day-description">${escapeHtml(day.description).replace(/\n/g, '<br/>')}</div>` : ''}
-                
-                ${others.length > 0 ? `
-                  <div class="events-grid">
-                    ${others.map(ev => `
-                      <div class="event-item">
-                        <strong>${escapeHtml(ev.title)}</strong> ${ev.startTime ? `(${escapeHtml(ev.startTime)})` : ''}
-                        ${ev.description ? `<br/>${escapeHtml(ev.description).replace(/\n/g, '<br/>')}` : ''}
+                <div class="day-right-content">
+                  <div class="day-desc">${escapeHtml(day.description || '').replace(/\n/g, '<br/>')}</div>
+                  
+                  <div class="activities-split">
+                    <div class="activity-column">
+                      <h4>Morning</h4>
+                      ${morning.map(ev => `
+                        <div style="margin-bottom: 15px; border-left: 2px solid #f0f0f0; padding-left: 12px;">
+                          <strong style="display:block; font-family:'Playfair Display', serif; font-size:11px; color:#111;">${escapeHtml(ev.title)}</strong>
+                          ${ev.imageUrl ? `<img src="${getSafeImageUrl(ev.imageUrl)}" style="width: 100%; height: 80px; object-fit: cover; border-radius: 4px; margin-top: 8px; border: 1px solid #eee;" />` : ''}
+                        </div>
+                      `).join('') || '<p style="color:#bbb; font-style:italic; font-size:9px;">At leisure...</p>'}
+                    </div>
+                    <div class="activity-column" style="border-left: 1px solid #f0f0f0; padding-left: 20px;">
+                      <h4>Afternoon</h4>
+                      ${afternoon.map(ev => `
+                        <div style="margin-bottom: 15px; border-left: 2px solid #f0f0f0; padding-left: 12px;">
+                          <strong style="display:block; font-family:'Playfair Display', serif; font-size:11px; color:#111;">${escapeHtml(ev.title)}</strong>
+                          ${ev.imageUrl ? `<img src="${getSafeImageUrl(ev.imageUrl)}" style="width: 100%; height: 80px; object-fit: cover; border-radius: 4px; margin-top: 8px; border: 1px solid #eee;" />` : ''}
+                        </div>
+                      `).join('') || '<p style="color:#bbb; font-style:italic; font-size:9px;">At leisure...</p>'}
+                    </div>
+                  </div>
+
+                  ${accommodations.map(hotel => `
+                    <div class="visual-card">
+                      <img src="${getSafeImageUrl(hotel.imageUrl || 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=500')}" class="visual-card-img" />
+                      <div class="visual-card-data">
+                        <span class="card-type">Sanctuary</span>
+                        <h4 class="card-title">${escapeHtml(hotel.title || hotel.metadata?.hotelName)}</h4>
+                        <span class="card-meta">
+                          ${hotel.metadata?.roomCategory ? escapeHtml(hotel.metadata.roomCategory) : 'Elite Guest Room'}<br/>
+                          Arrival: ${escapeHtml(hotel.metadata?.checkInDate || 'TBD')} | Departure: ${escapeHtml(hotel.metadata?.checkOutDate || 'TBD')}
+                        </span>
                       </div>
-                    `).join('')}
-                  </div>
-                ` : ''}
-
-                ${hotels.map(hotel => `
-                  <div class="highlight-block">
-                    <div class="highlight-title">🏨 Accommodation</div>
-                    <div class="highlight-body">
-                      <strong>${escapeHtml(hotel.title || hotel.metadata?.hotelName)}</strong>
-                      ${hotel.metadata?.roomCategory ? `${escapeHtml(hotel.metadata.roomCategory)}` : ''}
-                      ${hotel.metadata?.mealPlan ? ` (${escapeHtml(hotel.metadata.mealPlan)})` : ''} <br/>
-                      ${hotel.metadata?.checkInDate ? `Check In: ${escapeHtml(hotel.metadata.checkInDate)} ${escapeHtml(hotel.metadata.checkInTime || '')}` : ''}
-                      ${hotel.metadata?.checkOutDate ? `<br/>Check Out: ${escapeHtml(hotel.metadata.checkOutDate)} ${escapeHtml(hotel.metadata.checkOutTime || '')}` : ''}
                     </div>
-                  </div>
-                `).join('')}
+                  `).join('')}
 
-                ${transports.map(tr => `
-                  <div class="highlight-block">
-                    <div class="highlight-title">🚗 Transport</div>
-                    <div class="highlight-body">
-                      <strong>${escapeHtml(tr.title || tr.metadata?.vehicleType)}</strong>
-                      ${tr.startTime ? `Departure: ${escapeHtml(tr.startTime)}<br/>` : ''}
-                      ${tr.description ? escapeHtml(tr.description).replace(/\n/g, '<br/>') : ''}
+                  ${transports.map(tr => `
+                    <div class="visual-card">
+                      <img src="${getSafeImageUrl(tr.imageUrl || 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?w=500')}" class="visual-card-img" />
+                      <div class="visual-card-data">
+                        <span class="card-type">Expeditious</span>
+                        <h4 class="card-title">${escapeHtml(tr.title || tr.metadata?.vehicleType || 'Executive Transfer')}</h4>
+                        <span class="card-meta">${escapeHtml(tr.description || 'Seamless connection across destinations.')}</span>
+                      </div>
                     </div>
-                  </div>
-                `).join('')}
+                  `).join('')}
+                </div>
               </div>
             </div>
             `;
-          }).join('') || '<p style="text-align:center;">Itinerary details coming soon...</p>'}
+          }).join('')}
 
-          <div class="price-box">
-            <h3>Investment</h3>
-            <div class="price-amount">₹${Number(proposal.sellingPrice || itinerary?.sellingPrice || itinerary?.totalCost || 0).toLocaleString('en-IN')}</div>
-            ${itinerary?.perPersonCost ? `<p class="handwritten" style="margin-top: 10px;">₹${Number(itinerary.perPersonCost).toLocaleString('en-IN')} per person</p>` : ''}
+          <div class="price-designed">
+            <h3>Standard Offering</h3>
+            <div class="total-amt">₹${Number(proposal.sellingPrice || 0).toLocaleString('en-IN')}</div>
+            <div class="pricing-label">Total investment for the curated group</div>
           </div>
-
-          ${(itinerary?.inclusionsHtml || itinerary?.exclusionsHtml) ? `
-            <div class="summary-grid">
-              ${itinerary?.inclusionsHtml ? `
-                <div class="summary-col">
-                  <h4>Inclusions</h4>
-                  <div class="summary-col-body">${itinerary.inclusionsHtml}</div>
-                </div>
-              ` : ''}
-              ${itinerary?.exclusionsHtml ? `
-                <div class="summary-col">
-                  <h4>Exclusions</h4>
-                  <div class="summary-col-body">${itinerary.exclusionsHtml}</div>
-                </div>
-              ` : ''}
-            </div>
-          ` : ''}
         </div>
 
         ${gallery.length > 0 ? `
-          <div class="content-page">
-            <div class="gallery-header">
-              <h2 style="font-size: 28px;">Visual Inspiration</h2>
-            </div>
-            <div class="gallery-grid">
-              ${gallery.map(img => `
-                <div class="gallery-item">
-                  <img src="${getSafeImageUrl(img.imageUrl)}" alt="Gallery Scene" />
-                </div>
-              `).join('')}
-            </div>
+          <div class="gallery-header">
+            <h2 style="font-size: 28px; font-weight: 700; text-transform: uppercase; letter-spacing: 4px;">Visual Journey</h2>
+            <p style="font-size: 10px; color: #888; margin-top: 10px; letter-spacing: 2px;">SNAPSHOTS FROM YOUR DESTINATION</p>
+          </div>
+          <div class="gallery-grid">
+            ${gallery.map(img => `
+              <div class="gallery-item">
+                <img src="${getSafeImageUrl(img.imageUrl)}" alt="Gallery Scene" />
+              </div>
+            `).join('')}
           </div>
         ` : ''}
 
-        <div class="footer">
-          <p class="handwritten" style="font-size: 20px;">Crafted with passion for ${escapeHtml(proposal.query?.name || 'Customer')}</p>
-          <div style="letter-spacing: 2px; margin-top: 8px;">WWW.IMAGICAHOLIDAYS.COM</div>
+        <div class="footer-final">
+          <p class="handwritten" style="font-size: 24px; margin-bottom: 15px;">A voyage perfectly crafted for ${escapeHtml(proposal.query?.name || 'you')}</p>
+          <div class="footer-logo">IMAGICA HOLIDAYS</div>
         </div>
       </body>
     </html>
