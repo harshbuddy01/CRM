@@ -206,6 +206,21 @@ const assignQuery = async (id, assignedToUserId, currentUserId) => {
     data: { lastAssignedAt: new Date() }
   });
 
+  // Notify the newly assigned user
+  if (currentUserId !== assignedToUserId) {
+    await prisma.notification.create({
+      data: {
+        userId: assignedToUserId,
+        type: 'query_assigned',
+        message: `Lead ${existingQuery.queryCode} (${existingQuery.name}) has been assigned to you.`,
+        priority: 'high',
+        relatedType: 'query',
+        relatedId: id,
+        channel: 'in_app'
+      }
+    });
+  }
+
   return updatedEntity;
 };
 
@@ -326,6 +341,21 @@ const changeQueryStatus = async (id, status, userId, canViewAll, canEditAll) => 
   if (status === 'confirmed') {
     const clientService = require('./client.service');
     await clientService.ensureClientFromQuery(id);
+    
+    // Notify the assigned user
+    if (existing.assignedTo) {
+      await prisma.notification.create({
+        data: {
+          userId: existing.assignedTo,
+          type: 'query_confirmed',
+          message: `Booking Confirmed! Lead ${existing.queryCode} (${existing.name}) is marked as paid.`,
+          priority: 'high',
+          relatedType: 'query',
+          relatedId: id,
+          channel: 'in_app'
+        }
+      });
+    }
   }
 
   return updated;

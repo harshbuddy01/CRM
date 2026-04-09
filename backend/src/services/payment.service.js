@@ -71,6 +71,21 @@ const recordManualPayment = async (data, userId) => {
         }
       }
     });
+
+    const query = await prisma.query.findUnique({ where: { id: payment.queryId }, select: { assignedTo: true, queryCode: true } });
+    if (query?.assignedTo && query.assignedTo !== userId) {
+      await prisma.notification.create({
+        data: {
+          userId: query.assignedTo,
+          type: 'payment_received',
+          message: `A manual payment of ₹${payment.amount} was recorded for Lead ${query.queryCode}.`,
+          priority: 'normal',
+          relatedType: 'query',
+          relatedId: payment.queryId,
+          channel: 'in_app'
+        }
+      });
+    }
   }
 
   return payment;
@@ -177,6 +192,23 @@ const handleWebhook = async (body, rawBody, signature) => {
           idempotencyKey: razorpayPaymentId
         }
       });
+    }
+
+    if (qId) {
+      const query = await prisma.query.findUnique({ where: { id: qId }, select: { assignedTo: true, queryCode: true } });
+      if (query?.assignedTo) {
+        await prisma.notification.create({
+          data: {
+            userId: query.assignedTo,
+            type: 'payment_received',
+            message: `A Razorpay payment of ₹${amount} was received for Lead ${query.queryCode}.`,
+            priority: 'high',
+            relatedType: 'query',
+            relatedId: qId,
+            channel: 'in_app'
+          }
+        });
+      }
     }
   } else if (body.event.includes('failed')) {
     // Log failures too
