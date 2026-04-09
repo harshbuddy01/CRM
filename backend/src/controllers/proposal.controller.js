@@ -74,10 +74,11 @@ const generateProposalHtml = (proposal) => {
   const itinerary = proposal.itinerary;
   const days = itinerary?.days || proposal.days || [];
   const gallery = itinerary?.galleryImages || [];
-  const destinations = [...new Set(days.map(d => d.destination?.name).filter(Boolean))].join(' • ') || proposal.query?.destination || 'TBD';
+  const destinations = [...new Set(days.map(d => d.destination?.name).filter(Boolean))].join(' • ') || itinerary?.title || proposal.query?.destination || 'TBD';
+  const departurePoint = proposal.query?.pickupLocation || days[0]?.destination?.name || 'TBD';
 
-  const fromDate = proposal.travelDateFrom || proposal.query?.travelDateFrom;
-  const toDate = proposal.travelDateTo || proposal.query?.travelDateTo;
+  const fromDate = proposal.travelDateFrom || itinerary?.travelDateFrom || proposal.query?.travelDateFrom;
+  const toDate = proposal.travelDateTo || itinerary?.travelDateTo || proposal.query?.travelDateTo;
   
   let dateString = 'Season TBD';
   if (fromDate && toDate) {
@@ -194,7 +195,7 @@ const generateProposalHtml = (proposal) => {
         <div class="meta-info-row">
           <div class="meta-item">
             <span class="meta-label">Departure :</span>
-            <span class="meta-value">${escapeHtml(proposal.query?.pickupLocation || 'TBD')}</span>
+            <span class="meta-value">${escapeHtml(departurePoint)}</span>
           </div>
           <div class="meta-item" style="text-align: right;">
             <span class="meta-label">Date :</span>

@@ -115,6 +115,8 @@ const createProposalFromItinerary = async (queryId, userId, itineraryId) => {
       totalCost: newItinerary.totalCost || 0,
       markupPct: newItinerary.markupPct || 0,
       sellingPrice: calculatedTotal,
+      travelDateFrom: newItinerary.travelDateFrom,
+      travelDateTo: newItinerary.travelDateTo,
       createdBy: userId,
       pdfStatus: 'pending',
     },
