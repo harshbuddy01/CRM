@@ -315,101 +315,101 @@ const generateProposalHtml = (proposal) => {
             const transports = events.filter(e => e.type === 'transport');
             const others = events.filter(e => e.type !== 'accommodation' && e.type !== 'transport');
 
-            return \`
+            return `
             <div class="day-entry">
               <div class="day-left">
-                <img class="arch-image" src="\${archImageUrl}" alt="Day Visual" />
+                <img class="arch-image" src="${archImageUrl}" alt="Day Visual" />
               </div>
               <div class="day-right">
                 <div class="day-header">
-                  <h3>DAY \${day.dayNumber} : \${escapeHtml(day.title || destinations)}</h3>
+                  <h3>DAY ${day.dayNumber} : ${escapeHtml(day.title || destinations)}</h3>
                 </div>
                 
-                \${day.description ? \`<div class="day-description">\${escapeHtml(day.description).replace(/\\n/g, '<br/>')}</div>\` : ''}
+                ${day.description ? `<div class="day-description">${escapeHtml(day.description).replace(/\n/g, '<br/>')}</div>` : ''}
                 
                 <div class="events-grid">
-                  \${others.map(ev => \`
+                  ${others.map(ev => `
                     <div class="event-item">
-                      <strong>\${escapeHtml(ev.title)}</strong> \${ev.startTime ? \`(\${escapeHtml(ev.startTime)})\` : ''}
-                      \${ev.description ? \`<br/>\${escapeHtml(ev.description).replace(/\\n/g, '<br/>')}\` : ''}
+                      <strong>${escapeHtml(ev.title)}</strong> ${ev.startTime ? `(${escapeHtml(ev.startTime)})` : ''}
+                      ${ev.description ? `<br/>${escapeHtml(ev.description).replace(/\n/g, '<br/>')}` : ''}
                     </div>
-                  \`).join('')}
+                  `).join('')}
                 </div>
 
-                \${hotels.map(hotel => \`
+                ${hotels.map(hotel => `
                   <div class="highlight-block">
                     <div class="highlight-title">🏨 Accommodation</div>
                     <div class="highlight-body">
-                      <strong>\${escapeHtml(hotel.title || hotel.metadata?.hotelName)}</strong>
-                      \${hotel.metadata?.roomCategory ? \`\${escapeHtml(hotel.metadata.roomCategory)}\` : ''}
-                      \${hotel.metadata?.mealPlan ? \` (\${escapeHtml(hotel.metadata.mealPlan)})\` : ''} <br/><br/>
-                      \${hotel.metadata?.checkInDate ? \`Check In : \${escapeHtml(hotel.metadata.checkInDate)} \${escapeHtml(hotel.metadata.checkInTime || '')}\` : ''}
-                      \${hotel.metadata?.checkOutDate ? \`<br/>Check Out : \${escapeHtml(hotel.metadata.checkOutDate)} \${escapeHtml(hotel.metadata.checkOutTime || '')}\` : ''}
+                      <strong>${escapeHtml(hotel.title || hotel.metadata?.hotelName)}</strong>
+                      ${hotel.metadata?.roomCategory ? `${escapeHtml(hotel.metadata.roomCategory)}` : ''}
+                      ${hotel.metadata?.mealPlan ? ` (${escapeHtml(hotel.metadata.mealPlan)})` : ''} <br/><br/>
+                      ${hotel.metadata?.checkInDate ? `Check In : ${escapeHtml(hotel.metadata.checkInDate)} ${escapeHtml(hotel.metadata.checkInTime || '')}` : ''}
+                      ${hotel.metadata?.checkOutDate ? `<br/>Check Out : ${escapeHtml(hotel.metadata.checkOutDate)} ${escapeHtml(hotel.metadata.checkOutTime || '')}` : ''}
                     </div>
                   </div>
-                \`).join('')}
+                `).join('')}
 
-                \${transports.map(tr => \`
+                ${transports.map(tr => `
                   <div class="highlight-block">
                     <div class="highlight-title">🚗 Transport</div>
                     <div class="highlight-body">
-                      <strong>\${escapeHtml(tr.title || tr.metadata?.vehicleType)}</strong>
-                      \${tr.startTime ? \`Departure: \${escapeHtml(tr.startTime)}<br/>\` : ''}
-                      \${tr.description ? escapeHtml(tr.description).replace(/\\n/g, '<br/>') : ''}
+                      <strong>${escapeHtml(tr.title || tr.metadata?.vehicleType)}</strong>
+                      ${tr.startTime ? `Departure: ${escapeHtml(tr.startTime)}<br/>` : ''}
+                      ${tr.description ? escapeHtml(tr.description).replace(/\n/g, '<br/>') : ''}
                     </div>
                   </div>
-                \`).join('')}
+                `).join('')}
               </div>
             </div>
-            \`;
+            `;
           }).join('') || '<p style="text-align:center;">Itinerary details coming soon...</p>'}
 
           <div class="price-box">
             <h3>Investment</h3>
-            <div class="price-amount">₹\${Number(proposal.sellingPrice || itinerary?.sellingPrice || itinerary?.totalCost || 0).toLocaleString('en-IN')}</div>
-            \${itinerary?.perPersonCost ? \`<p class="handwritten" style="margin-top: 15px;">₹\${Number(itinerary.perPersonCost).toLocaleString('en-IN')} per person</p>\` : ''}
+            <div class="price-amount">₹${Number(proposal.sellingPrice || itinerary?.sellingPrice || itinerary?.totalCost || 0).toLocaleString('en-IN')}</div>
+            ${itinerary?.perPersonCost ? `<p class="handwritten" style="margin-top: 15px;">₹${Number(itinerary.perPersonCost).toLocaleString('en-IN')} per person</p>` : ''}
           </div>
 
-          \${(itinerary?.inclusionsHtml || itinerary?.exclusionsHtml) ? \`
+          ${(itinerary?.inclusionsHtml || itinerary?.exclusionsHtml) ? `
             <div style="margin-top: 60px; display: grid; grid-template-columns: 1fr 1fr; gap: 40px; page-break-inside: avoid;">
-              \${itinerary?.inclusionsHtml ? \`
+              ${itinerary?.inclusionsHtml ? `
                 <div>
                   <h4 style="color: #d4af37; border-bottom: 1px solid #eee; padding-bottom: 10px;">Inclusions</h4>
-                  <div style="font-size: 13px; line-height: 1.6; padding-top: 10px;">\${itinerary.inclusionsHtml}</div>
+                  <div style="font-size: 13px; line-height: 1.6; padding-top: 10px;">${itinerary.inclusionsHtml}</div>
                 </div>
-              \` : ''}
-              \${itinerary?.exclusionsHtml ? \`
+              ` : ''}
+              ${itinerary?.exclusionsHtml ? `
                 <div>
                   <h4 style="color: #d4af37; border-bottom: 1px solid #eee; padding-bottom: 10px;">Exclusions</h4>
-                  <div style="font-size: 13px; line-height: 1.6; padding-top: 10px;">\${itinerary.exclusionsHtml}</div>
+                  <div style="font-size: 13px; line-height: 1.6; padding-top: 10px;">${itinerary.exclusionsHtml}</div>
                 </div>
-              \` : ''}
+              ` : ''}
             </div>
-          \` : ''}
+          ` : ''}
         </div>
 
-        \${gallery.length > 0 ? \`
+        ${gallery.length > 0 ? `
           <div class="content-page">
             <div class="gallery-header">
               <h2 style="font-size: 32px;">Visual Inspiration</h2>
             </div>
             <div class="gallery-grid">
-              \${gallery.map(img => \`
+              ${gallery.map(img => `
                 <div class="gallery-item">
-                  <img src="\${getSafeImageUrl(img.imageUrl)}" alt="Gallery Scene" />
+                  <img src="${getSafeImageUrl(img.imageUrl)}" alt="Gallery Scene" />
                 </div>
-              \`).join('')}
+              `).join('')}
             </div>
           </div>
-        \` : ''}
+        ` : ''}
 
         <div class="footer">
-          <p class="handwritten">Crafted with passion for \${escapeHtml(proposal.query?.name || 'Customer')}</p>
+          <p class="handwritten">Crafted with passion for ${escapeHtml(proposal.query?.name || 'Customer')}</p>
           <div style="letter-spacing: 2px;">WWW.IMAGICAHOLIDAYS.COM</div>
         </div>
       </body>
     </html>
-  \`;
+  `;
 };
 
 const createProposal = async (req, res, next) => {
