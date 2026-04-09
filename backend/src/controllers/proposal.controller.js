@@ -186,7 +186,7 @@ const generateProposalHtml = (proposal) => {
         <div class="hero-container">
           <img src="${coverImageUrl}" class="hero-img" />
           <div class="hero-overlay-text">
-            <h1 class="hero-title">TRAVEL ITINERARY</h1>
+            <h1 class="hero-title">${escapeHtml(itinerary?.title || proposal.query?.destination || 'TRAVEL ITINERARY')}</h1>
           </div>
         </div>
 
