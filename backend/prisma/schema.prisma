@@ -174,7 +174,7 @@ model Query {
   budget         Decimal?  @db.Decimal(12, 2)
   leadSource     String    @map("lead_source") /// 'website','call','walkin','whatsapp','facebook','google','reference','agent'
   campaignName   String?   @map("campaign_name")
-  status         String    @default("new") /// 'new','followup','dnp','proposal_sent','ready_to_pay','confirmed','lost','invalid'
+  status         String    @default("new") /// 'new','quoted','negotiation','confirmed','in_progress','completed','lost','invalid'
   assignedTo     String?   @map("assigned_to")
   nextFollowupAt DateTime? @map("next_followup_at")
   mergedInto     String?   @map("merged_into") /// If this query was merged into another

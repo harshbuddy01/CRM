@@ -6,23 +6,23 @@
 // ============================================================
 
 export const TRANSITIONS: Record<string, string[]> = {
-  new:           ['followup', 'dnp', 'lost', 'invalid'],
-  followup:      ['followup', 'dnp', 'proposal_sent', 'lost', 'invalid'],
-  dnp:           ['followup', 'lost', 'invalid'],
-  proposal_sent: ['followup', 'ready_to_pay', 'lost', 'invalid'],
-  ready_to_pay:  ['confirmed', 'lost'],
-  confirmed:     [],
-  lost:          ['new'],
+  new:           ['quoted', 'negotiation', 'confirmed', 'lost', 'invalid'],
+  quoted:        ['negotiation', 'confirmed', 'lost', 'invalid', 'new'],
+  negotiation:   ['quoted', 'confirmed', 'lost', 'invalid', 'new'],
+  confirmed:     ['in_progress', 'completed', 'lost'],
+  in_progress:   ['completed', 'lost'],
+  completed:     [],
+  lost:          ['new', 'quoted'],
   invalid:       ['new'],
 };
 
 export const STATUS_LABELS: Record<string, string> = {
   new: 'New',
-  followup: 'Follow Up',
-  dnp: 'DNP',
-  proposal_sent: 'Proposal Sent',
-  ready_to_pay: 'Ready to Pay',
+  quoted: 'Quoted',
+  negotiation: 'Negotiation',
   confirmed: 'Confirmed',
+  in_progress: 'In Progress',
+  completed: 'Completed',
   lost: 'Lost',
   invalid: 'Invalid',
 };
