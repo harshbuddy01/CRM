@@ -105,7 +105,9 @@ export function ImageCropperModal({ isOpen, onClose, imageFile, onCropComplete }
   return (
     <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 backdrop-blur-md bg-black/60 animate-in fade-in duration-300">
       <div className="bg-white rounded-3xl shadow-2xl w-full max-w-4xl flex flex-col overflow-hidden border border-white/20">
-        <div className="p-4 border-b flex items-center justify-between bg-slate-50">
+        
+        {/* Header - Fixed Z-index to prevent cropper bleed */}
+        <div className="p-4 border-b flex items-center justify-between bg-slate-50 relative z-20">
           <div>
             <h2 className="text-lg font-bold flex items-center gap-2">
               <CropIcon className="w-5 h-5 text-blue-500" /> Selective Image Cropper
@@ -117,20 +119,22 @@ export function ImageCropperModal({ isOpen, onClose, imageFile, onCropComplete }
           </button>
         </div>
 
-        <div className="flex-1 p-6 bg-slate-900 flex items-center justify-center overflow-auto min-h-[300px] max-h-[60vh]">
+        {/* Cropping Area - Hidden overflow and flex center */}
+        <div className="flex-1 p-6 bg-slate-900 flex items-center justify-center overflow-hidden relative z-10 w-full" style={{ height: '65vh' }}>
           {imgSrc ? (
             <ReactCrop
               crop={crop}
               onChange={(_, percentCrop) => setCrop(percentCrop)}
               onComplete={(c) => setCompletedCrop(c)}
-              className="max-h-full"
+              className="flex justify-center items-center max-w-full max-h-full"
             >
               <img
                 ref={imgRef}
                 alt="Crop Original"
                 src={imgSrc}
                 onLoad={onImageLoad}
-                className="max-h-[50vh] w-auto border border-white/10 shadow-2xl"
+                className="block max-w-full border border-white/10 shadow-2xl object-contain"
+                style={{ maxHeight: 'calc(65vh - 3rem)' }}
               />
             </ReactCrop>
           ) : (
@@ -141,7 +145,8 @@ export function ImageCropperModal({ isOpen, onClose, imageFile, onCropComplete }
           )}
         </div>
 
-        <div className="p-5 border-t bg-slate-50 flex items-center justify-between">
+        {/* Footer */}
+        <div className="p-5 border-t bg-slate-50 flex items-center justify-between relative z-20">
           <p className="text-xs font-medium text-slate-400">Aspect Ratio: Freeform</p>
           <div className="flex gap-3">
             <Button variant="ghost" onClick={onClose} className="rounded-xl font-bold uppercase tracking-wider text-xs px-6" disabled={isProcessing}>
@@ -153,6 +158,7 @@ export function ImageCropperModal({ isOpen, onClose, imageFile, onCropComplete }
             </Button>
           </div>
         </div>
+
       </div>
     </div>
   );
