@@ -211,21 +211,18 @@ const generateProposalHtml = (proposal) => {
             archImageUrl = archImageUrl ? getSafeImageUrl(archImageUrl) : 'https://images.unsplash.com/photo-1506012787146-f92b2d7d6d96?q=80&w=800&auto=format&fit=crop';
             
             const activities = events.filter(e => e.type !== 'accommodation' && e.type !== 'transport');
-            const morning = activities.filter(e => {
-              if (!e.startTime) return activities.indexOf(e) < activities.length / 2;
-              const hour = parseInt(e.startTime.split(':')[0]);
-              return hour < 14;
-            });
-            const afternoon = activities.filter(e => !morning.includes(e));
-            
             const stay = events.find(e => e.type === 'accommodation');
             const trans = events.find(e => e.type === 'transport');
 
-            // Split long description text if needed
+            // Calculate exact date for the day
+            let dayDateLabel = '';
+            if (fromDate) {
+              const d = new Date(fromDate);
+              d.setDate(d.getDate() + (day.dayNumber - 1));
+              dayDateLabel = ' – ' + d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+            }
+
             const desc = day.description || '';
-            const descParts = desc.length > 500 
-              ? [desc.slice(0, Math.floor(desc.length / 2)), desc.slice(Math.floor(desc.length / 2))]
-              : [desc, ''];
 
             return `
             <div class="day-row ${isEven ? 'even' : ''}">
@@ -234,23 +231,19 @@ const generateProposalHtml = (proposal) => {
               </div>
               <div class="day-details">
                 <div class="day-header">
-                  <h2 class="day-title"><span>DAY ${day.dayNumber} :</span> ${escapeHtml(day.title || destinations)}</h2>
+                  <h2 class="day-title"><span>DAY ${day.dayNumber}${dayDateLabel} :</span> ${escapeHtml(day.title || destinations)}</h2>
                 </div>
                 
                 <div class="split-columns">
-                  <div class="col-half">
-                    <span class="col-label">Morning <span>06.00 - 14.00</span></span>
-                    <div class="col-text">
-                      ${descParts[0]}
-                      ${morning.map(ev => `<div style="margin-top:8px;">• <strong>${escapeHtml(ev.title)}</strong></div>`).join('')}
-                    </div>
-                  </div>
-                  <div class="col-half" style="border-left: 1px solid #eee; padding-left: 15px;">
-                    <span class="col-label">Afternoon <span>15.00 - 22.00</span></span>
-                    <div class="col-text">
-                      ${descParts[1] || ''}
-                      ${afternoon.map(ev => `<div style="margin-top:8px;">• <strong>${escapeHtml(ev.title)}</strong></div>`).join('')}
-                      ${afternoon.length === 0 && !descParts[1] ? '<em>Evenings at leisure for self-exploration.</em>' : ''}
+                  <div class="col-half" style="width: 100%;">
+                    <div class="col-text" style="column-count: 2; column-gap: 30px; column-rule: 1px solid #ccc; orphans: 2; widows: 2; text-align: left;">
+                      ${desc ? `<p style="margin-top:0;">${escapeHtml(desc)}</p>` : ''}
+                      ${activities.map(ev => `
+                        <div style="margin-top:10px; break-inside: avoid-column;">
+                          • <strong>${escapeHtml(ev.title)}</strong>
+                          ${ev.description ? `<br/><span style="color:#777; font-size: 8.5px; margin-left: 8px; display: block;">${escapeHtml(ev.description)}</span>` : ''}
+                        </div>
+                      `).join('')}
                     </div>
                   </div>
                 </div>
@@ -262,7 +255,9 @@ const generateProposalHtml = (proposal) => {
                     <span class="mini-type">Sanctuary</span>
                     <h4 class="mini-title">${escapeHtml(stay.title || stay.metadata?.hotelName)}</h4>
                     <span class="mini-meta">
-                      ${escapeHtml(stay.metadata?.roomCategory || 'Executive Room')}
+                      ${escapeHtml(stay.metadata?.roomType || stay.metadata?.roomCategory || 'Standard Room')}
+                      ${stay.metadata?.mealPlan ? `<br/>Meal Plan: ${escapeHtml(stay.metadata.mealPlan)}` : ''}
+                      ${stay.description ? `<br/>Notes: ${escapeHtml(stay.description)}` : ''}
                       ${stay.metadata?.checkInDate ? `<br/>Check-In: ${escapeHtml(stay.metadata.checkInDate)}` : ''}
                       ${stay.metadata?.checkOutDate ? ` | Check-Out: ${escapeHtml(stay.metadata.checkOutDate)}` : ''}
                     </span>

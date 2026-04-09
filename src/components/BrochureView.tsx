@@ -87,20 +87,17 @@ export function BrochureView({ itinerary, query }: { itinerary: any, query?: any
           archImageUrl = archImageUrl ? getSafeImageUrl(archImageUrl) : 'https://images.unsplash.com/photo-1506012787146-f92b2d7d6d96?q=80&w=800&auto=format&fit=crop';
           
           const activities = events.filter((e: any) => e.type !== 'accommodation' && e.type !== 'transport');
-          const morning = activities.filter((e: any) => {
-            if (!e.startTime) return activities.indexOf(e) < activities.length / 2;
-            const hour = parseInt(e.startTime.split(':')[0]);
-            return hour < 14;
-          });
-          const afternoon = activities.filter((e: any) => !morning.includes(e));
-          
           const stays = events.filter((e: any) => e.type === 'accommodation');
           const trans = events.filter((e: any) => e.type === 'transport');
 
+          let dayDateLabel = '';
+          if (fromDate) {
+            const d = new Date(fromDate);
+            d.setDate(d.getDate() + (day.dayNumber - 1));
+            dayDateLabel = ' – ' + d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+          }
+
           const desc = day.description || '';
-          const descParts = desc.length > 500 
-            ? [desc.slice(0, Math.floor(desc.length / 2)), desc.slice(Math.floor(desc.length / 2))]
-            : [desc, ''];
 
           return (
             <div key={day.id} className={`flex flex-col md:flex-row gap-10 items-start ${isEven ? 'md:flex-row-reverse' : ''}`}>
@@ -112,49 +109,29 @@ export function BrochureView({ itinerary, query }: { itinerary: any, query?: any
               <div className="w-full md:w-[60%] text-left pt-6">
                 <div className="border-b-[1.5px] border-[#111] pb-3 mb-6">
                   <h2 className="text-2xl uppercase tracking-widest font-bold text-slate-800">
-                    <span className="text-[#8b6e4b] mr-3">DAY {day.dayNumber} :</span>
+                    <span className="text-[#8b6e4b] mr-3">DAY {day.dayNumber}{dayDateLabel} :</span>
                     {day.title || destinations}
                   </h2>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 relative">
-                  <div className="hidden md:block absolute left-1/2 top-4 bottom-4 w-px bg-slate-200 -ml-4"></div>
-                  
-                  <div className="pr-4">
-                    <span className="block text-[11px] font-bold text-[#8b6e4b] uppercase tracking-widest border-b border-slate-100 pb-2 mb-4">
-                      Morning <span className="text-slate-400 font-normal ml-2">06.00 - 14.00</span>
-                    </span>
-                    <div className="text-[13px] leading-relaxed text-slate-600 space-y-4">
-                      {descParts[0] && <p>{descParts[0]}</p>}
-                      {morning.length > 0 && (
-                        <ul className="space-y-3 font-medium text-slate-800">
-                          {morning.map((ev: any) => (
-                            <li key={ev.id} className="flex items-start gap-2">
-                              <span className="w-1.5 h-1.5 rounded-full bg-[#8b6e4b] mt-1.5 shrink-0" /> {ev.title}
-                            </li>
-                          ))}
-                        </ul>
+                <div 
+                  className="w-full text-[13px] leading-relaxed text-slate-600 block" 
+                  style={{ columnCount: 2, columnGap: '30px', columnRule: '1px solid #e2e8f0', widows: 2, orphans: 2, textAlign: 'left' }}
+                >
+                  {desc && <p className="mb-4" style={{ breakInside: 'avoid-column' }}>{desc}</p>}
+                  {activities.map((ev: any) => (
+                    <div key={ev.id} className="mb-4" style={{ breakInside: 'avoid-column' }}>
+                      <div className="flex items-start gap-2 text-slate-800 font-medium leading-tight">
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#8b6e4b] mt-[5px] shrink-0" /> 
+                        <strong>{ev.title}</strong>
+                      </div>
+                      {ev.description && (
+                        <div className="pl-[14px] mt-1 text-[11px] text-slate-500 leading-snug">
+                          {ev.description}
+                        </div>
                       )}
                     </div>
-                  </div>
-
-                  <div className="md:pl-4">
-                    <span className="block text-[11px] font-bold text-[#8b6e4b] uppercase tracking-widest border-b border-slate-100 pb-2 mb-4">
-                      Afternoon <span className="text-slate-400 font-normal ml-2">15.00 - 22.00</span>
-                    </span>
-                    <div className="text-[13px] leading-relaxed text-slate-600 space-y-4">
-                      {descParts[1] && <p>{descParts[1]}</p>}
-                      {afternoon.length > 0 && (
-                        <ul className="space-y-3 font-medium text-slate-800">
-                          {afternoon.map((ev: any) => (
-                            <li key={ev.id} className="flex items-start gap-2">
-                               <span className="w-1.5 h-1.5 rounded-full bg-[#8b6e4b] mt-1.5 shrink-0" /> {ev.title}
-                            </li>
-                          ))}
-                        </ul>
-                      )}
-                    </div>
-                  </div>
+                  ))}
                 </div>
 
                 {/* Event Embedded Cards Matching PDF */}
@@ -174,8 +151,14 @@ export function BrochureView({ itinerary, query }: { itinerary: any, query?: any
                           {stay.metadata?.hotelName || stay.title}
                         </div>
                         <div className="text-[9px] text-slate-500 mt-1 uppercase tracking-widest">
-                          {stay.metadata?.roomType || 'Standard Room'} • {stay.metadata?.mealPlan || 'Meal Plan Default'}
+                          {stay.metadata?.roomType || stay.metadata?.roomCategory || 'Standard Room'} 
+                          {stay.metadata?.mealPlan ? ` • ${stay.metadata.mealPlan}` : ''}
                         </div>
+                        {stay.description && (
+                          <div className="text-[10px] text-slate-500 italic mt-1 line-clamp-2">
+                            {stay.description}
+                          </div>
+                        )}
                       </div>
                     </div>
                   ))}
