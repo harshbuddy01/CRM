@@ -129,44 +129,44 @@ const generateProposalHtml = (proposal) => {
 
           /* CONTENT */
           .page-content { padding: 40px 60px; }
-          .day-card { margin-bottom: 60px; page-break-inside: avoid; position: relative; border-bottom: 1px solid #f0f0f0; padding-bottom: 40px; }
+          .day-card { margin-bottom: 40px; page-break-inside: avoid; position: relative; border-bottom: 1px solid #f0f0f0; padding-bottom: 30px; }
           .day-num { font-size: 40px; font-weight: 900; color: #d4af37; opacity: 0.15; position: absolute; left: -40px; top: -10px; }
-          .day-title-row { margin-bottom: 25px; }
-          .day-text-title { font-size: 22px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: #111; }
+          .day-title-row { margin-bottom: 20px; }
+          .day-text-title { font-size: 20px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: #111; }
 
-          .day-split { display: flex; gap: 40px; align-items: flex-start; }
-          .day-left-visual { width: 38%; }
-          .day-right-content { width: 62%; }
-          .arch-img-designed { width: 100%; height: 350px; object-fit: cover; border-radius: 175px 175px 0 0; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+          .day-split { display: flex; gap: 30px; align-items: flex-start; }
+          .day-left-visual { width: 35%; }
+          .day-right-content { width: 65%; }
+          .arch-img-designed { width: 100%; height: 280px; object-fit: cover; border-radius: 140px 140px 0 0; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
 
-          .day-desc { font-size: 11px; line-height: 1.7; color: #444; margin-bottom: 20px; text-align: justify; border-left: 2px solid #eee; padding-left: 15px; }
+          .day-desc { font-size: 10.5px; line-height: 1.6; color: #444; margin-bottom: 15px; text-align: justify; border-left: 2px solid #eee; padding-left: 12px; }
 
           /* ACTIVITIES TWO SECTION */
-          .activities-split { display: flex; justify-content: space-between; margin-top: 20px; border-top: 1px solid #f0f0f0; padding-top: 20px; }
-          .activity-column { width: 47%; }
-          .activity-column h4 { font-size: 9px; text-transform: uppercase; letter-spacing: 3px; color: #8b6e4b; margin-bottom: 12px; border-bottom: 2px solid #f9f9f9; padding-bottom: 6px; display: block; }
+          .activities-split { display: flex; justify-content: space-between; margin-top: 15px; border-top: 1px solid #f0f0f0; padding-top: 15px; }
+          .activity-column { width: 48%; }
+          .activity-column h4 { font-size: 8px; text-transform: uppercase; letter-spacing: 2px; color: #8b6e4b; margin-bottom: 10px; border-bottom: 2px solid #f9f9f9; padding-bottom: 4px; display: block; }
 
           /* VISUAL CARDS */
-          .visual-card { display: flex; margin-bottom: 15px; background: #fff; border: 1px solid #eee; border-radius: 4px; overflow: hidden; page-break-inside: avoid; transition: transform 0.3s ease; }
-          .visual-card-img { width: 110px; height: 110px; object-fit: cover; border-right: 1px solid #eee; }
-          .visual-card-data { flex: 1; padding: 15px; display: flex; flex-direction: column; justify-content: center; }
-          .card-type { font-size: 8px; text-transform: uppercase; color: #d4af37; font-weight: 800; letter-spacing: 1.5px; margin-bottom: 4px; }
-          .card-title { font-size: 14px; font-weight: 700; font-family: 'Playfair Display', serif; color: #111; margin: 4px 0; }
-          .card-meta { font-size: 9px; color: #777; line-height: 1.5; }
+          .visual-card { display: flex; margin-bottom: 12px; background: #fff; border: 1px solid #eee; border-radius: 4px; overflow: hidden; page-break-inside: avoid; }
+          .visual-card-img { width: 90px; height: 90px; object-fit: cover; border-right: 1px solid #eee; }
+          .visual-card-data { flex: 1; padding: 12px; display: flex; flex-direction: column; justify-content: center; }
+          .card-type { font-size: 7.5px; text-transform: uppercase; color: #d4af37; font-weight: 800; letter-spacing: 1.2px; margin-bottom: 3px; }
+          .card-title { font-size: 13px; font-weight: 700; font-family: 'Playfair Display', serif; color: #111; margin: 3px 0; }
+          .card-meta { font-size: 8.5px; color: #777; line-height: 1.4; }
 
           /* PRICING & FOOTER */
-          .price-designed { margin-top: 40px; padding: 40px; background: #111; color: #fff; text-align: center; border-radius: 8px; page-break-inside: avoid; }
-          .price-designed h3 { color: #d4af37; font-size: 12px; text-transform: uppercase; letter-spacing: 6px; margin-bottom: 20px; }
-          .total-amt { font-size: 48px; font-weight: 900; font-family: 'Playfair Display', serif; letter-spacing: 1px; }
-          .pricing-label { font-size: 10px; text-transform: uppercase; letter-spacing: 2px; opacity: 0.6; margin-top: 15px; }
+          .price-designed { margin-top: 30px; padding: 30px; background: #111; color: #fff; text-align: center; border-radius: 8px; page-break-inside: avoid; }
+          .price-designed h3 { color: #d4af37; font-size: 11px; text-transform: uppercase; letter-spacing: 5px; margin-bottom: 15px; }
+          .total-amt { font-size: 42px; font-weight: 900; font-family: 'Playfair Display', serif; letter-spacing: 1px; }
+          .pricing-label { font-size: 9px; text-transform: uppercase; letter-spacing: 2px; opacity: 0.6; margin-top: 12px; }
 
-          .gallery-header { margin-top: 60px; text-align: center; margin-bottom: 30px; page-break-before: always; }
-          .gallery-grid { display: flex; flex-wrap: wrap; gap: 15px; justify-content: space-between; padding: 0 40px; }
-          .gallery-item { width: 31%; height: 220px; border-radius: 4px; overflow: hidden; margin-bottom: 15px; border: 1px solid #eee; }
+          .gallery-header { margin-top: 40px; text-align: center; margin-bottom: 25px; page-break-before: auto; }
+          .gallery-grid { display: flex; flex-wrap: wrap; gap: 12px; justify-content: space-between; padding: 0 40px; }
+          .gallery-item { width: 31%; height: 180px; border-radius: 4px; overflow: hidden; margin-bottom: 12px; border: 1px solid #eee; }
           .gallery-item img { width: 100%; height: 100%; object-fit: cover; }
 
-          .footer-final { text-align: center; padding: 40px 0; margin-top: 60px; border-top: 1px solid #eee; }
-          .footer-logo { font-size: 16px; letter-spacing: 8px; text-transform: uppercase; color: #ccc; font-weight: 300; }
+          .footer-final { text-align: center; padding: 30px 0; margin-top: 40px; border-top: 1px solid #eee; }
+          .footer-logo { font-size: 14px; letter-spacing: 6px; text-transform: uppercase; color: #ccc; font-weight: 300; }
         </style>
       </head>
       <body>
@@ -264,6 +264,26 @@ const generateProposalHtml = (proposal) => {
             </div>
             `;
           }).join('')}
+
+          ${(itinerary?.inclusionsHtml || itinerary?.exclusionsHtml) ? `
+            <div style="margin-top: 40px; page-break-inside: avoid; border-top: 2px solid #111; padding-top: 30px;">
+              <h3 style="font-size: 18px; text-transform: uppercase; letter-spacing: 4px; margin-bottom: 20px; text-align: center;">Details of the Journey</h3>
+              <div style="display: flex; justify-content: space-between; gap: 30px;">
+                ${itinerary?.inclusionsHtml ? `
+                  <div style="width: 48%;">
+                    <h4 style="font-size: 10px; color: #d4af37; text-transform: uppercase; letter-spacing: 2px; border-bottom: 1px solid #eee; padding-bottom: 8px; margin-bottom: 12px;">The Inclusions</h4>
+                    <div style="font-size: 9px; line-height: 1.6; color: #555;">${itinerary.inclusionsHtml}</div>
+                  </div>
+                ` : ''}
+                ${itinerary?.exclusionsHtml ? `
+                  <div style="width: 48%;">
+                    <h4 style="font-size: 10px; color: #888; text-transform: uppercase; letter-spacing: 2px; border-bottom: 1px solid #eee; padding-bottom: 8px; margin-bottom: 12px;">The Exclusions</h4>
+                    <div style="font-size: 9px; line-height: 1.6; color: #555;">${itinerary.exclusionsHtml}</div>
+                  </div>
+                ` : ''}
+              </div>
+            </div>
+          ` : ''}
 
           <div class="price-designed">
             <h3>Standard Offering</h3>
