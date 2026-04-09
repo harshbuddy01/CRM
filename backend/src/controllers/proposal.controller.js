@@ -76,7 +76,6 @@ const generateProposalHtml = (proposal) => {
   const itinerary = proposal.itinerary;
   const days = itinerary?.days || proposal.days || [];
   const totalDays = days.length;
-  // If no places are mapped, fallback to Query's generic destination
   const destinations = [...new Set(days.map(d => d.destination?.name).filter(Boolean))].join(', ') || proposal.query?.destination || 'TBD';
   const gallery = itinerary?.galleryImages || [];
 
@@ -114,6 +113,7 @@ const generateProposalHtml = (proposal) => {
             background: #ffffff; 
             -webkit-print-color-adjust: exact; 
             print-color-adjust: exact;
+            font-size: 11px; /* Scaled down to prevent bleeding/overlapping of long texts */
           }
           
           h1, h2, h3 { font-family: 'Playfair Display', serif; color: #1a1a1a; margin: 0; }
@@ -127,7 +127,7 @@ const generateProposalHtml = (proposal) => {
             flex-direction: column;
           }
           .cover-image-wrapper {
-            height: 65vh;
+            height: 60vh;
             width: 100%;
             position: relative;
             background: #e2dfd8;
@@ -141,21 +141,20 @@ const generateProposalHtml = (proposal) => {
             position: absolute;
             top: 50%; left: 50%; transform: translate(-50%, -50%);
             text-align: center;
-            padding: 20px 40px;
+            padding: 24px 48px;
             background: rgba(255, 255, 255, 0.95);
             box-shadow: 0 10px 40px rgba(0,0,0,0.15);
             border: 2px solid #222;
           }
           .cover-title-box h1 {
-            font-size: 42px;
+            font-size: 40px;
             font-weight: 900;
             text-transform: uppercase;
             letter-spacing: 2px;
             color: #000;
           }
-
           .cover-title-box .subtitle {
-            font-size: 14px;
+            font-size: 13px;
             letter-spacing: 4px;
             text-transform: uppercase;
             color: #555;
@@ -163,51 +162,65 @@ const generateProposalHtml = (proposal) => {
             display: block;
           }
           
-          .cover-details {
+          /* Cover Info Block - Two Sections Design */
+          .cover-details-container {
             padding: 40px 60px;
             flex-grow: 1;
             display: flex;
             flex-direction: column;
             justify-content: center;
-            gap: 20px;
           }
-          .cover-line {
+          .cover-metrics {
             display: flex;
-            align-items: center;
+            flex-wrap: wrap;
+            justify-content: space-between;
+          }
+          .metric-block {
+            width: 45%;
+            margin-bottom: 30px;
+          }
+          .metric-label {
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: #888;
+            margin-bottom: 8px;
+            display: block;
+          }
+          .metric-val {
             font-size: 18px;
-          }
-          .line-label { 
-            width: 140px; 
-            font-weight: 600; 
-            color: #555;
+            font-weight: 700;
+            color: #111;
             font-family: 'Playfair Display', serif;
-          }
-          .line-value { 
-            flex-grow: 1; 
-            border-bottom: 1px solid #777; 
-            padding-bottom: 5px; 
-            color: #222;
-            font-weight: 500;
+            border-bottom: 2px solid #eaeaea;
+            padding-bottom: 8px;
+            display: block;
           }
 
           /* PAGE CONTENT WRAPPER */
-          .content-page { padding: 50px 60px; }
+          .content-page { padding: 40px 60px; }
           
-          /* DAY LAYOUT (ARCH STYLE) */
+          /* DAY LAYOUT (FLEXBOX LEFT/RIGHT) */
           .day-entry {
-            margin-bottom: 50px;
-            break-inside: avoid;
-            display: grid;
-            grid-template-columns: 240px 1fr;
-            gap: 40px;
-            align-items: start;
+            margin-bottom: 60px;
+            display: flex;
+            flex-direction: row;
+            justify-content: space-between;
+            align-items: flex-start;
             border-bottom: 1px solid #eaeaea;
             padding-bottom: 40px;
+            page-break-inside: avoid;
+            break-inside: avoid;
           }
           
+          .day-left {
+            width: 35%;
+            padding-right: 30px;
+          }
           .arch-image {
-            width: 240px;
-            height: 320px;
+            width: 100%;
+            height: 300px;
             object-fit: cover;
             border-radius: 120px 120px 0 0;
             box-shadow: 0 15px 30px rgba(0,0,0,0.08);
@@ -215,10 +228,9 @@ const generateProposalHtml = (proposal) => {
           }
           
           .day-right {
+            width: 65%;
             display: flex;
             flex-direction: column;
-            gap: 15px;
-            padding-top: 20px;
           }
           
           .day-header {
@@ -228,44 +240,60 @@ const generateProposalHtml = (proposal) => {
             text-transform: uppercase;
             border-bottom: 2px solid #d4af37;
             padding-bottom: 10px;
-            margin-bottom: 10px;
+            margin-bottom: 15px;
           }
           .day-header h3 { font-size: 18px; font-weight: 700; letter-spacing: 2px; color: #222; }
           
           .day-description {
-            font-size: 14px;
-            line-height: 1.8;
+            font-size: 12px;
+            line-height: 1.6;
             color: #444;
+            text-align: justify;
+            margin-bottom: 15px;
           }
           
-          .events-grid { margin-top: 10px; display: flex; flex-direction: column; gap: 15px; }
+          .events-grid { display: flex; flex-direction: column; gap: 10px; margin-bottom: 15px; }
           
           /* ACCOMMODATION / TRANSPORT BLOCKS */
           .highlight-block {
-            background: #fdfdfd;
+            background: #fdfaf5;
             border-left: 3px solid #d4af37;
-            padding: 15px 20px;
-            border-radius: 0 6px 6px 0;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.03);
+            padding: 12px 18px;
+            margin-bottom: 10px;
+            border-radius: 0 4px 4px 0;
+            box-shadow: 0 1px 5px rgba(0,0,0,0.02);
+            page-break-inside: avoid;
+            break-inside: avoid;
           }
-          .highlight-title { font-weight: 700; color: #8b6e4b; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
-          .highlight-body { font-size: 14px; color: #222; line-height: 1.6; }
-          .highlight-body strong { font-family: 'Playfair Display', serif; font-size: 18px; display: block; margin-bottom: 4px; color: #000; }
+          .highlight-title { font-weight: 700; color: #8b6e4b; font-size: 10px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+          .highlight-body { font-size: 12px; color: #222; line-height: 1.5; }
+          .highlight-body strong { font-family: 'Playfair Display', serif; font-size: 15px; display: block; margin-bottom: 3px; color: #000; }
           
-          .event-item { font-size: 14px; color: #444; line-height: 1.6; }
+          .event-item { font-size: 12px; color: #444; line-height: 1.5; }
 
           /* PRICING */
-          .price-box { margin-top: 50px; padding: 50px; text-align: center; background: #faf9f5; border-radius: 12px; border: 1px dashed #d4af37; break-inside: avoid; }
-          .price-box h3 { font-size: 28px; margin-bottom: 15px; color: #8b6e4b; font-style: italic; }
-          .price-amount { font-size: 48px; font-weight: 700; color: #1a1a1a; font-family: 'Playfair Display', serif; }
+          .price-box { margin-top: 50px; padding: 40px; text-align: center; background: #faf9f5; border-radius: 8px; border: 1px dashed #d4af37; break-inside: avoid; page-break-inside: avoid; }
+          .price-box h3 { font-size: 24px; margin-bottom: 15px; color: #8b6e4b; font-style: italic; }
+          .price-amount { font-size: 42px; font-weight: 700; color: #1a1a1a; font-family: 'Playfair Display', serif; }
           
           /* GALLERY */
           .gallery-header { margin-top: 60px; text-align: center; margin-bottom: 30px; page-break-before: always; }
-          .gallery-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; }
-          .gallery-item { height: 220px; border-radius: 8px; overflow: hidden; }
+          .gallery-grid { display: flex; flex-wrap: wrap; gap: 15px; justify-content: space-between; }
+          .gallery-item { width: 31%; height: 200px; border-radius: 6px; overflow: hidden; margin-bottom: 15px; }
           .gallery-item img { width: 100%; height: 100%; object-fit: cover; }
           
-          .footer { text-align: center; padding: 40px; color: #888; font-size: 12px; margin-top: 40px; border-top: 1px solid #eee; }
+          .summary-grid {
+            margin-top: 40px;
+            display: flex;
+            justify-content: space-between;
+            gap: 40px;
+            page-break-inside: avoid;
+          }
+          .summary-col { width: 48%; }
+          .summary-col h4 { color: #d4af37; border-bottom: 1px solid #eee; padding-bottom: 8px; font-size: 14px; margin-bottom: 10px; }
+          .summary-col-body { font-size: 11px; line-height: 1.5; color: #555; }
+
+          .footer { text-align: center; padding: 30px; color: #888; font-size: 10px; margin-top: 40px; border-top: 1px solid #eee; page-break-inside: avoid; }
         </style>
       </head>
       <body>
@@ -279,18 +307,24 @@ const generateProposalHtml = (proposal) => {
             </div>
           </div>
           
-          <div class="cover-details">
-            <div class="cover-line">
-              <span class="line-label">Departure :</span>
-              <span class="line-value">${escapeHtml(proposal.query?.pickupLocation || proposal.query?.leadSource || 'Your Origin')}</span>
-            </div>
-            <div class="cover-line">
-              <span class="line-label">Date :</span>
-              <span class="line-value">${escapeHtml(dateString)}</span>
-            </div>
-            <div class="cover-line">
-              <span class="line-label">Destination :</span>
-              <span class="line-value">${escapeHtml(destinations)}</span>
+          <div class="cover-details-container">
+            <div class="cover-metrics">
+              <div class="metric-block">
+                <span class="metric-label">Departure</span>
+                <span class="metric-val">${escapeHtml(proposal.query?.pickupLocation || proposal.query?.leadSource || 'Your Origin')}</span>
+              </div>
+              <div class="metric-block">
+                <span class="metric-label">Destination</span>
+                <span class="metric-val">${escapeHtml(destinations)}</span>
+              </div>
+              <div class="metric-block">
+                <span class="metric-label">Date</span>
+                <span class="metric-val">${escapeHtml(dateString)}</span>
+              </div>
+              <div class="metric-block">
+                <span class="metric-label">Travelers</span>
+                <span class="metric-val">${proposal.query?.adults || 0} Adults${proposal.query?.children ? `, ${proposal.query.children} Kids` : ''}</span>
+              </div>
             </div>
           </div>
         </div>
@@ -301,13 +335,11 @@ const generateProposalHtml = (proposal) => {
             const events = day.events || [];
             
             // Arch Image Selection
-            // Priority: Day Image -> First Event Image -> Fallback
             let archImageUrl = day.imageUrl;
             if (!archImageUrl) {
               const eventWithImage = events.find(e => e.imageUrl);
               if (eventWithImage) archImageUrl = eventWithImage.imageUrl;
             }
-            // Use a soft placeholder pattern if absolutely no images exist
             archImageUrl = archImageUrl ? getSafeImageUrl(archImageUrl) : 'https://images.unsplash.com/photo-1506012787146-f92b2d7d6d96?q=80&w=800&auto=format&fit=crop';
             
             // Categorize events
@@ -327,14 +359,16 @@ const generateProposalHtml = (proposal) => {
                 
                 ${day.description ? `<div class="day-description">${escapeHtml(day.description).replace(/\n/g, '<br/>')}</div>` : ''}
                 
-                <div class="events-grid">
-                  ${others.map(ev => `
-                    <div class="event-item">
-                      <strong>${escapeHtml(ev.title)}</strong> ${ev.startTime ? `(${escapeHtml(ev.startTime)})` : ''}
-                      ${ev.description ? `<br/>${escapeHtml(ev.description).replace(/\n/g, '<br/>')}` : ''}
-                    </div>
-                  `).join('')}
-                </div>
+                ${others.length > 0 ? `
+                  <div class="events-grid">
+                    ${others.map(ev => `
+                      <div class="event-item">
+                        <strong>${escapeHtml(ev.title)}</strong> ${ev.startTime ? `(${escapeHtml(ev.startTime)})` : ''}
+                        ${ev.description ? `<br/>${escapeHtml(ev.description).replace(/\n/g, '<br/>')}` : ''}
+                      </div>
+                    `).join('')}
+                  </div>
+                ` : ''}
 
                 ${hotels.map(hotel => `
                   <div class="highlight-block">
@@ -342,9 +376,9 @@ const generateProposalHtml = (proposal) => {
                     <div class="highlight-body">
                       <strong>${escapeHtml(hotel.title || hotel.metadata?.hotelName)}</strong>
                       ${hotel.metadata?.roomCategory ? `${escapeHtml(hotel.metadata.roomCategory)}` : ''}
-                      ${hotel.metadata?.mealPlan ? ` (${escapeHtml(hotel.metadata.mealPlan)})` : ''} <br/><br/>
-                      ${hotel.metadata?.checkInDate ? `Check In : ${escapeHtml(hotel.metadata.checkInDate)} ${escapeHtml(hotel.metadata.checkInTime || '')}` : ''}
-                      ${hotel.metadata?.checkOutDate ? `<br/>Check Out : ${escapeHtml(hotel.metadata.checkOutDate)} ${escapeHtml(hotel.metadata.checkOutTime || '')}` : ''}
+                      ${hotel.metadata?.mealPlan ? ` (${escapeHtml(hotel.metadata.mealPlan)})` : ''} <br/>
+                      ${hotel.metadata?.checkInDate ? `Check In: ${escapeHtml(hotel.metadata.checkInDate)} ${escapeHtml(hotel.metadata.checkInTime || '')}` : ''}
+                      ${hotel.metadata?.checkOutDate ? `<br/>Check Out: ${escapeHtml(hotel.metadata.checkOutDate)} ${escapeHtml(hotel.metadata.checkOutTime || '')}` : ''}
                     </div>
                   </div>
                 `).join('')}
@@ -367,21 +401,21 @@ const generateProposalHtml = (proposal) => {
           <div class="price-box">
             <h3>Investment</h3>
             <div class="price-amount">₹${Number(proposal.sellingPrice || itinerary?.sellingPrice || itinerary?.totalCost || 0).toLocaleString('en-IN')}</div>
-            ${itinerary?.perPersonCost ? `<p class="handwritten" style="margin-top: 15px;">₹${Number(itinerary.perPersonCost).toLocaleString('en-IN')} per person</p>` : ''}
+            ${itinerary?.perPersonCost ? `<p class="handwritten" style="margin-top: 10px;">₹${Number(itinerary.perPersonCost).toLocaleString('en-IN')} per person</p>` : ''}
           </div>
 
           ${(itinerary?.inclusionsHtml || itinerary?.exclusionsHtml) ? `
-            <div style="margin-top: 60px; display: grid; grid-template-columns: 1fr 1fr; gap: 40px; page-break-inside: avoid;">
+            <div class="summary-grid">
               ${itinerary?.inclusionsHtml ? `
-                <div>
-                  <h4 style="color: #d4af37; border-bottom: 1px solid #eee; padding-bottom: 10px;">Inclusions</h4>
-                  <div style="font-size: 13px; line-height: 1.6; padding-top: 10px;">${itinerary.inclusionsHtml}</div>
+                <div class="summary-col">
+                  <h4>Inclusions</h4>
+                  <div class="summary-col-body">${itinerary.inclusionsHtml}</div>
                 </div>
               ` : ''}
               ${itinerary?.exclusionsHtml ? `
-                <div>
-                  <h4 style="color: #d4af37; border-bottom: 1px solid #eee; padding-bottom: 10px;">Exclusions</h4>
-                  <div style="font-size: 13px; line-height: 1.6; padding-top: 10px;">${itinerary.exclusionsHtml}</div>
+                <div class="summary-col">
+                  <h4>Exclusions</h4>
+                  <div class="summary-col-body">${itinerary.exclusionsHtml}</div>
                 </div>
               ` : ''}
             </div>
@@ -391,7 +425,7 @@ const generateProposalHtml = (proposal) => {
         ${gallery.length > 0 ? `
           <div class="content-page">
             <div class="gallery-header">
-              <h2 style="font-size: 32px;">Visual Inspiration</h2>
+              <h2 style="font-size: 28px;">Visual Inspiration</h2>
             </div>
             <div class="gallery-grid">
               ${gallery.map(img => `
@@ -404,8 +438,8 @@ const generateProposalHtml = (proposal) => {
         ` : ''}
 
         <div class="footer">
-          <p class="handwritten">Crafted with passion for ${escapeHtml(proposal.query?.name || 'Customer')}</p>
-          <div style="letter-spacing: 2px;">WWW.IMAGICAHOLIDAYS.COM</div>
+          <p class="handwritten" style="font-size: 20px;">Crafted with passion for ${escapeHtml(proposal.query?.name || 'Customer')}</p>
+          <div style="letter-spacing: 2px; margin-top: 8px;">WWW.IMAGICAHOLIDAYS.COM</div>
         </div>
       </body>
     </html>
