@@ -23,6 +23,7 @@ import { motion } from 'framer-motion';
 import DOMPurify from 'dompurify';
 import { format, addDays } from 'date-fns';
 import { MediaLibraryModal } from '@/components/MediaLibraryModal';
+import { ImageCropperModal } from '@/components/ImageCropperModal';
 
 const EVENT_TYPES = [
   { value: 'accommodation', label: 'Accommodation', icon: Hotel, color: 'text-blue-600 bg-blue-50' },
@@ -70,6 +71,10 @@ export default function ItineraryBuilderPage() {
   const [isSharing, setIsSharing] = useState(false);
   const [destDropdownDayId, setDestDropdownDayId] = useState<string | null>(null);
 
+  // Unified Cropper State
+  const [cropFile, setCropFile] = useState<File | null>(null);
+  const [cropTarget, setCropTarget] = useState<'cover' | 'day' | 'event' | null>(null);
+
   const { data: itinerary, isLoading } = useQuery({
     queryKey: ['itinerary', id],
     queryFn: async () => { const r = await api.get(`/itineraries/${id}`); return r.data.data; },
@@ -105,12 +110,9 @@ export default function ItineraryBuilderPage() {
     onError: (err: any) => toast.error(err.response?.data?.message || 'Failed to delete'),
   });
 
-  const handleCoverUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleCoverUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]; if (!file) return;
-    const fd = new FormData(); fd.append('photo', file);
-    try { await api.post(`/itineraries/${id}/cover-photo`, fd, { headers: { 'Content-Type': 'multipart/form-data' } }); toast.success('Cover photo updated'); invalidate(); }
-    catch { toast.error('Upload failed'); }
-    finally { e.target.value = ''; }
+    setCropTarget('cover'); setCropFile(file); e.target.value = '';
   };
 
   const handleGalleryUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -121,23 +123,46 @@ export default function ItineraryBuilderPage() {
     finally { e.target.value = ''; }
   };
 
-  const handleEventImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleEventImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]; if (!file || !eventImgTarget) return;
-    const fd = new FormData(); fd.append('photo', file);
-    try { await api.post(`/itineraries/events/${eventImgTarget}/image`, fd, { headers: { 'Content-Type': 'multipart/form-data' } }); toast.success('Image updated'); invalidate(); }
-    catch { toast.error('Upload failed'); }
-    finally {
-      e.target.value = '';
-      setEventImgTarget(null);
-    }
+    setCropTarget('event'); setCropFile(file); e.target.value = '';
   };
 
-  const handleDayImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleDayImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]; if (!file || !selectedDayId) return;
-    const fd = new FormData(); fd.append('photo', file);
-    try { await api.put(`/itineraries/days/${selectedDayId}/image`, fd, { headers: { 'Content-Type': 'multipart/form-data' } }); toast.success('Day image updated'); invalidate(); }
-    catch { toast.error('Upload failed'); }
-    finally { e.target.value = ''; }
+    setCropTarget('day'); setCropFile(file); e.target.value = '';
+  };
+
+  const handleCropComplete = async (croppedBlob: Blob | null) => {
+    if (!croppedBlob || !cropFile || !cropTarget) {
+       setCropFile(null); setCropTarget(null);
+       return;
+    }
+    
+    const fileToUpload = new File([croppedBlob], cropFile.name, { type: cropFile.type || 'image/jpeg' });
+    const fd = new FormData(); fd.append('photo', fileToUpload);
+    
+    try {
+      if (cropTarget === 'cover') {
+         await api.post(`/itineraries/${id}/cover-photo`, fd, { headers: { 'Content-Type': 'multipart/form-data' } }); 
+         toast.success('Cover photo updated');
+      } else if (cropTarget === 'day' && selectedDayId) {
+         await api.put(`/itineraries/days/${selectedDayId}/image`, fd, { headers: { 'Content-Type': 'multipart/form-data' } }); 
+         toast.success('Day image updated');
+      } else if (cropTarget === 'event' && eventImgTarget) {
+         await api.post(`/itineraries/events/${eventImgTarget}/image`, fd, { headers: { 'Content-Type': 'multipart/form-data' } }); 
+         toast.success('Image updated');
+      }
+      invalidate();
+    } catch {
+      toast.error('Upload failed');
+    } finally {
+      setCropFile(null);
+      setCropTarget(null);
+      if (cropTarget === 'event') {
+         setEventImgTarget(null);
+      }
+    }
   };
 
   const handleShare = async () => {
@@ -252,6 +277,13 @@ export default function ItineraryBuilderPage() {
           mediaModalTarget?.type === 'day' ? 'Select Day Photo' :
           mediaModalTarget?.type === 'event' ? 'Select Event Photo' : 'Select Gallery Photo'
         }
+      />
+
+      <ImageCropperModal
+        isOpen={!!cropFile}
+        imageFile={cropFile}
+        onClose={() => { setCropFile(null); setCropTarget(null); }}
+        onCropComplete={handleCropComplete}
       />
 
        {/* Header with cover photo */}

@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { ImageCropperModal } from './ImageCropperModal';
 
 interface MediaLibraryModalProps {
   isOpen: boolean;
@@ -50,21 +51,33 @@ export function MediaLibraryModal({ isOpen, onClose, onSelect, title = 'Media Li
 
   const categories = Array.from(new Set(allImages.map((img: any) => img.category).filter(Boolean))) as string[];
 
-  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const [cropFile, setCropFile] = useState<File | null>(null);
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Basic validation
     if (file.size > 5 * 1024 * 1024) {
       toast.error("File is too large (max 5MB)");
       return;
     }
 
+    setCropFile(file);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const handleCropComplete = async (croppedBlob: Blob | null) => {
+    if (!croppedBlob || !cropFile) {
+      setCropFile(null); // Cancelled
+      return;
+    }
+
     setIsUploading(true);
     const formData = new FormData();
-    formData.append('image', file);
+    // We send the cropped Blob
+    formData.append('image', croppedBlob);
     formData.append('category', selectedCategory || 'General');
-    formData.append('caption', file.name.split('.')[0]);
+    formData.append('caption', cropFile.name.split('.')[0]);
 
     try {
       await api.post('/cms/gallery', formData, {
@@ -77,7 +90,7 @@ export function MediaLibraryModal({ isOpen, onClose, onSelect, title = 'Media Li
       toast.error(err.response?.data?.message || 'Failed to upload. check permissions.');
     } finally {
       setIsUploading(false);
-      if (fileInputRef.current) fileInputRef.current.value = '';
+      setCropFile(null);
     }
   };
 
@@ -106,7 +119,7 @@ export function MediaLibraryModal({ isOpen, onClose, onSelect, title = 'Media Li
           ref={fileInputRef} 
           className="hidden" 
           accept="image/*" 
-          onChange={handleUpload} 
+          onChange={handleFileSelect} 
         />
 
         {/* Filters */}
@@ -218,6 +231,13 @@ export function MediaLibraryModal({ isOpen, onClose, onSelect, title = 'Media Li
             </div>
         </div>
       </div>
+
+      <ImageCropperModal
+        isOpen={!!cropFile}
+        imageFile={cropFile}
+        onClose={() => setCropFile(null)}
+        onCropComplete={handleCropComplete}
+      />
     </div>
   );
 }
