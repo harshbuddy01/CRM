@@ -67,7 +67,7 @@ export function BrochureView({ itinerary, query }: { itinerary: any, query?: any
 
       {/* Meta Bar */}
       <div className="w-full h-4 bg-[#454545] mb-8" />
-      <div className="flex flex-col md:flex-row justify-between px-8 md:px-16 pb-8 border-b border-black/10 mb-12">
+      <div className="flex flex-col md:flex-row justify-between px-8 md:px-16 pb-8 border-b border-black/10 mb-10">
         <div className="font-serif text-lg mb-4 md:mb-0">
           <span className="font-bold">Departure :</span> 
           <span className="border-b border-slate-400 inline-block min-w-[150px] px-2 text-slate-700">{departurePoint}</span>
@@ -75,6 +75,23 @@ export function BrochureView({ itinerary, query }: { itinerary: any, query?: any
         <div className="font-serif text-lg text-right">
           <span className="font-bold">Date :</span> 
           <span className="border-b border-slate-400 inline-block min-w-[150px] px-2 text-slate-700">{dateString}</span>
+        </div>
+      </div>
+
+      {/* BRAND & CONTACT IDENTITY SECTION */}
+      <div className="px-8 md:px-16 pb-16 text-center">
+        <div className="font-serif text-3xl font-black text-[#111] tracking-[4px] uppercase mb-8">
+          Imagica Holidays
+        </div>
+        <div className="flex flex-col sm:flex-row justify-center items-center gap-6 sm:gap-16 font-sans text-sm text-[#444] font-medium">
+          <div className="flex items-center gap-3">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" alt="WhatsApp" className="w-6 h-6" />
+            <span>+91 98765 43210</span>
+          </div>
+          <div className="flex items-center gap-3">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/e/ec/Email_icon.svg" alt="Email" className="w-6 h-6" />
+            <span>contact@imagicaholidays.com</span>
+          </div>
         </div>
       </div>
 
@@ -94,7 +111,7 @@ export function BrochureView({ itinerary, query }: { itinerary: any, query?: any
           if (fromDate) {
             const d = new Date(fromDate);
             d.setDate(d.getDate() + (day.dayNumber - 1));
-            dayDateLabel = ' – ' + d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+            dayDateLabel = ' (' + d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) + ')';
           }
 
           const desc = day.description || '';

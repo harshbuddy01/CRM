@@ -203,6 +203,25 @@ const generateProposalHtml = (proposal) => {
           </div>
         </div>
 
+        <!-- BRAND & CONTACT IDENTITY SECTION -->
+        <div class="brand-contact-section" style="padding: 20px 60px 60px; text-align: center; page-break-after: avoid;">
+          <!-- Logo Placeholder -->
+          <div style="font-family: 'Playfair Display', serif; font-size: 24px; font-weight: 900; color: #111; letter-spacing: 4px; margin-bottom: 25px; text-transform: uppercase;">
+            Imagica Holidays
+          </div>
+          
+          <div style="display: flex; justify-content: center; gap: 50px; font-family: 'Montserrat', sans-serif; font-size: 14px; color: #444; font-weight: 500;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" alt="WhatsApp" style="width: 24px; height: 24px;" />
+              <span>+91 98765 43210</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <img src="https://upload.wikimedia.org/wikipedia/commons/e/ec/Email_icon.svg" alt="Email" style="width: 24px; height: 24px;" />
+              <span>contact@imagicaholidays.com</span>
+            </div>
+          </div>
+        </div>
+
         <div class="page-content">
           ${days.map((day, dIdx) => {
             const isEven = (dIdx + 1) % 2 === 0;
@@ -219,7 +238,7 @@ const generateProposalHtml = (proposal) => {
             if (fromDate) {
               const d = new Date(fromDate);
               d.setDate(d.getDate() + (day.dayNumber - 1));
-              dayDateLabel = ' – ' + d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+              dayDateLabel = ' (' + d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) + ')';
             }
 
             const desc = day.description || '';
