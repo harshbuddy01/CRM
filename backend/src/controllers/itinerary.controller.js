@@ -50,8 +50,41 @@ const generateItineraryHtml = (itinerary) => {
   
   const days = itinerary?.days || [];
   const totalDays = days.length;
-  const destinations = [...new Set(days.map(d => d.destination?.name).filter(Boolean))].join(', ') || 'Your Journey';
+  const destinations = [...new Set(days.map(d => d.destination?.name).filter(Boolean))].join(' • ') || 'Your Journey';
   const gallery = itinerary?.galleryImages || [];
+
+  // --- UI ICON CONSTANTS (SVG) TO FIX PDF RENDERING ISSUE ---
+  const ICONS = {
+    airplane: `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px; margin-right:4px;"><path d="M2 22h20"/><path d="M6.36 17.4 4 17l-3-4 1.1-.55 3.5 1.5 5-5-3-5 1.5-1.5L14 9.5l6-3.5c.5-.3 1.2-.1 1.5.4a1.2 1.2 0 0 1 0 1.1l-1.5 3 2.5 4c.4.7.1 1.5-.6 1.9l-1.5 1-5-3-5 5Z"/></svg>`,
+    calendar: `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px; margin-right:4px;"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>`,
+    clock: `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px; margin-right:4px;"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`,
+    users: `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px; margin-right:4px;"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`
+  };
+
+  const CONTACT_INFO_HTML = `
+    <div style="display: flex; justify-content: center; flex-wrap: wrap; gap: 15px 30px; font-family: 'Montserrat', sans-serif; font-size: 10px; color: #555; font-weight: 500; max-width: 700px; margin: 0 auto; line-height: 1;">
+      <div style="display: flex; align-items: center; gap: 6px; white-space: nowrap;">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" alt="WA" style="width: 13px; height: 13px;" />
+        <span>+91 97330 38048</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 6px; white-space: nowrap;">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/7/7e/Gmail_icon_%282020%29.svg" alt="Email" style="width: 13px; height: 13px;" />
+        <span>info@imagicaholidays.com</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 6px; white-space: nowrap;">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.6;"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+        <span>www.imagicaholidays.com</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 6px; white-space: nowrap;">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#d4af37" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
+        <span>@sikkimdiariesptr</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 6px; white-space: nowrap;">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#3b5998" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path></svg>
+        <span>/sikkimdiariesptr</span>
+      </div>
+    </div>
+  `;
 
   const PREMIUM_ICONS = {
     accommodation: '<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#d4af37" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 22v-5a2 2 0 0 1 4 0v5"/><path d="M2 22h20"/><path d="M4 22V4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v18"/><path d="M9 7h1"/><path d="M9 11h1"/><path d="M14 7h1"/><path d="M14 11h1"/></svg>',
@@ -227,35 +260,33 @@ const generateItineraryHtml = (itinerary) => {
       </head>
       <body>
         <div class="page">
-          <div class="brand-contact-section" style="padding: 0 60px 40px; text-align: center; page-break-after: avoid; background: white;">
-            <!-- Logo Placeholder Box -->
-            <div style="width: 200px; height: 80px; border: 1.5px dashed #ccc; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center; color: #aaa; font-size: 11px; text-transform: uppercase; letter-spacing: 2px; border-radius: 4px;">
-              [ Logo Space ]
+        <div class="meta-info-row">
+          <div class="meta-item">
+            <div style="margin-bottom: 12px;">
+              <span class="meta-label">${ICONS.airplane} Route :</span>
+              <span class="meta-value">${escapeHtml(destinations)}</span>
             </div>
-            
-            <div style="display: flex; justify-content: center; flex-wrap: wrap; gap: 20px 35px; font-family: 'Montserrat', sans-serif; font-size: 10px; color: #555; font-weight: 500; max-width: 600px; margin: 0 auto;">
-              <div style="display: flex; align-items: center; gap: 8px;">
-                <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" alt="WhatsApp" style="width: 14px; height: 14px;" />
-                <span>+91 98765 43210</span>
-              </div>
-              <div style="display: flex; align-items: center; gap: 8px;">
-                <img src="https://upload.wikimedia.org/wikipedia/commons/7/7e/Gmail_icon_%282020%29.svg" alt="Email" style="width: 14px; height: 14px;" />
-                <span>info@imagicaholidays.com</span>
-              </div>
-              <div style="display: flex; align-items: center; gap: 8px;">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.7;"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
-                <span>www.imagicaholidays.com</span>
-              </div>
-              <div style="display: flex; align-items: center; gap: 8px;">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#d4af37" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
-                <span>@imagicaholidays</span>
-              </div>
-              <div style="display: flex; align-items: center; gap: 8px;">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#3b5998" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path></svg>
-                <span>/imagicaholidays</span>
-              </div>
+            <div>
+              <span class="meta-label">${ICONS.clock} Duration :</span>
+              <span class="meta-value">${escapeHtml(totalDays)} Days & ${Math.max(0, totalDays-1)} Nights</span>
             </div>
           </div>
+          <div class="meta-item" style="text-align: right;">
+            <div style="margin-bottom: 12px;">
+              <span class="meta-label">${ICONS.calendar} Date :</span>
+              <span class="meta-value">Season TBD</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- BRAND & CONTACT IDENTITY SECTION (TOP) -->
+        <div class="brand-contact-section" style="padding: 0 60px 40px; text-align: center; page-break-after: avoid; page-break-inside: avoid;">
+          <div style="width: 200px; height: 60px; margin: 0 auto 15px; display: flex; align-items: center; justify-content: center; border-bottom: 2px solid #8b6e4b;">
+             <h2 style="font-family: 'Playfair Display', serif; font-size: 24px; font-weight: 900; letter-spacing: 4px; color: #1a1a1a;">IMAGICA</h2>
+          </div>
+          
+          ${CONTACT_INFO_HTML}
+        </div>
           <div class="hero">
             ${itinerary?.coverPhotoUrl ? `<img src="${getSafeImageUrl(itinerary.coverPhotoUrl)}" alt="Cover" />` : ''}
             <div class="hero-overlay">
