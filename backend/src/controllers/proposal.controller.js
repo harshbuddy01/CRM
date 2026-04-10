@@ -153,7 +153,7 @@ const generateProposalHtml = (proposal) => {
             background: #ffffff; 
             -webkit-print-color-adjust: exact; 
             print-color-adjust: exact;
-            font-size: 11.5px;
+            font-size: 10px;
           }
           
           h1, h2, h3, h4 { font-family: 'Playfair Display', serif; color: #1a1a1a; margin: 0; }
@@ -203,17 +203,17 @@ const generateProposalHtml = (proposal) => {
           .split-columns::after { content: ''; position: absolute; left: 50%; top: 10%; bottom: 10%; width: 1px; background: #ddd; }
           .col-half { width: 48%; }
 
-          .col-label { color: #8b6e4b; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 8px; display: block; border-bottom: 1px solid #f0f0f0; padding-bottom: 4px; }
+          .col-label { color: #8b6e4b; font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 8px; display: block; border-bottom: 1px solid #f0f0f0; padding-bottom: 4px; }
           .col-label span { color: #999; margin-left: 5px; font-weight: 400; }
-          .col-text { font-size: 11px; line-height: 1.6; color: #444; text-align: justify; }
+          .col-text { font-size: 9.5px; line-height: 1.5; color: #555; text-align: justify; }
 
           /* CARDS FOR STAY/TRANSPORT */
-          .mini-card { display: flex; background: #fafafa; border: 1px solid #eee; margin-top: 15px; border-radius: 4px; overflow: hidden; margin-bottom: 15px; }
-          .mini-card-img { width: 90px; height: 90px; object-fit: cover; }
-          .mini-card-data { flex: 1; padding: 12px; display: flex; flex-direction: column; justify-content: center; }
-          .mini-type { font-size: 8.5px; text-transform: uppercase; color: #8b6e4b; font-weight: 800; }
-          .mini-title { font-size: 13px; font-weight: 700; font-family: 'Playfair Display', serif; margin-top: 2px; }
-          .mini-meta { font-size: 9.5px; color: #666; margin-top: 4px; }
+          .mini-card { display: flex; background: #fafafa; border: 1px solid #eee; margin-top: 15px; border-radius: 4px; overflow: hidden; }
+          .mini-card-img { width: 80px; height: 80px; object-fit: cover; }
+          .mini-card-data { flex: 1; padding: 10px; display: flex; flex-direction: column; justify-content: center; }
+          .mini-type { font-size: 7px; text-transform: uppercase; color: #8b6e4b; font-weight: 800; }
+          .mini-title { font-size: 11px; font-weight: 700; font-family: 'Playfair Display', serif; }
+          .mini-meta { font-size: 8px; color: #777; margin-top: 3px; }
 
           /* PRICE BLOCK */
           .price-block { 
@@ -349,12 +349,8 @@ const generateProposalHtml = (proposal) => {
             const desc = day.description || '';
             const highlights = activities.map(a => a.title).join(' • ');
 
-            // DYNAMIC LAYOUT LOGIC: If a day has major components or long text, force it to be prominent (full page)
-            const isHighIntensity = stay || trans || desc.length > 500;
-            const breakStyle = isHighIntensity ? 'page-break-after: always;' : '';
-
             return `
-            <div class="day-row ${isEven ? 'even' : ''}" style="${breakStyle}">
+            <div class="day-row ${isEven ? 'even' : ''}">
               <div class="day-visual">
                 <img src="${archImageUrl}" class="arch-img" />
               </div>

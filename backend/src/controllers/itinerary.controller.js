@@ -198,7 +198,7 @@ const generateItineraryHtml = (itinerary) => {
           .day-photo { width: 100%; margin-bottom: 20px; }
           .day-photo img { width: 100%; border-radius: 4px; box-shadow: 0 5px 25px rgba(0,0,0,0.1); border: 4px solid white; object-fit: cover; max-height: 400px; }
           
-          .day-description { font-size: 22px; line-height: 1.8; color: #222; margin-bottom: 30px; text-align: left; }
+          .day-description { font-size: 20px; line-height: 1.8; color: #333; margin-bottom: 30px; text-align: left; }
           
           .events-list { border-left: 2px solid rgba(212, 175, 55, 0.3); padding-left: 20px; margin-left: 10px; }
           .event-item { 
@@ -223,7 +223,7 @@ const generateItineraryHtml = (itinerary) => {
             text-transform: uppercase; 
             letter-spacing: 0.05em;
           }
-          .event-info .soft-note { font-family: 'EB Garamond', serif; font-size: 18px; color: #444; margin: 6px 0; font-style: italic; line-height: 1.6; }
+          .event-info .soft-note { font-family: 'EB Garamond', serif; font-size: 16px; color: #555; margin: 4px 0; font-style: italic; }
           .event-image { margin-top: 15px; }
           .event-image img { max-width: 80%; border-radius: 8px; border: 4px solid white; box-shadow: 0 4px 15px rgba(0,0,0,0.08); max-height: 250px; object-fit: cover; }
 
@@ -374,17 +374,8 @@ const generateItineraryHtml = (itinerary) => {
                 formattedDateAttractive = `${weekday}, ${dayOfMonth} of ${month} ${year}`;
               }
 
-              const activities = events.filter(e => e.type !== 'accommodation' && e.type !== 'transport');
-              const stay = events.find(e => e.type === 'accommodation');
-              const trans = events.find(e => e.type === 'transport');
-              const desc = day.description || '';
-
-              // DYNAMIC LAYOUT LOGIC: If a day has major components or long text, force it onto its own page
-              const isHighIntensity = stay || trans || desc.length > 500;
-              const breakStyle = isHighIntensity ? 'page-break-after: always;' : '';
-
               return `
-              <div class="day-entry" style="${breakStyle}">
+              <div class="day-entry">
                 <div class="day-title-wrap">
                   <span class="day-number">Day ${day.dayNumber}</span>
                   <div style="display: flex; flex-direction: column;">
