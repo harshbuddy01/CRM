@@ -3,6 +3,7 @@
 import React from 'react';
 import DOMPurify from 'dompurify';
 import { Sun, Hotel, Utensils, Mountain, Compass, Car, Plane, LogIn, LogOut } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 function getSafeImageUrl(url: string) {
   if (!url) return '';
@@ -89,7 +90,7 @@ export function BrochureView({ itinerary, query }: { itinerary: any, query?: any
             <span>+91 98765 43210</span>
           </div>
           <div className="flex items-center gap-3">
-            <img src="https://upload.wikimedia.org/wikipedia/commons/e/ec/Email_icon.svg" alt="Email" className="w-6 h-6" />
+            <img src="https://upload.wikimedia.org/wikipedia/commons/7/7e/Gmail_icon_%282020%29.svg" alt="Email" className="w-6 h-6" />
             <span>contact@imagicaholidays.com</span>
           </div>
         </div>
@@ -117,7 +118,14 @@ export function BrochureView({ itinerary, query }: { itinerary: any, query?: any
           const desc = day.description || '';
 
           return (
-            <div key={day.id} className={`flex flex-col md:flex-row gap-10 items-start ${isEven ? 'md:flex-row-reverse' : ''}`}>
+            <motion.div 
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-100px" }}
+              transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+              key={day.id} 
+              className={`flex flex-col md:flex-row gap-10 items-start ${isEven ? 'md:flex-row-reverse' : ''}`}
+            >
               
               <div className="w-full md:w-[40%] shrink-0 text-center">
                 <img src={archImageUrl} alt={`Day ${day.dayNumber}`} className="w-[85%] mx-auto h-[450px] md:h-[500px] object-cover rounded-[180px] rounded-b-none shadow-xl border border-slate-100 select-none pointer-events-none" />
@@ -202,7 +210,7 @@ export function BrochureView({ itinerary, query }: { itinerary: any, query?: any
                   ))}
                 </div>
               </div>
-            </div>
+            </motion.div>
           );
         })}
       </div>

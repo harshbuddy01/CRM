@@ -240,7 +240,7 @@ const generateItineraryHtml = (itinerary) => {
                 <span>+91 98765 43210</span>
               </div>
               <div style="display: flex; align-items: center; gap: 8px;">
-                <img src="https://upload.wikimedia.org/wikipedia/commons/e/ec/Email_icon.svg" alt="Email" style="width: 16px; height: 16px;" />
+                <img src="https://upload.wikimedia.org/wikipedia/commons/7/7e/Gmail_icon_%282020%29.svg" alt="Email" style="width: 16px; height: 16px;" />
                 <span>info@imagicaholidays.com</span>
               </div>
               <div style="display: flex; align-items: center; gap: 8px;">
@@ -438,7 +438,7 @@ const generateItineraryHtml = (itinerary) => {
                   <span>+91 98765 43210</span>
                 </div>
                 <div style="display: flex; align-items: center; gap: 8px;">
-                  <img src="https://upload.wikimedia.org/wikipedia/commons/e/ec/Email_icon.svg" alt="Email" style="width: 16px; height: 16px;" />
+                  <img src="https://upload.wikimedia.org/wikipedia/commons/7/7e/Gmail_icon_%282020%29.svg" alt="Email" style="width: 16px; height: 16px;" />
                   <span>info@imagicaholidays.com</span>
                 </div>
                 <div style="display: flex; align-items: center; gap: 8px;">

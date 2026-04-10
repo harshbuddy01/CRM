@@ -954,7 +954,7 @@ function QueryProposalsList({ queryId, queryCode, customerName, customerEmail }:
 
               <div className="flex items-center gap-2">
                 {/* Actions */}
-                <div className="flex items-center gap-1.5 bg-slate-50 p-1.5 rounded-2xl border border-slate-100 opacity-0 group-hover:opacity-100 transition-all scale-95 group-hover:scale-100">
+                <div className="flex items-center gap-1.5 bg-slate-50 p-1.5 rounded-2xl border border-slate-100 transition-all">
                   {p.status === 'pending' && (
                     <Button 
                       size="sm"
