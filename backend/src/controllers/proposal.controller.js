@@ -238,66 +238,89 @@ const generateProposalHtml = (proposal) => {
           .gallery-section { display: flex; flex-wrap: wrap; gap: 15px; margin-top: 40px; page-break-before: always; padding: 60px; }
           .gallery-item { flex: 1 1 30%; height: 220px; border-radius: 8px; overflow: hidden; box-shadow: 4px 4px 15px rgba(0,0,0,0.05); border: 4px solid #fff; }
           .gallery-item img { width: 100%; height: 100%; object-fit: cover; }
+
+          /* PAGE STRUCTURE & BREATHING ROOM */
+          .first-page { 
+            height: 297mm; 
+            width: 100%;
+            position: relative; 
+            overflow: hidden; 
+            background: #fff;
+            page-break-after: always; 
+          }
+          .branding-footer { 
+            position: absolute; 
+            bottom: 60px; 
+            width: 100%; 
+            left: 0; 
+            padding-bottom: 20px;
+          }
+          .main-itinerary-start { 
+            padding-top: 60px; 
+          }
         </style>
       </head>
       <body>
 
-        <div class="hero-container">
-          <img src="${coverImageUrl}" class="hero-img" />
-          <div class="hero-overlay-text">
-            <h1 class="hero-title">${escapeHtml(itinerary?.title || proposal.query?.destination || 'TRAVEL ITINERARY')}</h1>
+        <div class="first-page">
+          <div class="hero-container">
+            <img src="${coverImageUrl}" class="hero-img" />
+            <div class="hero-overlay-text">
+              <h1 class="hero-title">${escapeHtml(itinerary?.title || proposal.query?.destination || 'TRAVEL ITINERARY')}</h1>
+            </div>
+          </div>
+
+          <div class="thick-divider"></div>
+
+          <div class="meta-info-row">
+            <div class="meta-item">
+              <div style="margin-bottom: 12px;">
+                <span class="meta-label">${ICONS.airplane} Route :</span>
+                <span class="meta-value">${escapeHtml(destinations)}</span>
+              </div>
+              <div>
+                <span class="meta-label">${ICONS.clock} Duration :</span>
+                <span class="meta-value">${escapeHtml(durationString)}</span>
+              </div>
+            </div>
+            <div class="meta-item" style="text-align: right;">
+              <div style="margin-bottom: 12px;">
+                <span class="meta-label">${ICONS.calendar} Date :</span>
+                <span class="meta-value">${escapeHtml(dateString)}</span>
+              </div>
+              <div>
+                <span class="meta-label">${ICONS.users} Travellers :</span>
+                <span class="meta-value">${escapeHtml(paxString)}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- PAYMENT SECTION (MOVED TO TOP) -->
+          <div style="padding: 0 60px;">
+            <div class="price-block" style="margin-top: 0; margin-bottom: 30px;">
+              <div class="price-val">₹${Number(proposal.sellingPrice || 0).toLocaleString('en-IN')}</div>
+              <div class="price-lbl">Total Investment For Curated Travel</div>
+              <div class="price-meta">Calculated for ${escapeHtml(paxString)}</div>
+              <div style="margin-top: 15px; font-size: 8px; color: #888; font-style: normal; line-height: 1.4; max-width: 80%; margin-left: auto; margin-right: auto;">
+                Note: All prices are subject to change without prior notice as per availability, 
+                the final date of travel and any changes in taxes.
+              </div>
+            </div>
+          </div>
+
+          <!-- BRAND & CONTACT IDENTITY SECTION (FORCE TO BOTTOM OF FIRST PAGE) -->
+          <div class="branding-footer" style="text-align: center;">
+            <div style="width: 200px; height: 1px; background: #8b6e4b; opacity: 0.3; margin: 0 auto 25px;"></div>
+            <div style="margin-bottom: 20px;">
+              <h2 style="font-family: 'Playfair Display', serif; font-size: 28px; font-weight: 900; letter-spacing: 5px; color: #1a1a1a; margin: 0;">IMAGICA</h2>
+              <div style="font-size: 9px; color: #8b6e4b; text-transform: uppercase; letter-spacing: 3px; font-weight: 600; margin-top: 4px;">Luxury Holidays & Curated Experiences</div>
+            </div>
+            
+            ${CONTACT_INFO_HTML}
           </div>
         </div>
 
-        <div class="thick-divider"></div>
-
-        <div class="meta-info-row">
-          <div class="meta-item">
-            <div style="margin-bottom: 12px;">
-              <span class="meta-label">${ICONS.airplane} Route :</span>
-              <span class="meta-value">${escapeHtml(destinations)}</span>
-            </div>
-            <div>
-              <span class="meta-label">${ICONS.clock} Duration :</span>
-              <span class="meta-value">${escapeHtml(durationString)}</span>
-            </div>
-          </div>
-          <div class="meta-item" style="text-align: right;">
-            <div style="margin-bottom: 12px;">
-              <span class="meta-label">${ICONS.calendar} Date :</span>
-              <span class="meta-value">${escapeHtml(dateString)}</span>
-            </div>
-            <div>
-              <span class="meta-label">${ICONS.users} Travellers :</span>
-              <span class="meta-value">${escapeHtml(paxString)}</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- PAYMENT SECTION (MOVED TO TOP) -->
-        <div style="padding: 0 60px;">
-          <div class="price-block" style="margin-top: 0; margin-bottom: 30px;">
-            <div class="price-val">₹${Number(proposal.sellingPrice || 0).toLocaleString('en-IN')}</div>
-            <div class="price-lbl">Total Investment For Curated Travel</div>
-            <div class="price-meta">Calculated for ${escapeHtml(paxString)}</div>
-            <div style="margin-top: 15px; font-size: 8px; color: #888; font-style: normal; line-height: 1.4; max-width: 80%; margin-left: auto; margin-right: auto;">
-              Note: All prices are subject to change without prior notice as per availability, 
-              the final date of travel and any changes in taxes.
-            </div>
-          </div>
-        </div>
-
-        <!-- BRAND & CONTACT IDENTITY SECTION (TOP) -->
-        <div class="brand-contact-section" style="padding: 0 60px 40px; text-align: center; page-break-after: avoid; page-break-inside: avoid;">
-          <!-- Logo Placeholder Box -->
-          <div style="width: 200px; height: 60px; margin: 0 auto 15px; display: flex; align-items: center; justify-content: center; border-bottom: 2px solid #8b6e4b;">
-             <h2 style="font-family: 'Playfair Display', serif; font-size: 24px; font-weight: 900; letter-spacing: 4px; color: #1a1a1a;">IMAGICA</h2>
-          </div>
-          
-          ${CONTACT_INFO_HTML}
-        </div>
-
-        <div class="page-content">
+        <div class="page-content main-itinerary-start">
           ${days.map((day, dIdx) => {
             const isEven = (dIdx + 1) % 2 === 0;
             const events = day.events || [];
@@ -334,7 +357,9 @@ const generateProposalHtml = (proposal) => {
               <div class="day-details">
                 <div class="day-header">
                   <h2 class="day-title"><span>DAY ${day.dayNumber} :</span> ${escapeHtml(day.title || destinations)}</h2>
-                  ${formattedDateAttractive ? `<div style="font-family: 'Dancing Script', cursive; font-size: 20px; color: #d4af37; margin-top: 6px; letter-spacing: 1px;">${formattedDateAttractive}</div>` : ''}
+                  <div class="day-date" style="font-family: 'Playfair Display', serif; font-size: 16px; color: #8b6e4b; font-weight: 700; margin-top: 6px; font-style: italic;">
+                    ${escapeHtml(formattedDateAttractive)}
+                  </div>
                   ${highlights ? `<div style="color: #8b6e4b; font-size: 10px; font-weight: 600; margin-top: 10px; letter-spacing: 1px; text-transform: uppercase;">✦ Highlights: ${escapeHtml(highlights)}</div>` : ''}
                 </div>
                 

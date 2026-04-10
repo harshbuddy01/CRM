@@ -256,6 +256,28 @@ const generateItineraryHtml = (itinerary) => {
 
           .footer { text-align: center; padding: 60px 0; border-top: 1px solid #eee; margin-top: 80px; }
           .footer p { font-family: 'Dancing Script', cursive; font-size: 28px; color: #8b6e4b; }
+          .mini-meta { font-size: 8px; color: #777; margin-top: 3px; }
+
+          /* PAGE STRUCTURE & BREATHING ROOM */
+          .first-page { 
+            height: 297mm; 
+            width: 100%;
+            position: relative; 
+            overflow: hidden; 
+            background: #fff;
+            page-break-after: always; 
+          }
+          .branding-footer { 
+            position: absolute; 
+            bottom: 60px; 
+            width: 100%; 
+            left: 0; 
+            padding-bottom: 20px;
+            background: #fff;
+          }
+          .main-itinerary-start { 
+            padding-top: 60px; 
+          }
         </style>
       </head>
       <body>
@@ -358,7 +380,9 @@ const generateItineraryHtml = (itinerary) => {
                   <span class="day-number">Day ${day.dayNumber}</span>
                   <div style="display: flex; flex-direction: column;">
                     <h3>${escapeHtml(day.title || 'In Search of Magic')}</h3>
-                    ${formattedDateAttractive ? `<div style="font-family: 'Dancing Script', cursive; font-size: 20px; color: #d4af37; margin-top: 6px; letter-spacing: 1px;">${formattedDateAttractive}</div>` : ''}
+                    <div class="day-date" style="font-family: 'Playfair Display', serif; font-size: 16px; color: #8b6e4b; font-weight: 700; margin-top: 6px; font-style: italic;">
+                      ${formattedDateAttractive}
+                    </div>
                   </div>
                 </div>
                 <div class="day-content">
@@ -461,8 +485,8 @@ const generateItineraryHtml = (itinerary) => {
             ` : ''}
 
             <!-- BRAND & CONTACT IDENTITY SECTION (BOTTOM) -->
-            <div style="text-align: center; padding: 40px; border-top: 1px solid #eee; margin-top: 40px; page-break-inside: avoid; background: white;">
-              <h3 style="font-size: 22px; color: #8b6e4b; margin-bottom: 20px; font-family: 'Dancing Script', cursive;">Let's Plan Your Perfect Escape</h3>
+            <div class="branding-footer">
+              <h3 style="font-size: 22px; color: #8b6e4b; margin-bottom: 20px; font-family: 'Dancing Script', cursive; text-align: center;">Let's Plan Your Perfect Escape</h3>
               
               <div style="display: flex; justify-content: center; flex-wrap: wrap; gap: 20px 35px; font-family: 'Montserrat', sans-serif; font-size: 10px; color: #555; font-weight: 500; max-width: 600px; margin: 0 auto;">
                 <div style="display: flex; align-items: center; gap: 8px;">
@@ -478,7 +502,6 @@ const generateItineraryHtml = (itinerary) => {
                   <span>www.imagicaholidays.com</span>
                 </div>
               </div>
-            </div>
 
               <div style="display: flex; justify-content: center; gap: 35px; font-family: 'Montserrat', sans-serif; font-size: 11px; color: #555; font-weight: 500; margin-top: 15px;">
                 <div style="display: flex; align-items: center; gap: 8px;">
