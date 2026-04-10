@@ -267,10 +267,42 @@ const removeProposal = async (id, userId, canViewAll = false) => {
     }
   }
 
-  return await prisma.proposal.update({
+  // Soft-delete the proposal
+  const deletedProposal = await prisma.proposal.update({
     where: { id },
     data: { deletedAt: new Date() }
   });
+
+  // Cascade: Also soft-delete the linked itinerary if it's an orphaned client working copy
+  if (proposal.itineraryId) {
+    // Check if this itinerary is:
+    // 1. NOT a master template (isTemplate === false)
+    // 2. NOT used by any OTHER active (non-deleted) proposal
+    const itinerary = await prisma.itinerary.findUnique({
+      where: { id: proposal.itineraryId },
+      select: { id: true, isTemplate: true, deletedAt: true }
+    });
+
+    if (itinerary && !itinerary.isTemplate && !itinerary.deletedAt) {
+      const otherActiveProposals = await prisma.proposal.count({
+        where: {
+          itineraryId: proposal.itineraryId,
+          id: { not: id },
+          deletedAt: null
+        }
+      });
+
+      if (otherActiveProposals === 0) {
+        // No other proposal uses this itinerary — safe to soft-delete it too
+        await prisma.itinerary.update({
+          where: { id: proposal.itineraryId },
+          data: { deletedAt: new Date() }
+        });
+      }
+    }
+  }
+
+  return deletedProposal;
 };
 
 module.exports = {

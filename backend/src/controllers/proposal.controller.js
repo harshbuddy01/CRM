@@ -750,18 +750,48 @@ const confirmProposal = async (req, res, next) => {
         data: { status: 'confirmed' }
       });
 
-      // B. Soft-delete and reject all other proposals for this same query to remove UI clutter
+      // B. Reject all other pending proposals and clean up their orphaned itineraries
+      // First, fetch the other pending proposals to get their itinerary IDs
+      const otherPendingProposals = await tx.proposal.findMany({
+        where: {
+          queryId: proposal.queryId,
+          id: { not: id },
+          status: 'pending'
+        },
+        select: { id: true, itineraryId: true }
+      });
+
+      // Soft-delete/reject them
       await tx.proposal.updateMany({
         where: { 
           queryId: proposal.queryId,
           id: { not: id },
-          status: 'pending' // Only reject pending ones
+          status: 'pending'
         },
         data: { 
           status: 'rejected',
           deletedAt: new Date()
         }
       });
+
+      // Clean up orphaned client working-copy itineraries from the rejected proposals
+      for (const rejectedProp of otherPendingProposals) {
+        if (!rejectedProp.itineraryId) continue;
+        // Don't delete the confirmed proposal's itinerary!
+        if (rejectedProp.itineraryId === proposal.itineraryId) continue;
+
+        const linkedItinerary = await tx.itinerary.findUnique({
+          where: { id: rejectedProp.itineraryId },
+          select: { id: true, isTemplate: true, deletedAt: true }
+        });
+
+        if (linkedItinerary && !linkedItinerary.isTemplate && !linkedItinerary.deletedAt) {
+          await tx.itinerary.update({
+            where: { id: rejectedProp.itineraryId },
+            data: { deletedAt: new Date() }
+          });
+        }
+      }
 
       // C. Move the query to confirmed status
       const updatedQuery = await tx.query.update({

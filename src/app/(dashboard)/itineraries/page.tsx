@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import {
   CalendarRange, Loader2, Search, Plus, Copy, Trash2,
   Edit3, MapPin, Clock, Eye, Image as ImageIcon,
-  FileText, Share2, MoreHorizontal,
+  FileText, Share2, MoreHorizontal, CheckCircle,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
@@ -21,6 +21,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 const STATUS_STYLES: Record<string, string> = {
   draft: 'bg-amber-50 text-amber-700 border-amber-200',
   published: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+  confirmed: 'bg-emerald-100 text-emerald-800 border-emerald-300',
 };
 
 export default function ItinerariesPage() {
@@ -251,12 +252,21 @@ export default function ItinerariesPage() {
                     </div>
                   )}
                   {/* Status Badge */}
-                  <span className={cn(
-                    'absolute top-3 right-3 px-2.5 py-1 rounded-lg text-[10px] font-black tracking-wider uppercase border shadow-sm',
-                    STATUS_STYLES[item.status] || STATUS_STYLES.draft
-                  )}>
-                    {item.status}
-                  </span>
+                  {viewType === 'clients' && item.proposals?.[0]?.status === 'confirmed' ? (
+                    <span className={cn(
+                      'absolute top-3 right-3 px-2.5 py-1 rounded-lg text-[10px] font-black tracking-wider uppercase border shadow-sm',
+                      STATUS_STYLES.confirmed
+                    )}>
+                      ✓ Confirmed
+                    </span>
+                  ) : (
+                    <span className={cn(
+                      'absolute top-3 right-3 px-2.5 py-1 rounded-lg text-[10px] font-black tracking-wider uppercase border shadow-sm',
+                      STATUS_STYLES[item.status] || STATUS_STYLES.draft
+                    )}>
+                      {item.status}
+                    </span>
+                  )}
                   {/* Quick Actions Overlay */}
                   <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-200 flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100">
                     <Link href={`/itineraries/${item.id}`}>
@@ -271,11 +281,18 @@ export default function ItinerariesPage() {
                 <div className="p-4 space-y-3">
                   <div>
                     {viewType === 'clients' && item.proposals?.[0]?.query && (
-                      <div className="mb-2">
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-bold bg-blue-50 text-blue-700 border border-blue-100">
-                          <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
-                          For: {item.proposals[0].query.name} <span className="opacity-60 text-[10px] uppercase font-black tracking-wider ml-1">{item.proposals[0].query.queryCode}</span>
-                        </span>
+                      <div className="mb-2 flex items-center gap-2 flex-wrap">
+                        {item.proposals[0].status === 'confirmed' ? (
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                            <CheckCircle className="w-3.5 h-3.5 text-emerald-600" />
+                            CONFIRMED — {item.proposals[0].query.name} <span className="opacity-60 text-[10px] uppercase font-black tracking-wider ml-1">{item.proposals[0].query.queryCode}</span>
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-bold bg-blue-50 text-blue-700 border border-blue-100">
+                            <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
+                            For: {item.proposals[0].query.name} <span className="opacity-60 text-[10px] uppercase font-black tracking-wider ml-1">{item.proposals[0].query.queryCode}</span>
+                          </span>
+                        )}
                       </div>
                     )}
                     <h3 className="font-bold text-slate-900 text-base leading-tight line-clamp-1">{item.title}</h3>

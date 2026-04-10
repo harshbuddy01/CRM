@@ -169,6 +169,7 @@ const list = async (options = {}) => {
           select: {
             id: true,
             version: true,
+            status: true,
             query: { select: { id: true, queryCode: true, name: true } },
           },
         },
