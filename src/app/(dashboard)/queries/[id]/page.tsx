@@ -1122,9 +1122,9 @@ function InsertItineraryModal({ isOpen, onClose, onSelect, isInserting }: { isOp
   const [search, setSearch] = useState('');
   
   const { data: itineraries, isLoading } = useQuery({
-    queryKey: ['itineraries', 'published', search],
+    queryKey: ['itineraries', 'templates', search],
     queryFn: async () => {
-      const res = await api.get(`/itineraries?status=published&search=${search}`);
+      const res = await api.get(`/itineraries?isTemplate=true&search=${search}`);
       return res.data.data;
     },
     enabled: isOpen

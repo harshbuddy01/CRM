@@ -430,11 +430,20 @@ const publishToTemplates = async (id, userId) => {
 // ── Share Logic ──────────────────────────────────────────────
 
 const generateShareSlug = async (id) => {
-  await getById(id);
+  const itinerary = await getById(id);
   const slug = nanoid(12);
+  
+  // Only set status to 'published' for master templates.
+  // Client working copies (isTemplate=false) keep their 'draft' status —
+  // their lifecycle is managed by the proposal system (draft → confirmed → completed).
+  const updateData = { shareSlug: slug };
+  if (itinerary.isTemplate) {
+    updateData.status = 'published';
+  }
+  
   return prisma.itinerary.update({
     where: { id },
-    data: { shareSlug: slug, status: 'published' },
+    data: updateData,
     include: fullInclude,
   });
 };

@@ -68,14 +68,36 @@ const getTourDetails = async (id) => {
 
 const updateTourOps = async (id, data) => {
   const { assignedOps, opsNotes, status } = data;
-  return await prisma.tour.update({
+  const updatedTour = await prisma.tour.update({
     where: { id },
     data: {
       ...(assignedOps !== undefined && { assignedOps }),
       ...(opsNotes !== undefined && { opsNotes }),
       ...(status !== undefined && { status }),
+    },
+    include: {
+      proposal: { select: { itineraryId: true } }
     }
   });
+
+  // Lifecycle cleanup: When tour is completed, auto-remove the client working copy
+  // from the Itinerary Builder to keep the system clean.
+  // Master templates (isTemplate=true) are NEVER deleted.
+  if (status === 'completed' && updatedTour.proposal?.itineraryId) {
+    const itinerary = await prisma.itinerary.findUnique({
+      where: { id: updatedTour.proposal.itineraryId },
+      select: { id: true, isTemplate: true, deletedAt: true }
+    });
+
+    if (itinerary && !itinerary.isTemplate && !itinerary.deletedAt) {
+      await prisma.itinerary.update({
+        where: { id: itinerary.id },
+        data: { deletedAt: new Date() }
+      });
+    }
+  }
+
+  return updatedTour;
 };
 
 const cancelTour = async (id, userId, reason) => {

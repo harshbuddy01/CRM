@@ -252,14 +252,25 @@ export default function ItinerariesPage() {
                     </div>
                   )}
                   {/* Status Badge */}
-                  {viewType === 'clients' && item.proposals?.[0]?.status === 'confirmed' ? (
-                    <span className={cn(
-                      'absolute top-3 right-3 px-2.5 py-1 rounded-lg text-[10px] font-black tracking-wider uppercase border shadow-sm',
-                      STATUS_STYLES.confirmed
-                    )}>
-                      ✓ Confirmed
-                    </span>
+                  {viewType === 'clients' ? (
+                    // Client Working Copies: Only show CONFIRMED (green) or DRAFT (amber)
+                    item.proposals?.[0]?.status === 'confirmed' ? (
+                      <span className={cn(
+                        'absolute top-3 right-3 px-2.5 py-1 rounded-lg text-[10px] font-black tracking-wider uppercase border shadow-sm',
+                        STATUS_STYLES.confirmed
+                      )}>
+                        ✓ Confirmed
+                      </span>
+                    ) : (
+                      <span className={cn(
+                        'absolute top-3 right-3 px-2.5 py-1 rounded-lg text-[10px] font-black tracking-wider uppercase border shadow-sm',
+                        STATUS_STYLES.draft
+                      )}>
+                        Draft
+                      </span>
+                    )
                   ) : (
+                    // Master Templates: Show actual status (draft/published)
                     <span className={cn(
                       'absolute top-3 right-3 px-2.5 py-1 rounded-lg text-[10px] font-black tracking-wider uppercase border shadow-sm',
                       STATUS_STYLES[item.status] || STATUS_STYLES.draft
