@@ -278,6 +278,24 @@ const generateItineraryHtml = (itinerary) => {
           .main-itinerary-start { 
             padding-top: 60px; 
           }
+
+          /* IMPACT SCALING FOR STANDALONE LOGO/TEXT DAYS */
+          .standalone-day { 
+            min-height: 260mm; 
+            display: flex !important; 
+            flex-direction: column; 
+            justify-content: center; 
+            page-break-after: always;
+            margin-bottom: 0 !important;
+            padding: 80px !important;
+          }
+          .standalone-day .day-title-wrap { border-bottom-width: 2px; padding-bottom: 30px; margin-bottom: 40px; }
+          .standalone-day .day-number { font-size: 38px; }
+          .standalone-day h3 { font-size: 34px; line-height: 1.2; }
+          .standalone-day .day-date { font-size: 22px !important; margin-top: 10px; }
+          .standalone-day .day-description { font-size: 24px; line-height: 1.8; color: #222; }
+          .standalone-day .day-photo img { max-height: 500px; border-width: 6px; }
+          .standalone-day .soft-note { font-size: 20px; line-height: 1.6; }
         </style>
       </head>
       <body>
@@ -379,12 +397,14 @@ const generateItineraryHtml = (itinerary) => {
               const trans = events.find(e => e.type === 'transport');
               const desc = day.description || '';
 
-              // DYNAMIC LAYOUT LOGIC: If a day has major components or long text, force it onto its own page
               const isHighIntensity = stay || trans || desc.length > 500;
-              const breakStyle = isHighIntensity ? 'page-break-after: always;' : '';
+              const isStandalone = !stay && !trans; // Descriptive day with only text/image
+              
+              const breakStyle = (isHighIntensity && !isStandalone) ? 'page-break-after: always;' : '';
+              const impactClass = isStandalone ? 'standalone-day' : '';
 
               return `
-              <div class="day-entry" style="${breakStyle}">
+              <div class="day-entry ${impactClass}" style="${breakStyle}">
                 <div class="day-title-wrap">
                   <span class="day-number">Day ${day.dayNumber}</span>
                   <div style="display: flex; flex-direction: column;">
