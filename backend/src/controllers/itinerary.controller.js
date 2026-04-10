@@ -227,36 +227,32 @@ const generateItineraryHtml = (itinerary) => {
       </head>
       <body>
         <div class="page">
-          <!-- BRAND & CONTACT IDENTITY SECTION (TOP) -->
-          <div style="padding: 20px 60px 40px; text-align: center; page-break-after: avoid; background: white;">
+          <div class="brand-contact-section" style="padding: 0 60px 40px; text-align: center; page-break-after: avoid; background: white;">
             <!-- Logo Placeholder Box -->
             <div style="width: 200px; height: 80px; border: 1.5px dashed #ccc; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center; color: #aaa; font-size: 11px; text-transform: uppercase; letter-spacing: 2px; border-radius: 4px;">
               [ Logo Space ]
             </div>
             
-            <div style="display: flex; justify-content: center; gap: 35px; font-family: 'Montserrat', sans-serif; font-size: 11px; color: #555; font-weight: 500;">
+            <div style="display: flex; justify-content: center; flex-wrap: wrap; gap: 20px 35px; font-family: 'Montserrat', sans-serif; font-size: 10px; color: #555; font-weight: 500; max-width: 600px; margin: 0 auto;">
               <div style="display: flex; align-items: center; gap: 8px;">
-                <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" alt="WhatsApp" style="width: 16px; height: 16px;" />
+                <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" alt="WhatsApp" style="width: 14px; height: 14px;" />
                 <span>+91 98765 43210</span>
               </div>
               <div style="display: flex; align-items: center; gap: 8px;">
-                <img src="https://upload.wikimedia.org/wikipedia/commons/7/7e/Gmail_icon_%282020%29.svg" alt="Email" style="width: 16px; height: 16px;" />
+                <img src="https://upload.wikimedia.org/wikipedia/commons/7/7e/Gmail_icon_%282020%29.svg" alt="Email" style="width: 14px; height: 14px;" />
                 <span>info@imagicaholidays.com</span>
               </div>
               <div style="display: flex; align-items: center; gap: 8px;">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.7;"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.7;"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
                 <span>www.imagicaholidays.com</span>
               </div>
-            </div>
-
-            <div style="display: flex; justify-content: center; gap: 35px; font-family: 'Montserrat', sans-serif; font-size: 11px; color: #555; font-weight: 500; margin-top: 15px;">
               <div style="display: flex; align-items: center; gap: 8px;">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#d4af37" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
-                <span>[@instagram_username]</span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#d4af37" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
+                <span>@imagicaholidays</span>
               </div>
               <div style="display: flex; align-items: center; gap: 8px;">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#3b5998" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path></svg>
-                <span>[@facebook_username]</span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#3b5998" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path></svg>
+                <span>/imagicaholidays</span>
               </div>
             </div>
           </div>
@@ -275,18 +271,30 @@ const generateItineraryHtml = (itinerary) => {
 
           <div class="info-grid">
             <div class="info-item">
-              <div class="label">Traveling Party</div>
+              <div class="label">👥 Traveling Party</div>
               <div class="value">${itinerary?.adults || 0} Adults${itinerary?.children ? `, ${itinerary.children} Kids` : ''}</div>
             </div>
             <div class="info-item">
-              <div class="label">Destinations</div>
+              <div class="label">🛫 Destinations / Departure</div>
               <div class="value">${escapeHtml(destinations)}</div>
             </div>
             <div class="info-item">
-              <div class="label">Duration</div>
+              <div class="label">⌛ Duration</div>
               <div class="value">${totalDays} Days</div>
             </div>
           </div>
+
+          <!-- PAYMENT SECTION (MOVED TO TOP) -->
+          ${(itinerary?.sellingPrice || itinerary?.totalCost) ? `
+          <div class="price-scroll" style="margin: 30px 60px; padding: 30px;">
+            <h3 class="handwritten">The Investment</h3>
+            <div class="grand-total">₹${Number(itinerary?.sellingPrice || itinerary?.totalCost || 0).toLocaleString('en-IN')}</div>
+            <div style="margin-top: 15px; font-size: 8px; color: #888; font-style: normal; line-height: 1.4; max-width: 80%; margin-left: auto; margin-right: auto; font-family: 'Montserrat', sans-serif;">
+              Note: All prices are subject to change without prior notice as per availability, 
+              the final date of travel and any changes in taxes.
+            </div>
+          </div>
+          ` : ''}
 
           <div class="content-wrap">
             <div class="section-heading">
@@ -376,13 +384,9 @@ const generateItineraryHtml = (itinerary) => {
               `;
             }).join('') || '<div class="handwritten" style="text-align: center; font-size: 32px; margin: 60px 0;">Your custom journey awaits...</div>'}
 
-            ${(itinerary?.sellingPrice || itinerary?.totalCost || itinerary?.perPersonCost) ? `
-            <div class="price-scroll">
-              <h3 class="handwritten">The Investment</h3>
-              <div class="grand-total">₹${Number(itinerary?.sellingPrice || itinerary?.totalCost || 0).toLocaleString('en-IN')}</div>
-              ${itinerary?.perPersonCost ? `<p class="handwritten" style="font-size: 20px; margin-top: 10px;">Offering at ₹${Number(itinerary.perPersonCost).toLocaleString('en-IN')} per person</p>` : ''}
+            <div style="margin-top: 40px; text-align: center; color: #8b6e4b; font-family: 'Dancing Script', cursive; font-size: 24px;">
+              Your Journey Awaits...
             </div>
-            ` : ''}
 
             ${gallery.length > 0 ? `
             <div class="gallery-section">
@@ -427,25 +431,23 @@ const generateItineraryHtml = (itinerary) => {
 
             <!-- BRAND & CONTACT IDENTITY SECTION (BOTTOM) -->
             <div style="text-align: center; padding: 40px; border-top: 1px solid #eee; margin-top: 40px; page-break-inside: avoid; background: white;">
-              <!-- Logo Placeholder Box -->
-              <div style="width: 200px; height: 80px; border: 1.5px dashed #ccc; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center; color: #aaa; font-size: 11px; text-transform: uppercase; letter-spacing: 2px; border-radius: 4px;">
-                [ Logo Space ]
-              </div>
+              <h3 style="font-size: 22px; color: #8b6e4b; margin-bottom: 20px; font-family: 'Dancing Script', cursive;">Let's Plan Your Perfect Escape</h3>
               
-              <div style="display: flex; justify-content: center; gap: 35px; font-family: 'Montserrat', sans-serif; font-size: 11px; color: #555; font-weight: 500;">
+              <div style="display: flex; justify-content: center; flex-wrap: wrap; gap: 20px 35px; font-family: 'Montserrat', sans-serif; font-size: 10px; color: #555; font-weight: 500; max-width: 600px; margin: 0 auto;">
                 <div style="display: flex; align-items: center; gap: 8px;">
-                  <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" alt="WhatsApp" style="width: 16px; height: 16px;" />
+                  <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" alt="WhatsApp" style="width: 14px; height: 14px;" />
                   <span>+91 98765 43210</span>
                 </div>
                 <div style="display: flex; align-items: center; gap: 8px;">
-                  <img src="https://upload.wikimedia.org/wikipedia/commons/7/7e/Gmail_icon_%282020%29.svg" alt="Email" style="width: 16px; height: 16px;" />
+                  <img src="https://upload.wikimedia.org/wikipedia/commons/7/7e/Gmail_icon_%282020%29.svg" alt="Email" style="width: 14px; height: 14px;" />
                   <span>info@imagicaholidays.com</span>
                 </div>
                 <div style="display: flex; align-items: center; gap: 8px;">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.7;"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.7;"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
                   <span>www.imagicaholidays.com</span>
                 </div>
               </div>
+            </div>
 
               <div style="display: flex; justify-content: center; gap: 35px; font-family: 'Montserrat', sans-serif; font-size: 11px; color: #555; font-weight: 500; margin-top: 15px;">
                 <div style="display: flex; align-items: center; gap: 8px;">

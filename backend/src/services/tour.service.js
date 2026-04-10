@@ -80,22 +80,8 @@ const updateTourOps = async (id, data) => {
     }
   });
 
-  // Lifecycle cleanup: When tour is completed, auto-remove the client working copy
-  // from the Itinerary Builder to keep the system clean.
-  // Master templates (isTemplate=true) are NEVER deleted.
-  if (status === 'completed' && updatedTour.proposal?.itineraryId) {
-    const itinerary = await prisma.itinerary.findUnique({
-      where: { id: updatedTour.proposal.itineraryId },
-      select: { id: true, isTemplate: true, deletedAt: true }
-    });
-
-    if (itinerary && !itinerary.isTemplate && !itinerary.deletedAt) {
-      await prisma.itinerary.update({
-        where: { id: itinerary.id },
-        data: { deletedAt: new Date() }
-      });
-    }
-  }
+  // Lifecycle cleanup: This is now handled by the 48-hour GC cron job in worker.js
+  // to ensure client copies remain visible for 48 hours after the trip is completed.
 
   return updatedTour;
 };

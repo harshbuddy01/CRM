@@ -147,6 +147,48 @@ cron.schedule('0 3 * * *', async () => {
   }
 });
 
+// --- Itinerary GC Cron (4 AM Daily) ---
+// Deletes client working copies from the Itinerary Builder if their
+// linked tour has been 'completed' for more than 48 hours.
+cron.schedule('0 4 * * *', async () => {
+  console.log('⏰ [Cron] Triggering 48-hour GC for completed client working copies...');
+  try {
+    const fortyEightHoursAgo = new Date(Date.now() - 48 * 60 * 60 * 1000);
+    
+    // Find tours that are completed AND were updated more than 48 hr ago
+    const completedTours = await prisma.tour.findMany({
+      where: {
+        status: 'completed',
+        updatedAt: { lte: fortyEightHoursAgo },
+        proposal: { itineraryId: { not: null } }
+      },
+      include: { proposal: { select: { itineraryId: true } } }
+    });
+
+    let gcCount = 0;
+    for (const tour of completedTours) {
+      if (!tour.proposal?.itineraryId) continue;
+      
+      const itineraryId = tour.proposal.itineraryId;
+      const itinerary = await prisma.itinerary.findUnique({
+        where: { id: itineraryId },
+        select: { id: true, isTemplate: true, deletedAt: true }
+      });
+
+      if (itinerary && !itinerary.isTemplate && !itinerary.deletedAt) {
+        await prisma.itinerary.update({
+          where: { id: itinerary.id },
+          data: { deletedAt: new Date() }
+        });
+        gcCount++;
+      }
+    }
+    console.log(`✅ [Cron] 48-hour GC completed. Cleaned up ${gcCount} old client drafts.`);
+  } catch (err) {
+    console.error('❌ [CronError] 48-hour GC failed:', err.message);
+  }
+});
+
 // Graceful Shutdown — handle both SIGINT (Ctrl+C) and SIGTERM (Railway/Docker)
 
 const gracefulShutdown = async (signal) => {

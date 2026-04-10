@@ -279,7 +279,8 @@ export default function ItinerariesPage() {
                     </span>
                   )}
                   {/* Quick Actions Overlay */}
-                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-200 flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100">
+                  {/* Quick Actions Overlay - Made visible by default as per request */}
+                  <div className="absolute inset-0 bg-black/10 flex items-center justify-center gap-2">
                     <Link href={`/itineraries/${item.id}`}>
                       <Button size="sm" className="rounded-xl bg-white text-slate-900 hover:bg-white/90 shadow-lg font-bold h-9">
                         <Edit3 className="w-3.5 h-3.5 mr-1.5" /> Edit
