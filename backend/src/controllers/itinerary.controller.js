@@ -227,6 +227,39 @@ const generateItineraryHtml = (itinerary) => {
       </head>
       <body>
         <div class="page">
+          <!-- BRAND & CONTACT IDENTITY SECTION (TOP) -->
+          <div style="padding: 20px 60px 40px; text-align: center; page-break-after: avoid; background: white;">
+            <!-- Logo Placeholder Box -->
+            <div style="width: 200px; height: 80px; border: 1.5px dashed #ccc; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center; color: #aaa; font-size: 11px; text-transform: uppercase; letter-spacing: 2px; border-radius: 4px;">
+              [ Logo Space ]
+            </div>
+            
+            <div style="display: flex; justify-content: center; gap: 35px; font-family: 'Montserrat', sans-serif; font-size: 11px; color: #555; font-weight: 500;">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" alt="WhatsApp" style="width: 16px; height: 16px;" />
+                <span>+91 98765 43210</span>
+              </div>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/e/ec/Email_icon.svg" alt="Email" style="width: 16px; height: 16px;" />
+                <span>info@imagicaholidays.com</span>
+              </div>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.7;"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+                <span>www.imagicaholidays.com</span>
+              </div>
+            </div>
+
+            <div style="display: flex; justify-content: center; gap: 35px; font-family: 'Montserrat', sans-serif; font-size: 11px; color: #555; font-weight: 500; margin-top: 15px;">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#d4af37" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
+                <span>[@instagram_username]</span>
+              </div>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#3b5998" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path></svg>
+                <span>[@facebook_username]</span>
+              </div>
+            </div>
+          </div>
           <div class="hero">
             ${itinerary?.coverPhotoUrl ? `<img src="${getSafeImageUrl(itinerary.coverPhotoUrl)}" alt="Cover" />` : ''}
             <div class="hero-overlay">
@@ -266,12 +299,18 @@ const generateItineraryHtml = (itinerary) => {
               const events = day.events || [];
               const dayImage = day.imageUrl;
               
-              let dayDateStr = '';
+              let formattedDateAttractive = '';
               if (itinerary.travelDateFrom) {
                 const dayDate = new Date(itinerary.travelDateFrom);
                 dayDate.setDate(dayDate.getDate() + (day.dayNumber - 1));
-                const opts = { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' };
-                dayDateStr = dayDate.toLocaleDateString('en-US', opts);
+                
+                const getOrdinalNum = (n) => n + (n > 0 ? ['th', 'st', 'nd', 'rd'][(n > 3 && n < 21) || n % 10 > 3 ? 0 : n % 10] : '');
+                const weekday = dayDate.toLocaleDateString('en-US', { weekday: 'long' });
+                const dayOfMonth = getOrdinalNum(dayDate.getDate());
+                const month = dayDate.toLocaleDateString('en-US', { month: 'long' });
+                const year = dayDate.getFullYear();
+                
+                formattedDateAttractive = `${weekday}, ${dayOfMonth} of ${month} ${year}`;
               }
 
               return `
@@ -280,7 +319,7 @@ const generateItineraryHtml = (itinerary) => {
                   <span class="day-number">Day ${day.dayNumber}</span>
                   <div style="display: flex; flex-direction: column;">
                     <h3>${escapeHtml(day.title || 'In Search of Magic')}</h3>
-                    ${dayDateStr ? `<div style="color: #666; font-size: 13px; margin-top: 4px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; font-family: sans-serif;">${dayDateStr}</div>` : ''}
+                    ${formattedDateAttractive ? `<div style="font-family: 'Dancing Script', cursive; font-size: 20px; color: #d4af37; margin-top: 6px; letter-spacing: 1px;">${formattedDateAttractive}</div>` : ''}
                   </div>
                 </div>
                 <div class="day-content">
@@ -386,9 +425,38 @@ const generateItineraryHtml = (itinerary) => {
             </div>
             ` : ''}
 
-            <div class="footer">
-              <p>Handcrafted with passion</p>
-              <div style="font-size: 12px; letter-spacing: 0.1em; color: #aaa; margin-top: 10px;">WWW.IMAGICAHOLIDAYS.COM</div>
+            <!-- BRAND & CONTACT IDENTITY SECTION (BOTTOM) -->
+            <div style="text-align: center; padding: 40px; border-top: 1px solid #eee; margin-top: 40px; page-break-inside: avoid; background: white;">
+              <!-- Logo Placeholder Box -->
+              <div style="width: 200px; height: 80px; border: 1.5px dashed #ccc; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center; color: #aaa; font-size: 11px; text-transform: uppercase; letter-spacing: 2px; border-radius: 4px;">
+                [ Logo Space ]
+              </div>
+              
+              <div style="display: flex; justify-content: center; gap: 35px; font-family: 'Montserrat', sans-serif; font-size: 11px; color: #555; font-weight: 500;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" alt="WhatsApp" style="width: 16px; height: 16px;" />
+                  <span>+91 98765 43210</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <img src="https://upload.wikimedia.org/wikipedia/commons/e/ec/Email_icon.svg" alt="Email" style="width: 16px; height: 16px;" />
+                  <span>info@imagicaholidays.com</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.7;"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+                  <span>www.imagicaholidays.com</span>
+                </div>
+              </div>
+
+              <div style="display: flex; justify-content: center; gap: 35px; font-family: 'Montserrat', sans-serif; font-size: 11px; color: #555; font-weight: 500; margin-top: 15px;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#d4af37" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
+                  <span>[@instagram_username]</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#3b5998" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path></svg>
+                  <span>[@facebook_username]</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>

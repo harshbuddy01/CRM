@@ -91,6 +91,18 @@ const generateProposalHtml = (proposal) => {
     ? getSafeImageUrl(itinerary.coverPhotoUrl) 
     : 'https://images.unsplash.com/photo-1436491865332-7a61a109cc05?q=80&w=2674&auto=format&fit=crop';
 
+  const numDays = days.length;
+  const numNights = Math.max(0, numDays - 1);
+  const durationString = numDays > 0 ? `${numDays} Days & ${numNights} Nights` : 'Duration TBD';
+
+  const adults = proposal.query?.adults || 0;
+  const children = proposal.query?.children || 0;
+  let paxString = 'Travellers TBD';
+  if (adults > 0 || children > 0) {
+    paxString = `${adults} Adult${adults !== 1 ? 's' : ''}`;
+    if (children > 0) paxString += ` & ${children} Child${children !== 1 ? 'ren' : ''}`;
+  }
+
   return `
     <!DOCTYPE html>
     <html lang="en">
@@ -171,13 +183,27 @@ const generateProposalHtml = (proposal) => {
           .mini-meta { font-size: 8px; color: #777; margin-top: 3px; }
 
           /* PRICE BLOCK */
-          .price-block { margin-top: 40px; padding: 40px; background: #111; color: #fff; text-align: center; page-break-inside: avoid; }
-          .price-val { font-size: 36px; font-weight: 900; font-family: 'Playfair Display', serif; color: #d4af37; letter-spacing: 1px; }
-          .price-lbl { font-size: 10px; text-transform: uppercase; letter-spacing: 4px; opacity: 0.6; margin-top: 10px; }
+          .price-block { 
+            margin-top: 50px; padding: 40px; 
+            background: #faf7f2; color: #333; text-align: center; page-break-inside: avoid; 
+            border: 1px solid #e0d0c0;
+            border-radius: 255px 15px 225px 15px/15px 225px 15px 255px;
+            position: relative;
+          }
+          .price-block::before {
+            content: '';
+            position: absolute; top: -5px; left: -5px; right: -5px; bottom: -5px;
+            border: 1px solid #8b6e4b; opacity: 0.3;
+            border-radius: 15px 225px 15px 255px/255px 15px 225px 15px;
+            pointer-events: none;
+          }
+          .price-val { font-size: 42px; font-weight: 900; font-family: 'Playfair Display', serif; color: #8b6e4b; letter-spacing: 1px; }
+          .price-lbl { font-size: 11px; text-transform: uppercase; letter-spacing: 3px; color: #666; margin-top: 12px; font-weight: 600; }
+          .price-meta { font-size: 9px; color: #999; margin-top: 6px; font-style: italic; }
 
-          /* GALLALRY */
-          .gallery-section { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-top: 40px; page-break-before: always; padding: 60px; }
-          .gallery-item { height: 180px; border-radius: 4px; overflow: hidden; }
+          /* GALLERY */
+          .gallery-section { display: flex; flex-wrap: wrap; gap: 15px; margin-top: 40px; page-break-before: always; padding: 60px; }
+          .gallery-item { flex: 1 1 30%; height: 220px; border-radius: 8px; overflow: hidden; box-shadow: 4px 4px 15px rgba(0,0,0,0.05); border: 4px solid #fff; }
           .gallery-item img { width: 100%; height: 100%; object-fit: cover; }
         </style>
       </head>
@@ -194,31 +220,58 @@ const generateProposalHtml = (proposal) => {
 
         <div class="meta-info-row">
           <div class="meta-item">
-            <span class="meta-label">Departure :</span>
-            <span class="meta-value">${escapeHtml(departurePoint)}</span>
+            <div style="margin-bottom: 12px;">
+              <span class="meta-label">Departure :</span>
+              <span class="meta-value">${escapeHtml(departurePoint)}</span>
+            </div>
+            <div>
+              <span class="meta-label">Duration :</span>
+              <span class="meta-value">${escapeHtml(durationString)}</span>
+            </div>
           </div>
           <div class="meta-item" style="text-align: right;">
-            <span class="meta-label">Date :</span>
-            <span class="meta-value">${escapeHtml(dateString)}</span>
+            <div style="margin-bottom: 12px;">
+              <span class="meta-label">Date :</span>
+              <span class="meta-value">${escapeHtml(dateString)}</span>
+            </div>
+            <div>
+              <span class="meta-label">Travellers :</span>
+              <span class="meta-value">${escapeHtml(paxString)}</span>
+            </div>
           </div>
         </div>
 
-        <!-- BRAND & CONTACT IDENTITY SECTION -->
-        <div class="brand-contact-section" style="padding: 20px 60px 60px; text-align: center; page-break-after: avoid;">
-          <!-- Logo Placeholder -->
-          <div style="font-family: 'Playfair Display', serif; font-size: 24px; font-weight: 900; color: #111; letter-spacing: 4px; margin-bottom: 25px; text-transform: uppercase;">
-            Imagica Holidays
+        <!-- BRAND & CONTACT IDENTITY SECTION (TOP) -->
+        <div class="brand-contact-section" style="padding: 20px 60px 40px; text-align: center; page-break-after: avoid;">
+          <!-- Logo Placeholder Box -->
+          <div style="width: 200px; height: 80px; border: 1.5px dashed #ccc; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center; color: #aaa; font-size: 11px; text-transform: uppercase; letter-spacing: 2px; border-radius: 4px;">
+            [ Logo Space ]
           </div>
           
-          <div style="display: flex; justify-content: center; gap: 50px; font-family: 'Montserrat', sans-serif; font-size: 14px; color: #444; font-weight: 500;">
-            <div style="display: flex; align-items: center; gap: 10px;">
-              <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" alt="WhatsApp" style="width: 24px; height: 24px;" />
+          <div style="display: flex; justify-content: center; gap: 35px; font-family: 'Montserrat', sans-serif; font-size: 11px; color: #555; font-weight: 500;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" alt="WhatsApp" style="width: 16px; height: 16px;" />
               <span>+91 98765 43210</span>
             </div>
-            <div style="display: flex; align-items: center; gap: 10px;">
-              <img src="https://upload.wikimedia.org/wikipedia/commons/e/ec/Email_icon.svg" alt="Email" style="width: 24px; height: 24px;" />
-              <span>contact@imagicaholidays.com</span>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <img src="https://upload.wikimedia.org/wikipedia/commons/e/ec/Email_icon.svg" alt="Email" style="width: 16px; height: 16px;" />
+              <span>info@imagicaholidays.com</span>
             </div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.7;"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+              <span>www.imagicaholidays.com</span>
+            </div>
+          </div>
+          <div style="display: flex; justify-content: center; gap: 35px; font-family: 'Montserrat', sans-serif; font-size: 11px; color: #555; font-weight: 500; margin-top: 15px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#d4af37" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
+              <span>[@instagram_username]</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#3b5998" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path></svg>
+              <span>[@facebook_username]</span>
+            </div>
+
           </div>
         </div>
 
@@ -234,14 +287,22 @@ const generateProposalHtml = (proposal) => {
             const trans = events.find(e => e.type === 'transport');
 
             // Calculate exact date for the day
-            let dayDateLabel = '';
+            let formattedDateAttractive = '';
             if (fromDate) {
               const d = new Date(fromDate);
               d.setDate(d.getDate() + (day.dayNumber - 1));
-              dayDateLabel = ' (' + d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) + ')';
+              
+              const getOrdinalNum = (n) => n + (n > 0 ? ['th', 'st', 'nd', 'rd'][(n > 3 && n < 21) || n % 10 > 3 ? 0 : n % 10] : '');
+              const weekday = d.toLocaleDateString('en-US', { weekday: 'long' });
+              const dayOfMonth = getOrdinalNum(d.getDate());
+              const month = d.toLocaleDateString('en-US', { month: 'long' });
+              const year = d.getFullYear();
+              
+              formattedDateAttractive = `${weekday}, ${dayOfMonth} of ${month} ${year}`;
             }
 
             const desc = day.description || '';
+            const highlights = activities.map(a => a.title).join(' • ');
 
             return `
             <div class="day-row ${isEven ? 'even' : ''}">
@@ -250,7 +311,9 @@ const generateProposalHtml = (proposal) => {
               </div>
               <div class="day-details">
                 <div class="day-header">
-                  <h2 class="day-title"><span>DAY ${day.dayNumber}${dayDateLabel} :</span> ${escapeHtml(day.title || destinations)}</h2>
+                  <h2 class="day-title"><span>DAY ${day.dayNumber} :</span> ${escapeHtml(day.title || destinations)}</h2>
+                  ${formattedDateAttractive ? `<div style="font-family: 'Dancing Script', cursive; font-size: 20px; color: #d4af37; margin-top: 6px; letter-spacing: 1px;">${formattedDateAttractive}</div>` : ''}
+                  ${highlights ? `<div style="color: #8b6e4b; font-size: 10px; font-weight: 600; margin-top: 10px; letter-spacing: 1px; text-transform: uppercase;">✦ Highlights: ${escapeHtml(highlights)}</div>` : ''}
                 </div>
                 
                 <div class="split-columns">
@@ -327,7 +390,8 @@ const generateProposalHtml = (proposal) => {
 
           <div class="price-block">
             <div class="price-val">₹${Number(proposal.sellingPrice || 0).toLocaleString('en-IN')}</div>
-            <div class="price-lbl">TOTAL INVESTMENT FOR CURATED TRAVEL</div>
+            <div class="price-lbl">Total Investment For Curated Travel</div>
+            <div class="price-meta">Calculated for ${escapeHtml(paxString)}</div>
           </div>
         </div>
 
@@ -339,9 +403,37 @@ const generateProposalHtml = (proposal) => {
           </div>
         ` : ''}
 
-        <div style="text-align: center; padding: 40px; border-top: 1px solid #eee; margin-top: 40px;">
-          <h2 style="font-family: 'Playfair Display', serif; font-size: 24px; color: #8b6e4b;">IMAGICA HOLIDAYS</h2>
-          <p style="font-size: 10px; color: #999; letter-spacing: 5px; text-transform: uppercase;">Extraordinary Journeys</p>
+        <!-- BRAND & CONTACT IDENTITY SECTION (BOTTOM) -->
+        <div style="text-align: center; padding: 40px; border-top: 1px solid #eee; margin-top: 40px; page-break-inside: avoid;">
+          <!-- Logo Placeholder Box -->
+          <div style="width: 200px; height: 80px; border: 1.5px dashed #ccc; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center; color: #aaa; font-size: 11px; text-transform: uppercase; letter-spacing: 2px; border-radius: 4px;">
+            [ Logo Space ]
+          </div>
+          
+          <div style="display: flex; justify-content: center; gap: 35px; font-family: 'Montserrat', sans-serif; font-size: 11px; color: #555; font-weight: 500;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" alt="WhatsApp" style="width: 16px; height: 16px;" />
+              <span>+91 98765 43210</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <img src="https://upload.wikimedia.org/wikipedia/commons/e/ec/Email_icon.svg" alt="Email" style="width: 16px; height: 16px;" />
+              <span>info@imagicaholidays.com</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.7;"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+              <span>www.imagicaholidays.com</span>
+            </div>
+          </div>
+          <div style="display: flex; justify-content: center; gap: 35px; font-family: 'Montserrat', sans-serif; font-size: 11px; color: #555; font-weight: 500; margin-top: 15px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#d4af37" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
+              <span>[@instagram_username]</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#3b5998" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path></svg>
+              <span>[@facebook_username]</span>
+            </div>
+          </div>
         </div>
       </body>
     </html>
