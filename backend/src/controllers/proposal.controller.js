@@ -258,36 +258,6 @@ const generateProposalHtml = (proposal) => {
           .main-itinerary-start { 
             padding-top: 60px; 
           }
-
-          /* IMPACT SCALING FOR STANDALONE LOGO/TEXT DAYS */
-          .standalone-day { 
-            min-height: 260mm; 
-            display: flex !important; 
-            flex-direction: column; 
-            justify-content: center; 
-            page-break-after: always;
-            margin-bottom: 0 !important;
-          }
-          .standalone-day .day-title { font-size: 32px; line-height: 1.2; margin-bottom: 15px; }
-          .standalone-day .day-date { font-size: 20px !important; margin-bottom: 25px; }
-          .standalone-day .col-text { font-size: 14.5px; line-height: 1.8; color: #222; text-align: left; }
-          .standalone-day .arch-img { height: 420px; border-radius: 210px 210px 0 0; margin-bottom: 30px; }
-          .standalone-day .day-visual { width: 50%; }
-          .standalone-day .day-details { width: 100%; border-left: none; padding-left: 0; }
-          .standalone-day .split-columns::after { display: none; }
-          .standalone-day .split-columns { flex-direction: column; gap: 20px; }
-          .standalone-day .col-half { width: 100%; }
-          .standalone-day .day-header { border-bottom: 2px solid #8b6e4b; padding-bottom: 20px; margin-bottom: 30px; }
-
-          /* IMPACT SCALING FOR LIGHT DAYS (NO HOTEL/TRANS) */
-          .light-day .day-title { font-size: 26px; }
-          .light-day .col-text { font-size: 13.5px; line-height: 1.8; color: #333; }
-          .light-day .arch-img { height: 380px; }
-          .light-day .day-visual { width: 45%; }
-          .light-day .day-details { width: 55%; }
-          .light-day .split-columns::after { display: none; }
-          .light-day .split-columns { flex-direction: column; gap: 15px; }
-          .light-day .col-half { width: 100%; }
         </style>
       </head>
       <body>
@@ -379,15 +349,13 @@ const generateProposalHtml = (proposal) => {
             const desc = day.description || '';
             const highlights = activities.map(a => a.title).join(' • ');
 
+            // DYNAMIC LAYOUT LOGIC: If a day has major components or long text, force it to be prominent (full page)
             const isHighIntensity = stay || trans || desc.length > 500;
-            const isStandalone = !stay && !trans; // Descriptive day with only text/image
-            
-            const breakStyle = (isHighIntensity && !isStandalone) ? 'page-break-after: always;' : '';
-            const impactClass = isStandalone ? 'standalone-day' : '';
+            const breakStyle = isHighIntensity ? 'page-break-after: always;' : '';
 
             return `
-              <div class="day-row ${isEven ? 'even' : ''} ${impactClass}" style="${breakStyle}">
-                <div class="day-visual">
+            <div class="day-row ${isEven ? 'even' : ''}" style="${breakStyle}">
+              <div class="day-visual">
                 <img src="${archImageUrl}" class="arch-img" />
               </div>
               <div class="day-details">
