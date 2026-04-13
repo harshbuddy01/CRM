@@ -72,6 +72,12 @@ export default function ItineraryBuilderPage() {
   const [isSharing, setIsSharing] = useState(false);
   const [destDropdownDayId, setDestDropdownDayId] = useState<string | null>(null);
 
+  useEffect(() => {
+    const handleGlobalClick = () => setDestDropdownDayId(null);
+    document.addEventListener('click', handleGlobalClick);
+    return () => document.removeEventListener('click', handleGlobalClick);
+  }, []);
+
   // Unified Cropper State
   const [cropFile, setCropFile] = useState<File | null>(null);
   const [cropTarget, setCropTarget] = useState<'cover' | 'day' | 'event' | null>(null);

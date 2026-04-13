@@ -22,7 +22,7 @@ export function SupplierCommTab({ queryId }: { queryId: string }) {
 
   const { data: queryInfo } = useQuery({ queryKey: ['query', queryId], queryFn: async () => (await api.get(`/queries/${queryId}`)).data.data });
   const { data: proposals } = useQuery({ queryKey: ['query-proposals', queryId], queryFn: async () => (await api.get(`/queries/${queryId}/proposals`)).data.data });
-  const { data: suppliers, isLoading: loadingSuppliers } = useQuery({ queryKey: ['masters', 'supplier'], queryFn: async () => (await api.get('/masters-v2/supplier')).data.data || [] });
+  const { data: suppliers, isLoading: loadingSuppliers } = useQuery({ queryKey: ['masters', 'supplier'], queryFn: async () => (await api.get('/masters-v2/suppliers')).data.data || [] });
 
   useEffect(() => {
     if (!queryInfo || !proposals || isTemplateGenerated) return;

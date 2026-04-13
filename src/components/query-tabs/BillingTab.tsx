@@ -31,31 +31,6 @@ export function BillingTab({ queryId }: { queryId: string }) {
     },
   });
 
-  if (isLoading || proposalsLoading) {
-    return (
-      <div className="flex flex-col items-center justify-center p-12 space-y-4">
-        <Loader2 className="w-8 h-8 animate-spin text-primary/40" />
-        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest animate-pulse">Synchronizing Ledger...</p>
-      </div>
-    );
-  }
-
-  if (proposalsError || billingError) {
-    return (
-      <Card className="border-red-100 bg-red-50/30">
-        <CardContent className="p-8 text-center">
-          <p className="text-red-600 font-bold mb-2">Sync Connection Interrupted</p>
-          <p className="text-xs text-red-400">We couldn't retrieve the latest billing data. Please try again.</p>
-          <Button variant="outline" size="sm" className="mt-4" onClick={() => queryClient.invalidateQueries({ queryKey: [queryId] })}>
-            Retry Connection
-          </Button>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  const hasConfirmedProposal = Array.isArray(proposals) && proposals.some((p: any) => p.status === 'confirmed');
-
   // ALL hooks must be declared ABOVE any conditional return (React rules of hooks)
   const [isDownloading, setIsDownloading] = useState(false);
   const downloadBillingPdf = useMutation({
@@ -196,6 +171,31 @@ export function BillingTab({ queryId }: { queryId: string }) {
       toast.error('Failed to record supplier payment', { description: err.response?.data?.message || err.message });
     }
   });
+
+  if (isLoading || proposalsLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center p-12 space-y-4">
+        <Loader2 className="w-8 h-8 animate-spin text-primary/40" />
+        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest animate-pulse">Synchronizing Ledger...</p>
+      </div>
+    );
+  }
+
+  if (proposalsError || billingError) {
+    return (
+      <Card className="border-red-100 bg-red-50/30">
+        <CardContent className="p-8 text-center">
+          <p className="text-red-600 font-bold mb-2">Sync Connection Interrupted</p>
+          <p className="text-xs text-red-400">We couldn't retrieve the latest billing data. Please try again.</p>
+          <Button variant="outline" size="sm" className="mt-4" onClick={() => queryClient.invalidateQueries({ queryKey: [queryId] })}>
+            Retry Connection
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const hasConfirmedProposal = Array.isArray(proposals) && proposals.some((p: any) => p.status === 'confirmed');
 
   if (isLoading) return <div className="flex justify-center p-8"><Loader2 className="w-6 h-6 animate-spin" /></div>;
   if (!data) return <Card><CardContent className="p-8 text-center text-muted-foreground">Unable to load billing data.</CardContent></Card>;
