@@ -435,11 +435,13 @@ export default function ItineraryBuilderPage() {
                   <TabsTrigger value="final" className="rounded-lg font-bold text-[10px] uppercase tracking-wider text-white/70 data-[state=active]:bg-white data-[state=active]:text-primary px-3 transition-all">Preview & Share</TabsTrigger>
                 </TabsList>
 
-                <Button size="sm" variant="secondary" className="rounded-xl font-bold text-xs h-9" onClick={() => openMediaLibrary('cover')}>
-                  <ImageIcon className="w-3.5 h-3.5 mr-1" /> Library
-                </Button>
-                <Button size="sm" variant="secondary" className="rounded-xl font-bold text-xs h-9" onClick={() => coverRef.current?.click()}>
-                  <Camera className="w-3.5 h-3.5 mr-1" /> Upload
+                <Button 
+                  size="sm" 
+                  variant="secondary" 
+                  className="rounded-xl font-bold text-xs h-9 bg-white/20 text-white hover:bg-white/30 border-white/20" 
+                  onClick={() => openMediaLibrary('cover')}
+                >
+                  <Camera className="w-3.5 h-3.5 mr-1" /> Banner Image
                 </Button>
                 <Button size="sm" variant="secondary" className="rounded-xl font-bold text-xs h-9" onClick={handleShare} disabled={isSharing}>
                   {isSharing ? <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" /> : <Share2 className="w-3.5 h-3.5 mr-1" />} {isSharing ? 'Sharing...' : 'Share'}
@@ -993,7 +995,7 @@ function EditingDayForm({ day, onSave }: { day: any; onSave: (data: any) => void
 
 function SuggestionsPanel({ selectedDay, onAddEvent, onUpdateDay }: { selectedDay: any; onAddEvent: (data: any) => void; onUpdateDay: (data: any) => void }) {
   const [search, setSearch] = useState('');
-  const [category, setCategory] = useState<'hotels' | 'activities' | 'transfers' | 'dayItinerary'>('dayItinerary');
+  const [category, setCategory] = useState<'hotels' | 'activities' | 'transfers' | 'dayItinerary' | 'library'>('dayItinerary');
   const destId = selectedDay?.destinationId;
 
   const { data } = useQuery({
@@ -1003,6 +1005,7 @@ function SuggestionsPanel({ selectedDay, onAddEvent, onUpdateDay }: { selectedDa
       let path = '';
       if (category === 'hotels') path = '/masters/hotels';
       else if (category === 'dayItinerary') path = '/masters-v2/day-itinerary-templates';
+      else if (category === 'library') path = '/cms/gallery';
       else path = `/masters-v2/${category}`;
       
       const res = await api.get(path, { params: search ? { search } : {} });
@@ -1011,7 +1014,7 @@ function SuggestionsPanel({ selectedDay, onAddEvent, onUpdateDay }: { selectedDa
       if (category === 'dayItinerary') return items;
       return items.filter((i: any) => i.destinationId === destId);
     },
-    enabled: category === 'dayItinerary' ? true : !!destId,
+    enabled: (category === 'dayItinerary' || category === 'library') ? true : !!destId,
   });
 
   const typeMap: Record<string, string> = { hotels: 'accommodation', activities: 'activity', transfers: 'transport', dayItinerary: 'sightseeing' };
@@ -1021,19 +1024,30 @@ function SuggestionsPanel({ selectedDay, onAddEvent, onUpdateDay }: { selectedDa
       <h3 className="font-bold text-sm text-slate-700 font-black uppercase tracking-widest opacity-50">Suggestions</h3>
       
       <div className="flex gap-1.5 overflow-x-auto pb-1 no-scrollbar">
-        {(['dayItinerary', 'hotels', 'activities', 'transfers'] as const).map(c => (
+        {(['dayItinerary', 'library', 'hotels', 'activities', 'transfers'] as const).map(c => (
           <button key={c} onClick={() => setCategory(c)} className={cn('px-4 py-2 rounded-xl text-[10px] whitespace-nowrap font-black uppercase tracking-wider transition-all shadow-sm', category === c ? 'bg-slate-900 text-white' : 'bg-white border border-slate-200 text-slate-500 hover:bg-slate-50')}>
-            {c === 'dayItinerary' ? 'Day Templates' : c}
+            {c === 'dayItinerary' ? 'Day Templates' : c === 'library' ? 'Library' : c}
           </button>
         ))}
       </div>
           
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-        <Input placeholder={`Search ${category}...`} className="pl-9 h-11 text-xs rounded-2xl bg-white border-slate-200 shadow-sm focus:ring-slate-200" value={search} onChange={e => setSearch(e.target.value)} />
+      <div className="relative flex gap-2">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+          <Input placeholder={`Search ${category}...`} className="pl-9 h-11 text-xs rounded-2xl bg-white border-slate-200 shadow-sm focus:ring-slate-200" value={search} onChange={e => setSearch(e.target.value)} />
+        </div>
+        {category === 'library' && (
+          <Button 
+            variant="outline" 
+            className="h-11 w-11 p-0 rounded-2xl bg-white border-slate-200 text-blue-600 hover:bg-blue-50"
+            onClick={() => setIsMediaModalOpen(true)}
+          >
+            <Plus className="w-5 h-5" />
+          </Button>
+        )}
       </div>
 
-      {!destId && category !== 'dayItinerary' ? (
+      {!destId && category !== 'dayItinerary' && category !== 'library' ? (
         <div className="border-2 border-dashed border-slate-200 rounded-3xl p-8 text-center text-xs font-bold text-slate-400 bg-slate-50/50">
           <MapPin className="w-8 h-8 mx-auto mb-3 opacity-20" />
           Set destination to see local items
@@ -1042,16 +1056,16 @@ function SuggestionsPanel({ selectedDay, onAddEvent, onUpdateDay }: { selectedDa
         <div className="space-y-3 max-h-[600px] overflow-y-auto pr-2 pb-10 no-scrollbar">
           {(data || []).map((item: any) => (
             <div key={item.id} className="flex gap-4 p-4 border border-slate-200/80 rounded-3xl bg-white shadow-sm hover:shadow-md transition-all group relative">
-              {item.photoUrl ? (
-                <img src={item.photoUrl} className="w-16 h-16 rounded-2xl object-cover shadow-sm bg-slate-100 flex-shrink-0" alt="" />
+              {(item.photoUrl || item.imageUrl) ? (
+                <img src={item.photoUrl || item.imageUrl} className="w-16 h-16 rounded-2xl object-cover shadow-sm bg-slate-100 flex-shrink-0" alt="" />
               ) : (
                  <div className="w-16 h-16 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center flex-shrink-0">
                    {category === 'hotels' ? <Hotel className="w-6 h-6 text-slate-200" /> : <ImageIcon className="w-6 h-6 text-slate-200" />}
                  </div>
               )}
               <div className="flex-1 min-w-0 flex flex-col justify-center">
-                <p className="font-black text-[11px] text-slate-800 leading-tight break-words">{item.title || item.name || item.vehicleType}</p>
-                {item.category && <p className="text-[10px] text-slate-400 font-bold mt-1 uppercase tracking-wider">{item.category}</p>}
+                <p className="font-black text-[11px] text-slate-800 leading-tight break-words">{item.title || item.name || item.vehicleType || item.caption || 'Untitled'}</p>
+                {(item.category || item.type) && <p className="text-[10px] text-slate-400 font-bold mt-1 uppercase tracking-wider">{item.category || item.type}</p>}
                 {(item.basePrice || item.pricePerPerson || item.price) && (
                   <p className="text-[11px] font-black text-slate-900 mt-1.5">₹{Number(item.basePrice || item.pricePerPerson || item.price).toLocaleString('en-IN')}</p>
                 )}
@@ -1063,6 +1077,17 @@ function SuggestionsPanel({ selectedDay, onAddEvent, onUpdateDay }: { selectedDa
                     if (category === 'dayItinerary') {
                       onUpdateDay({ title: item.title, description: item.description, imageUrl: item.photoUrl });
                       toast.success('Applied Day Template');
+                    } else if (category === 'library') {
+                      // Apply library image to active context
+                      if (activeSection === 'day') {
+                        onUpdateDay({ imageUrl: item.imageUrl });
+                      } else if (activeSection === 'event' && selectedEventId) {
+                        onUpdateEvent(selectedEventId, { imageUrl: item.imageUrl });
+                      } else {
+                        // Default to cover photo if nothing else selected
+                        updateMut.mutate({ coverPhotoUrl: item.imageUrl });
+                      }
+                      toast.success('Applied library image');
                     } else {
                       const eventData = {
                         type: typeMap[category],
@@ -1076,7 +1101,7 @@ function SuggestionsPanel({ selectedDay, onAddEvent, onUpdateDay }: { selectedDa
                     }
                   }}
                 >
-                  <Plus className="w-4 h-4" />
+                  {category === 'library' ? <Check className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
                 </button>
               </div>
             </div>

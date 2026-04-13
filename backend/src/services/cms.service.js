@@ -10,7 +10,13 @@ const uploadToCloudinary = (buffer, folder) =>
   new Promise((resolve, reject) => {
     const stream = cloudinary.uploader.upload_stream(
       { folder: `travelcrm/${folder}`, resource_type: 'image' },
-      (err, result) => (err ? reject(err) : resolve(result.secure_url))
+      (err, result) => {
+        if (err) {
+          console.error(`[CMS] Cloudinary upload failed for ${folder}:`, err);
+          return reject(err);
+        }
+        resolve(result.secure_url);
+      }
     );
     stream.end(buffer);
   });
@@ -58,11 +64,19 @@ const listGallery = (category, search) => {
       { category: { contains: search, mode: 'insensitive' } },
     ];
   }
-  return prisma.galleryImage.findMany({ where, orderBy: { sequence: 'asc' } });
+  return prisma.galleryImage.findMany({ where, orderBy: { createdAt: 'desc' } });
 };
 const createGalleryImage = async (data, file) => {
-  if (file) data.imageUrl = await uploadToCloudinary(file.buffer, 'gallery');
+  if (file) {
+    try {
+      data.imageUrl = await uploadToCloudinary(file.buffer, 'gallery');
+    } catch (e) {
+      console.error('[CMS] createGalleryImage failed at cloudinary:', e);
+      throw e;
+    }
+  }
   if (data.sequence) data.sequence = parseInt(data.sequence, 10);
+  data.isActive = true;
   return prisma.galleryImage.create({ data });
 };
 const updateGalleryImage = async (id, data, file) => {

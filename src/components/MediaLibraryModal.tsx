@@ -5,7 +5,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { 
   Search, X, Loader2, Image as ImageIcon, 
-  Filter, Check, MousePointer2, Upload, Camera
+  Filter, Check, MousePointer2, Upload, Camera, Trash2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -91,6 +91,17 @@ export function MediaLibraryModal({ isOpen, onClose, onSelect, title = 'Media Li
     } finally {
       setIsUploading(false);
       setCropFile(null);
+    }
+  };
+
+  const deleteMutation = async (id: string) => {
+    if (!window.confirm('Delete this image permanently from the library?')) return;
+    try {
+      await api.delete(`/cms/gallery/${id}`);
+      toast.success('Image deleted from library');
+      queryClient.invalidateQueries({ queryKey: ['media-library'] });
+    } catch (err: any) {
+      toast.error('Failed to delete image');
     }
   };
 
@@ -190,8 +201,16 @@ export function MediaLibraryModal({ isOpen, onClose, onSelect, title = 'Media Li
                     <p className="text-white font-bold text-[10px] truncate">{img.caption || 'Untitled'}</p>
                     <p className="text-white/60 text-[9px] uppercase tracking-widest">{img.category || 'Standard'}</p>
                     
-                    <div className="absolute top-2 right-2 w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white scale-0 group-hover:scale-100 transition-transform shadow-lg">
-                       <Check className="w-4 h-4" />
+                    <div className="absolute top-2 right-2 flex gap-1.5">
+                      <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white scale-0 group-hover:scale-100 transition-transform shadow-lg">
+                         <Check className="w-4 h-4" />
+                      </div>
+                      <button 
+                        onClick={(e) => { e.stopPropagation(); deleteMutation(img.id); }}
+                        className="w-8 h-8 bg-rose-500 rounded-full flex items-center justify-center text-white scale-0 group-hover:scale-100 transition-transform shadow-lg hover:bg-rose-600"
+                      >
+                         <Trash2 className="w-4 h-4" />
+                      </button>
                     </div>
                   </div>
 

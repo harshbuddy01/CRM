@@ -57,26 +57,7 @@ export function BillingTab({ queryId }: { queryId: string }) {
     }
   });
 
-  if (!hasConfirmedProposal) {
-    return (
-      <Card className="border-2 border-dashed border-slate-200 bg-slate-50/50">
-        <CardContent className="p-12 text-center">
-          <div className="bg-white w-16 h-16 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-center mx-auto mb-6">
-            <CreditCard className="w-8 h-8 text-slate-300" />
-          </div>
-          <h3 className="text-xl font-black text-slate-900 mb-2">Billing Section Locked</h3>
-          <p className="text-slate-500 max-w-sm mx-auto font-medium leading-relaxed">
-            Please finalize any proposal from the client side before generating bills or recording payments.
-          </p>
-          <div className="mt-8 flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-400">
-            <div className="w-1.5 h-1.5 rounded-full bg-slate-300" />
-            Awaiting Confirmation
-            <div className="w-1.5 h-1.5 rounded-full bg-slate-300" />
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
+
 
 
 
@@ -197,7 +178,27 @@ export function BillingTab({ queryId }: { queryId: string }) {
 
   const hasConfirmedProposal = Array.isArray(proposals) && proposals.some((p: any) => p.status === 'confirmed');
 
-  if (isLoading) return <div className="flex justify-center p-8"><Loader2 className="w-6 h-6 animate-spin" /></div>;
+  if (!hasConfirmedProposal) {
+    return (
+      <Card className="border-2 border-dashed border-slate-200 bg-slate-50/50">
+        <CardContent className="p-12 text-center">
+          <div className="bg-white w-16 h-16 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-center mx-auto mb-6">
+            <CreditCard className="w-8 h-8 text-slate-300" />
+          </div>
+          <h3 className="text-xl font-black text-slate-900 mb-2">Billing Section Locked</h3>
+          <p className="text-slate-500 max-w-sm mx-auto font-medium leading-relaxed">
+            Please finalize any proposal from the client side before generating bills or recording payments.
+          </p>
+          <div className="mt-8 flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-400">
+            <div className="w-1.5 h-1.5 rounded-full bg-slate-300" />
+            Awaiting Confirmation
+            <div className="w-1.5 h-1.5 rounded-full bg-slate-300" />
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   if (!data) return <Card><CardContent className="p-8 text-center text-muted-foreground">Unable to load billing data.</CardContent></Card>;
 
   const { customer, supplier, payments, invoice } = data;
