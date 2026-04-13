@@ -27,6 +27,7 @@ registerMaster('room-types',           'roomType');
 registerMaster('meal-plans',           'mealPlan');
 registerMaster('package-themes',       'packageTheme');
 registerMaster('day-itinerary-templates', 'dayItineraryTemplate');
+registerMaster('destinations',         'destination');
 registerMaster('gallery-images', 'galleryImage');
 
 module.exports = router;

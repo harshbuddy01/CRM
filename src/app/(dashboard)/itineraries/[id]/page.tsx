@@ -40,6 +40,81 @@ const EVENT_TYPES = [
 
 const getEventType = (type: string) => EVENT_TYPES.find(t => t.value === type) || EVENT_TYPES[1];
 
+function DestinationDropdown({ dayId, currentDestId, destinations, addDestMut, updateDayMut, onClose }: any) {
+  const [search, setSearch] = useState('');
+  const filtered = destinations.filter((d: any) => d.name.toLowerCase().includes(search.toLowerCase()));
+
+  return (
+    <div 
+      className="absolute left-0 top-full mt-2 z-[999] bg-white rounded-2xl border border-slate-200 shadow-xl p-2 w-56 max-h-64 flex flex-col animate-in fade-in zoom-in-95 cursor-default" 
+      onClick={e => e.stopPropagation()}
+    >
+       <div className="px-2 py-1 flex items-center gap-2 border-b border-slate-100 pb-2 mb-1">
+         <Search className="w-3 h-3 text-slate-400 shrink-0" />
+         <input 
+           autoFocus
+           value={search}
+           onChange={e => setSearch(e.target.value)}
+           placeholder="Find or add new..."
+           className="w-full text-xs font-bold text-slate-700 placeholder:text-slate-300 focus:outline-none bg-transparent"
+           onKeyDown={e => {
+             if (e.key === 'Enter' && search.trim() && filtered.length === 0) {
+               e.preventDefault();
+               addDestMut.mutate(search.trim(), {
+                 onSuccess: (res: any) => {
+                   updateDayMut.mutate({ dayId, data: { destinationId: res.data.data.id } });
+                   onClose();
+                 }
+               });
+             }
+           }}
+         />
+       </div>
+
+       <div className="flex-1 overflow-y-auto no-scrollbar flex flex-col gap-0.5 min-h-0">
+          {currentDestId && (
+            <button
+              className="w-full text-left px-3 py-1.5 rounded-xl text-xs font-bold text-rose-400 hover:bg-rose-50 transition-colors shrink-0"
+              onClick={() => { updateDayMut.mutate({ dayId, data: { destinationId: null } }); onClose(); }}
+            >
+              ✕ Clear destination
+            </button>
+          )}
+
+          {filtered.map((dest: any) => (
+            <button
+              key={dest.id}
+              className={cn(
+                "w-full text-left px-3 py-2 rounded-xl text-xs font-bold transition-colors shrink-0",
+                dest.id === currentDestId ? "bg-blue-50 text-blue-600" : "text-slate-700 hover:bg-slate-50 relative pr-8"
+              )}
+              onClick={() => { updateDayMut.mutate({ dayId, data: { destinationId: dest.id } }); onClose(); }}
+            >
+              {dest.name}
+              {dest.id === currentDestId && <Check className="w-3 h-3 absolute right-3 top-1/2 -translate-y-1/2" />}
+            </button>
+          ))}
+          
+          {search.trim() && filtered.length === 0 && (
+            <button
+              className="w-full text-left px-3 py-2 rounded-xl text-xs font-bold text-emerald-600 bg-emerald-50 hover:bg-emerald-100 transition-colors shrink-0 mt-1"
+              onClick={() => { 
+                addDestMut.mutate(search.trim(), {
+                  onSuccess: (res: any) => {
+                    updateDayMut.mutate({ dayId, data: { destinationId: res.data.data.id } });
+                    onClose();
+                  }
+                });
+              }}
+            >
+              + Add "{search}"
+            </button>
+          )}
+       </div>
+    </div>
+  );
+}
+
 export default function ItineraryBuilderPage() {
   const { id } = useParams();
   const router = useRouter();
@@ -108,6 +183,11 @@ export default function ItineraryBuilderPage() {
   const addEventMut = useMutation({ mutationFn: ({ dayId, data }: any) => api.post(`/itineraries/days/${dayId}/events`, data), onSuccess: invalidate });
   const updateEventMut = useMutation({ mutationFn: ({ eventId, data }: any) => api.put(`/itineraries/events/${eventId}`, data), onSuccess: () => { invalidate(); setEditingEvent(null); } });
   const removeEventMut = useMutation({ mutationFn: (eventId: string) => api.delete(`/itineraries/events/${eventId}`), onSuccess: invalidate });
+  const addDestMut = useMutation({
+    mutationFn: (name: string) => api.post('/masters-v2/destinations', { name }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['destinations-dropdown'] }); toast.success('Destination added') }
+  });
+
   const deleteItineraryMut = useMutation({
     mutationFn: () => api.delete(`/itineraries/${id}`),
     onSuccess: () => {
@@ -466,7 +546,7 @@ export default function ItineraryBuilderPage() {
                 </div>
                 <div className="flex flex-col gap-2">
                   {itinerary.days?.map((day: any) => (
-                    <div key={day.id} className="relative group/dayitem">
+                    <div key={day.id} className={cn("relative group/dayitem", destDropdownDayId === day.id && "z-[100]")}>
                       <div
                         role="button"
                         onClick={() => {
@@ -522,30 +602,14 @@ export default function ItineraryBuilderPage() {
                       </div>
                       {/* Destination Quick-Select Dropdown */}
                       {destDropdownDayId === day.id && (
-                        <div className="absolute left-0 top-full mt-1 z-50 bg-white rounded-2xl border border-slate-200 shadow-xl p-2 w-48 max-h-52 overflow-y-auto animate-in fade-in zoom-in-95 no-scrollbar">
-                          <div className="px-2 py-1 text-[8px] font-black uppercase tracking-widest text-slate-300">Select Destination</div>
-                          {day.destinationId && (
-                            <button
-                              className="w-full text-left px-3 py-1.5 rounded-xl text-xs font-bold text-rose-400 hover:bg-rose-50 transition-colors"
-                              onClick={(e) => { e.stopPropagation(); updateDayMut.mutate({ dayId: day.id, data: { destinationId: null } }); setDestDropdownDayId(null); }}
-                            >
-                              ✕ Clear destination
-                            </button>
-                          )}
-                          {destinations.map((dest: any) => (
-                            <button
-                              key={dest.id}
-                              className={cn(
-                                "w-full text-left px-3 py-1.5 rounded-xl text-xs font-bold transition-colors",
-                                dest.id === day.destinationId ? "bg-blue-50 text-blue-600" : "text-slate-700 hover:bg-slate-50"
-                              )}
-                              onClick={(e) => { e.stopPropagation(); updateDayMut.mutate({ dayId: day.id, data: { destinationId: dest.id } }); setDestDropdownDayId(null); }}
-                            >
-                              {dest.name}
-                            </button>
-                          ))}
-                          {destinations.length === 0 && <p className="text-[10px] text-slate-300 text-center py-2">No destinations found</p>}
-                        </div>
+                        <DestinationDropdown 
+                          dayId={day.id} 
+                          currentDestId={day.destinationId} 
+                          destinations={destinations} 
+                          addDestMut={addDestMut} 
+                          updateDayMut={updateDayMut} 
+                          onClose={() => setDestDropdownDayId(null)} 
+                        />
                       )}
                       <button 
                         className="absolute right-2 top-3 p-1.5 rounded-lg text-rose-500 opacity-0 group-hover/dayitem:opacity-100 hover:bg-rose-50 transition-all active:scale-75"
@@ -622,7 +686,7 @@ export default function ItineraryBuilderPage() {
                             </div>
                             <div>
                               <h3 className="text-lg font-black tracking-tight text-slate-800 uppercase">Day {selectedDay.dayNumber} Timeline</h3>
-                              <div className="relative flex items-center gap-2 mt-1">
+                              <div className={cn("relative flex items-center gap-2 mt-1", destDropdownDayId === 'timeline-' + selectedDay.id && "z-[100]")}>
                                 <button 
                                   onClick={(e) => { e.stopPropagation(); setDestDropdownDayId(destDropdownDayId === 'timeline-' + selectedDay.id ? null : 'timeline-' + selectedDay.id); }}
                                   className={cn(
@@ -643,30 +707,14 @@ export default function ItineraryBuilderPage() {
                                 
                                 {/* Destination Dropdown for Timeline view */}
                                 {destDropdownDayId === 'timeline-' + selectedDay.id && (
-                                  <div className="absolute left-0 top-full mt-2 z-50 bg-white rounded-2xl border border-slate-200 shadow-xl p-2 w-56 max-h-52 overflow-y-auto animate-in fade-in zoom-in-95 no-scrollbar">
-                                    <div className="px-2 py-1 text-[8px] font-black uppercase tracking-widest text-slate-300">Select Destination</div>
-                                    {selectedDay.destinationId && (
-                                      <button
-                                        className="w-full text-left px-3 py-1.5 rounded-xl text-xs font-bold text-rose-400 hover:bg-rose-50 transition-colors"
-                                        onClick={(e) => { e.stopPropagation(); updateDayMut.mutate({ dayId: selectedDay.id, data: { destinationId: null } }); setDestDropdownDayId(null); }}
-                                      >
-                                        ✕ Clear destination
-                                      </button>
-                                    )}
-                                    {destinations.map((dest: any) => (
-                                      <button
-                                        key={dest.id}
-                                        className={cn(
-                                          "w-full text-left px-3 py-2 rounded-xl text-xs font-bold transition-colors",
-                                          dest.id === selectedDay.destinationId ? "bg-blue-50 text-blue-600" : "text-slate-700 hover:bg-slate-50"
-                                        )}
-                                        onClick={(e) => { e.stopPropagation(); updateDayMut.mutate({ dayId: selectedDay.id, data: { destinationId: dest.id } }); setDestDropdownDayId(null); }}
-                                      >
-                                        {dest.name}
-                                      </button>
-                                    ))}
-                                    {destinations.length === 0 && <p className="text-[10px] text-slate-300 text-center py-2">No destinations found</p>}
-                                  </div>
+                                  <DestinationDropdown 
+                                    dayId={selectedDay.id} 
+                                    currentDestId={selectedDay.destinationId} 
+                                    destinations={destinations} 
+                                    addDestMut={addDestMut} 
+                                    updateDayMut={updateDayMut} 
+                                    onClose={() => setDestDropdownDayId(null)} 
+                                  />
                                 )}
                               </div>
                             </div>
