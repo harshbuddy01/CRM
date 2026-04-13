@@ -230,28 +230,23 @@ export default function ItineraryBuilderPage() {
     }
   };
 
-  const handleFinalize = () => {
-    updateMut.mutate({ status: 'finalized' }, {
+  const handlePublish = () => {
+    updateMut.mutate({ status: 'published' }, {
       onSuccess: () => {
         toast.success(
-          'Itinerary Finalized! Ready to be converted into a Proposal.', 
-          { description: 'You can now select this itinerary when creating a proposal for a lead.' }
+          'Template Published! Now available for creating client proposals.', 
+          { description: 'Your team can now use this template when building proposals.' }
         );
       }
     });
   };
 
-  const handlePublishTemplate = async () => {
-    try {
-      const res = await api.post(`/itineraries/${id}/publish-template`);
-      toast.success(res.data.message || 'Saved as a new Master Template!');
-      // Navigate to the newly created template
-      if (res.data?.data?.id) {
-        router.push(`/itineraries/${res.data.data.id}`);
+  const handleUnpublish = () => {
+    updateMut.mutate({ status: 'draft' }, {
+      onSuccess: () => {
+        toast.success('Template reverted to Draft.');
       }
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Failed to publish template');
-    }
+    });
   };
 
   if (isLoading) return <div className="flex h-[60vh] items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-muted-foreground opacity-50" /></div>;
@@ -911,6 +906,8 @@ export default function ItineraryBuilderPage() {
               itinerary={itinerary} 
               onShare={handleShare} 
               onExport={handleExportPdf}
+              onPublish={handlePublish}
+              onUnpublish={handleUnpublish}
               onDelete={() => deleteItineraryMut.mutate()}
               isDeleting={deleteItineraryMut.isPending}
               isPdfExporting={isPdfExporting}
@@ -1546,10 +1543,12 @@ function PricingTab({ itinerary, onUpdate }: { itinerary: any; onUpdate: (data: 
   );
 }
 
-function FinalPreviewTab({ itinerary, onShare, onExport, onDelete, isDeleting, isPdfExporting, isSharing }: { 
+function FinalPreviewTab({ itinerary, onShare, onExport, onPublish, onUnpublish, onDelete, isDeleting, isPdfExporting, isSharing }: { 
   itinerary: any; 
   onShare: () => void; 
   onExport: () => void;
+  onPublish: () => void;
+  onUnpublish: () => void;
   onDelete: () => void;
   isDeleting: boolean;
   isPdfExporting: boolean;
@@ -1557,6 +1556,50 @@ function FinalPreviewTab({ itinerary, onShare, onExport, onDelete, isDeleting, i
 }) {
   return (
     <div className="space-y-6 w-full pb-20">
+      {/* Publish/Unpublish for Master Templates */}
+      {itinerary.isTemplate && (
+        <div className="max-w-[1200px] mx-auto px-4 md:px-0 print:hidden">
+          {itinerary.status === 'draft' ? (
+            <div className="bg-amber-50 border border-amber-200 rounded-2xl p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center">
+                  <Edit3 className="w-5 h-5 text-amber-600" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-slate-900 text-sm">This template is a Draft</h3>
+                  <p className="text-xs text-slate-500 mt-0.5">Publish it to make it available for creating client proposals.</p>
+                </div>
+              </div>
+              <Button 
+                className="rounded-xl font-bold px-8 h-11 bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-200 active:scale-95 transition-all"
+                onClick={onPublish}
+              >
+                <CheckCircle className="w-4 h-4 mr-2" /> Publish Template
+              </Button>
+            </div>
+          ) : (
+            <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center">
+                  <CheckCircle className="w-5 h-5 text-emerald-600" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-slate-900 text-sm">Template is Published ✅</h3>
+                  <p className="text-xs text-slate-500 mt-0.5">This template is live and available for proposals.</p>
+                </div>
+              </div>
+              <Button 
+                variant="outline"
+                className="rounded-xl font-bold px-6 h-11 border-amber-300 text-amber-700 hover:bg-amber-50 active:scale-95 transition-all"
+                onClick={onUnpublish}
+              >
+                <Edit3 className="w-4 h-4 mr-2" /> Revert to Draft
+              </Button>
+            </div>
+          )}
+        </div>
+      )}
+
       <div className="flex justify-end gap-3 print:hidden max-w-[1200px] mx-auto px-4 md:px-0">
         <Button variant="outline" className="rounded-2xl font-bold px-6 h-11 border-slate-200 hover:bg-slate-50 transition-all active:scale-95" onClick={onShare} disabled={isSharing}>
           {isSharing ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Share2 className="w-4 h-4 mr-2 text-slate-500" />} {isSharing ? 'Sharing...' : 'Share Link'}

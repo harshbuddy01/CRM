@@ -54,7 +54,8 @@ export default function ItinerariesPage() {
   });
 
   const duplicateMutation = useMutation({
-    mutationFn: (id: string) => api.post(`/itineraries/${id}/duplicate`),
+    mutationFn: ({ id, asTemplate }: { id: string; asTemplate: boolean }) =>
+      api.post(`/itineraries/${id}/duplicate`, { asTemplate }),
     onSuccess: () => {
       toast.success('Itinerary duplicated');
       qc.invalidateQueries({ queryKey: ['itineraries'] });
@@ -118,12 +119,14 @@ export default function ItinerariesPage() {
             Create and manage master destination templates and working client drafts.
           </p>
         </div>
-        <Button
-          className="rounded-xl px-6 font-bold shadow-lg shadow-primary/10"
-          onClick={() => setShowCreate(true)}
-        >
-          <Plus className="w-4 h-4 mr-2" /> New Template
-        </Button>
+        {viewType === 'templates' && (
+          <Button
+            className="rounded-xl px-6 font-bold shadow-lg shadow-primary/10"
+            onClick={() => setShowCreate(true)}
+          >
+            <Plus className="w-4 h-4 mr-2" /> New Template
+          </Button>
+        )}
       </div>
 
       {/* View Toggles */}
@@ -350,7 +353,7 @@ export default function ItinerariesPage() {
                     <Button
                       variant="ghost" size="icon"
                       className="h-8 w-8 rounded-lg text-slate-400 hover:text-blue-600"
-                      onClick={() => duplicateMutation.mutate(item.id)}
+                      onClick={() => duplicateMutation.mutate({ id: item.id, asTemplate: viewType === 'templates' })}
                     >
                       <Copy className="w-3.5 h-3.5" />
                     </Button>

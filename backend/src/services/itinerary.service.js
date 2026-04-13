@@ -77,7 +77,7 @@ const uploadToCloudinary = (file, folder) => {
 // ── Core CRUD ────────────────────────────────────────────────
 
 const create = async (userId, data) => {
-  const { title, description, days } = data;
+  const { title, description, days, isTemplate } = data;
   if (!title) throw new ValidationError('Title is required');
 
   const itinerary = await prisma.itinerary.create({
@@ -88,6 +88,7 @@ const create = async (userId, data) => {
       travelDateFrom: data.travelDateFrom ? new Date(data.travelDateFrom) : null,
       travelDateTo: data.travelDateTo ? new Date(data.travelDateTo) : null,
       createdBy: userId,
+      isTemplate: isTemplate === true || isTemplate === 'true',
       days: days && days.length
         ? {
             create: days.map((day, idx) => ({
@@ -141,7 +142,12 @@ const list = async (options = {}) => {
 
   if (status) where.status = status;
   if (isTemplate !== undefined) {
-    where.isTemplate = isTemplate === 'true' || isTemplate === true;
+    const isTemplateBool = isTemplate === 'true' || isTemplate === true;
+    where.isTemplate = isTemplateBool;
+    // Client Working Copies: only show itineraries linked to at least one active proposal
+    if (!isTemplateBool) {
+      where.proposals = { some: { deletedAt: null } };
+    }
   }
   if (search) {
     where.title = { contains: search, mode: 'insensitive' };
@@ -303,7 +309,7 @@ const remove = async (id) => {
 
 };
 
-const duplicate = async (id, userId) => {
+const duplicate = async (id, userId, asTemplate = false) => {
   const source = await getById(id);
 
   const newItinerary = await prisma.itinerary.create({
@@ -312,8 +318,8 @@ const duplicate = async (id, userId) => {
       description: source.description,
       coverPhotoUrl: source.coverPhotoUrl,
       status: 'draft',
-      isTemplate: false,
-      sourceTemplateId: source.isTemplate ? source.id : source.sourceTemplateId,
+      isTemplate: asTemplate,
+      sourceTemplateId: asTemplate ? null : (source.isTemplate ? source.id : source.sourceTemplateId),
       totalCost: source.totalCost,
       perPersonCost: source.perPersonCost,
       sellingPrice: source.sellingPrice,

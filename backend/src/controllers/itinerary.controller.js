@@ -561,7 +561,8 @@ const remove = async (req, res, next) => {
 
 const duplicate = async (req, res, next) => {
   try {
-    const itinerary = await itineraryService.duplicate(req.params.id, req.user.id);
+    const asTemplate = req.body?.asTemplate === true;
+    const itinerary = await itineraryService.duplicate(req.params.id, req.user.id, asTemplate);
     res.status(201).json({ success: true, data: itinerary });
   } catch (err) { next(err); }
 };
