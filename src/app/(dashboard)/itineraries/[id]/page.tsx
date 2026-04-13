@@ -898,6 +898,11 @@ export default function ItineraryBuilderPage() {
                   selectedDay={selectedDay} 
                   onAddEvent={(data: any) => { if (selectedDayId) addEventMut.mutate({ dayId: selectedDayId, data }); }} 
                   onUpdateDay={(data: any) => { if (selectedDayId) updateDayMut.mutate({ dayId: selectedDayId, data }); }}
+                  activeSection={activeSection}
+                  selectedEventId={selectedEventId}
+                  onUpdateEvent={(eventId: string, data: any) => updateEventMut.mutate({ eventId, data })}
+                  onUpdateItinerary={(data: any) => updateMut.mutate(data)}
+                  onOpenLibrary={() => setIsMediaModalOpen(true)}
                 />
               </div>
             </div>
@@ -993,7 +998,18 @@ function EditingDayForm({ day, onSave }: { day: any; onSave: (data: any) => void
   );
 }
 
-function SuggestionsPanel({ selectedDay, onAddEvent, onUpdateDay }: { selectedDay: any; onAddEvent: (data: any) => void; onUpdateDay: (data: any) => void }) {
+function SuggestionsPanel({ 
+  selectedDay, onAddEvent, onUpdateDay, activeSection, selectedEventId, onUpdateEvent, onUpdateItinerary, onOpenLibrary 
+}: { 
+  selectedDay: any; 
+  onAddEvent: (data: any) => void; 
+  onUpdateDay: (data: any) => void;
+  activeSection: string;
+  selectedEventId: string | null;
+  onUpdateEvent: (eventId: string, data: any) => void;
+  onUpdateItinerary: (data: any) => void;
+  onOpenLibrary: () => void;
+}) {
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState<'hotels' | 'activities' | 'transfers' | 'dayItinerary' | 'library'>('dayItinerary');
   const destId = selectedDay?.destinationId;
@@ -1040,7 +1056,7 @@ function SuggestionsPanel({ selectedDay, onAddEvent, onUpdateDay }: { selectedDa
           <Button 
             variant="outline" 
             className="h-11 w-11 p-0 rounded-2xl bg-white border-slate-200 text-blue-600 hover:bg-blue-50"
-            onClick={() => setIsMediaModalOpen(true)}
+            onClick={onOpenLibrary}
           >
             <Plus className="w-5 h-5" />
           </Button>
@@ -1085,7 +1101,7 @@ function SuggestionsPanel({ selectedDay, onAddEvent, onUpdateDay }: { selectedDa
                         onUpdateEvent(selectedEventId, { imageUrl: item.imageUrl });
                       } else {
                         // Default to cover photo if nothing else selected
-                        updateMut.mutate({ coverPhotoUrl: item.imageUrl });
+                        onUpdateItinerary({ coverPhotoUrl: item.imageUrl });
                       }
                       toast.success('Applied library image');
                     } else {
