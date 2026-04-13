@@ -621,9 +621,9 @@ export default function ItineraryBuilderPage() {
                             </div>
                             <div>
                               <h3 className="text-lg font-black tracking-tight text-slate-800 uppercase">Day {selectedDay.dayNumber} Timeline</h3>
-                              <div className="flex items-center gap-2 mt-1">
+                              <div className="relative flex items-center gap-2 mt-1">
                                 <button 
-                                  onClick={(e) => { e.stopPropagation(); setDestDropdownDayId(destDropdownDayId === selectedDay.id ? null : selectedDay.id); }}
+                                  onClick={(e) => { e.stopPropagation(); setDestDropdownDayId(destDropdownDayId === 'timeline-' + selectedDay.id ? null : 'timeline-' + selectedDay.id); }}
                                   className={cn(
                                     "flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest leading-none transition-colors",
                                     selectedDay.destination?.name ? "text-slate-400 hover:text-blue-500" : "text-amber-500 hover:text-amber-600 italic"
@@ -638,6 +638,34 @@ export default function ItineraryBuilderPage() {
                                       {format(addDays(new Date(itinerary.travelDateFrom), selectedDay.dayNumber - 1), 'EEEE, MMM d yyyy')}
                                     </div>
                                   </>
+                                )}
+                                
+                                {/* Destination Dropdown for Timeline view */}
+                                {destDropdownDayId === 'timeline-' + selectedDay.id && (
+                                  <div className="absolute left-0 top-full mt-2 z-50 bg-white rounded-2xl border border-slate-200 shadow-xl p-2 w-56 max-h-52 overflow-y-auto animate-in fade-in zoom-in-95 no-scrollbar">
+                                    <div className="px-2 py-1 text-[8px] font-black uppercase tracking-widest text-slate-300">Select Destination</div>
+                                    {selectedDay.destinationId && (
+                                      <button
+                                        className="w-full text-left px-3 py-1.5 rounded-xl text-xs font-bold text-rose-400 hover:bg-rose-50 transition-colors"
+                                        onClick={(e) => { e.stopPropagation(); updateDayMut.mutate({ dayId: selectedDay.id, data: { destinationId: null } }); setDestDropdownDayId(null); }}
+                                      >
+                                        ✕ Clear destination
+                                      </button>
+                                    )}
+                                    {destinations.map((dest: any) => (
+                                      <button
+                                        key={dest.id}
+                                        className={cn(
+                                          "w-full text-left px-3 py-2 rounded-xl text-xs font-bold transition-colors",
+                                          dest.id === selectedDay.destinationId ? "bg-blue-50 text-blue-600" : "text-slate-700 hover:bg-slate-50"
+                                        )}
+                                        onClick={(e) => { e.stopPropagation(); updateDayMut.mutate({ dayId: selectedDay.id, data: { destinationId: dest.id } }); setDestDropdownDayId(null); }}
+                                      >
+                                        {dest.name}
+                                      </button>
+                                    ))}
+                                    {destinations.length === 0 && <p className="text-[10px] text-slate-300 text-center py-2">No destinations found</p>}
+                                  </div>
                                 )}
                               </div>
                             </div>

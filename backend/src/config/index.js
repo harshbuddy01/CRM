@@ -68,7 +68,7 @@ const config = {
   
   // --- Operational Settings ---
   upload: {
-    maxFileSize: parseInt(process.env.UPLOAD_MAX_SIZE, 10) || 5 * 1024 * 1024, // 5MB default
+    maxFileSize: parseInt(process.env.UPLOAD_MAX_SIZE, 10) || 20 * 1024 * 1024, // 20MB default
   },
 
   rateLimit: {

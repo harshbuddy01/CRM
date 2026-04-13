@@ -69,7 +69,7 @@ export function Sidebar({ open, setOpen }: SidebarProps) {
     { href: '/clients', label: 'Clients', icon: Contact, show: true },
     { href: '/agents', label: 'B2B Agents', icon: Briefcase, show: true },
     { href: '/masters-v2', label: 'Masters', icon: Database, show: user?.permissions['master.manage_destinations'] || user?.permissions['master.manage_hotels'] },
-    { href: '/masters-v2?cat=gallery-images', label: 'Media Vault', icon: ImageIcon, show: true },
+    { href: '/library', label: 'Library', icon: ImageIcon, show: true },
     // Sprint 8 & Admin
     { href: '/cms/pages', label: 'Website CMS', icon: Globe, show: user?.role === 'admin' || user?.permissions['master.manage_destinations'], isSetting: true },
     { href: '/finance/expenses', label: 'Finance', icon: DollarSign, show: user?.role === 'admin' || user?.permissions['payment.view_all'], isSetting: true },

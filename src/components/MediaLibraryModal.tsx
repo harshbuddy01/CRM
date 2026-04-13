@@ -57,8 +57,8 @@ export function MediaLibraryModal({ isOpen, onClose, onSelect, title = 'Media Li
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error("File is too large (max 5MB)");
+    if (file.size > 20 * 1024 * 1024) {
+      toast.error("File is too large (max 20MB)");
       return;
     }
 
@@ -184,7 +184,7 @@ export function MediaLibraryModal({ isOpen, onClose, onSelect, title = 'Media Li
             </div>
           ) : (
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {data.map((img: any) => (
+              {(data || []).map((img: any) => (
                 <div 
                   key={img.id}
                   onClick={() => onSelect(img.imageUrl)}
