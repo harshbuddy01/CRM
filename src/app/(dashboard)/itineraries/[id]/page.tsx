@@ -623,7 +623,7 @@ export default function ItineraryBuilderPage() {
                               <h3 className="text-lg font-black tracking-tight text-slate-800 uppercase">Day {selectedDay.dayNumber} Timeline</h3>
                               <div className="flex items-center gap-2 mt-1">
                                 <button 
-                                  onClick={() => setDestDropdownDayId(destDropdownDayId === selectedDay.id ? null : selectedDay.id)}
+                                  onClick={(e) => { e.stopPropagation(); setDestDropdownDayId(destDropdownDayId === selectedDay.id ? null : selectedDay.id); }}
                                   className={cn(
                                     "flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest leading-none transition-colors",
                                     selectedDay.destination?.name ? "text-slate-400 hover:text-blue-500" : "text-amber-500 hover:text-amber-600 italic"
@@ -1017,7 +1017,7 @@ function SuggestionsPanel({
   const { data } = useQuery({
     queryKey: ['suggestions', category, destId, search],
     queryFn: async () => {
-      if (!destId && category !== 'dayItinerary') return [];
+      if (!destId && category !== 'dayItinerary' && category !== 'library') return [];
       let path = '';
       if (category === 'hotels') path = '/masters/hotels';
       else if (category === 'dayItinerary') path = '/masters-v2/day-itinerary-templates';
@@ -1027,7 +1027,8 @@ function SuggestionsPanel({
       const res = await api.get(path, { params: search ? { search } : {} });
       const items = Array.isArray(res.data?.data) ? res.data.data : (res.data?.data?.items || res.data || []);
       
-      if (category === 'dayItinerary') return items;
+      // Library and Day Templates don't need destination filtering
+      if (category === 'dayItinerary' || category === 'library') return items;
       return items.filter((i: any) => i.destinationId === destId);
     },
     enabled: (category === 'dayItinerary' || category === 'library') ? true : !!destId,
