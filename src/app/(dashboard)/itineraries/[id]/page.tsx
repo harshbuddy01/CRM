@@ -467,15 +467,16 @@ export default function ItineraryBuilderPage() {
                 <div className="flex flex-col gap-2">
                   {itinerary.days?.map((day: any) => (
                     <div key={day.id} className="relative group/dayitem">
-                      <button
+                      <div
+                        role="button"
                         onClick={() => {
                           setSelectedDayId(day.id);
                           setActiveSection('day');
                         }}
                         className={cn(
-                          "w-full flex items-center gap-3 p-2 rounded-xl transition-all group text-left",
+                          "w-full flex items-center gap-3 p-2 rounded-xl transition-all group text-left cursor-pointer hover:bg-slate-50",
                           activeSection === 'day' && selectedDayId === day.id 
-                            ? "bg-blue-600 text-white shadow-lg shadow-blue-200 ring-2 ring-blue-100" 
+                            ? "bg-blue-600 text-white shadow-lg shadow-blue-200 ring-2 ring-blue-100 hover:bg-blue-600" 
                             : "hover:bg-slate-100 text-slate-600"
                         )}
                       >
@@ -518,7 +519,7 @@ export default function ItineraryBuilderPage() {
                             </div>
                           )}
                         </div>
-                      </button>
+                      </div>
                       {/* Destination Quick-Select Dropdown */}
                       {destDropdownDayId === day.id && (
                         <div className="absolute left-0 top-full mt-1 z-50 bg-white rounded-2xl border border-slate-200 shadow-xl p-2 w-48 max-h-52 overflow-y-auto animate-in fade-in zoom-in-95 no-scrollbar">

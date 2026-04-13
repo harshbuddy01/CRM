@@ -34,7 +34,7 @@ router.delete('/:id', proposalController.deleteProposal);
 router.get('/', can('proposal.view_assigned'), proposalController.listAllProposals);
 
 const multer = require('multer');
-const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 20 * 1024 * 1024 } });
 
 // Dispatch Notifications 
 router.post('/:id/confirm', proposalController.confirmProposal);
