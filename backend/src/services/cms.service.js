@@ -64,7 +64,7 @@ const listGallery = (category, search) => {
       { category: { contains: search, mode: 'insensitive' } },
     ];
   }
-  return prisma.galleryImage.findMany({ where, orderBy: { createdAt: 'desc' } });
+  return prisma.galleryImage.findMany({ where, orderBy: { sequence: 'asc' } });
 };
 const createGalleryImage = async (data, file) => {
   if (file) {
