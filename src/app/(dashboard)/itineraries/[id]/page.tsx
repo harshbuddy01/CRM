@@ -56,7 +56,7 @@ export default function ItineraryBuilderPage() {
   const galleryRef = useRef<HTMLInputElement>(null);
   const eventImgRef = useRef<HTMLInputElement>(null);
   const dayImgRef = useRef<HTMLInputElement>(null);
-  const [activeSection, setActiveSection] = useState<'day' | 'packageTerms' | 'gallery'>('day');
+  const [activeSection, setActiveSection] = useState<'day' | 'packageTerms' | 'gallery' | 'event'>('day');
   const [editingDayId, setEditingDayId] = useState<string | null>(null);
   const [editingDuration, setEditingDuration] = useState(false);
   const [nightsInput, setNightsInput] = useState<number | ''>('');
@@ -807,7 +807,7 @@ export default function ItineraryBuilderPage() {
                                           </div>
                                           
                                           <div className="flex gap-1">
-                                            <button className="h-8 w-8 flex items-center justify-center bg-slate-50 hover:bg-blue-600 text-slate-400 hover:text-white rounded-xl transition-all duration-300 shadow-sm border border-slate-100" onClick={() => setEditingEvent(ev)}><Edit3 className="w-4 h-4" /></button>
+                                            <button className="h-8 w-8 flex items-center justify-center bg-slate-50 hover:bg-blue-600 text-slate-400 hover:text-white rounded-xl transition-all duration-300 shadow-sm border border-slate-100" onClick={() => { setEditingEvent(ev); setActiveSection('event'); }}><Edit3 className="w-4 h-4" /></button>
                                             <button className="h-8 w-8 flex items-center justify-center bg-slate-50 hover:bg-red-600 text-slate-400 hover:text-white rounded-xl transition-all duration-300 shadow-sm border border-slate-100" onClick={() => removeEventMut.mutate(ev.id)}><Trash2 className="w-4 h-4" /></button>
                                           </div>
                                         </div>
@@ -899,7 +899,7 @@ export default function ItineraryBuilderPage() {
                   onAddEvent={(data: any) => { if (selectedDayId) addEventMut.mutate({ dayId: selectedDayId, data }); }} 
                   onUpdateDay={(data: any) => { if (selectedDayId) updateDayMut.mutate({ dayId: selectedDayId, data }); }}
                   activeSection={activeSection}
-                  selectedEventId={selectedEventId}
+                  selectedEventId={editingEvent?.id || null}
                   onUpdateEvent={(eventId: string, data: any) => updateEventMut.mutate({ eventId, data })}
                   onUpdateItinerary={(data: any) => updateMut.mutate(data)}
                   onOpenLibrary={() => setIsMediaModalOpen(true)}
