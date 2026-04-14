@@ -181,14 +181,26 @@ export default function ItineraryBuilderPage() {
 
   const updateMut = useMutation({ mutationFn: (data: any) => api.put(`/itineraries/${id}`, data), onSuccess: invalidate });
   const addDayMut = useMutation({ mutationFn: (data: any) => api.post(`/itineraries/${id}/days`, data), onSuccess: (res) => { invalidate(); setSelectedDayId(res.data.data.id); } });
-  const updateDayMut = useMutation({ mutationFn: ({ dayId, data }: any) => api.put(`/itineraries/days/${dayId}`, data), onSuccess: invalidate });
+  const updateDayMut = useMutation({ 
+    mutationFn: ({ dayId, data }: any) => api.put(`/itineraries/days/${dayId}`, data), 
+    onSuccess: invalidate,
+    onError: (err: any) => toast.error(err.response?.data?.message || err.message || 'Failed to update day')
+  });
   const removeDayMut = useMutation({ mutationFn: (dayId: string) => api.delete(`/itineraries/days/${dayId}`), onSuccess: () => { setSelectedDayId(null); invalidate(); } });
   const addEventMut = useMutation({ mutationFn: ({ dayId, data }: any) => api.post(`/itineraries/days/${dayId}/events`, data), onSuccess: invalidate });
   const updateEventMut = useMutation({ mutationFn: ({ eventId, data }: any) => api.put(`/itineraries/events/${eventId}`, data), onSuccess: () => { invalidate(); setEditingEvent(null); } });
   const removeEventMut = useMutation({ mutationFn: (eventId: string) => api.delete(`/itineraries/events/${eventId}`), onSuccess: invalidate });
   const addDestMut = useMutation({
-    mutationFn: (name: string) => api.post('/masters-v2/destinations', { name }),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['destinations-dropdown'] }); toast.success('Destination added') }
+    mutationFn: (name: string) => {
+      const fd = new FormData();
+      fd.append('name', name);
+      return api.post('/masters-v2/destinations', fd);
+    },
+    onSuccess: () => { 
+      qc.invalidateQueries({ queryKey: ['destinations-dropdown'] }); 
+      toast.success('Destination added'); 
+    },
+    onError: (err: any) => toast.error(err.response?.data?.message || err.message || 'Failed to add destination')
   });
 
   const deleteItineraryMut = useMutation({
