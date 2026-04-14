@@ -76,7 +76,7 @@ function DestinationDropdown({ dayId, currentDestId, destinations, addDestMut, u
           {currentDestId && (
             <button
               className="w-full text-left px-3 py-1.5 rounded-xl text-xs font-bold text-rose-400 hover:bg-rose-50 transition-colors shrink-0"
-              onClick={() => { updateDayMut.mutate({ dayId, data: { destinationId: null } }); onClose(); }}
+              onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); updateDayMut.mutate({ dayId, data: { destinationId: null } }); onClose(); }}
             >
               ✕ Clear destination
             </button>
@@ -89,7 +89,7 @@ function DestinationDropdown({ dayId, currentDestId, destinations, addDestMut, u
                 "w-full text-left px-3 py-2 rounded-xl text-xs font-bold transition-colors shrink-0",
                 dest.id === currentDestId ? "bg-blue-50 text-blue-600" : "text-slate-700 hover:bg-slate-50 relative pr-8"
               )}
-              onClick={() => { updateDayMut.mutate({ dayId, data: { destinationId: dest.id } }); onClose(); }}
+              onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); updateDayMut.mutate({ dayId, data: { destinationId: dest.id } }); onClose(); }}
             >
               {dest.name}
               {dest.id === currentDestId && <Check className="w-3 h-3 absolute right-3 top-1/2 -translate-y-1/2" />}
@@ -99,7 +99,9 @@ function DestinationDropdown({ dayId, currentDestId, destinations, addDestMut, u
           {search.trim() && filtered.length === 0 && (
             <button
               className="w-full text-left px-3 py-2 rounded-xl text-xs font-bold text-emerald-600 bg-emerald-50 hover:bg-emerald-100 transition-colors shrink-0 mt-1"
-              onClick={() => { 
+              onMouseDown={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
                 addDestMut.mutate(search.trim(), {
                   onSuccess: (res: any) => {
                     updateDayMut.mutate({ dayId, data: { destinationId: res.data.data.id } });
