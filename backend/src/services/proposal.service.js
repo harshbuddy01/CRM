@@ -192,6 +192,7 @@ const getProposalsByQuery = async (queryId) => {
           days: {
             orderBy: { dayNumber: 'asc' },
             include: {
+              destination: { select: { id: true, name: true } },
               events: { orderBy: { sortOrder: 'asc' } },
             },
           },

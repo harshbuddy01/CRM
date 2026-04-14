@@ -48,6 +48,7 @@ function DestinationDropdown({ dayId, currentDestId, destinations, addDestMut, u
     <div 
       className="absolute left-0 top-full mt-2 z-[999] bg-white rounded-2xl border border-slate-200 shadow-xl p-2 w-56 max-h-64 flex flex-col animate-in fade-in zoom-in-95 cursor-default" 
       onClick={e => e.stopPropagation()}
+      onMouseDown={e => e.stopPropagation()}
     >
        <div className="px-2 py-1 flex items-center gap-2 border-b border-slate-100 pb-2 mb-1">
          <Search className="w-3 h-3 text-slate-400 shrink-0" />
@@ -149,8 +150,8 @@ export default function ItineraryBuilderPage() {
 
   useEffect(() => {
     const handleGlobalClick = () => setDestDropdownDayId(null);
-    document.addEventListener('click', handleGlobalClick);
-    return () => document.removeEventListener('click', handleGlobalClick);
+    document.addEventListener('mousedown', handleGlobalClick);
+    return () => document.removeEventListener('mousedown', handleGlobalClick);
   }, []);
 
   // Unified Cropper State
@@ -573,6 +574,7 @@ export default function ItineraryBuilderPage() {
                           <div className="flex items-center gap-1 mt-0.5">
                             {day.destination?.name ? (
                               <button
+                                onMouseDown={(e) => { e.stopPropagation(); }}
                                 onClick={(e) => { e.stopPropagation(); setDestDropdownDayId(destDropdownDayId === day.id ? null : day.id); }}
                                 className={cn(
                                   "text-[9px] font-bold flex items-center gap-1 hover:underline",
@@ -583,6 +585,7 @@ export default function ItineraryBuilderPage() {
                               </button>
                             ) : (
                               <button
+                                onMouseDown={(e) => { e.stopPropagation(); }}
                                 onClick={(e) => { e.stopPropagation(); setDestDropdownDayId(destDropdownDayId === day.id ? null : day.id); }}
                                 className={cn(
                                   "text-[9px] font-bold flex items-center gap-1 hover:underline italic",
@@ -688,6 +691,7 @@ export default function ItineraryBuilderPage() {
                               <h3 className="text-lg font-black tracking-tight text-slate-800 uppercase">Day {selectedDay.dayNumber} Timeline</h3>
                               <div className={cn("relative flex items-center gap-2 mt-1", destDropdownDayId === 'timeline-' + selectedDay.id && "z-[100]")}>
                                 <button 
+                                  onMouseDown={(e) => { e.stopPropagation(); }}
                                   onClick={(e) => { e.stopPropagation(); setDestDropdownDayId(destDropdownDayId === 'timeline-' + selectedDay.id ? null : 'timeline-' + selectedDay.id); }}
                                   className={cn(
                                     "flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest leading-none transition-colors",

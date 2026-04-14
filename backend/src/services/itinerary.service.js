@@ -9,6 +9,23 @@ const { nanoid } = require('nanoid');
 const { NotFoundError, ValidationError } = require('../utils/AppError');
 const { syncToMeili, removeFromMeili } = require('../utils/meilisearch');
 
+/**
+ * Invalidate cached PDFs for all proposals linked to a given itinerary.
+ * This ensures that when itinerary content (days, events, destinations) changes,
+ * the next PDF download or email send generates a fresh PDF.
+ */
+const invalidateLinkedProposalPdfs = async (itineraryId) => {
+  if (!itineraryId) return;
+  try {
+    await prisma.proposal.updateMany({
+      where: { itineraryId, deletedAt: null },
+      data: { pdfStatus: 'pending', pdfUrl: null },
+    });
+  } catch (err) {
+    console.error('[PDF Invalidation] Failed for itinerary:', itineraryId, err.message);
+  }
+};
+
 
 // ── Helpers ──────────────────────────────────────────────────
 
@@ -510,7 +527,7 @@ const addDay = async (itineraryId, data) => {
   });
   const nextDayNumber = (maxDay._max.dayNumber || 0) + 1;
 
-  return prisma.itineraryDay.create({
+  const day = await prisma.itineraryDay.create({
     data: {
       itineraryId,
       dayNumber: data.dayNumber || nextDayNumber,
@@ -523,11 +540,16 @@ const addDay = async (itineraryId, data) => {
       events: { orderBy: { sortOrder: 'asc' } },
     },
   });
+
+  // Invalidate cached PDFs for linked proposals
+  invalidateLinkedProposalPdfs(itineraryId);
+
+  return day;
 };
 
 const updateDay = async (dayId, data) => {
   const { title, description, destinationId, imageUrl } = data;
-  return prisma.itineraryDay.update({
+  const updated = await prisma.itineraryDay.update({
     where: { id: dayId },
     data: {
       ...(title !== undefined && { title }),
@@ -540,6 +562,11 @@ const updateDay = async (dayId, data) => {
       events: { orderBy: { sortOrder: 'asc' } },
     },
   });
+
+  // Invalidate cached PDFs for linked proposals
+  invalidateLinkedProposalPdfs(updated.itineraryId);
+
+  return updated;
 };
 
 const uploadDayImage = async (dayId, file) => {
@@ -575,6 +602,9 @@ const removeDay = async (dayId) => {
     }
   });
 
+  // Invalidate cached PDFs for linked proposals
+  invalidateLinkedProposalPdfs(day.itineraryId);
+
   return { success: true };
 };
 
@@ -595,7 +625,7 @@ const addEvent = async (dayId, data) => {
   });
   const nextSort = (maxSort._max.sortOrder || 0) + 1;
 
-  return prisma.itineraryEvent.create({
+  const event = await prisma.itineraryEvent.create({
     data: {
       dayId,
       type: data.type || 'sightseeing',
@@ -608,17 +638,25 @@ const addEvent = async (dayId, data) => {
       sortOrder: data.sortOrder ?? nextSort,
     },
   });
+
+  // Invalidate cached PDFs for linked proposals
+  invalidateLinkedProposalPdfs(day.itineraryId);
+
+  return event;
 };
 
 const updateEvent = async (eventId, data) => {
-  const event = await prisma.itineraryEvent.findUnique({ where: { id: eventId } });
+  const event = await prisma.itineraryEvent.findUnique({
+    where: { id: eventId },
+    include: { day: { select: { itineraryId: true } } },
+  });
   if (!event) throw new NotFoundError('Event not found');
 
   if (data.type && !VALID_EVENT_TYPES.includes(data.type)) {
     throw new ValidationError(`Invalid event type: ${data.type}`);
   }
 
-  return prisma.itineraryEvent.update({
+  const updated = await prisma.itineraryEvent.update({
     where: { id: eventId },
     data: {
       ...(data.type !== undefined && { type: data.type }),
@@ -632,12 +670,24 @@ const updateEvent = async (eventId, data) => {
       ...(data.sortOrder !== undefined && { sortOrder: data.sortOrder }),
     },
   });
+
+  // Invalidate cached PDFs for linked proposals
+  invalidateLinkedProposalPdfs(event.day?.itineraryId);
+
+  return updated;
 };
 
 const removeEvent = async (eventId) => {
-  const event = await prisma.itineraryEvent.findUnique({ where: { id: eventId } });
+  const event = await prisma.itineraryEvent.findUnique({
+    where: { id: eventId },
+    include: { day: { select: { itineraryId: true } } },
+  });
   if (!event) throw new NotFoundError('Event not found');
   await prisma.itineraryEvent.delete({ where: { id: eventId } });
+
+  // Invalidate cached PDFs for linked proposals
+  invalidateLinkedProposalPdfs(event.day?.itineraryId);
+
   return { success: true };
 };
 
