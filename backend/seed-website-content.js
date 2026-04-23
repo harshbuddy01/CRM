@@ -6,6 +6,7 @@
 const { PrismaClient } = require('@prisma/client');
 const fs = require('fs');
 const path = require('path');
+const vm = require('vm');
 
 const prisma = new PrismaClient();
 
@@ -13,15 +14,69 @@ const prisma = new PrismaClient();
 function parseJourneysFromConstants() {
   const filePath = path.resolve(__dirname, '../../imagicaholidays-01/src/lib/constants.ts');
   const content = fs.readFileSync(filePath, 'utf-8');
-  
-  // Extract the journeys array
-  const match = content.match(/export const journeys\s*=\s*(\[[\s\S]*?\n\];)/);
-  if (!match) throw new Error('Could not find journeys array in constants.ts');
-  
-  // Clean TypeScript-specific syntax and eval as JSON
-  let jsonStr = match[1];
-  // The data is already valid JSON-like, just need to eval it
-  const journeys = eval(jsonStr);
+
+  // Use bracket-balancing to safely extract the journeys array
+  const token = 'export const journeys';
+  const tokenIdx = content.indexOf(token);
+  if (tokenIdx === -1) throw new Error('Could not find "export const journeys" in constants.ts');
+
+  // Find the opening bracket
+  const bracketStart = content.indexOf('[', tokenIdx);
+  if (bracketStart === -1) throw new Error('Could not find opening "[" for journeys array');
+
+  // Bracket-balance to find the matching closing bracket
+  let depth = 0;
+  let inString = false;
+  let stringChar = '';
+  let escaped = false;
+  let endIdx = -1;
+
+  for (let i = bracketStart; i < content.length; i++) {
+    const ch = content[i];
+
+    if (escaped) { escaped = false; continue; }
+    if (ch === '\\') { escaped = true; continue; }
+
+    if (inString) {
+      if (ch === stringChar) inString = false;
+      continue;
+    }
+
+    if (ch === '"' || ch === "'" || ch === '`') {
+      inString = true;
+      stringChar = ch;
+      continue;
+    }
+
+    if (ch === '[') depth++;
+    else if (ch === ']') {
+      depth--;
+      if (depth === 0) { endIdx = i; break; }
+    }
+  }
+
+  if (endIdx === -1) throw new Error('Could not find matching "]" for journeys array');
+
+  const arrayStr = content.slice(bracketStart, endIdx + 1);
+
+  // Use vm.runInNewContext with an empty sandbox to safely evaluate (no access to require, process, etc.)
+  let journeys;
+  try {
+    journeys = vm.runInNewContext(`(${arrayStr})`, Object.create(null), { timeout: 5000 });
+  } catch (e) {
+    throw new Error(`Failed to parse journeys array: ${e.message}`);
+  }
+
+  // Validate the result
+  if (!Array.isArray(journeys)) throw new Error('Parsed journeys is not an array');
+  if (journeys.length === 0) throw new Error('Parsed journeys array is empty');
+
+  // Validate first item has expected properties
+  const first = journeys[0];
+  if (!first.id || !first.title || !first.regions) {
+    throw new Error('First journey item is missing required properties (id, title, regions)');
+  }
+
   return journeys;
 }
 
@@ -33,7 +88,7 @@ const TRENDING_DATA = [
     tagline: "The Sacred Spiritual Peaks",
     image: "https://images.pexels.com/photos/19195937/pexels-photo-19195937.jpeg?auto=compress&cs=tinysrgb&w=1200",
     lastUpdated: "April 22, 2026",
-    link: "/destinations/gangtok",
+    link: "/destinations/kedarnath",
     sequence: 0,
   },
   {
@@ -66,7 +121,7 @@ async function main() {
     console.log(`📋 Found ${journeys.length} journeys in constants.ts`);
   } catch (e) {
     console.error('❌ Failed to parse constants.ts:', e.message);
-    return;
+    process.exit(1);
   }
 
   let created = 0;

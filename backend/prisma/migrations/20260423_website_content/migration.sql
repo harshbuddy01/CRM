@@ -22,7 +22,7 @@ CREATE TABLE "website_journeys" (
     "is_active" BOOLEAN NOT NULL DEFAULT true,
     "sequence" INTEGER NOT NULL DEFAULT 0,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updated_at" TIMESTAMP(3) NOT NULL,
+    "updated_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "website_journeys_pkey" PRIMARY KEY ("id")
 );

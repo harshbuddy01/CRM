@@ -24,7 +24,10 @@ function DayForm({ day, onSave, onCancel, saving }: any) {
       <div className="grid grid-cols-4 gap-3">
         <div className="space-y-1">
           <Label className="text-[10px] uppercase tracking-wide text-muted-foreground">Day #</Label>
-          <Input type="number" value={f.dayNumber} onChange={e => set('dayNumber', e.target.value)} />
+          <Input type="number" value={f.dayNumber} onChange={e => {
+            const parsed = parseInt(e.target.value, 10);
+            set('dayNumber', Number.isFinite(parsed) ? parsed : f.dayNumber);
+          }} />
         </div>
         <div className="space-y-1">
           <Label className="text-[10px] uppercase tracking-wide text-muted-foreground">Title *</Label>
@@ -84,6 +87,7 @@ function JourneyForm({ initial, onClose, onSaved }: { initial: any; onClose: () 
   const [showDayForm, setShowDayForm] = useState(false);
   const [editingDay, setEditingDay] = useState<any>(null);
   const [daySaving, setDaySaving] = useState(false);
+  const [dayDeleting, setDayDeleting] = useState(false);
   const qc = useQueryClient();
   const set = (k: string, v: any) => setForm(f => ({ ...f, [k]: v }));
 
@@ -91,8 +95,14 @@ function JourneyForm({ initial, onClose, onSaved }: { initial: any; onClose: () 
     e.preventDefault();
     setSaving(true);
     try {
-      if (initial) await api.put(`/website-content/journeys/${initial.id}`, form);
-      else await api.post('/website-content/journeys', form);
+      // Parse badges and images from JSON strings before sending
+      const payload = {
+        ...form,
+        badges: typeof form.badges === 'string' ? JSON.parse(form.badges) : form.badges,
+        images: typeof form.images === 'string' ? JSON.parse(form.images) : form.images,
+      };
+      if (initial) await api.put(`/website-content/journeys/${initial.id}`, payload);
+      else await api.post('/website-content/journeys', payload);
       toast.success(initial ? 'Journey updated!' : 'Journey created!');
       onSaved();
       onClose();
@@ -128,12 +138,14 @@ function JourneyForm({ initial, onClose, onSaved }: { initial: any; onClose: () 
 
   const removeDay = async (dayId: string) => {
     if (!confirm('Remove this day?')) return;
+    setDayDeleting(true);
     try {
       await api.delete(`/website-content/journey-days/${dayId}`);
       toast.success('Day removed');
       qc.invalidateQueries({ queryKey: ['wc-journeys'] });
       onSaved();
-    } catch (err: any) { toast.error('Failed'); }
+    } catch (err: any) { toast.error('Failed to remove day'); }
+    finally { setDayDeleting(false); }
   };
 
   return (
@@ -172,12 +184,18 @@ function JourneyForm({ initial, onClose, onSaved }: { initial: any; onClose: () 
         <div className="grid md:grid-cols-2 gap-4">
           <div className="space-y-1.5">
             <Label className="text-xs text-muted-foreground">Price Per Guest (₹) *</Label>
-            <Input type="number" value={form.pricePerGuest} onChange={e => set('pricePerGuest', e.target.value)} />
+            <Input type="number" value={form.pricePerGuest} onChange={e => {
+              const parsed = parseInt(e.target.value, 10);
+              set('pricePerGuest', Number.isFinite(parsed) ? parsed : form.pricePerGuest);
+            }} />
             <input type="range" min="5000" max="100000" step="500" value={form.pricePerGuest} onChange={e => set('pricePerGuest', parseInt(e.target.value))} className="w-full mt-1" />
           </div>
           <div className="space-y-1.5">
             <Label className="text-xs text-muted-foreground">Original Price (₹)</Label>
-            <Input type="number" value={form.originalPrice} onChange={e => set('originalPrice', e.target.value)} />
+            <Input type="number" value={form.originalPrice} onChange={e => {
+              const parsed = parseInt(e.target.value, 10);
+              set('originalPrice', Number.isFinite(parsed) ? parsed : form.originalPrice);
+            }} />
             <input type="range" min="5000" max="150000" step="500" value={form.originalPrice} onChange={e => set('originalPrice', parseInt(e.target.value))} className="w-full mt-1" />
           </div>
         </div>
@@ -187,19 +205,31 @@ function JourneyForm({ initial, onClose, onSaved }: { initial: any; onClose: () 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div className="space-y-1.5">
           <Label className="text-xs uppercase tracking-wide text-muted-foreground">Nights</Label>
-          <Input type="number" value={form.durationNights} onChange={e => set('durationNights', e.target.value)} />
+          <Input type="number" value={form.durationNights} onChange={e => {
+            const parsed = parseInt(e.target.value, 10);
+            set('durationNights', Number.isFinite(parsed) ? parsed : form.durationNights);
+          }} />
         </div>
         <div className="space-y-1.5">
           <Label className="text-xs uppercase tracking-wide text-muted-foreground">Days</Label>
-          <Input type="number" value={form.durationDays} onChange={e => set('durationDays', e.target.value)} />
+          <Input type="number" value={form.durationDays} onChange={e => {
+            const parsed = parseInt(e.target.value, 10);
+            set('durationDays', Number.isFinite(parsed) ? parsed : form.durationDays);
+          }} />
         </div>
         <div className="space-y-1.5">
           <Label className="text-xs uppercase tracking-wide text-muted-foreground">Ports</Label>
-          <Input type="number" value={form.ports} onChange={e => set('ports', e.target.value)} />
+          <Input type="number" value={form.ports} onChange={e => {
+            const parsed = parseInt(e.target.value, 10);
+            set('ports', Number.isFinite(parsed) ? parsed : form.ports);
+          }} />
         </div>
         <div className="space-y-1.5">
           <Label className="text-xs uppercase tracking-wide text-muted-foreground">Countries</Label>
-          <Input type="number" value={form.countries} onChange={e => set('countries', e.target.value)} />
+          <Input type="number" value={form.countries} onChange={e => {
+            const parsed = parseInt(e.target.value, 10);
+            set('countries', Number.isFinite(parsed) ? parsed : form.countries);
+          }} />
         </div>
       </div>
 
@@ -248,7 +278,10 @@ function JourneyForm({ initial, onClose, onSaved }: { initial: any; onClose: () 
       <div className="grid md:grid-cols-2 gap-4">
         <div className="space-y-1.5">
           <Label className="text-xs uppercase tracking-wide text-muted-foreground">Display Order</Label>
-          <Input type="number" value={form.sequence} onChange={e => set('sequence', e.target.value)} />
+          <Input type="number" value={form.sequence} onChange={e => {
+            const parsed = parseInt(e.target.value, 10);
+            set('sequence', Number.isFinite(parsed) ? parsed : form.sequence);
+          }} />
         </div>
         <label className="flex items-center gap-2 text-sm pt-6">
           <input type="checkbox" checked={form.isActive} onChange={e => set('isActive', e.target.checked)} />
@@ -279,7 +312,7 @@ function JourneyForm({ initial, onClose, onSaved }: { initial: any; onClose: () 
                 </div>
                 <div className="flex gap-1">
                   <Button type="button" variant="ghost" size="sm" onClick={() => setEditingDay(d)}><Edit2 className="w-3 h-3" /></Button>
-                  <Button type="button" variant="ghost" size="sm" className="text-red-500" onClick={() => removeDay(d.id)}><Trash2 className="w-3 h-3" /></Button>
+                  <Button type="button" variant="ghost" size="sm" className="text-red-500" disabled={dayDeleting} onClick={() => removeDay(d.id)}><Trash2 className="w-3 h-3" /></Button>
                 </div>
               </div>
             )
@@ -315,6 +348,7 @@ export default function JourneysTab() {
   const deleteMut = useMutation({
     mutationFn: (id: string) => api.delete(`/website-content/journeys/${id}`),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['wc-journeys'] }); toast.success('Journey deleted'); },
+    onError: (error: any) => { console.error('Delete journey failed:', error); toast.error(error.response?.data?.message || 'Failed to delete journey'); },
   });
 
   const openEdit = (j: any) => { setEditing(j); setShowForm(true); };

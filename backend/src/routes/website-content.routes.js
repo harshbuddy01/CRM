@@ -1,6 +1,6 @@
 // ============================================================
 // TravelCRM — Website Content Routes
-// Protected CRUD for journeys & trending + public read endpoints
+// Protected CRUD for journeys & trending (public read endpoints are in app.js)
 // ============================================================
 
 const express = require('express');

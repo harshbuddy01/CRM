@@ -70,7 +70,10 @@ function TrendingForm({ initial, onClose, onSaved }: { initial: any; onClose: ()
         </div>
         <div className="space-y-1.5">
           <Label className="text-xs uppercase tracking-wide text-muted-foreground">Display Order</Label>
-          <Input type="number" value={form.sequence} onChange={e => set('sequence', e.target.value)} />
+          <Input type="number" value={form.sequence} onChange={e => {
+            const parsed = parseInt(e.target.value, 10);
+            set('sequence', Number.isFinite(parsed) ? parsed : form.sequence);
+          }} />
         </div>
         <label className="flex items-center gap-2 text-sm pt-6">
           <input type="checkbox" checked={form.isActive} onChange={e => set('isActive', e.target.checked)} />
@@ -106,6 +109,7 @@ export default function TrendingTab() {
   const deleteMut = useMutation({
     mutationFn: (id: string) => api.delete(`/website-content/trending/${id}`),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['wc-trending'] }); toast.success('Deleted'); },
+    onError: (error: any) => { console.error('Delete trending failed:', error); toast.error(error.response?.data?.message || 'Failed to delete'); },
   });
 
   return (
