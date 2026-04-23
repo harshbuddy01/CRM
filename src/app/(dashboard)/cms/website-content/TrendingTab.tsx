@@ -63,6 +63,11 @@ function TrendingForm({ initial, onClose, onSaved }: { initial: any; onClose: ()
         <div className="space-y-1.5">
           <Label className="text-xs uppercase tracking-wide text-muted-foreground">Image URL *</Label>
           <Input value={form.image} onChange={e => set('image', e.target.value)} placeholder="https://..." required />
+          {form.image && !form.image.match(/\.(jpeg|jpg|gif|png|webp)/i) && !form.image.includes('images.unsplash.com') && !form.image.includes('images.pexels.com') && (
+            <p className="text-xs text-amber-600 font-medium bg-amber-50 p-1.5 rounded border border-amber-200">
+              ⚠️ Warning: This doesn't look like a direct image URL. If you copied a webpage link (like unsplash.com/photos/...), the image won't load. Right-click the image and select "Copy Image Address".
+            </p>
+          )}
         </div>
         <div className="space-y-1.5">
           <Label className="text-xs uppercase tracking-wide text-muted-foreground">Last Updated</Label>
