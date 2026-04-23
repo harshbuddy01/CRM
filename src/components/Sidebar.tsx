@@ -26,7 +26,8 @@ import {
   Building2,
   Sheet,
   CalendarRange,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Compass
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { X } from 'lucide-react';
@@ -71,6 +72,7 @@ export function Sidebar({ open, setOpen }: SidebarProps) {
     { href: '/masters-v2', label: 'Masters', icon: Database, show: user?.permissions['master.manage_destinations'] || user?.permissions['master.manage_hotels'] },
     { href: '/library', label: 'Library', icon: ImageIcon, show: true },
     // Sprint 8 & Admin
+    { href: '/cms/website-content', label: 'Website Content', icon: Compass, show: user?.role === 'admin' || user?.permissions['master.manage_destinations'], isSetting: true },
     { href: '/cms/pages', label: 'Website CMS', icon: Globe, show: user?.role === 'admin' || user?.permissions['master.manage_destinations'], isSetting: true },
     { href: '/finance/expenses', label: 'Finance', icon: DollarSign, show: user?.role === 'admin' || user?.permissions['payment.view_all'], isSetting: true },
     { href: '/branches', label: 'Branches', icon: Building2, show: user?.permissions['users.manage'], isSetting: true },

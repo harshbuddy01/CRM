@@ -1081,3 +1081,73 @@ model ItineraryGalleryImage {
   @@index([itineraryId])
   @@map("itinerary_gallery_images")
 }
+
+// ============================================================
+// 18. WEBSITE CONTENT MANAGEMENT
+// ============================================================
+
+/// Journey packages displayed on the imagicaholidays website
+model WebsiteJourney {
+  id              String   @id @default(uuid())
+  slug            String   @unique /// URL slug e.g. "sikkim-journey-0"
+  title           String
+  regions         String   /// e.g. "NORTH-EAST INDIA & SIKKIM"
+  durationNights  Int      @map("duration_nights")
+  durationDays    Int      @map("duration_days")
+  pricePerGuest   Int      @map("price_per_guest")
+  originalPrice   Int      @map("original_price")
+  departurePort   String   @map("departure_port")
+  returnPort      String   @map("return_port")
+  departureDate   String   @map("departure_date") /// e.g. "1 Nov 2026"
+  returnDate      String   @map("return_date")
+  ports           Int      @default(2)
+  countries       Int      @default(1)
+  vehicle         String   @default("Premium SUV")
+  badges          Json     /// JSON array e.g. ["SIKKIM"]
+  images          Json     /// JSON array of image URLs
+  mapImage        String?  @map("map_image")
+  overview        String?  @db.Text
+  isActive        Boolean  @default(true) @map("is_active")
+  sequence        Int      @default(0)
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  days WebsiteJourneyDay[]
+
+  @@index([isActive])
+  @@index([sequence])
+  @@map("website_journeys")
+}
+
+/// Itinerary day within a website journey
+model WebsiteJourneyDay {
+  id          String  @id @default(uuid())
+  journeyId   String  @map("journey_id")
+  dayNumber   Int     @map("day_number")
+  title       String  /// e.g. "Discover Gangtok"
+  date        String  /// e.g. "1 Nov"
+  time        String  /// e.g. "Arrival 12:00"
+  description String? @db.Text
+  image       String? /// image URL
+
+  journey WebsiteJourney @relation(fields: [journeyId], references: [id], onDelete: Cascade)
+
+  @@index([journeyId])
+  @@map("website_journey_days")
+}
+
+/// Trending destination items for the homepage popup on imagicaholidays
+model TrendingDestination {
+  id          String  @id @default(uuid())
+  region      String  /// e.g. "Northern Frontiers"
+  title       String  /// e.g. "Kedarnath"
+  tagline     String  /// e.g. "The Sacred Spiritual Peaks"
+  image       String  /// image URL
+  link        String  /// e.g. "/destinations/gangtok"
+  lastUpdated String  @map("last_updated") /// e.g. "April 22, 2026"
+  isActive    Boolean @default(true) @map("is_active")
+  sequence    Int     @default(0)
+
+  @@index([isActive])
+  @@map("trending_destinations")
+}

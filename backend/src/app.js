@@ -168,11 +168,22 @@ apiRouter.use('/integrations', require('./routes/sheet-sync.routes'));
 apiRouter.use('/itineraries', require('./routes/itinerary.routes'));
 // System Admin (Backups, Logs)
 apiRouter.use('/admin', require('./routes/admin.routes'));
+// Website Content Management (Journeys, Trending)
+apiRouter.use('/website-content', require('./routes/website-content.routes'));
 
 // Sprint 10 — Post Sales, Vouchers, Documents
 apiRouter.use('/', require('./routes/booking-service.routes'));
 apiRouter.use('/', require('./routes/voucher.routes'));
 apiRouter.use('/', require('./routes/query-document.routes'));
+
+// ── Public endpoints (no auth required) for website consumption ──
+const publicRouter = express.Router();
+const wcCtrl = require('./controllers/website-content.controller');
+publicRouter.get('/journeys', wcCtrl.getPublicJourneys);
+publicRouter.get('/trending', wcCtrl.getPublicTrending);
+
+app.use('/v1/public', publicRouter);
+app.use('/api/v1/public', publicRouter);
 
 // Mount the router under both prefixes
 
