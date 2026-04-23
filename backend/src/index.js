@@ -31,6 +31,15 @@ const server = app.listen(config.port, '0.0.0.0', () => {
   } catch (e) {
     console.error('❌ Could not load status service:', e);
   }
+
+  // Auto-seed website content (journeys + trending) if tables are empty
+  try {
+    require('./scripts/auto-seed-website').autoSeedWebsiteContent()
+      .then(() => console.log('✅ Website content auto-seed checked.'))
+      .catch(err => console.error('⚠️ Website content auto-seed failed:', err.message));
+  } catch (e) {
+    console.error('⚠️ Could not load auto-seed script:', e.message);
+  }
 });
 
 // Graceful shutdown
