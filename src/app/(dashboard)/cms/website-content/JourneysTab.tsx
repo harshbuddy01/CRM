@@ -96,10 +96,26 @@ function JourneyForm({ initial, onClose, onSaved }: { initial: any; onClose: () 
     setSaving(true);
     try {
       // Parse badges and images from JSON strings before sending
+      let parsedBadges = form.badges;
+      let parsedImages = form.images;
+      try {
+        parsedBadges = typeof form.badges === 'string' ? JSON.parse(form.badges) : form.badges;
+      } catch (jsonErr: any) {
+        toast.error(`Invalid JSON in badges: ${jsonErr.message}`);
+        setSaving(false);
+        return;
+      }
+      try {
+        parsedImages = typeof form.images === 'string' ? JSON.parse(form.images) : form.images;
+      } catch (jsonErr: any) {
+        toast.error(`Invalid JSON in images: ${jsonErr.message}`);
+        setSaving(false);
+        return;
+      }
       const payload = {
         ...form,
-        badges: typeof form.badges === 'string' ? JSON.parse(form.badges) : form.badges,
-        images: typeof form.images === 'string' ? JSON.parse(form.images) : form.images,
+        badges: parsedBadges,
+        images: parsedImages,
       };
       if (initial) await api.put(`/website-content/journeys/${initial.id}`, payload);
       else await api.post('/website-content/journeys', payload);
@@ -144,7 +160,7 @@ function JourneyForm({ initial, onClose, onSaved }: { initial: any; onClose: () 
       toast.success('Day removed');
       qc.invalidateQueries({ queryKey: ['wc-journeys'] });
       onSaved();
-    } catch (err: any) { toast.error('Failed to remove day'); }
+    } catch (err: any) { toast.error(err.response?.data?.message || 'Failed to remove day'); }
     finally { setDayDeleting(false); }
   };
 

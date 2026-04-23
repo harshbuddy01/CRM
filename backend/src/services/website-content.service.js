@@ -17,6 +17,7 @@ const parseIntSafe = (val, fallback = null) => {
 
 /** Safely parse a JSON string. Returns parsed value on success, fallback on error. */
 const safeJsonParse = (val, fieldName, fallback = []) => {
+  if (val == null) return fallback;
   if (typeof val !== 'string') return val;
   try {
     return JSON.parse(val);
@@ -113,7 +114,7 @@ const deleteJourney = (id) =>
 // ─── Journey Days ────────────────────────────────────────────
 
 const addJourneyDay = (journeyId, data) => {
-  const dayNumber = parseIntSafe(data.dayNumber, 0);
+  const dayNumber = parseIntSafe(data.dayNumber, 1);
   return prisma.websiteJourneyDay.create({
     data: {
       journeyId,

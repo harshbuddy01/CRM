@@ -65,3 +65,17 @@ CREATE INDEX "trending_destinations_is_active_idx" ON "trending_destinations"("i
 
 -- AddForeignKey
 ALTER TABLE "website_journey_days" ADD CONSTRAINT "website_journey_days_journey_id_fkey" FOREIGN KEY ("journey_id") REFERENCES "website_journeys"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- Auto-update updated_at on row modification
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = CURRENT_TIMESTAMP;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER update_website_journeys_updated_at
+  BEFORE UPDATE ON "website_journeys"
+  FOR EACH ROW
+  EXECUTE FUNCTION update_updated_at_column();

@@ -33,12 +33,29 @@ function parseJourneysFromConstants() {
 
   for (let i = bracketStart; i < content.length; i++) {
     const ch = content[i];
+    const nextCh = i + 1 < content.length ? content[i + 1] : '';
 
     if (escaped) { escaped = false; continue; }
     if (ch === '\\') { escaped = true; continue; }
 
     if (inString) {
       if (ch === stringChar) inString = false;
+      continue;
+    }
+
+    // Skip single-line comments
+    if (ch === '/' && nextCh === '/') {
+      const nlIdx = content.indexOf('\n', i + 2);
+      if (nlIdx === -1) break;
+      i = nlIdx;
+      continue;
+    }
+
+    // Skip multi-line comments
+    if (ch === '/' && nextCh === '*') {
+      const endComment = content.indexOf('*/', i + 2);
+      if (endComment === -1) break;
+      i = endComment + 1;
       continue;
     }
 
