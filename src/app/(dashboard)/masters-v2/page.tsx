@@ -88,7 +88,13 @@ export default function MastersV2Page() {
 function MasterPanel({ category }: { category: typeof CATEGORIES[0] }) {
   const qc = useQueryClient();
   const { user } = useAuthStore();
-  const canManage = !!(user?.permissions?.['master.manage_destinations'] || user?.permissions?.['master.manage_hotels']);
+  const getRequiredPermission = (catId: string) => {
+    if (catId === 'suppliers') return 'master.manage_vendors';
+    if (['hotels', 'room-types', 'meal-plans'].includes(catId)) return 'master.manage_hotels';
+    return 'master.manage_destinations';
+  };
+  const reqPermission = getRequiredPermission(category.id);
+  const canManage = !!(user?.permissions?.[reqPermission] || user?.permissions?.['master.manage_destinations']);
   const [search, setSearch] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [editItem, setEditItem] = useState<any>(null);
