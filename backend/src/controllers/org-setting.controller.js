@@ -27,8 +27,21 @@ const saveSettings = async (req, res, next) => {
   }
 };
 
+const uploadAsset = async (req, res, next) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ success: false, message: 'No file provided' });
+    }
+    const result = await orgSettingService.uploadAsset(req.file);
+    res.json({ success: true, url: result.secure_url });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   getAllSettings,
   getSettingByKey,
   saveSettings,
+  uploadAsset,
 };

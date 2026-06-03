@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { useAuthStore } from '@/lib/auth-store';
@@ -11,7 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { RichTextEditor } from '@/components/ui/rich-text-editor';
 import { toast } from 'sonner';
-import { Loader2, Save, Building, Mail, Webhook, CreditCard, ShieldAlert, GitMerge, Check, Edit2 } from 'lucide-react';
+import { Loader2, Save, Building, Mail, Webhook, CreditCard, ShieldAlert, GitMerge, Check, Edit2, FileText, Upload } from 'lucide-react';
 
 function StatusSettingsTab() {
   const queryClient = useQueryClient();
@@ -108,6 +108,103 @@ function StatusSettingsTab() {
   );
 }
 
+interface ImageUploadFieldProps {
+  label: string;
+  placeholder: string;
+  value: string;
+  onChange: (val: string) => void;
+  description?: string;
+}
+
+function ImageUploadField({ label, placeholder, value, onChange, description }: ImageUploadFieldProps) {
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const res = await api.post('/settings/upload', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      if (res.data?.success && res.data?.url) {
+        onChange(res.data.url);
+        toast.success(`${label} uploaded successfully!`);
+      } else {
+        toast.error('Upload response invalid');
+      }
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Failed to upload image');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  return (
+    <div className="space-y-2">
+      <Label className="flex justify-between items-center">
+        <span>{label}</span>
+        {value && (
+          <button
+            type="button"
+            onClick={() => onChange('')}
+            className="text-xs text-red-500 hover:text-red-700 flex items-center gap-1 font-normal transition-colors"
+          >
+            Clear Image
+          </button>
+        )}
+      </Label>
+      <div className="flex gap-2">
+        <div className="relative flex-1">
+          <Input
+            placeholder={placeholder}
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            className="pr-10"
+          />
+          {value && (
+            <div className="absolute right-2 top-1.5 w-6 h-6 rounded border overflow-hidden bg-muted flex items-center justify-center">
+              <img src={value} alt="Preview" className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLElement).style.display = 'none'; }} />
+            </div>
+          )}
+        </div>
+        <input
+          type="file"
+          ref={fileInputRef}
+          onChange={handleFileChange}
+          accept="image/*"
+          className="hidden"
+        />
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => fileInputRef.current?.click()}
+          disabled={uploading}
+          className="shrink-0 gap-2 border-dashed border-indigo-200 hover:border-indigo-500 hover:bg-indigo-50/50"
+        >
+          {uploading ? (
+            <Loader2 className="w-4 h-4 animate-spin text-indigo-600" />
+          ) : (
+            <Upload className="w-4 h-4 text-indigo-600" />
+          )}
+          Upload
+        </Button>
+      </div>
+      {description && <p className="text-xs text-muted-foreground">{description}</p>}
+      {value && (
+        <div className="mt-2 p-1.5 border rounded-lg bg-muted/20 max-w-[200px] overflow-hidden group relative">
+          <img src={value} alt="Preview thumbnail" className="w-full h-24 object-cover rounded shadow-sm" />
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function SettingsPage() {
   const { user } = useAuthStore();
   const queryClient = useQueryClient();
@@ -194,6 +291,12 @@ export default function SettingsPage() {
             >
               <GitMerge className="w-4 h-4 mr-3" /> Pipeline Statuses
             </TabsTrigger>
+            <TabsTrigger 
+              value="pdf-design" 
+              className="justify-start px-4 py-2.5 w-full data-[state=active]:bg-indigo-50 data-[state=active]:text-indigo-700 data-[state=active]:shadow-none hover:bg-muted/50 transition-colors rounded-lg"
+            >
+              <FileText className="w-4 h-4 mr-3" /> Proposal PDF Design
+            </TabsTrigger>
           </TabsList>
         </div>
 
@@ -249,14 +352,14 @@ export default function SettingsPage() {
                   onChange={(e) => setFormData({ ...formData, companyAddress: e.target.value })}
                 />
               </div>
-              <div className="space-y-2 pt-2">
-                <Label>Company Logo URL (Optional)</Label>
-                <Input 
-                  placeholder="https://example.com/logo.png"
-                  value={formData.companyLogoUrl || ''}
-                  onChange={(e) => setFormData({ ...formData, companyLogoUrl: e.target.value })}
+              <div className="pt-2">
+                <ImageUploadField 
+                  label="Company Logo" 
+                  placeholder="https://example.com/logo.png" 
+                  value={formData.companyLogoUrl || ''} 
+                  onChange={(val) => setFormData({ ...formData, companyLogoUrl: val })}
+                  description="Provide a company logo to display on PDF itineraries and signatures. Direct URL or upload an image."
                 />
-                <p className="text-xs text-muted-foreground">Provide a direct URL to a standard ratio image (PNG or JPG).</p>
               </div>
             </CardContent>
           </Card>
@@ -359,6 +462,162 @@ export default function SettingsPage() {
         <TabsContent value="statuses" className="mt-0 outline-none">
           <StatusSettingsTab />
         </TabsContent>
+
+        <TabsContent value="pdf-design" className="mt-0 space-y-6 outline-none">
+          <Card>
+            <CardHeader>
+              <CardTitle>Proposal PDF Layout Customization</CardTitle>
+              <CardDescription>
+                Customize background assets, banner layouts, watermarks, and theme colors for printed/exported itinerary PDFs.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <ImageUploadField 
+                  label="Cover Page Hero Photo" 
+                  placeholder="https://example.com/cover-train.jpg" 
+                  value={formData.pdfCoverPhoto || ''} 
+                  onChange={(val) => setFormData({ ...formData, pdfCoverPhoto: val })}
+                  description="This is the main cover image. Defaults to the Darjeeling toy train photo."
+                />
+                <ImageUploadField 
+                  label="Page Top Banner" 
+                  placeholder="https://example.com/header-banner.jpg" 
+                  value={formData.pdfHeaderBanner || ''} 
+                  onChange={(val) => setFormData({ ...formData, pdfHeaderBanner: val })}
+                  description="Horizontal landscape/illustration image displayed below page headers (e.g. Page 3, 4)."
+                />
+                <ImageUploadField 
+                  label="Page Background Watermark" 
+                  placeholder="https://example.com/watermark.png" 
+                  value={formData.pdfWatermark || ''} 
+                  onChange={(val) => setFormData({ ...formData, pdfWatermark: val })}
+                  description="Faint background watermark image behind body text."
+                />
+                <ImageUploadField 
+                  label="Page Bottom Silhouette" 
+                  placeholder="https://example.com/bottom-silhouette.png" 
+                  value={formData.pdfBottomSilhouette || ''} 
+                  onChange={(val) => setFormData({ ...formData, pdfBottomSilhouette: val })}
+                  description="Faint mountain/tree silhouette displayed at the bottom of pages."
+                />
+                <div className="space-y-2">
+                  <Label>Primary Theme Color (Hex)</Label>
+                  <div className="flex gap-2">
+                    <Input type="color" value={formData.pdfThemeColor || '#0f3d2f'} onChange={e => setFormData({...formData, pdfThemeColor: e.target.value})} className="w-12 p-1 h-9" />
+                    <Input value={formData.pdfThemeColor || '#0f3d2f'} onChange={e => setFormData({...formData, pdfThemeColor: e.target.value})} className="uppercase font-mono" />
+                  </div>
+                  <p className="text-xs text-muted-foreground">Main brand color (e.g., used for headers and footers). Defaults to Forest Green (#0f3d2f).</p>
+                </div>
+                <div className="space-y-2">
+                  <Label>Accent Theme Color (Hex)</Label>
+                  <div className="flex gap-2">
+                    <Input type="color" value={formData.pdfAccentColor || '#d4af37'} onChange={e => setFormData({...formData, pdfAccentColor: e.target.value})} className="w-12 p-1 h-9" />
+                    <Input value={formData.pdfAccentColor || '#d4af37'} onChange={e => setFormData({...formData, pdfAccentColor: e.target.value})} className="uppercase font-mono" />
+                  </div>
+                  <p className="text-xs text-muted-foreground">Highlight accent color (e.g., gold borders and icons). Defaults to Gold (#d4af37).</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="mt-6 border-indigo-200 bg-indigo-50/10">
+            <CardHeader>
+              <CardTitle className="flex items-center text-indigo-900 gap-2">
+                <FileText className="w-5 h-5 text-indigo-600" />
+                Canva Full-Page Background Templates
+              </CardTitle>
+              <CardDescription className="text-indigo-800/80">
+                Design the entire page layout in Canva (with headers, footers, and watermarks), export as images, upload them here, and overlay dynamic CRM text.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="flex items-center gap-3 p-3 border rounded-lg bg-white shadow-sm">
+                <input
+                  type="checkbox"
+                  id="pdfUseCanvaBackground"
+                  checked={formData.pdfUseCanvaBackground === 'true'}
+                  onChange={(e) => setFormData({ ...formData, pdfUseCanvaBackground: e.target.checked ? 'true' : 'false' })}
+                  className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+                />
+                <Label htmlFor="pdfUseCanvaBackground" className="font-semibold text-indigo-900 cursor-pointer">
+                  Enable Canva Background Templates
+                </Label>
+              </div>
+
+              {formData.pdfUseCanvaBackground === 'true' && (
+                <div className="space-y-6 pt-2">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <ImageUploadField
+                      label="Canva Cover Page Background"
+                      placeholder="https://example.com/canva-cover.png"
+                      value={formData.pdfCanvaCover || ''}
+                      onChange={(val) => setFormData({ ...formData, pdfCanvaCover: val })}
+                      description="Full A4 size background image for Page 1. Best exported from Canva as 210mm x 297mm PNG/JPG."
+                    />
+                    <ImageUploadField
+                      label="Canva Inner Page Background"
+                      placeholder="https://example.com/canva-inner.png"
+                      value={formData.pdfCanvaInner || ''}
+                      onChange={(val) => setFormData({ ...formData, pdfCanvaInner: val })}
+                      description="Full A4 background applied behind Page 2, 3, and all Day Wise Detailed pages. Programmatically hides default top/bottom lines."
+                    />
+                  </div>
+
+                  <div className="border-t pt-4">
+                    <h4 className="font-semibold text-indigo-950 text-sm mb-3">Positioning & Margins (Advanced)</h4>
+                    <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                      <div className="space-y-1.5">
+                        <Label className="text-xs">Cover Overlay Top</Label>
+                        <Input
+                          value={formData.pdfCoverOverlayTop || '130mm'}
+                          onChange={(e) => setFormData({ ...formData, pdfCoverOverlayTop: e.target.value })}
+                          placeholder="e.g. 130mm"
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label className="text-xs">Inner Top Margin</Label>
+                        <Input
+                          value={formData.pdfPagePaddingTop || '38mm'}
+                          onChange={(e) => setFormData({ ...formData, pdfPagePaddingTop: e.target.value })}
+                          placeholder="e.g. 38mm"
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label className="text-xs">Inner Bottom Margin</Label>
+                        <Input
+                          value={formData.pdfPagePaddingBottom || '20mm'}
+                          onChange={(e) => setFormData({ ...formData, pdfPagePaddingBottom: e.target.value })}
+                          placeholder="e.g. 20mm"
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label className="text-xs">Inner Left Margin</Label>
+                        <Input
+                          value={formData.pdfPagePaddingLeft || '15mm'}
+                          onChange={(e) => setFormData({ ...formData, pdfPagePaddingLeft: e.target.value })}
+                          placeholder="e.g. 15mm"
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label className="text-xs">Inner Right Margin</Label>
+                        <Input
+                          value={formData.pdfPagePaddingRight || '15mm'}
+                          onChange={(e) => setFormData({ ...formData, pdfPagePaddingRight: e.target.value })}
+                          placeholder="e.g. 15mm"
+                        />
+                      </div>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-2">
+                      Adjust these margin values (e.g. in millimeters <code>mm</code>) to align the dynamic text exactly within your Canva template spaces.
+                    </p>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
           <div className="flex justify-end pt-6 border-t mt-8">
             <Button 
               onClick={handleSave} 

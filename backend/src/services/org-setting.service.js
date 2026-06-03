@@ -1,4 +1,12 @@
 const prisma = require('../config/prisma');
+const cloudinary = require('../config/cloudinary');
+
+const sanitizePublicId = (filename) => {
+  if (!filename) return undefined;
+  const name = String(filename).replace(/\.[^.]+$/, '');
+  const sanitized = name.replace(/[^a-zA-Z0-9-_]/g, '-').replace(/-+/g, '-').replace(/^-+|-+$/g, '').substring(0, 100);
+  return sanitized || `upload-${Date.now()}`;
+};
 
 const getAllSettings = async () => {
   const settings = await prisma.orgSetting.findMany();
@@ -28,8 +36,26 @@ const saveSettings = async (settingsObj) => {
   return await getAllSettings();
 };
 
+const uploadAsset = async (file) => {
+  return new Promise((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream(
+      {
+        folder: 'travelcrm/settings',
+        resource_type: 'auto',
+        public_id: sanitizePublicId(file.originalname),
+      },
+      (err, result) => {
+        if (err) return reject(err);
+        resolve(result);
+      }
+    );
+    stream.end(file.buffer);
+  });
+};
+
 module.exports = {
   getAllSettings,
   getSettingByKey,
   saveSettings,
+  uploadAsset,
 };
