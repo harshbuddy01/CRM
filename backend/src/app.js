@@ -32,6 +32,7 @@ app.use(helmet({
     },
   },
   crossOriginEmbedderPolicy: false,
+  frameguard: false,
 }));
 
 // CORS — allow only whitelisted frontend origins

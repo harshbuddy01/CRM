@@ -122,7 +122,7 @@ const generatePdfFromHtml = async (htmlContent) => {
     const pdfOptions = {
       format: 'A4',
       printBackground: true,
-      margin: { top: '15mm', right: '15mm', bottom: '20mm', left: '15mm' }, // Slightly larger bottom margin for page numbers/spacing
+      margin: { top: '0', right: '0', bottom: '0', left: '0' }, // Zero margins — the HTML template handles all internal padding; allows footer to bleed to edges
       displayHeaderFooter: false,
     };
 

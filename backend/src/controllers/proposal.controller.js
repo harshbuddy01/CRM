@@ -37,7 +37,37 @@ const getOrGeneratePdf = async (proposal) => {
   }
 
   // Generate fresh PDF
-  const htmlContent = generateProposalHtml(proposal);
+  let htmlContent;
+  if (proposal.itineraryId) {
+    try {
+      const itineraryService = require('../services/itinerary.service');
+      const orgSettingService = require('../services/org-setting.service');
+      const { generateItineraryHtml } = require('./itinerary.controller');
+      
+      const itinerary = await itineraryService.getExportData(proposal.itineraryId);
+      const settings = await orgSettingService.getAllSettings();
+      
+      if (proposal.query) {
+        itinerary.proposals = [
+          {
+            query: {
+              name: proposal.query.name,
+              queryCode: proposal.query.queryCode
+            }
+          }
+        ];
+        itinerary.queryCode = proposal.query.queryCode;
+      }
+      
+      htmlContent = generateItineraryHtml(itinerary, settings);
+    } catch (itineraryErr) {
+      logger.error('[PDF Generation] Failed to generate itinerary PDF, falling back to proposal HTML:', itineraryErr);
+      htmlContent = generateProposalHtml(proposal);
+    }
+  } else {
+    htmlContent = generateProposalHtml(proposal);
+  }
+
   const pdfBuffer = await pdfService.generatePdfFromHtml(htmlContent);
   const buffer = Buffer.from(pdfBuffer);
   const filename = `proposal-${proposal.id}.pdf`;
