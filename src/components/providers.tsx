@@ -9,9 +9,11 @@ export default function Providers({ children }: { children: React.ReactNode }) {
       new QueryClient({
         defaultOptions: {
           queries: {
-            staleTime: 60 * 1000, // 1 minute
+            staleTime: 2 * 1000, // consider data stale after 2 seconds
             retry: 1,
-            refetchOnWindowFocus: false,
+            refetchOnWindowFocus: true, // auto-refresh when clicking back to the CRM tab
+            refetchInterval: 5000, // auto-refresh active queries every 5 seconds
+            refetchIntervalInBackground: false, // PAUSE polling automatically when the tab is hidden or backgrounded
           },
         },
       })
