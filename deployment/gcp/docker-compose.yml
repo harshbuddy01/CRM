@@ -67,7 +67,6 @@ services:
     environment:
       REDIS_URL: redis://redis:6379
       MEILISEARCH_HOST: http://meilisearch:7700
-      VAULT_ENDPOINT: http://minio:9000
     networks:
       - crm-network
 
