@@ -51,7 +51,7 @@ export default function SharePage() {
 
   return (
     <div className="min-h-screen bg-slate-100 py-12 px-4 selection:bg-slate-800 selection:text-white">
-      <BrochureView itinerary={itinerary} />
+      <BrochureView itinerary={itinerary} isShare={true} shareSlug={slug as string} />
     </div>
   );
 }

@@ -26,13 +26,19 @@ const logger = require('../utils/logger');
  */
 const authenticate = async (req, res, next) => {
   try {
-    // Extract token from "Bearer <token>" header
+    let token = null;
+
+    // Extract token from "Bearer <token>" header or from query parameter
     const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      throw new UnauthorizedError('No authentication token provided');
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      token = authHeader.split(' ')[1];
+    } else if (req.query.token) {
+      token = req.query.token;
     }
 
-    const token = authHeader.split(' ')[1];
+    if (!token) {
+      throw new UnauthorizedError('No authentication token provided');
+    }
 
     // Verify JWT signature and decode payload (includes permissions)
     const decoded = jwt.verify(token, config.jwt.secret);

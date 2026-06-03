@@ -39,6 +39,7 @@ const { authenticate } = require('../middlewares/authenticate');
 
 // Public share page data
 router.get('/share/:slug', ctrl.getByShareSlug);
+router.get('/share/:slug/html', ctrl.exportHtmlByShareSlug);
 
 // ── Protected Routes ─────────────────────────────────────────
 
@@ -75,5 +76,6 @@ router.post('/events/:eventId/image', handleSingleUpload('photo'), ctrl.uploadEv
 // Share & Export
 router.post('/:id/generate-share-link', ctrl.generateShareLink);
 router.get('/:id/export-pdf', ctrl.exportPdf);
+router.get('/:id/html', ctrl.exportHtml);
 
 module.exports = router;
