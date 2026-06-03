@@ -60,7 +60,34 @@ const updateClient = async (id, data) => {
   });
 };
 
+// Statuses that indicate the client has active/real business — deletion must be blocked
+const ACTIVE_STATUSES = ['confirmed', 'in_progress', 'completed'];
+
 const deleteClient = async (id) => {
+  // Safety check: block deletion if any confirmed/active queries exist for this client
+  const activeQueryCount = await prisma.query.count({
+    where: {
+      clientId: id,
+      status: { in: ACTIVE_STATUSES },
+      deletedAt: null, // Exclude soft-deleted queries
+    },
+  });
+
+  if (activeQueryCount > 0) {
+    const err = new Error(
+      `Cannot delete client — they have ${activeQueryCount} active or confirmed booking${activeQueryCount > 1 ? 's' : ''}. ` +
+      `Please close or cancel all bookings before deleting this client.`
+    );
+    err.statusCode = 409; // Conflict
+    throw err;
+  }
+
+  // Only unlink queries that are in inactive/dead statuses (lost, invalid, new, quoted, negotiation)
+  await prisma.query.updateMany({
+    where: { clientId: id },
+    data: { clientId: null },
+  });
+
   return await prisma.client.delete({ where: { id } });
 };
 

@@ -1,6 +1,7 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
+import { useState } from 'react';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { useParams, useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -116,6 +117,8 @@ export default function ClientDetailPage() {
               </div>
             </CardContent>
           </Card>
+
+          <DeleteClientSection clientId={id as string} clientName={client.name} />
         </div>
 
         {/* Booking History */}
@@ -169,5 +172,106 @@ export default function ClientDetailPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+// ─── Delete Client Section ────────────────────────────────────────────────────
+function DeleteClientSection({ clientId, clientName }: { clientId: string; clientName: string }) {
+  const router = useRouter();
+  const [confirming, setConfirming] = useState(false);
+  const [blockReason, setBlockReason] = useState<string | null>(null);
+
+  const mutation = useMutation({
+    mutationFn: () => api.delete(`/clients/${clientId}`),
+    onSuccess: async () => {
+      const { toast } = await import('sonner');
+      toast.success(`${clientName} has been permanently deleted.`);
+      router.push('/clients');
+    },
+    onError: async (err: any) => {
+      const serverMessage: string = err?.response?.data?.message || '';
+      const isBlocked = err?.response?.status === 409;
+
+      if (isBlocked) {
+        // Show the reason inline — it's a business rule block, not a system error
+        setBlockReason(serverMessage);
+        setConfirming(false);
+      } else {
+        const { toast } = await import('sonner');
+        toast.error(serverMessage || 'Failed to delete client. Please try again.');
+        setConfirming(false);
+      }
+    }
+  });
+
+  return (
+    <Card className={blockReason ? 'border-amber-200 bg-amber-50/40' : 'border-red-100 bg-red-50/30'}>
+      <CardHeader className="pb-3">
+        <CardTitle className={`text-base ${blockReason ? 'text-amber-700' : 'text-red-700'}`}>
+          Danger Zone
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        {blockReason ? (
+          // Blocked state — show clear reason why delete is not allowed
+          <>
+            <div className="flex gap-2.5 p-3 rounded-lg bg-amber-100 border border-amber-200">
+              <span className="text-amber-600 text-sm mt-0.5 shrink-0">⚠️</span>
+              <p className="text-xs text-amber-800 font-semibold leading-relaxed">{blockReason}</p>
+            </div>
+            <p className="text-[11px] text-amber-600/80 leading-relaxed">
+              To delete this client, first go to their bookings and change the status to <strong>Lost</strong> or <strong>Invalid</strong>.
+            </p>
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full border-amber-200 text-amber-700 hover:bg-amber-50 font-bold"
+              onClick={() => setBlockReason(null)}
+            >
+              Got it
+            </Button>
+          </>
+        ) : (
+          <>
+            <p className="text-xs text-red-600/80 leading-relaxed">
+              Permanently delete this client. <strong>Clients with confirmed or active bookings cannot be deleted</strong> — only clients with no active business can be removed.
+            </p>
+            {!confirming ? (
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 hover:text-red-700 font-bold"
+                onClick={() => setConfirming(true)}
+              >
+                Delete Client
+              </Button>
+            ) : (
+              <div className="space-y-2">
+                <p className="text-xs font-bold text-red-700 text-center">Are you absolutely sure?</p>
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    className="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold"
+                    onClick={() => mutation.mutate()}
+                    disabled={mutation.isPending}
+                  >
+                    {mutation.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : 'Yes, Delete'}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="flex-1 font-bold"
+                    onClick={() => setConfirming(false)}
+                    disabled={mutation.isPending}
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            )}
+          </>
+        )}
+      </CardContent>
+    </Card>
   );
 }
