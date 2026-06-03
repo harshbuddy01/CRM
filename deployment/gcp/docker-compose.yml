@@ -65,6 +65,7 @@ services:
     env_file:
       - .env
     environment:
+      NODE_ENV: production
       REDIS_URL: redis://redis:6379
       MEILISEARCH_HOST: http://meilisearch:7700
     networks:
