@@ -87,12 +87,15 @@ export function SupplierCommTab({ queryId }: { queryId: string }) {
         <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden max-h-[600px] flex flex-col shadow-sm">
           {loadingSuppliers ? <div className="p-8 text-center"><Loader2 className="w-6 h-6 animate-spin mx-auto text-slate-400" /></div> : (
             <div className="overflow-y-auto p-2 space-y-1 flex-1 bg-slate-50">
-              {suppliers?.filter((s: any) => s.email).map((sup: any) => (
-                <label key={sup.id} className={`flex items-start p-3 rounded-xl cursor-pointer transition-all border ${selectedSuppliers.includes(sup.id) ? 'bg-blue-50 border-blue-200' : 'bg-white border-transparent hover:border-slate-200'} shadow-sm`}>
-                  <input type="checkbox" className="w-4 h-4 mt-0.5 rounded text-blue-600 mr-3 shrink-0" checked={selectedSuppliers.includes(sup.id)} onChange={(e) => e.target.checked ? setSelectedSuppliers([...selectedSuppliers, sup.id]) : setSelectedSuppliers(selectedSuppliers.filter(s => s !== sup.id))} />
-                  <div className="-mt-1"><p className="font-semibold text-sm text-slate-800">{sup.companyName}</p>{sup.contactPerson && <p className="text-xs text-slate-500 mt-0.5">{sup.contactPerson}</p>}<p className="text-xs text-slate-500 max-w-[200px] truncate">{sup.email}</p></div>
-                </label>
-              ))}
+              {(() => {
+                const suppliersList = Array.isArray(suppliers) ? suppliers : (suppliers?.items || []);
+                return suppliersList.filter((s: any) => s.email).map((sup: any) => (
+                  <label key={sup.id} className={`flex items-start p-3 rounded-xl cursor-pointer transition-all border ${selectedSuppliers.includes(sup.id) ? 'bg-blue-50 border-blue-200' : 'bg-white border-transparent hover:border-slate-200'} shadow-sm`}>
+                    <input type="checkbox" className="w-4 h-4 mt-0.5 rounded text-blue-600 mr-3 shrink-0" checked={selectedSuppliers.includes(sup.id)} onChange={(e) => e.target.checked ? setSelectedSuppliers([...selectedSuppliers, sup.id]) : setSelectedSuppliers(selectedSuppliers.filter(s => s !== sup.id))} />
+                    <div className="-mt-1"><p className="font-semibold text-sm text-slate-800">{sup.companyName}</p>{sup.contactPerson && <p className="text-xs text-slate-500 mt-0.5">{sup.contactPerson}</p>}<p className="text-xs text-slate-500 max-w-[200px] truncate">{sup.email}</p></div>
+                  </label>
+                ));
+              })()}
             </div>
           )}
         </div>
