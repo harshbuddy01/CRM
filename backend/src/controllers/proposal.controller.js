@@ -662,45 +662,57 @@ const sendEmail = async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'No recipient email provided.' });
     }
 
-    // Use cached PDF instead of regenerating (30s → instant)
-    const pdfBuffer = await getOrGeneratePdf(proposal);
-
-    // Prepare Attachments for Nodemailer
-    const attachments = [
-      {
-        filename: `Proposal-v${proposal.version}-${proposal.query.queryCode}.pdf`,
-        content: pdfBuffer,
-        contentType: 'application/pdf'
-      }
-    ];
-
-    if (req.file) {
-      attachments.push({
-        filename: req.file.originalname,
-        content: req.file.buffer,
-        contentType: req.file.mimetype
-      });
-    }
+    // Build the PDF download link (avoids attaching large PDF binary — fixes 552 5.3.4 SMTP size error)
+    const protocol = req.headers['x-forwarded-proto'] || req.protocol;
+    const baseUrl = (config.apiUrl || `${protocol}://${req.get('host')}/api/v1`).replace(/\/$/, '');
+    const pdfDownloadUrl = `${baseUrl}/proposals/${proposal.id}/pdf`;
 
     const finalSubject = subject || 'Your Travel Proposal is Ready!';
     const rawContent = body || bodyRichText || `<p>Hi ${proposal.query.name}, your travel proposal is ready.</p>`;
 
+    // Append PDF download button to the email body
+    const pdfLinkHtml = `
+      <div style="margin-top:24px;text-align:center;">
+        <a href="${pdfDownloadUrl}" 
+           style="display:inline-block;background:#1a1a2e;color:#ffffff;padding:14px 32px;border-radius:8px;text-decoration:none;font-weight:bold;font-size:15px;letter-spacing:0.5px;">
+          📄 Download Your Proposal PDF
+        </a>
+        <p style="margin-top:10px;font-size:12px;color:#888;">Or copy this link: <a href="${pdfDownloadUrl}" style="color:#666;">${pdfDownloadUrl}</a></p>
+      </div>
+    `;
+
+    const combinedBody = rawContent + pdfLinkHtml;
+
     // Wrap in Artisanal V3 Frame
     const htmlContent = getArtisanalEmailFrame({
       subject: finalSubject,
-      bodyContent: rawContent,
+      bodyContent: combinedBody,
       inviteType: 'proposal'
     });
+
+    // Prepare attachments — only include extra file if user uploaded one (and it's small enough)
+    const attachments = [];
+    if (req.file) {
+      const fileSizeMB = req.file.buffer.length / (1024 * 1024);
+      if (fileSizeMB <= 15) {
+        attachments.push({
+          filename: req.file.originalname,
+          content: req.file.buffer,
+          contentType: req.file.mimetype
+        });
+      } else {
+        logger.warn(`Skipped attaching ${req.file.originalname} — too large (${fileSizeMB.toFixed(1)}MB)`);
+      }
+    }
 
     // Prepare Nodemailer Message
     const msg = {
       to: finalTo,
       subject: finalSubject,
       html: htmlContent,
-      attachments
+      ...(attachments.length > 0 && { attachments })
     };
 
-    
     if (cc) {
       msg.cc = cc.split(',').map(e => e.trim()).filter(Boolean).join(',');
     }
@@ -720,12 +732,12 @@ const sendEmail = async (req, res, next) => {
         type: 'email',
         direction: 'outbound',
         status: 'success',
-        payload: { provider: 'brevo_smtp', to: finalTo, subject: finalSubject, withCustomAttachment: !!req.file },
+        payload: { provider: 'brevo_smtp', to: finalTo, subject: finalSubject, pdfSentAsLink: true, withCustomAttachment: !!req.file },
         relatedId: proposal.queryId,
       }
     });
 
-    res.json({ success: true, message: 'Email sent successfully with proposal attached.' });
+    res.json({ success: true, message: 'Email sent successfully! PDF link included in email.' });
   } catch (error) {
     logger.error('Proposal Email Send Error:', error.message);
     next(error);
