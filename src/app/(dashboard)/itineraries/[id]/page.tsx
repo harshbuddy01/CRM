@@ -1670,7 +1670,8 @@ function PricingTab({ itinerary, onUpdate }: { itinerary: any; onUpdate: (data: 
                 markupPct: globalGst, 
                 costingBreakdown: rows,
                 sellingPrice: totalPackagePrice,
-                totalCost: subtotal // Saving subtotal as base layout totalCost
+                totalCost: subtotal, // Saving subtotal as base layout totalCost
+                perPersonCost: adults > 0 ? Math.round(totalPackagePrice / adults) : Math.round(totalPackagePrice)
               });
               toast.success('Pricing saved and synchronized with all active proposals!');
             }}
