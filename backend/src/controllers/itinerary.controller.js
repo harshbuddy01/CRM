@@ -382,7 +382,7 @@ const generateItineraryHtml = (itinerary, settings = {}) => {
       </div>
 
       <!-- Bottom Silhouette Background -->
-      ${pdfBottomSilhouette ? `<img src="${pdfBottomSilhouette}" style="position: absolute; bottom: 12mm; left: 0; width: 100%; height: 20mm; object-fit: contain; object-position: center bottom; opacity: 1.0; pointer-events: none;" />` : `
+      ${pdfBottomSilhouette ? `<img src="${pdfBottomSilhouette}" style="position: absolute; bottom: 12mm; left: 0; width: 100%; height: 32mm; object-fit: cover; object-position: center bottom; opacity: 1.0; pointer-events: none;" />` : `
       <svg viewBox="0 0 800 100" preserveAspectRatio="none" style="position: absolute; bottom: 12mm; left: 0; width: 100%; height: 20mm; opacity: 0.15; pointer-events: none;">
         <path d="M0 100 L50 70 L120 85 L200 60 L280 75 L380 45 L480 70 L580 50 L680 80 L800 65 L800 100 Z" fill="#94a3b8" />
         <path d="M0 100 L80 80 L160 90 L240 70 L340 85 L440 60 L540 80 L640 70 L720 90 L800 75 L800 100 Z" fill="#cbd5e1" />
@@ -699,7 +699,7 @@ const generateItineraryHtml = (itinerary, settings = {}) => {
             </div>
 
             <!-- Bottom Silhouette Background -->
-            ${pdfBottomSilhouette ? `<img src="${pdfBottomSilhouette}" style="position: absolute; bottom: 12mm; left: 0; width: 100%; height: 25mm; object-fit: contain; object-position: center bottom; opacity: 1.0; pointer-events: none;" />` : `
+            ${pdfBottomSilhouette ? `<img src="${pdfBottomSilhouette}" style="position: absolute; bottom: 12mm; left: 0; width: 100%; height: 32mm; object-fit: cover; object-position: center bottom; opacity: 1.0; pointer-events: none;" />` : `
             <svg viewBox="0 0 800 100" preserveAspectRatio="none" style="position: absolute; bottom: 12mm; left: 0; width: 100%; height: 25mm; opacity: 0.15; pointer-events: none;">
               <path d="M0 100 L50 70 L120 85 L200 60 L280 75 L380 45 L480 70 L580 50 L680 80 L800 65 L800 100 Z" fill="#94a3b8" />
               <path d="M0 100 L80 80 L160 90 L240 70 L340 85 L440 60 L540 80 L640 70 L720 90 L800 75 L800 100 Z" fill="#cbd5e1" />
@@ -739,7 +739,7 @@ const generateItineraryHtml = (itinerary, settings = {}) => {
           </div>
 
           <!-- Content -->
-          <div class="page-content" style="margin-top: 10mm;">
+          <div class="page-content" style="margin-top: 10mm; display: flex; flex-direction: column; padding-bottom: 38mm;">
             <!-- Greeting & Background Watermark -->
             <div style="position: relative; text-align: left; margin-bottom: 4mm;">
               <!-- Faint Train Background Watermark -->
@@ -860,7 +860,7 @@ const generateItineraryHtml = (itinerary, settings = {}) => {
             <div style="page-break-inside: avoid; margin-bottom: 3mm;">
               <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 5px;">
                 <div style="flex: 1; height: 1px; background: #efe4d2;"></div>
-                <span style="font-family: 'Montserrat', sans-serif; font-size: 7px; font-weight: 700; color: var(--pdf-accent); text-transform: uppercase; letter-spacing: 1px; white-space: nowrap;">${svgLeaf} Why You'll Love This Stay</span>
+                <div style="display: flex; align-items: center; gap: 4px; white-space: nowrap;">${svgLeaf}<span style="font-family: 'Montserrat', sans-serif; font-size: 7px; font-weight: 700; color: var(--pdf-accent); text-transform: uppercase; letter-spacing: 1px;">Why You'll Love This Stay</span></div>
                 <div style="flex: 1; height: 1px; background: #efe4d2;"></div>
               </div>
               <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;">
@@ -889,7 +889,7 @@ const generateItineraryHtml = (itinerary, settings = {}) => {
 
             <!-- PACKAGE VALUE section -->
             ${sellingPrice ? `
-            <div style="margin-top: auto; margin-bottom: 2mm; text-align: center;">
+            <div style="margin-top: auto; margin-bottom: 4mm; text-align: center;">
               <div style="display: inline-block; background: white; border: 1.5px solid var(--pdf-accent); border-radius: 8px; padding: 8px 30px; position: relative; box-shadow: 0 4px 15px rgba(0,0,0,0.02);">
                 <span style="position: absolute; left: 6px; top: 50%; transform: translateY(-50%) rotate(-45deg); opacity: 0.6;">${svgLeaf}</span>
                 <span style="position: absolute; right: 6px; top: 50%; transform: translateY(-50%) rotate(45deg); opacity: 0.6;">${svgLeaf}</span>
@@ -905,7 +905,7 @@ const generateItineraryHtml = (itinerary, settings = {}) => {
           </div>
 
           <!-- Bottom Silhouette Background -->
-          ${pdfBottomSilhouette ? `<img src="${pdfBottomSilhouette}" style="position: absolute; bottom: 12mm; left: 0; width: 100%; height: 20mm; object-fit: contain; object-position: center bottom; opacity: 1.0; pointer-events: none;" />` : `
+          ${pdfBottomSilhouette ? `<img src="${pdfBottomSilhouette}" style="position: absolute; bottom: 12mm; left: 0; width: 100%; height: 32mm; object-fit: cover; object-position: center bottom; opacity: 1.0; pointer-events: none;" />` : `
           <svg viewBox="0 0 800 100" preserveAspectRatio="none" style="position: absolute; bottom: 12mm; left: 0; width: 100%; height: 20mm; opacity: 0.15; pointer-events: none;">
             <path d="M0 100 L50 70 L120 85 L200 60 L280 75 L380 45 L480 70 L580 50 L680 80 L800 65 L800 100 Z" fill="#94a3b8" />
             <path d="M0 100 L80 80 L160 90 L240 70 L340 85 L440 60 L540 80 L640 70 L720 90 L800 75 L800 100 Z" fill="#cbd5e1" />
@@ -955,7 +955,7 @@ const generateItineraryHtml = (itinerary, settings = {}) => {
           </div>
 
           <!-- Content -->
-          <div class="page-content" style="margin-top: 4mm;">
+          <div class="page-content" style="margin-top: 4mm; display: flex; flex-direction: column; padding-bottom: 38mm;">
             <div style="background: var(--pdf-primary); padding: 4px 15px; color: white; text-align: left; font-family: 'Montserrat', sans-serif; font-size: 8px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; border-radius: 4px 4px 0 0;">
               ${svgBus.replace(/stroke="white"/g, 'stroke="white"')} Transportation Used: Private SUV (Innova / Xylo / Similar)
             </div>
@@ -1024,7 +1024,7 @@ const generateItineraryHtml = (itinerary, settings = {}) => {
           </div>
 
           <!-- Bottom Silhouette Background -->
-          ${pdfBottomSilhouette ? `<img src="${pdfBottomSilhouette}" style="position: absolute; bottom: 12mm; left: 0; width: 100%; height: 20mm; object-fit: contain; object-position: center bottom; opacity: 1.0; pointer-events: none;" />` : `
+          ${pdfBottomSilhouette ? `<img src="${pdfBottomSilhouette}" style="position: absolute; bottom: 12mm; left: 0; width: 100%; height: 32mm; object-fit: cover; object-position: center bottom; opacity: 1.0; pointer-events: none;" />` : `
           <svg viewBox="0 0 800 100" preserveAspectRatio="none" style="position: absolute; bottom: 12mm; left: 0; width: 100%; height: 20mm; opacity: 0.15; pointer-events: none;">
             <path d="M0 100 L50 70 L120 85 L200 60 L280 75 L380 45 L480 70 L580 50 L680 80 L800 65 L800 100 Z" fill="#94a3b8" />
             <path d="M0 100 L80 80 L160 90 L240 70 L340 85 L440 60 L540 80 L640 70 L720 90 L800 75 L800 100 Z" fill="#cbd5e1" />
@@ -1099,7 +1099,7 @@ const generateItineraryHtml = (itinerary, settings = {}) => {
           </div>
 
           <!-- Bottom Silhouette Background -->
-          ${pdfBottomSilhouette ? `<img src="${pdfBottomSilhouette}" style="position: absolute; bottom: 12mm; left: 0; width: 100%; height: 20mm; object-fit: contain; object-position: center bottom; opacity: 1.0; pointer-events: none;" />` : `
+          ${pdfBottomSilhouette ? `<img src="${pdfBottomSilhouette}" style="position: absolute; bottom: 12mm; left: 0; width: 100%; height: 32mm; object-fit: cover; object-position: center bottom; opacity: 1.0; pointer-events: none;" />` : `
           <svg viewBox="0 0 800 100" preserveAspectRatio="none" style="position: absolute; bottom: 12mm; left: 0; width: 100%; height: 20mm; opacity: 0.15; pointer-events: none;">
             <path d="M0 100 L50 70 L120 85 L200 60 L280 75 L380 45 L480 70 L580 50 L680 80 L800 65 L800 100 Z" fill="#94a3b8" />
             <path d="M0 100 L80 80 L160 90 L240 70 L340 85 L440 60 L540 80 L640 70 L720 90 L800 75 L800 100 Z" fill="#cbd5e1" />
@@ -1206,7 +1206,7 @@ const generateItineraryHtml = (itinerary, settings = {}) => {
           </div>
 
           <!-- Bottom Silhouette Background -->
-          ${pdfBottomSilhouette ? `<img src="${pdfBottomSilhouette}" style="position: absolute; bottom: 12mm; left: 0; width: 100%; height: 20mm; object-fit: contain; object-position: center bottom; opacity: 1.0; pointer-events: none;" />` : `
+          ${pdfBottomSilhouette ? `<img src="${pdfBottomSilhouette}" style="position: absolute; bottom: 12mm; left: 0; width: 100%; height: 32mm; object-fit: cover; object-position: center bottom; opacity: 1.0; pointer-events: none;" />` : `
           <svg viewBox="0 0 800 100" preserveAspectRatio="none" style="position: absolute; bottom: 12mm; left: 0; width: 100%; height: 20mm; opacity: 0.15; pointer-events: none;">
             <path d="M0 100 L50 70 L120 85 L200 60 L280 75 L380 45 L480 70 L580 50 L680 80 L800 65 L800 100 Z" fill="#94a3b8" />
             <path d="M0 100 L80 80 L160 90 L240 70 L340 85 L440 60 L540 80 L640 70 L720 90 L800 75 L800 100 Z" fill="#cbd5e1" />
@@ -1303,7 +1303,7 @@ const generateItineraryHtml = (itinerary, settings = {}) => {
           </div>
 
           <!-- Bottom Silhouette Background -->
-          ${pdfBottomSilhouette ? `<img src="${pdfBottomSilhouette}" style="position: absolute; bottom: 12mm; left: 0; width: 100%; height: 20mm; object-fit: contain; object-position: center bottom; opacity: 1.0; pointer-events: none;" />` : `
+          ${pdfBottomSilhouette ? `<img src="${pdfBottomSilhouette}" style="position: absolute; bottom: 12mm; left: 0; width: 100%; height: 32mm; object-fit: cover; object-position: center bottom; opacity: 1.0; pointer-events: none;" />` : `
           <svg viewBox="0 0 800 100" preserveAspectRatio="none" style="position: absolute; bottom: 12mm; left: 0; width: 100%; height: 20mm; opacity: 0.15; pointer-events: none;">
             <path d="M0 100 L50 70 L120 85 L200 60 L280 75 L380 45 L480 70 L580 50 L680 80 L800 65 L800 100 Z" fill="#94a3b8" />
             <path d="M0 100 L80 80 L160 90 L240 70 L340 85 L440 60 L540 80 L640 70 L720 90 L800 75 L800 100 Z" fill="#cbd5e1" />
