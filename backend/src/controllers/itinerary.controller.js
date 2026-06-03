@@ -151,6 +151,19 @@ const generateItineraryHtml = (itinerary, settings = {}) => {
   const svgBus = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6v6"/><path d="M15 6v6"/><path d="M2 12h19.6"/><path d="M18 18h3s.5-1.7.8-2.8c.1-.4.2-.8.2-1.2 0-.4-.1-.8-.2-1.2l-1.4-5C20.1 6.8 19.1 6 18 6H4a2 2 0 0 0-2 2v10h3"/><circle cx="7" cy="18" r="2"/><path d="M9 18h5"/><circle cx="16" cy="18" r="2"/></svg>`;
 
   const defaultCoverBase64 = loadCoverImageBase64();
+  const standardFooterHtml = `
+  <div class="page-footer">
+    <svg viewBox="0 0 800 80" preserveAspectRatio="none" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1;">
+      <path d="M 0 40 Q 400 10 800 40 L 800 80 L 0 80 Z" fill="var(--pdf-primary)" />
+      <path d="M 0 40 Q 400 10 800 40" stroke="var(--pdf-accent)" stroke-width="2.5" fill="none" />
+    </svg>
+    <div style="position: relative; z-index: 5; display: flex; justify-content: space-between; align-items: center; width: 100%; font-family: 'Montserrat', sans-serif; font-size: 8px; color: white; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; margin-top: 5mm;">
+      <span style="display: flex; align-items: center; gap: 4px;">\${svgGlobe} \${escapeHtml(companyWeb)}</span>
+      <span style="display: flex; align-items: center; gap: 4px;">\${svgPhone} \${escapeHtml(companyPhone)}</span>
+      <span style="display: flex; align-items: center; gap: 4px;">\${svgMail} \${escapeHtml(companyEmail)}</span>
+    </div>
+  </div>
+  `;
   const coverImageUrl = itinerary.coverPhotoUrl 
     ? getSafeImageUrl(itinerary.coverPhotoUrl) 
     : (defaultCoverBase64 || 'https://images.unsplash.com/photo-1544735716-392fe2489ffa?q=80&w=1200&auto=format&fit=crop');
@@ -390,13 +403,7 @@ const generateItineraryHtml = (itinerary, settings = {}) => {
       `}
 
       <!-- Standard Footer -->
-      <div class="page-footer">
-        <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; font-family: 'Montserrat', sans-serif; font-size: 8px; color: white; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase;">
-          <span style="display: flex; align-items: center; gap: 4px;">${svgGlobe} ${escapeHtml(companyWeb)}</span>
-          <span style="display: flex; align-items: center; gap: 4px;">${svgPhone} ${escapeHtml(companyPhone)}</span>
-          <span style="display: flex; align-items: center; gap: 4px;">${svgMail} ${escapeHtml(companyEmail)}</span>
-        </div>
-      </div>
+      \${standardFooterHtml}
     </div>
     `;
   });
@@ -487,9 +494,8 @@ const generateItineraryHtml = (itinerary, settings = {}) => {
             bottom: 0;
             left: 0;
             right: 0;
-            height: 14mm;
-            background: var(--pdf-primary);
-            border-top: 2px solid var(--pdf-accent);
+            height: 18mm;
+            background: transparent;
             padding: 0 15mm;
             display: flex;
             justify-content: space-between;
@@ -608,9 +614,9 @@ const generateItineraryHtml = (itinerary, settings = {}) => {
             </div>
 
             <!-- Hero Image with Overlay -->
-            <div style="height: 125mm; width: 100%; margin-top: 28mm; position: relative; background-image: url('${pdfCoverPhoto || coverImageUrl}'); background-size: cover; background-position: center; border-bottom: 2px solid var(--pdf-accent);">
+            <div style="height: 125mm; width: 100%; margin-top: 28mm; position: relative; background-image: url('${pdfCoverPhoto || coverImageUrl}'); background-size: cover; background-position: center;">
               <div style="position: absolute; inset: 0; background: linear-gradient(to bottom, rgba(15, 61, 47, 0.12), rgba(15, 61, 47, 0.45));"></div>
-              <div style="position: absolute; bottom: 15mm; left: 15mm; color: white; text-align: left; max-width: 75%;">
+              <div style="position: absolute; bottom: 18mm; left: 15mm; color: white; text-align: left; max-width: 75%;">
                 <h2 style="font-family: 'Playfair Display', serif; font-size: 34px; font-weight: 800; color: white; margin: 0; letter-spacing: 1.5px; text-transform: uppercase; line-height: 1.1; text-shadow: 0 2px 8px rgba(0,0,0,0.5);">
                   ${escapeHtml(titleFallback).replace('&', '<br/>&')}
                 </h2>
@@ -623,6 +629,10 @@ const generateItineraryHtml = (itinerary, settings = {}) => {
                   ${escapeHtml(subtitleFallback).replace('•', '<br/>•')}
                 </p>
               </div>
+              <svg viewBox="0 0 800 100" preserveAspectRatio="none" style="position: absolute; bottom: -1px; left: 0; width: 100%; height: 16mm; z-index: 5;">
+                <path d="M 0 100 L 0 40 Q 400 95 800 40 L 800 100 Z" fill="white" />
+                <path d="M 0 40 Q 400 95 800 40" stroke="var(--pdf-accent)" stroke-width="3" fill="none" />
+              </svg>
             </div>
 
             <!-- Overlapping Meta Card -->
@@ -669,29 +679,51 @@ const generateItineraryHtml = (itinerary, settings = {}) => {
             <div style="margin-top: 18mm; padding: 0 15mm; display: flex; justify-content: space-between; align-items: flex-start; gap: 30px; text-align: left;">
               <div style="width: 48%; border-right: 1px solid #efe4d2; padding-right: 20px;">
                 <span style="font-family: 'Montserrat', sans-serif; font-size: 8px; font-weight: 700; color: var(--pdf-accent); text-transform: uppercase; letter-spacing: 1px; display: block; margin-bottom: 8px;">Travel Consultant</span>
-                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
-                  ${itinerary.creator?.photoUrl ? `<img src="${getSafeImageUrl(itinerary.creator.photoUrl)}" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover; border: 1.5px solid var(--pdf-accent);" />` : `<div style="width: 32px; height: 32px; border-radius: 50%; background: #efe4d2; border: 1.5px solid var(--pdf-accent); display: flex; align-items: center; justify-content: center;"><span style="font-family: 'Playfair Display', serif; font-size: 14px; font-weight: 700; color: var(--pdf-primary);">${consultantInitial}</span></div>`}
+                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
+                  ${itinerary.creator?.photoUrl ? `
+                    <img src="${getSafeImageUrl(itinerary.creator.photoUrl)}" style="width: 12mm; height: 12mm; border-radius: 50%; object-fit: cover; border: 1.5px solid var(--pdf-accent);" />
+                  ` : `
+                    <div style="width: 12mm; height: 12mm; border-radius: 50%; background: var(--pdf-primary); border: 1.5px solid var(--pdf-accent); display: flex; align-items: center; justify-content: center; overflow: hidden;">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="var(--pdf-accent)" stroke-width="2" style="width: 6mm; height: 6mm;">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                        <circle cx="12" cy="7" r="4" />
+                      </svg>
+                    </div>
+                  `}
                   <div>
-                    <span style="font-family: 'Playfair Display', serif; font-size: 14px; font-weight: 700; color: var(--pdf-primary); display: block;">${escapeHtml(consultantName)}</span>
-                    <span style="font-family: 'EB Garamond', serif; font-size: 10px; color: var(--pdf-accent); font-style: italic;">Holiday Specialist</span>
+                    <span style="font-family: 'Playfair Display', serif; font-size: 16px; font-weight: 700; color: var(--pdf-primary); display: block; line-height: 1.2;">${escapeHtml(consultantName)}</span>
+                    <span style="font-family: 'Playfair Display', serif; font-size: 11px; color: var(--pdf-accent); font-style: italic; display: block; margin-top: 1px;">Holiday Specialist</span>
                   </div>
                 </div>
-                <div style="display: flex; flex-direction: column; gap: 3px; font-size: 11px; color: #444; font-family: 'EB Garamond', serif;">
-                  <span style="display: flex; align-items: center; gap: 4px;">${svgPhone.replace(/stroke="white"/g, `stroke="${pdfAccentColor}"`)} ${escapeHtml(companyPhone)}</span>
-                  <span style="display: flex; align-items: center; gap: 4px;">${svgMail.replace(/stroke="white"/g, `stroke="${pdfAccentColor}"`)} ${escapeHtml(companyEmail)}</span>
+                <div style="display: flex; flex-direction: column; gap: 6px; font-size: 11px; color: #444; font-family: 'Montserrat', sans-serif; font-weight: 500;">
+                  <span style="display: flex; align-items: center; gap: 8px;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="var(--pdf-accent)" stroke-width="2" style="width: 3.8mm; height: 3.8mm; flex-shrink: 0;"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" /></svg>
+                    <span style="font-family: 'Montserrat', sans-serif; font-size: 11px; color: #333;">${escapeHtml(companyPhone)}</span>
+                  </span>
+                  <span style="display: flex; align-items: center; gap: 8px;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="var(--pdf-accent)" stroke-width="2" style="width: 3.8mm; height: 3.8mm; flex-shrink: 0;"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" /><polyline points="22,6 12,13 2,6" /></svg>
+                    <span style="font-family: 'Montserrat', sans-serif; font-size: 11px; color: #333;">${escapeHtml(companyEmail)}</span>
+                  </span>
+                  <span style="display: flex; align-items: center; gap: 8px;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="var(--pdf-accent)" stroke-width="2" style="width: 3.8mm; height: 3.8mm; flex-shrink: 0;"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" /></svg>
+                    <span style="font-family: 'Montserrat', sans-serif; font-size: 11px; color: #333;">Your Journey, Our Expertise.</span>
+                  </span>
                 </div>
               </div>
 
-              <div style="width: 48%; display: flex; flex-direction: column; justify-content: space-between; height: 30mm;">
+              <div style="width: 48%; display: flex; flex-direction: column; justify-content: space-between; height: 32mm;">
                 <div>
-                  <span style="font-family: 'Montserrat', sans-serif; font-size: 8px; font-weight: 700; color: var(--pdf-accent); text-transform: uppercase; letter-spacing: 1px; display: block; margin-bottom: 6px;">About This Journey</span>
-                  <p style="font-family: 'EB Garamond', serif; font-size: 12px; color: #444; line-height: 1.4; margin: 0; text-align: justify;">
+                  <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 6px;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="var(--pdf-accent)" stroke-width="2" style="width: 4.5mm; height: 4.5mm; flex-shrink: 0; display: inline-block; vertical-align: middle;"><path d="M3 20L10 7.5L15 16.5L18 12L22 20H3Z" /></svg>
+                    <span style="font-family: 'Montserrat', sans-serif; font-size: 9px; font-weight: 700; color: var(--pdf-accent); text-transform: uppercase; letter-spacing: 1px;">About This Journey</span>
+                  </div>
+                  <p style="font-family: 'Montserrat', sans-serif; font-size: 10.5px; font-weight: 500; color: #333; line-height: 1.55; margin: 0; text-align: justify; letter-spacing: 0.2px;">
                     Experience the perfect blend of serene tea gardens, majestic mountains, spiritual heritage, and charming hill towns. A journey curated to give you unforgettable memories.
                   </p>
                 </div>
-                <div style="border-top: 1px dashed #efe4d2; padding-top: 6px; text-align: right; margin-top: auto;">
-                  <span style="font-family: 'Satisfy', cursive; font-size: 18px; color: var(--pdf-accent); display: block;">
-                    Let's plan your perfect escape!
+                <div style="border-top: 1px dashed #efe4d2; padding-top: 8px; text-align: right; margin-top: auto;">
+                  <span style="font-family: 'Satisfy', cursive; font-size: 19px; color: var(--pdf-primary); display: block; font-weight: 500;">
+                    Let's create memories that last a lifetime.
                   </span>
                   <svg width="80" height="6" viewBox="0 0 80 6" style="margin-top: 3px; display: inline-block;"><path d="M0 3 Q20 0 40 3 Q60 6 80 3" stroke="${pdfAccentColor}" stroke-width="1.5" fill="none"/></svg>
                 </div>
@@ -707,13 +739,7 @@ const generateItineraryHtml = (itinerary, settings = {}) => {
             `}
 
             <!-- Bottom Footer Bar -->
-            <div class="page-footer">
-              <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; font-family: 'Montserrat', sans-serif; font-size: 8px; color: white; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase;">
-                <span style="display: flex; align-items: center; gap: 4px;">${svgGlobe} ${escapeHtml(companyWeb)}</span>
-                <span style="display: flex; align-items: center; gap: 4px;">${svgPhone} ${escapeHtml(companyPhone)}</span>
-                <span style="display: flex; align-items: center; gap: 4px;">${svgMail} ${escapeHtml(companyEmail)}</span>
-              </div>
-            </div>
+            ${standardFooterHtml}
           `}
         </div>
 
@@ -913,13 +939,7 @@ const generateItineraryHtml = (itinerary, settings = {}) => {
           `}
 
           <!-- Standard Footer -->
-          <div class="page-footer">
-            <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; font-family: 'Montserrat', sans-serif; font-size: 8px; color: white; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase;">
-              <span style="display: flex; align-items: center; gap: 4px;">${svgGlobe} ${escapeHtml(companyWeb)}</span>
-              <span style="display: flex; align-items: center; gap: 4px;">${svgPhone} ${escapeHtml(companyPhone)}</span>
-              <span style="display: flex; align-items: center; gap: 4px;">${svgMail} ${escapeHtml(companyEmail)}</span>
-            </div>
-          </div>
+          ${standardFooterHtml}
         </div>
 
         <!-- PAGE 3: TRANSPORTATION -->
@@ -1032,13 +1052,7 @@ const generateItineraryHtml = (itinerary, settings = {}) => {
           `}
 
           <!-- Standard Footer -->
-          <div class="page-footer">
-            <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; font-family: 'Montserrat', sans-serif; font-size: 8px; color: white; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase;">
-              <span style="display: flex; align-items: center; gap: 4px;">${svgGlobe} ${escapeHtml(companyWeb)}</span>
-              <span style="display: flex; align-items: center; gap: 4px;">${svgPhone} ${escapeHtml(companyPhone)}</span>
-              <span style="display: flex; align-items: center; gap: 4px;">${svgMail} ${escapeHtml(companyEmail)}</span>
-            </div>
-          </div>
+          \${standardFooterHtml}
         </div>
 
         ${daysHtml}
@@ -1107,13 +1121,7 @@ const generateItineraryHtml = (itinerary, settings = {}) => {
           `}
 
           <!-- Standard Footer -->
-          <div class="page-footer">
-            <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; font-family: 'Montserrat', sans-serif; font-size: 8px; color: white; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase;">
-              <span style="display: flex; align-items: center; gap: 4px;">${svgGlobe} ${escapeHtml(companyWeb)}</span>
-              <span style="display: flex; align-items: center; gap: 4px;">${svgPhone} ${escapeHtml(companyPhone)}</span>
-              <span style="display: flex; align-items: center; gap: 4px;">${svgMail} ${escapeHtml(companyEmail)}</span>
-            </div>
-          </div>
+          \${standardFooterHtml}
         </div>
 
         <!-- PAGE 6: TERMS & POLICIES -->
@@ -1214,13 +1222,7 @@ const generateItineraryHtml = (itinerary, settings = {}) => {
           `}
 
           <!-- Standard Footer -->
-          <div class="page-footer">
-            <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; font-family: 'Montserrat', sans-serif; font-size: 8px; color: white; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase;">
-              <span style="display: flex; align-items: center; gap: 4px;">${svgGlobe} ${escapeHtml(companyWeb)}</span>
-              <span style="display: flex; align-items: center; gap: 4px;">${svgPhone} ${escapeHtml(companyPhone)}</span>
-              <span style="display: flex; align-items: center; gap: 4px;">${svgMail} ${escapeHtml(companyEmail)}</span>
-            </div>
-          </div>
+          \${standardFooterHtml}
         </div>
 
         <!-- PAGE 7: EXQUISITE DIAMOND GALLERY -->
@@ -1311,13 +1313,7 @@ const generateItineraryHtml = (itinerary, settings = {}) => {
           `}
 
           <!-- Standard Footer -->
-          <div class="page-footer">
-            <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; font-family: 'Montserrat', sans-serif; font-size: 8px; color: white; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase;">
-              <span style="display: flex; align-items: center; gap: 4px;">${svgGlobe} ${escapeHtml(companyWeb)}</span>
-              <span style="display: flex; align-items: center; gap: 4px;">${svgPhone} ${escapeHtml(companyPhone)}</span>
-              <span style="display: flex; align-items: center; gap: 4px;">${svgMail} ${escapeHtml(companyEmail)}</span>
-            </div>
-          </div>
+          \${standardFooterHtml}
         </div>
       </body>
     </html>
