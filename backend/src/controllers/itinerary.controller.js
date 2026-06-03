@@ -81,7 +81,10 @@ const generateItineraryHtml = (itinerary, settings = {}) => {
     computedTotalDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
   }
 
-  const guestName = itinerary.proposals?.[0]?.query?.name || 'Harsh';
+  const rawGuestName = itinerary.proposals?.[0]?.query?.name || '';
+  const guestName = (!rawGuestName || rawGuestName.toLowerCase() === 'harsh' || rawGuestName.toLowerCase() === 'harsh anand' || rawGuestName.toLowerCase() === 'draft')
+    ? 'Sir/Madam'
+    : rawGuestName;
 
   let titleFallback = itinerary?.title || '';
   if (!titleFallback || titleFallback.toLowerCase() === 'draft' || titleFallback.toLowerCase() === 'harsh' || titleFallback.toLowerCase() === guestName.toLowerCase()) {
@@ -158,9 +161,9 @@ const generateItineraryHtml = (itinerary, settings = {}) => {
       <path d="M 0 40 Q 400 10 800 40" stroke="var(--pdf-accent)" stroke-width="2.5" fill="none" />
     </svg>
     <div style="position: relative; z-index: 5; display: flex; justify-content: space-between; align-items: center; width: 100%; font-family: 'Montserrat', sans-serif; font-size: 8px; color: white; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; margin-top: 5mm;">
-      <span style="display: flex; align-items: center; gap: 4px;">\${svgGlobe} \${escapeHtml(companyWeb)}</span>
-      <span style="display: flex; align-items: center; gap: 4px;">\${svgPhone} \${escapeHtml(companyPhone)}</span>
-      <span style="display: flex; align-items: center; gap: 4px;">\${svgMail} \${escapeHtml(companyEmail)}</span>
+      <span style="display: flex; align-items: center; gap: 4px;">${svgGlobe} ${escapeHtml(companyWeb)}</span>
+      <span style="display: flex; align-items: center; gap: 4px;">${svgPhone} ${escapeHtml(companyPhone)}</span>
+      <span style="display: flex; align-items: center; gap: 4px;">${svgMail} ${escapeHtml(companyEmail)}</span>
     </div>
   </div>
   `;
@@ -403,7 +406,7 @@ const generateItineraryHtml = (itinerary, settings = {}) => {
       `}
 
       <!-- Standard Footer -->
-      \${standardFooterHtml}
+      ${standardFooterHtml}
     </div>
     `;
   });
@@ -1052,7 +1055,7 @@ const generateItineraryHtml = (itinerary, settings = {}) => {
           `}
 
           <!-- Standard Footer -->
-          \${standardFooterHtml}
+          ${standardFooterHtml}
         </div>
 
         ${daysHtml}
@@ -1121,7 +1124,7 @@ const generateItineraryHtml = (itinerary, settings = {}) => {
           `}
 
           <!-- Standard Footer -->
-          \${standardFooterHtml}
+          ${standardFooterHtml}
         </div>
 
         <!-- PAGE 6: TERMS & POLICIES -->
@@ -1222,7 +1225,7 @@ const generateItineraryHtml = (itinerary, settings = {}) => {
           `}
 
           <!-- Standard Footer -->
-          \${standardFooterHtml}
+          ${standardFooterHtml}
         </div>
 
         <!-- PAGE 7: EXQUISITE DIAMOND GALLERY -->
@@ -1259,7 +1262,7 @@ const generateItineraryHtml = (itinerary, settings = {}) => {
             <!-- Row 1: Large left (2/3) + Tall right (1/3) -->
             <div style="display: flex; gap: 6px; height: 78mm; margin-top: 4mm;">
               <!-- Large Feature Photo -->
-              <div style="flex: 2; border-radius: 6px; overflow: hidden; border: none; box-shadow: 0 4px 12px rgba(0,0,0,0.08); position: relative;">
+              <div style="flex: 2; border-radius: 6px; overflow: hidden; border: none; position: relative;">
                 <div style="width: 100%; height: 100%; background-image: url('${gridImages[0]}'); background-size: cover; background-position: center;"></div>
                 <div style="position: absolute; bottom: 0; left: 0; right: 0; background: linear-gradient(to top, rgba(15,61,47,0.6), transparent); padding: 8px 10px;">
                   <span style="font-family: 'Satisfy', cursive; font-size: 11px; color: white;">Discover ${escapeHtml(destinations.split(' &amp; ')[0] || destinations)}</span>
@@ -1267,28 +1270,28 @@ const generateItineraryHtml = (itinerary, settings = {}) => {
               </div>
               <!-- Right stacked 2 photos -->
               <div style="flex: 1; display: flex; flex-direction: column; gap: 6px;">
-                <div style="flex: 1; border-radius: 6px; overflow: hidden; border: none; box-shadow: 0 4px 12px rgba(0,0,0,0.06);">
+                <div style="flex: 1; border-radius: 6px; overflow: hidden; border: none;">
                   <div style="width: 100%; height: 100%; background-image: url('${gridImages[1]}'); background-size: cover; background-position: center;"></div>
                 </div>
-                <div style="flex: 1; border-radius: 6px; overflow: hidden; border: none; box-shadow: 0 4px 12px rgba(0,0,0,0.06);">
+                <div style="flex: 1; border-radius: 6px; overflow: hidden; border: none;">
                   <div style="width: 100%; height: 100%; background-image: url('${gridImages[2]}'); background-size: cover; background-position: center;"></div>
                 </div>
               </div>
             </div>
             <!-- Row 2: 3 equal photos -->
             <div style="display: flex; gap: 6px; height: 60mm; margin-top: 6px;">
-              <div style="flex: 1; border-radius: 6px; overflow: hidden; border: none; box-shadow: 0 4px 12px rgba(0,0,0,0.06); position: relative;">
+              <div style="flex: 1; border-radius: 6px; overflow: hidden; border: none; position: relative;">
                 <div style="width: 100%; height: 100%; background-image: url('${gridImages[3]}'); background-size: cover; background-position: center;"></div>
                 <div style="position: absolute; inset: 0; background: rgba(15,61,47,0.08);"></div>
               </div>
-              <div style="flex: 1; border-radius: 6px; overflow: hidden; border: 2.5px solid var(--pdf-primary); box-shadow: 0 6px 18px rgba(15,61,47,0.15); position: relative;">
+              <div style="flex: 1; border-radius: 6px; overflow: hidden; border: 2.5px solid var(--pdf-primary); position: relative;">
                 <div style="width: 100%; height: 100%; background-image: url('${gridImages[4]}'); background-size: cover; background-position: center;"></div>
                 <!-- Center badge -->
                 <div style="position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%); background: var(--pdf-primary); border: 1.5px solid var(--pdf-accent); border-radius: 20px; padding: 3px 10px; white-space: nowrap;">
                   <span style="font-family: 'Montserrat', sans-serif; font-size: 6.5px; font-weight: 700; color: var(--pdf-accent); text-transform: uppercase; letter-spacing: 0.5px;">Imagica Holidays</span>
                 </div>
               </div>
-              <div style="flex: 1; border-radius: 6px; overflow: hidden; border: none; box-shadow: 0 4px 12px rgba(0,0,0,0.06); position: relative;">
+              <div style="flex: 1; border-radius: 6px; overflow: hidden; border: none; position: relative;">
                 <div style="width: 100%; height: 100%; background-image: url('${gridImages[0]}'); background-size: cover; background-position: center;"></div>
                 <div style="position: absolute; inset: 0; background: rgba(15,61,47,0.08);"></div>
               </div>
@@ -1313,7 +1316,7 @@ const generateItineraryHtml = (itinerary, settings = {}) => {
           `}
 
           <!-- Standard Footer -->
-          \${standardFooterHtml}
+          ${standardFooterHtml}
         </div>
       </body>
     </html>
