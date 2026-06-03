@@ -1,0 +1,158 @@
+version: '3.8'
+
+services:
+  # --- Database (PostgreSQL) ---
+  postgres:
+    image: postgres:15-alpine
+    container_name: crm-postgres
+    restart: always
+    environment:
+      POSTGRES_DB: railway
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - crm-network
+
+  # --- Cache & BullMQ Queue (Redis) ---
+  redis:
+    image: redis:7-alpine
+    container_name: crm-redis
+    restart: always
+    volumes:
+      - redis_data:/data
+    networks:
+      - crm-network
+
+  # --- Instant Search (Meilisearch) ---
+  meilisearch:
+    image: getmeili/meilisearch:v1.9.0
+    container_name: crm-meilisearch
+    restart: always
+    environment:
+      MEILI_ENV: production
+      MEILI_MASTER_KEY: ${MEILISEARCH_MASTER_KEY}
+    volumes:
+      - meili_data:/meili_data
+    networks:
+      - crm-network
+
+  # --- S3 Object Storage (MinIO) ---
+  minio:
+    image: minio/minio
+    container_name: crm-minio
+    restart: always
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    volumes:
+      - minio_data:/data
+    networks:
+      - crm-network
+
+  # --- TravelCRM Backend (API + Worker) ---
+  backend:
+    build:
+      context: ../../backend
+      dockerfile: Dockerfile
+    container_name: crm-backend
+    restart: always
+    depends_on:
+      - postgres
+      - redis
+    environment:
+      PORT: 3001
+      NODE_ENV: production
+      DATABASE_URL: postgresql://postgres:${DB_PASSWORD}@postgres:5432/railway?schema=public
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-15m}
+      REFRESH_TOKEN_SECRET: ${REFRESH_TOKEN_SECRET}
+      REFRESH_TOKEN_EXPIRES_IN: ${REFRESH_TOKEN_EXPIRES_IN:-7d}
+      FRONTEND_URL: ${FRONTEND_URL}
+      API_URL: ${API_URL}
+      
+      # Nodemailer SMTP config
+      SMTP_HOST: ${SMTP_HOST}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER}
+      SMTP_PASS: ${SMTP_PASS}
+      EMAIL_FROM: ${EMAIL_FROM}
+
+      # Meilisearch
+      MEILISEARCH_HOST: http://meilisearch:7700
+      MEILISEARCH_MASTER_KEY: ${MEILISEARCH_MASTER_KEY}
+
+      # Safety Vault (MinIO/S3)
+      VAULT_ACCESS_KEY: ${MINIO_ROOT_USER}
+      VAULT_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
+      VAULT_ENDPOINT: http://minio:9000
+      VAULT_BUCKET: ${VAULT_BUCKET:-crm-backups}
+
+      # Integrations
+      RAZORPAY_KEY_ID: ${RAZORPAY_KEY_ID}
+      RAZORPAY_KEY_SECRET: ${RAZORPAY_KEY_SECRET}
+      RAZORPAY_WEBHOOK_SECRET: ${RAZORPAY_WEBHOOK_SECRET}
+      CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME}
+      CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY}
+      CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET}
+      INTERAKT_API_KEY: ${INTERAKT_API_KEY}
+      WEBHOOK_API_KEY: ${WEBHOOK_API_KEY}
+      COMPANY_NAME: ${COMPANY_NAME:-TravelCRM}
+    networks:
+      - crm-network
+
+  # --- Automation Platform (n8n) ---
+  n8n:
+    image: docker.n8n.io/n8nio/n8n
+    container_name: crm-n8n
+    restart: always
+    environment:
+      - DB_TYPE=postgresdb
+      - DB_POSTGRESDB_HOST=postgres
+      - DB_POSTGRESDB_PORT=5432
+      - DB_POSTGRESDB_DATABASE=railway
+      - DB_POSTGRESDB_USER=postgres
+      - DB_POSTGRESDB_PASSWORD=${DB_PASSWORD}
+      - N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY}
+    depends_on:
+      - postgres
+    volumes:
+      - n8n_data:/home/node/.n8n
+    networks:
+      - crm-network
+
+  # --- Reverse Proxy with SSL (Caddy) ---
+  caddy:
+    image: caddy:2-alpine
+    container_name: crm-caddy
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - backend
+      - minio
+      - meilisearch
+      - n8n
+    networks:
+      - crm-network
+
+volumes:
+  postgres_data:
+  redis_data:
+  meili_data:
+  minio_data:
+  n8n_data:
+  caddy_data:
+  caddy_config:
+
+networks:
+  crm-network:
+    driver: bridge

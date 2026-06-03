@@ -1,0 +1,36 @@
+# ============================================================
+# TravelCRM GCP VM Caddy Configuration
+# ============================================================
+# Caddy will automatically request and renew SSL certificates 
+# from Let's Encrypt for all domains listed here.
+# ============================================================
+
+{
+    # Replace with your email for SSL certificate notifications
+    email support@imagicaholidays.com
+}
+
+# --- CRM Backend API ---
+api.imagicaholidays.com {
+    reverse_proxy backend:3001
+}
+
+# --- MinIO Web Console (Admin Panel) ---
+minio.imagicaholidays.com {
+    reverse_proxy minio:9001
+}
+
+# --- MinIO S3 API (For upload/download calls) ---
+s3.imagicaholidays.com {
+    reverse_proxy minio:9000
+}
+
+# --- Meilisearch Server ---
+search.imagicaholidays.com {
+    reverse_proxy meilisearch:7700
+}
+
+# --- n8n Automation Engine ---
+n8n.imagicaholidays.com {
+    reverse_proxy n8n:5678
+}
