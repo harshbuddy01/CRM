@@ -62,45 +62,12 @@ services:
     depends_on:
       - postgres
       - redis
+    env_file:
+      - .env
     environment:
-      PORT: 3001
-      NODE_ENV: production
-      DATABASE_URL: ${DATABASE_URL}
       REDIS_URL: redis://redis:6379
-      JWT_SECRET: ${JWT_SECRET}
-      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-15m}
-      REFRESH_TOKEN_SECRET: ${REFRESH_TOKEN_SECRET}
-      REFRESH_TOKEN_EXPIRES_IN: ${REFRESH_TOKEN_EXPIRES_IN:-7d}
-      FRONTEND_URL: ${FRONTEND_URL}
-      API_URL: ${API_URL}
-      
-      # Nodemailer SMTP config
-      SMTP_HOST: ${SMTP_HOST}
-      SMTP_PORT: ${SMTP_PORT:-587}
-      SMTP_USER: ${SMTP_USER}
-      SMTP_PASS: ${SMTP_PASS}
-      EMAIL_FROM: ${EMAIL_FROM}
-
-      # Meilisearch
       MEILISEARCH_HOST: http://meilisearch:7700
-      MEILISEARCH_MASTER_KEY: ${MEILISEARCH_MASTER_KEY}
-
-      # Safety Vault (MinIO/S3)
-      VAULT_ACCESS_KEY: ${MINIO_ROOT_USER}
-      VAULT_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
       VAULT_ENDPOINT: http://minio:9000
-      VAULT_BUCKET: ${VAULT_BUCKET:-crm-backups}
-
-      # Integrations
-      RAZORPAY_KEY_ID: ${RAZORPAY_KEY_ID}
-      RAZORPAY_KEY_SECRET: ${RAZORPAY_KEY_SECRET}
-      RAZORPAY_WEBHOOK_SECRET: ${RAZORPAY_WEBHOOK_SECRET}
-      CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME}
-      CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY}
-      CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET}
-      INTERAKT_API_KEY: ${INTERAKT_API_KEY}
-      WEBHOOK_API_KEY: ${WEBHOOK_API_KEY}
-      COMPANY_NAME: ${COMPANY_NAME:-TravelCRM}
     networks:
       - crm-network
 
