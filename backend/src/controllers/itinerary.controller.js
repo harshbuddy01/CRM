@@ -525,9 +525,9 @@ const generateItineraryHtml = (itinerary, settings = {}) => {
           .font-handwritten { font-family: 'Caveat', cursive; }
           
           .policy-text, .policy-text p, .policy-text li, .policy-text span, .policy-text div {
-            font-size: 7.2px !important;
-            line-height: 1.22 !important;
-            margin: 0 0 3px 0 !important;
+            font-size: 10px !important;
+            line-height: 1.35 !important;
+            margin: 0 0 4px 0 !important;
             padding: 0 !important;
           }
           

@@ -3,14 +3,14 @@
 import React, { useState, useRef, useEffect } from 'react';
 import ReactCrop, { type Crop, PixelCrop } from 'react-image-crop';
 import 'react-image-crop/dist/ReactCrop.css';
-import { X, Crop as CropIcon, Loader2 } from 'lucide-react';
+import { X, Crop as CropIcon, Loader2, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface Props {
   isOpen: boolean;
   onClose: () => void;
   imageFile: File | null;
-  onCropComplete: (croppedBlob: Blob | null) => void;
+  onCropComplete: (croppedBlob: Blob | null) => void | Promise<void>;
 }
 
 export function ImageCropperModal({ isOpen, onClose, imageFile, onCropComplete }: Props) {
@@ -46,7 +46,14 @@ export function ImageCropperModal({ isOpen, onClose, imageFile, onCropComplete }
     if (!completedCrop || !imgRef.current) {
       // If no valid crop state is built, return the original file to avoid getting stuck
       if (imageFile) {
-        onCropComplete(imageFile);
+        setIsProcessing(true);
+        try {
+          await onCropComplete(imageFile);
+        } catch (e) {
+          console.error('Callback error:', e);
+        } finally {
+          setIsProcessing(false);
+        }
       }
       return;
     }
@@ -84,19 +91,29 @@ export function ImageCropperModal({ isOpen, onClose, imageFile, onCropComplete }
       );
 
       // Convert canvas back to a Blob, keeping the original mime type or defaulting to jpg
-      canvas.toBlob((blob) => {
-        setIsProcessing(false);
+      canvas.toBlob(async (blob) => {
         if (!blob) {
             console.error('Canvas conversion is empty');
+            setIsProcessing(false);
             return;
         }
-        onCropComplete(blob);
+        try {
+          await onCropComplete(blob);
+        } catch (e) {
+          console.error('Crop callback error:', e);
+        } finally {
+          setIsProcessing(false);
+        }
       }, imageFile?.type || 'image/jpeg', 0.95);
 
     } catch (e) {
       console.error('Crop Error:', e);
       setIsProcessing(false);
-      onCropComplete(imageFile); // Fallback to original
+      try {
+        await onCropComplete(imageFile); // Fallback to original
+      } catch (err) {
+        console.error(err);
+      }
     }
   };
 
@@ -121,6 +138,16 @@ export function ImageCropperModal({ isOpen, onClose, imageFile, onCropComplete }
 
         {/* Cropping Area - Hidden overflow and flex center */}
         <div className="flex-1 p-6 bg-slate-900 flex items-center justify-center overflow-hidden relative z-10 w-full" style={{ height: '65vh' }}>
+          {isProcessing && (
+            <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-sm z-30 flex flex-col items-center justify-center gap-4 animate-in fade-in duration-200">
+              <div className="relative flex items-center justify-center">
+                <div className="w-16 h-16 rounded-full border-4 border-blue-500/20 border-t-blue-500 animate-spin"></div>
+                <Upload className="w-6 h-6 text-blue-500 absolute animate-pulse" />
+              </div>
+              <p className="text-white font-bold text-sm tracking-wide">Uploading cropped image...</p>
+              <p className="text-slate-400 text-xs">Please wait, this will close automatically.</p>
+            </div>
+          )}
           {imgSrc ? (
             <ReactCrop
               crop={crop}
@@ -154,7 +181,7 @@ export function ImageCropperModal({ isOpen, onClose, imageFile, onCropComplete }
             </Button>
             <Button onClick={handleConfirm} className="rounded-xl bg-blue-600 hover:bg-blue-700 font-bold uppercase tracking-wider text-xs h-10 px-8" disabled={isProcessing}>
               {isProcessing ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <CropIcon className="w-4 h-4 mr-2" />}
-              {isProcessing ? 'Processing' : 'Confirm & Upload'}
+              {isProcessing ? 'Uploading...' : 'Confirm & Upload'}
             </Button>
           </div>
         </div>
