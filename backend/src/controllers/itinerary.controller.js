@@ -777,7 +777,7 @@ const generateItineraryHtml = (itinerary, settings = {}) => {
           `}
         </div>
 
-        <!-- PAGE 2: WELCOME & ACCOMMODATION -->
+        <!-- PAGE 2: WELCOME -->
         <div class="page">
           <!-- Curved Top Header -->
           <div class="page-header" style="height: 34mm;">
@@ -845,6 +845,73 @@ const generateItineraryHtml = (itinerary, settings = {}) => {
               </div>
             </div>
 
+            <!-- WHY YOU'LL LOVE THIS STAY -->
+            <div style="page-break-inside: avoid; margin-bottom: 3mm; margin-top: 5mm;">
+              <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 5px;">
+                <div style="flex: 1; height: 1px; background: #efe4d2;"></div>
+                <div style="display: flex; align-items: center; gap: 4px; white-space: nowrap;">${svgLeaf}<span style="font-family: 'Montserrat', sans-serif; font-size: 7px; font-weight: 700; color: var(--pdf-accent); text-transform: uppercase; letter-spacing: 1px;">Why You'll Love This Journey</span></div>
+                <div style="flex: 1; height: 1px; background: #efe4d2;"></div>
+              </div>
+              <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;">
+                <div style="background: white; border: 1px solid #efe4d2; border-radius: 6px; padding: 5px; text-align: center;">
+                  <span style="display: block; margin-bottom: 2px;">${svgMountain}</span>
+                  <span style="font-family: 'Montserrat', sans-serif; font-size: 6.5px; font-weight: 700; color: var(--pdf-primary); display: block; margin-bottom: 1px;">Scenic Views</span>
+                  <span style="font-family: 'EB Garamond', serif; font-size: 9px; color: #666; line-height: 1.2; display: block;">Hills &amp; misty valleys.</span>
+                </div>
+                <div style="background: white; border: 1px solid #efe4d2; border-radius: 6px; padding: 5px; text-align: center;">
+                  <span style="display: block; margin-bottom: 2px;">${svgMapPin}</span>
+                  <span style="font-family: 'Montserrat', sans-serif; font-size: 6.5px; font-weight: 700; color: var(--pdf-primary); display: block; margin-bottom: 1px;">Prime Location</span>
+                  <span style="font-family: 'EB Garamond', serif; font-size: 9px; color: #666; line-height: 1.2; display: block;">Near local viewpoints.</span>
+                </div>
+                <div style="background: white; border: 1px solid #efe4d2; border-radius: 6px; padding: 5px; text-align: center;">
+                  <span style="display: block; margin-bottom: 2px;">${svgFamily}</span>
+                  <span style="font-family: 'Montserrat', sans-serif; font-size: 6.5px; font-weight: 700; color: var(--pdf-primary); display: block; margin-bottom: 1px;">Family Friendly</span>
+                  <span style="font-family: 'EB Garamond', serif; font-size: 9px; color: #666; line-height: 1.2; display: block;">Comfortable amenities.</span>
+                </div>
+                <div style="background: white; border: 1px solid #efe4d2; border-radius: 6px; padding: 5px; text-align: center;">
+                  <span style="display: block; margin-bottom: 2px;">${svgFood}</span>
+                  <span style="font-family: 'Montserrat', sans-serif; font-size: 6.5px; font-weight: 700; color: var(--pdf-primary); display: block; margin-bottom: 1px;">Local Cuisine</span>
+                  <span style="font-family: 'EB Garamond', serif; font-size: 9px; color: #666; line-height: 1.2; display: block;">Warm hospitality.</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Bottom Silhouette Background -->
+          ${pdfBottomSilhouette ? `<img src="${pdfBottomSilhouette}" style="position: absolute; bottom: 12mm; left: 0; width: 100%; height: 25mm; object-fit: cover; object-position: center bottom; opacity: 1.0; pointer-events: none;" />` : `
+          <svg viewBox="0 0 800 100" preserveAspectRatio="none" style="position: absolute; bottom: 12mm; left: 0; width: 100%; height: 25mm; opacity: 0.15; pointer-events: none;">
+            <path d="M0 100 L50 70 L120 85 L200 60 L280 75 L380 45 L480 70 L580 50 L680 80 L800 65 L800 100 Z" fill="#94a3b8" />
+            <path d="M0 100 L80 80 L160 90 L240 70 L340 85 L440 60 L540 80 L640 70 L720 90 L800 75 L800 100 Z" fill="#cbd5e1" />
+          </svg>
+          `}
+
+          <!-- Standard Footer -->
+          ${standardFooterHtml}
+        </div>
+
+        <!-- PAGE 3: ACCOMMODATION SUMMARY -->
+        <div class="page">
+          <!-- Curved Top Header -->
+          <div class="page-header" style="height: 34mm;">
+            <svg viewBox="0 0 800 130" preserveAspectRatio="none" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: -1;">
+              <path d="M 0 0 L 800 0 L 800 115 Q 400 95 0 115 Z" fill="white" />
+              <path d="M 0 115 Q 400 95 800 115" stroke="${pdfAccentColor}" stroke-width="2" fill="none" />
+            </svg>
+            <div style="display: flex; align-items: center; gap: 10px; margin-top: 4mm;">
+              ${companyLogo ? `<img src="${getSafeImageUrl(companyLogo)}" alt="Logo" style="height: 12mm; max-width: 30mm; object-fit: contain;" />` : `<div style="font-family: 'Playfair Display', serif; font-size: 16px; font-weight: bold; color: var(--pdf-primary); border: 2px solid var(--pdf-accent); padding: 2px 6px;">IH</div>`}
+              <div style="display: flex; flex-direction: column;">
+                <span style="font-family: 'Playfair Display', serif; font-size: 15px; font-weight: 700; color: var(--pdf-primary); letter-spacing: 0.5px; text-transform: uppercase;">${escapeHtml(companyName)}</span>
+                <span style="font-family: 'Montserrat', sans-serif; font-size: 6px; font-weight: 600; color: #888; letter-spacing: 1px; text-transform: uppercase;">${escapeHtml(companySlogan)}</span>
+              </div>
+            </div>
+            <div style="text-align: right; margin-top: 5mm;">
+              <span style="font-family: 'Playfair Display', serif; font-size: 14px; font-weight: 700; color: var(--pdf-primary); letter-spacing: 1px; text-transform: uppercase;">${escapeHtml(destinations)}</span>
+              <span style="font-family: 'EB Garamond', serif; font-size: 10px; font-style: italic; color: var(--pdf-accent); display: block; margin-top: 2px;">${computedTotalDays} Days / ${Math.max(1, computedTotalDays - 1)} Nights</span>
+            </div>
+          </div>
+
+          <!-- Content -->
+          <div class="page-content" style="margin-top: 10mm; display: flex; flex-direction: column; padding-bottom: 38mm;">
             <!-- ACCOMMODATION section -->
             <div style="background: white; border: 1.5px solid #efe4d2; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.03); margin-bottom: 5mm;">
               <div style="background: var(--pdf-primary); padding: 4px 15px; color: white; text-align: left; font-family: 'Montserrat', sans-serif; font-size: 8px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; display: flex; align-items: center; gap: 6px;">
@@ -922,58 +989,11 @@ const generateItineraryHtml = (itinerary, settings = {}) => {
                 }).join('');
               })()}
             </div>
-
-            <!-- WHY YOU'LL LOVE THIS STAY -->
-            <div style="page-break-inside: avoid; margin-bottom: 3mm;">
-              <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 5px;">
-                <div style="flex: 1; height: 1px; background: #efe4d2;"></div>
-                <div style="display: flex; align-items: center; gap: 4px; white-space: nowrap;">${svgLeaf}<span style="font-family: 'Montserrat', sans-serif; font-size: 7px; font-weight: 700; color: var(--pdf-accent); text-transform: uppercase; letter-spacing: 1px;">Why You'll Love This Stay</span></div>
-                <div style="flex: 1; height: 1px; background: #efe4d2;"></div>
-              </div>
-              <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;">
-                <div style="background: white; border: 1px solid #efe4d2; border-radius: 6px; padding: 5px; text-align: center;">
-                  <span style="display: block; margin-bottom: 2px;">${svgMountain}</span>
-                  <span style="font-family: 'Montserrat', sans-serif; font-size: 6.5px; font-weight: 700; color: var(--pdf-primary); display: block; margin-bottom: 1px;">Scenic Views</span>
-                  <span style="font-family: 'EB Garamond', serif; font-size: 9px; color: #666; line-height: 1.2; display: block;">Hills &amp; misty valleys.</span>
-                </div>
-                <div style="background: white; border: 1px solid #efe4d2; border-radius: 6px; padding: 5px; text-align: center;">
-                  <span style="display: block; margin-bottom: 2px;">${svgMapPin}</span>
-                  <span style="font-family: 'Montserrat', sans-serif; font-size: 6.5px; font-weight: 700; color: var(--pdf-primary); display: block; margin-bottom: 1px;">Prime Location</span>
-                  <span style="font-family: 'EB Garamond', serif; font-size: 9px; color: #666; line-height: 1.2; display: block;">Near local viewpoints.</span>
-                </div>
-                <div style="background: white; border: 1px solid #efe4d2; border-radius: 6px; padding: 5px; text-align: center;">
-                  <span style="display: block; margin-bottom: 2px;">${svgFamily}</span>
-                  <span style="font-family: 'Montserrat', sans-serif; font-size: 6.5px; font-weight: 700; color: var(--pdf-primary); display: block; margin-bottom: 1px;">Family Friendly</span>
-                  <span style="font-family: 'EB Garamond', serif; font-size: 9px; color: #666; line-height: 1.2; display: block;">Comfortable amenities.</span>
-                </div>
-                <div style="background: white; border: 1px solid #efe4d2; border-radius: 6px; padding: 5px; text-align: center;">
-                  <span style="display: block; margin-bottom: 2px;">${svgFood}</span>
-                  <span style="font-family: 'Montserrat', sans-serif; font-size: 6.5px; font-weight: 700; color: var(--pdf-primary); display: block; margin-bottom: 1px;">Local Cuisine</span>
-                  <span style="font-family: 'EB Garamond', serif; font-size: 9px; color: #666; line-height: 1.2; display: block;">Warm hospitality.</span>
-                </div>
-              </div>
-            </div>
-
-            <!-- PACKAGE VALUE section -->
-            ${sellingPrice ? `
-            <div style="margin-top: auto; margin-bottom: 4mm; text-align: center;">
-              <div style="display: inline-block; background: white; border: 1.5px solid var(--pdf-accent); border-radius: 8px; padding: 8px 30px; position: relative; box-shadow: 0 4px 15px rgba(0,0,0,0.02);">
-                <span style="position: absolute; left: 6px; top: 50%; transform: translateY(-50%) rotate(-45deg); opacity: 0.6;">${svgLeaf}</span>
-                <span style="position: absolute; right: 6px; top: 50%; transform: translateY(-50%) rotate(45deg); opacity: 0.6;">${svgLeaf}</span>
-                
-                <span style="font-family: 'Montserrat', sans-serif; font-size: 7px; font-weight: 700; color: var(--pdf-primary); letter-spacing: 1px; text-transform: uppercase; display: block; margin-bottom: 2px;">Package Value</span>
-                <span style="font-family: 'Playfair Display', serif; font-size: 24px; font-weight: 700; color: var(--pdf-primary); line-height: 1;">
-                  ₹${sellingPrice.toLocaleString('en-IN')}/-
-                </span>
-                <span style="font-family: 'EB Garamond', serif; font-size: 9px; color: #666; font-style: italic; display: block; margin-top: 1px;">Inclusive of GST</span>
-              </div>
-            </div>
-            ` : ''}
           </div>
 
           <!-- Bottom Silhouette Background -->
-          ${pdfBottomSilhouette ? `<img src="${pdfBottomSilhouette}" style="position: absolute; bottom: 12mm; left: 0; width: 100%; height: 32mm; object-fit: cover; object-position: center bottom; opacity: 1.0; pointer-events: none;" />` : `
-          <svg viewBox="0 0 800 100" preserveAspectRatio="none" style="position: absolute; bottom: 12mm; left: 0; width: 100%; height: 20mm; opacity: 0.15; pointer-events: none;">
+          ${pdfBottomSilhouette ? `<img src="${pdfBottomSilhouette}" style="position: absolute; bottom: 12mm; left: 0; width: 100%; height: 25mm; object-fit: cover; object-position: center bottom; opacity: 1.0; pointer-events: none;" />` : `
+          <svg viewBox="0 0 800 100" preserveAspectRatio="none" style="position: absolute; bottom: 12mm; left: 0; width: 100%; height: 25mm; opacity: 0.15; pointer-events: none;">
             <path d="M0 100 L50 70 L120 85 L200 60 L280 75 L380 45 L480 70 L580 50 L680 80 L800 65 L800 100 Z" fill="#94a3b8" />
             <path d="M0 100 L80 80 L160 90 L240 70 L340 85 L440 60 L540 80 L640 70 L720 90 L800 75 L800 100 Z" fill="#cbd5e1" />
           </svg>
