@@ -436,6 +436,9 @@ const generateItineraryHtml = (itinerary, settings = {}) => {
             background: var(--pdf-bg-sage); 
             -webkit-print-color-adjust: exact; 
             print-color-adjust: exact;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
           }
           
           .page { 
@@ -539,7 +542,10 @@ const generateItineraryHtml = (itinerary, settings = {}) => {
           }
           
           @media print {
-            body { background: none; }
+            body { 
+              background: none; 
+              display: block;
+            }
             .page { 
               box-shadow: none; 
               margin: 0;
