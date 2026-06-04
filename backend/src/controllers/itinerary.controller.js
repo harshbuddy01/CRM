@@ -541,6 +541,20 @@ const generateItineraryHtml = (itinerary, settings = {}) => {
             padding: 0 !important;
           }
           
+          @media screen and (max-width: 800px) {
+            body {
+              padding: 0 !important;
+              margin: 0 !important;
+              background: #f1f5f9 !important;
+            }
+            .page {
+              zoom: calc(100vw / 800) !important;
+              box-shadow: none !important;
+              margin: 0 auto 10px auto !important;
+              border-radius: 0 !important;
+            }
+          }
+
           @media print {
             body { 
               background: none; 
@@ -961,16 +975,34 @@ const generateItineraryHtml = (itinerary, settings = {}) => {
                   const roomType = stay.metadata?.roomType || 'Deluxe Room';
                   const mealPlan = stay.metadata?.mealPlan || 'Breakfast + Dinner Included';
                   const destination = stay.destination || 'Sikkim';
-                  const nightsCount = stay.metadata?.nights || 3;
-                  
-                  const showDates = !!fromDate;
-                  const checkInDate = fromDate 
-                    ? new Date(new Date(fromDate).getTime() + (stay.dayNumber - 1) * 24 * 60 * 60 * 1000).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
-                    : '';
-                  
-                  const checkOutDate = fromDate
-                    ? new Date(new Date(fromDate).getTime() + (stay.dayNumber - 1 + nightsCount) * 24 * 60 * 60 * 1000).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
-                    : '';
+                  let checkInDate = '';
+                  let checkOutDate = '';
+                  let nightsCount = stay.metadata?.nights || 3;
+
+                  if (stay.metadata?.checkInDate && stay.metadata?.checkOutDate) {
+                    const inDate = new Date(stay.metadata.checkInDate);
+                    const outDate = new Date(stay.metadata.checkOutDate);
+                    
+                    if (!isNaN(inDate.getTime()) && !isNaN(outDate.getTime())) {
+                      checkInDate = inDate.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+                      checkOutDate = outDate.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+                      
+                      const diffTime = Math.abs(outDate.getTime() - inDate.getTime());
+                      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                      nightsCount = diffDays || 1;
+                    }
+                  }
+
+                  if (!checkInDate || !checkOutDate) {
+                    checkInDate = fromDate 
+                      ? new Date(new Date(fromDate).getTime() + (stay.dayNumber - 1) * 24 * 60 * 60 * 1000).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
+                      : '';
+                    checkOutDate = fromDate
+                      ? new Date(new Date(fromDate).getTime() + (stay.dayNumber - 1 + nightsCount) * 24 * 60 * 60 * 1000).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
+                      : '';
+                  }
+
+                  const showDates = !!checkInDate && !!checkOutDate;
 
                   return `
                   <div style="display: flex; min-height: 42mm; ${index > 0 ? 'border-top: 1.5px solid #efe4d2;' : ''}">

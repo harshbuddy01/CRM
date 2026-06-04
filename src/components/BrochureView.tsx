@@ -43,7 +43,7 @@ export function BrochureView({
     : `${baseURL}/itineraries/${itinerary.id}/html?token=${token || ''}`;
 
   return (
-    <div className="w-full max-w-[1000px] mx-auto shadow-2xl relative overflow-hidden rounded-3xl border border-slate-100 bg-white" style={{ height: '88vh' }}>
+    <div className="w-full max-w-[1000px] mx-auto shadow-2xl relative overflow-hidden md:rounded-3xl rounded-none border-0 md:border border-slate-100 bg-white h-screen md:h-[88vh]">
       <iframe 
         src={iframeSrc} 
         className="w-full h-full border-0" 
