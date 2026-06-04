@@ -125,6 +125,15 @@ module.exports = router;
 
 // ─── HTML Generator ───────────────────────────────────────────
 const esc = (s) => String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const escapeHtml = esc;
+
+const getSafeImageUrl = (url) => {
+  if (!url) return '';
+  if (url.startsWith('http://')) {
+    return url.replace('http://', 'https://');
+  }
+  return url;
+};
 
 function generateVoucherHtml(voucher, settings = {}) {
   const isCustomer = voucher.voucherType === 'customer';
