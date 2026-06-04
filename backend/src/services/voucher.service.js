@@ -95,10 +95,18 @@ const getById = async (id) => {
   });
 };
 
+/**
+ * Delete a voucher by ID
+ */
+const deleteVoucher = async (id) => {
+  return prisma.voucher.delete({ where: { id } });
+};
+
 module.exports = {
   listByQuery,
   createVoucher,
   updatePdfUrl,
   markSent,
   getById,
+  deleteVoucher,
 };

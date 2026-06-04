@@ -103,12 +103,16 @@ router.post('/vouchers/:id/share-links', async (req, res, next) => {
     }
 
     const recipientName = voucher.voucherType === 'supplier' ? voucher.supplierName : (voucher.leadPaxName || voucher.query?.name || 'Customer');
-    const msgText = `Hi ${recipientName}, here is the ${voucher.voucherType === 'customer' ? 'booking confirmation voucher' : 'supplier reservation voucher'} (${voucher.voucherNumber}) for ${voucher.hotelName || 'your booking'}: ${voucher.pdfUrl || ''}`;
+    // Always use the live public backend URL — never the stored pdfUrl which may be stale
+    const publicPdfUrl = `${process.env.API_URL || 'https://api.imagicaholidays.com/api/v1'}/public/vouchers/${voucher.id}/download-pdf`;
+    const msgText = `Hi ${recipientName}, here is your ${voucher.voucherType === 'customer' ? 'booking confirmation voucher' : 'supplier reservation voucher'} (${voucher.voucherNumber}) for ${voucher.hotelName || 'your booking'}:\n${publicPdfUrl}`;
     
-    const waLink = `https://wa.me/${normalizedPhone}?text=${encodeURIComponent(msgText)}`;
+    const waLink = normalizedPhone
+      ? `https://wa.me/${normalizedPhone}?text=${encodeURIComponent(msgText)}`
+      : `https://wa.me/?text=${encodeURIComponent(msgText)}`;
     const smsLink = `sms:${normalizedPhone}?body=${encodeURIComponent(msgText)}`;
 
-    res.json({ success: true, waLink, smsLink, recipientPhone: phone });
+    res.json({ success: true, waLink, smsLink, recipientPhone: phone, pdfUrl: publicPdfUrl });
   } catch (err) { next(err); }
 });
 
@@ -117,25 +121,54 @@ router.post('/vouchers/:id/send', async (req, res, next) => {
   try {
     const voucher = await voucherService.getById(req.params.id);
     if (!voucher) return res.status(404).json({ success: false, message: 'Voucher not found' });
-    if (!voucher.pdfUrl) return res.status(400).json({ success: false, message: 'Generate PDF first' });
 
-    // Log the email
     const prisma = require('../config/prisma');
-    const toEmail = req.body.email || (voucher.voucherType === 'supplier' ? (await prisma.supplier.findFirst({ where: { companyName: { equals: voucher.supplierName, mode: 'insensitive' } } }))?.email : voucher.query.email);
+
+    // Resolve recipient email
+    let toEmail = req.body.email || null;
+    if (!toEmail) {
+      if (voucher.voucherType === 'supplier') {
+        const supplier = await prisma.supplier.findFirst({
+          where: { companyName: { equals: voucher.supplierName, mode: 'insensitive' } }
+        });
+        toEmail = supplier?.email || null;
+      } else {
+        toEmail = voucher.query?.email || null;
+      }
+    }
+
+    if (!toEmail) {
+      return res.status(400).json({
+        success: false,
+        message: voucher.voucherType === 'supplier'
+          ? 'No email found for this supplier. Please add an email to the supplier profile first.'
+          : 'No email found for this customer/query.'
+      });
+    }
+
     const commType = voucher.voucherType === 'supplier' ? 'supplier' : 'customer';
+    const publicPdfUrl = `${process.env.API_URL || 'https://api.imagicaholidays.com/api/v1'}/public/vouchers/${voucher.id}/download-pdf`;
 
     await prisma.emailLog.create({
       data: {
         queryId: voucher.queryId,
         subject: `Voucher ${voucher.voucherNumber} - ${voucher.voucherType === 'customer' ? 'Booking Confirmation' : 'Supplier Reservation'}`,
-        body: `Voucher ${voucher.voucherNumber} sent to ${toEmail || 'unknown recipient'}`,
+        body: `Voucher ${voucher.voucherNumber} sent to ${toEmail}. PDF: ${publicPdfUrl}`,
         sentBy: req.user.id,
         communicationType: commType,
       },
     });
 
     await voucherService.markSent(req.params.id);
-    res.json({ success: true, message: 'Voucher sent successfully' });
+    res.json({ success: true, message: `Voucher sent to ${toEmail}` });
+  } catch (err) { next(err); }
+});
+
+// Delete a voucher
+router.delete('/vouchers/:id', async (req, res, next) => {
+  try {
+    await voucherService.deleteVoucher(req.params.id);
+    res.json({ success: true, message: 'Voucher deleted' });
   } catch (err) { next(err); }
 });
 
@@ -157,14 +190,14 @@ const getSafeImageUrl = (url) => {
 function generateVoucherHtml(voucher, settings = {}) {
   const isCustomer = voucher.voucherType === 'customer';
   
-  // Dynamic brand identity fields
+  // Dynamic brand identity fields — only use what is actually configured
   const companyLogo = settings.companyLogoUrl || '';
-  const companyName = settings.companyName || 'Sikkim Holidays';
-  const companySlogan = settings.companySlogan || 'A Unit of Ethno Trails Holidays PVT LTD';
-  const companyAddress = settings.companyAddress || '32 Chowringhee Road, Building No./Flat No.: 706, Om Tower, Park Street, Kolkata - 700071';
-  const companyPhone = settings.companyPhone || '+91-8981510077';
-  const companyEmail = settings.companyEmail || 'sikkimholidays.booking@gmail.com';
-  const companyWeb = settings.companyWebsite || 'sikkimholidays.com';
+  const companyName = settings.companyName || '';
+  const companySlogan = settings.companySlogan || '';
+  const companyAddress = settings.companyAddress || '';
+  const companyPhone = settings.companyPhone || '';
+  const companyEmail = settings.companyEmail || '';
+  const companyWeb = settings.companyWebsite || '';
 
   // Calculate dynamic nights count
   const inDate = voucher.checkIn ? new Date(voucher.checkIn) : null;
@@ -240,11 +273,9 @@ function generateVoucherHtml(voucher, settings = {}) {
           margin-bottom: 25px;
         }
         .brand-logo {
-          width: 50px;
-          height: 50px;
-          border-radius: 50%;
-          object-fit: cover;
-          border: 2px solid #d4af37;
+          width: 60px;
+          height: 60px;
+          object-fit: contain;
           flex-shrink: 0;
         }
         .brand-info {
@@ -443,13 +474,16 @@ function generateVoucherHtml(voucher, settings = {}) {
           ${companyLogo ? `<img src="${getSafeImageUrl(companyLogo)}" alt="Logo" class="brand-logo" />` : `<div style="width: 50px; height: 50px; border-radius: 50%; background: #1e3a8a; border: 2px solid #d4af37; display: flex; align-items: center; justify-content: center; color: white; font-family: 'Playfair Display', serif; font-size: 16px; font-weight: bold; flex-shrink: 0;">SH</div>`}
           <div class="brand-info">
             <h1 class="brand-title">${escapeHtml(companyName)}</h1>
-            <p class="brand-address">${escapeHtml(companySlogan)}</p>
-            <p class="brand-address">${escapeHtml(companyAddress)}</p>
+            ${companySlogan ? `<p class="brand-address">${escapeHtml(companySlogan)}</p>` : ''}
+            ${companyAddress ? `<p class="brand-address">${escapeHtml(companyAddress)}</p>` : ''}
+            ${(companyPhone || companyEmail || companyWeb) ? `
             <div class="brand-contact">
-              <span>Phone: ${escapeHtml(companyPhone)}</span> &bull; 
-              <span>Email: ${escapeHtml(companyEmail)}</span> &bull; 
-              <span>Website: ${escapeHtml(companyWeb)}</span>
-            </div>
+              ${companyPhone ? `<span>Phone: ${escapeHtml(companyPhone)}</span>` : ''}
+              ${companyPhone && (companyEmail || companyWeb) ? ' &bull; ' : ''}
+              ${companyEmail ? `<span>Email: ${escapeHtml(companyEmail)}</span>` : ''}
+              ${companyEmail && companyWeb ? ' &bull; ' : ''}
+              ${companyWeb ? `<span>Website: ${escapeHtml(companyWeb)}</span>` : ''}
+            </div>` : ''}
           </div>
         </div>
 

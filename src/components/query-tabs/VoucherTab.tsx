@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Loader2, Plus, FileText, Download, Send, Mail } from 'lucide-react';
+import { Loader2, Plus, FileText, Download, Send, Mail, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { useState } from 'react';
 import { toast } from 'sonner';
@@ -99,6 +99,17 @@ export function VoucherTab({ queryId }: { queryId: string }) {
     onError: (err: any) => toast.error(err.response?.data?.message || 'Failed to get share links'),
   });
 
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      await api.delete(`/vouchers/${id}`);
+    },
+    onSuccess: () => {
+      toast.success('Voucher deleted');
+      queryClient.invalidateQueries({ queryKey: ['vouchers', queryId] });
+    },
+    onError: (err: any) => toast.error(err.response?.data?.message || 'Failed to delete'),
+  });
+
   if (isLoading) return <div className="flex justify-center p-8"><Loader2 className="w-6 h-6 animate-spin" /></div>;
 
   return (
@@ -147,6 +158,19 @@ export function VoucherTab({ queryId }: { queryId: string }) {
                       </Button>
                       <Button size="sm" variant="outline" className="gap-1 text-orange-600 hover:text-orange-700" onClick={() => getShareLinksMutation.mutate({ id: v.id, type: 'sms' })} disabled={getShareLinksMutation.isPending}>
                         SMS
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="gap-1 text-red-600 hover:text-red-700 hover:bg-red-50"
+                        disabled={deleteMutation.isPending}
+                        onClick={() => {
+                          if (window.confirm(`Delete voucher ${v.voucherNumber}? This cannot be undone.`)) {
+                            deleteMutation.mutate(v.id);
+                          }
+                        }}
+                      >
+                        <Trash2 className="w-3 h-3" /> Delete
                       </Button>
                     </div>
                   )}
