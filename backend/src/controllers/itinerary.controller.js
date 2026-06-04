@@ -531,6 +531,13 @@ const generateItineraryHtml = (itinerary, settings = {}) => {
             padding: 0 !important;
           }
           
+          .terms-text, .terms-text p, .terms-text li, .terms-text span, .terms-text div {
+            font-size: 7.4px !important;
+            line-height: 1.25 !important;
+            margin: 0 0 3px 0 !important;
+            padding: 0 !important;
+          }
+          
           @media print {
             body { background: none; }
             .page { 
@@ -1237,15 +1244,15 @@ const generateItineraryHtml = (itinerary, settings = {}) => {
 
           <!-- Content -->
           <div class="page-content" style="margin-top: 6mm;">
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; text-align: left; height: 160mm;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; text-align: left; height: 145mm; max-height: 145mm; overflow: hidden;">
               
               <!-- Left Side: Terms and Conditions -->
-              <div style="display: flex; flex-direction: column; background: white; border: 1.5px solid #efe4d2; border-radius: 8px; padding: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.02);">
+              <div style="display: flex; flex-direction: column; background: white; border: 1.5px solid #efe4d2; border-radius: 8px; padding: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.02); height: 145mm; max-height: 145mm; box-sizing: border-box; overflow: hidden;">
                 <div style="display: flex; align-items: center; gap: 6px; border-bottom: 1.5px solid var(--pdf-primary); padding-bottom: 6px; margin-bottom: 10px;">
                   ${svgDocument}
                   <h4 style="font-family: 'Playfair Display', serif; font-size: 14px; font-weight: 700; color: var(--pdf-primary); text-transform: uppercase; margin: 0; letter-spacing: 0.5px;">Terms & Conditions</h4>
                 </div>
-                <div class="policy-text" style="font-family: 'EB Garamond', serif; color: #444; overflow: auto; padding-right: 5px; flex: 1;">
+                <div class="policy-text terms-text" style="font-family: 'EB Garamond', serif; color: #444; max-height: 110mm; overflow: hidden; padding-right: 5px; flex: 1;">
                   ${itinerary.packageTerms || itinerary.termsHtml || `
                     <p>&bull; All rates are subject to availability at the time of actual booking confirmation.</p>
                     <p>&bull; Standard check-in time at hotels is 14:00 hrs and check-out is 11:00 hrs.</p>
@@ -1257,14 +1264,14 @@ const generateItineraryHtml = (itinerary, settings = {}) => {
               </div>
 
               <!-- Right Side: Booking & Cancellation Policies -->
-              <div style="display: flex; flex-direction: column; gap: 15px;">
+              <div style="display: flex; flex-direction: column; gap: 15px; height: 145mm; max-height: 145mm; box-sizing: border-box;">
                 <!-- Payment Policy -->
-                <div style="display: flex; flex-direction: column; background: white; border: 1.5px solid #efe4d2; border-radius: 8px; padding: 12px 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.02); height: 72mm;">
+                <div style="display: flex; flex-direction: column; background: white; border: 1.5px solid #efe4d2; border-radius: 8px; padding: 12px 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.02); height: 65mm; max-height: 65mm; box-sizing: border-box; overflow: hidden;">
                   <div style="display: flex; align-items: center; gap: 6px; border-bottom: 1.5px solid var(--pdf-primary); padding-bottom: 4px; margin-bottom: 8px;">
                     ${svgCreditCard}
                     <h4 style="font-family: 'Playfair Display', serif; font-size: 12px; font-weight: 700; color: var(--pdf-primary); text-transform: uppercase; margin: 0; letter-spacing: 0.5px;">Payment Policy</h4>
                   </div>
-                  <div class="policy-text" style="font-family: 'EB Garamond', serif; color: #444; overflow: auto; padding-right: 5px; flex: 1;">
+                  <div class="policy-text" style="font-family: 'EB Garamond', serif; color: #444; max-height: 45mm; overflow: hidden; padding-right: 5px; flex: 1;">
                     ${itinerary.paymentPolicyHtml || `
                       <p>&bull; 25% of the total package cost is required to initiate bookings.</p>
                       <p>&bull; 50% of the total package cost is due 30 days prior to departure.</p>
@@ -1275,12 +1282,12 @@ const generateItineraryHtml = (itinerary, settings = {}) => {
                 </div>
 
                 <!-- Cancellation Policy -->
-                <div style="display: flex; flex-direction: column; background: white; border: 1.5px solid #efe4d2; border-radius: 8px; padding: 12px 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.02); height: 73mm;">
+                <div style="display: flex; flex-direction: column; background: white; border: 1.5px solid #efe4d2; border-radius: 8px; padding: 12px 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.02); height: 65mm; max-height: 65mm; box-sizing: border-box; overflow: hidden;">
                   <div style="display: flex; align-items: center; gap: 6px; border-bottom: 1.5px solid var(--pdf-primary); padding-bottom: 4px; margin-bottom: 8px;">
                     ${svgShield}
                     <h4 style="font-family: 'Playfair Display', serif; font-size: 12px; font-weight: 700; color: var(--pdf-primary); text-transform: uppercase; margin: 0; letter-spacing: 0.5px;">Cancellation Policy</h4>
                   </div>
-                  <div class="policy-text" style="font-family: 'EB Garamond', serif; color: #444; overflow: auto; padding-right: 5px; flex: 1;">
+                  <div class="policy-text" style="font-family: 'EB Garamond', serif; color: #444; max-height: 45mm; overflow: hidden; padding-right: 5px; flex: 1;">
                     ${itinerary.cancellationPolicyHtml || `
                       <p>&bull; Cancellation 30 days or more before departure: 10% of total cost is non-refundable.</p>
                       <p>&bull; Cancellation 15 to 29 days before departure: 50% of total package cost is charged.</p>
