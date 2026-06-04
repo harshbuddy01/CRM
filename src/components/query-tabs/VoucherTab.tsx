@@ -74,7 +74,7 @@ export function VoucherTab({ queryId }: { queryId: string }) {
   });
 
   const sendEmailMutation = useMutation({
-    mutationFn: async ({ id, email }: { id: string; email?: string }) => {
+    mutationFn: async ({ id, email }: { id: string; email?: string; voucherNumber?: string }) => {
       await api.post(`/vouchers/${id}/send`, email ? { email } : {});
     },
     onSuccess: (_, vars) => {
@@ -83,12 +83,11 @@ export function VoucherTab({ queryId }: { queryId: string }) {
       setManualEmail('');
       queryClient.invalidateQueries({ queryKey: ['vouchers', queryId] });
     },
-    onError: (err: any) => {
+    onError: (err: any, vars) => {
       const msg: string = err.response?.data?.message || 'Failed to send Email';
-      // If no email found, show the manual email entry prompt
-      if (msg.toLowerCase().includes('no email')) {
-        const voucher = err.config?.url?.split('/')?.[2];
-        toast.error(msg);
+      // If no email found and this was an automatic attempt, show the manual email entry prompt
+      if (msg.toLowerCase().includes('no email') && !vars.email) {
+        setEmailPrompt({ voucherId: vars.id, voucherNumber: vars.voucherNumber || 'Voucher' });
       } else {
         toast.error(msg);
       }
@@ -170,7 +169,7 @@ export function VoucherTab({ queryId }: { queryId: string }) {
                         disabled={sendEmailMutation.isPending}
                         onClick={() => {
                           setManualEmail('');
-                          setEmailPrompt({ voucherId: v.id, voucherNumber: v.voucherNumber });
+                          sendEmailMutation.mutate({ id: v.id, voucherNumber: v.voucherNumber });
                         }}
                       >
                         <Mail className="w-3 h-3" /> Email
