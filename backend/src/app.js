@@ -23,15 +23,16 @@ app.set('trust proxy', 1);
 // GLOBAL MIDDLEWARES
 // ========================
 
-// Security headers — allow crm.imagicaholidays.com to embed itinerary preview in iframes
 app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       ...helmet.contentSecurityPolicy.getDefaultDirectives(),
       'frame-ancestors': ["'self'", 'https://crm.imagicaholidays.com', 'https://www.imagicaholidays.com'],
+      'img-src': ["'self'", 'data:', 'https://res.cloudinary.com', 'https://images.unsplash.com', 'https:'],
     },
   },
   crossOriginEmbedderPolicy: false,
+  crossOriginResourcePolicy: false,
   frameguard: false,
 }));
 
