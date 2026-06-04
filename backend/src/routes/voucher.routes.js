@@ -8,6 +8,24 @@ const voucherService = require('../services/voucher.service');
 const orgSettingService = require('../services/org-setting.service');
 const { authenticate } = require('../middlewares/authenticate');
 
+// Public route to view/download voucher PDF directly (bypasses Cloudinary ACL issues for clients/suppliers)
+router.get('/vouchers/:id/download-pdf', async (req, res, next) => {
+  try {
+    const voucher = await voucherService.getById(req.params.id);
+    if (!voucher) return res.status(404).json({ success: false, message: 'Voucher not found' });
+
+    const settings = await orgSettingService.getAllSettings();
+    const pdfService = require('../services/pdf.service');
+    const html = generateVoucherHtml(voucher, settings);
+    const pdfBuffer = await pdfService.generatePdfFromHtml(html);
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Length', pdfBuffer.length);
+    res.setHeader('Content-Disposition', `inline; filename=Voucher-${voucher.voucherNumber}.pdf`);
+    res.end(pdfBuffer);
+  } catch (err) { next(err); }
+});
+
 router.use(authenticate);
 
 // List vouchers for a query
@@ -46,7 +64,7 @@ router.post('/vouchers/:id/generate-pdf', async (req, res, next) => {
 
     // Upload to Cloudinary using image type for public access compatibility
     const cloudinary = require('../config/cloudinary');
-    const result = await new Promise((resolve, reject) => {
+    await new Promise((resolve, reject) => {
       const stream = cloudinary.uploader.upload_stream(
         { folder: 'travelcrm/vouchers', resource_type: 'image', format: 'pdf' },
         (err, result) => err ? reject(err) : resolve(result)
@@ -54,7 +72,8 @@ router.post('/vouchers/:id/generate-pdf', async (req, res, next) => {
       stream.end(pdfBuffer);
     });
 
-    const updated = await voucherService.updatePdfUrl(req.params.id, result.secure_url);
+    const publicUrl = `${process.env.API_URL || 'https://api.imagicaholidays.com/api/v1'}/vouchers/${req.params.id}/download-pdf`;
+    const updated = await voucherService.updatePdfUrl(req.params.id, publicUrl);
     res.json({ success: true, data: updated });
   } catch (err) { next(err); }
 });
