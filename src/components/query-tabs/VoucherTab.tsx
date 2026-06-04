@@ -17,6 +17,8 @@ export function VoucherTab({ queryId }: { queryId: string }) {
   const queryClient = useQueryClient();
   const [isOpen, setIsOpen] = useState(false);
   const [isCustomSupplier, setIsCustomSupplier] = useState(false);
+  const [emailPrompt, setEmailPrompt] = useState<{ voucherId: string; voucherNumber: string } | null>(null);
+  const [manualEmail, setManualEmail] = useState('');
   const [form, setForm] = useState({
     voucherType: 'customer', hotelName: '', supplierName: '', destination: '',
     leadPaxName: '', paxDetails: '', checkIn: '', checkOut: '', roomType: '',
@@ -72,14 +74,25 @@ export function VoucherTab({ queryId }: { queryId: string }) {
   });
 
   const sendEmailMutation = useMutation({
-    mutationFn: async (id: string) => {
-      await api.post(`/vouchers/${id}/send`);
+    mutationFn: async ({ id, email }: { id: string; email?: string }) => {
+      await api.post(`/vouchers/${id}/send`, email ? { email } : {});
     },
-    onSuccess: () => {
+    onSuccess: (_, vars) => {
       toast.success('Voucher sent via Email');
+      setEmailPrompt(null);
+      setManualEmail('');
       queryClient.invalidateQueries({ queryKey: ['vouchers', queryId] });
     },
-    onError: (err: any) => toast.error(err.response?.data?.message || 'Failed to send Email'),
+    onError: (err: any) => {
+      const msg: string = err.response?.data?.message || 'Failed to send Email';
+      // If no email found, show the manual email entry prompt
+      if (msg.toLowerCase().includes('no email')) {
+        const voucher = err.config?.url?.split('/')?.[2];
+        toast.error(msg);
+      } else {
+        toast.error(msg);
+      }
+    },
   });
 
   const getShareLinksMutation = useMutation({
@@ -150,7 +163,16 @@ export function VoucherTab({ queryId }: { queryId: string }) {
                           Generate PDF
                         </Button>
                       )}
-                      <Button size="sm" variant="outline" className="gap-1 text-blue-600 hover:text-blue-700" onClick={() => sendEmailMutation.mutate(v.id)} disabled={sendEmailMutation.isPending}>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="gap-1 text-blue-600 hover:text-blue-700"
+                        disabled={sendEmailMutation.isPending}
+                        onClick={() => {
+                          setManualEmail('');
+                          setEmailPrompt({ voucherId: v.id, voucherNumber: v.voucherNumber });
+                        }}
+                      >
                         <Mail className="w-3 h-3" /> Email
                       </Button>
                       <Button size="sm" variant="outline" className="gap-1 text-green-600 hover:text-green-700" onClick={() => getShareLinksMutation.mutate({ id: v.id, type: 'wa' })} disabled={getShareLinksMutation.isPending}>
@@ -255,6 +277,43 @@ export function VoucherTab({ queryId }: { queryId: string }) {
             <Button variant="outline" onClick={() => setIsOpen(false)}>Cancel</Button>
             <Button onClick={() => createMutation.mutate()} disabled={createMutation.isPending}>
               {createMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Generate'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Email Prompt Dialog */}
+      <Dialog open={!!emailPrompt} onOpenChange={(open) => { if (!open) { setEmailPrompt(null); setManualEmail(''); } }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Send Voucher via Email</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            <p className="text-sm text-muted-foreground">
+              Enter the email address to send <strong>{emailPrompt?.voucherNumber}</strong> to:
+            </p>
+            <Input
+              type="email"
+              placeholder="e.g. guest@email.com"
+              value={manualEmail}
+              onChange={e => setManualEmail(e.target.value)}
+              onKeyDown={e => {
+                if (e.key === 'Enter' && manualEmail && emailPrompt) {
+                  sendEmailMutation.mutate({ id: emailPrompt.voucherId, email: manualEmail });
+                }
+              }}
+              autoFocus
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setEmailPrompt(null); setManualEmail(''); }}>Cancel</Button>
+            <Button
+              disabled={!manualEmail || sendEmailMutation.isPending}
+              onClick={() => {
+                if (emailPrompt) sendEmailMutation.mutate({ id: emailPrompt.voucherId, email: manualEmail });
+              }}
+            >
+              {sendEmailMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Send'}
             </Button>
           </DialogFooter>
         </DialogContent>

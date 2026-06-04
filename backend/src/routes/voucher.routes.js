@@ -511,13 +511,16 @@ function generateVoucherHtml(voucher, settings = {}) {
           ${voucher.confirmationNumber ? `
           <div class="badge-cnf">Booking CNF: ${escapeHtml(voucher.confirmationNumber)}</div>
           ` : ''}
-          <div class="badge-trip">Trip ID: ${escapeHtml(voucher.query?.queryCode || 'QRY-TBD')}</div>
+          ${voucher.query?.queryCode ? `
+          <div class="badge-trip">Trip ID: ${escapeHtml(voucher.query.queryCode)}</div>
+          ` : ''}
         </div>
         
+        ${voucher.creator?.name ? `
         <div class="confirmed-by" style="text-align: left; margin-bottom: 20px;">
-          Confirmed By: ${escapeHtml(voucher.creator?.name || 'Team Sikkim Holidays')} 
+          Confirmed By: ${escapeHtml(voucher.creator.name)}
           ${voucher.creator?.mobile ? `(${escapeHtml(voucher.creator.mobile)})` : ''}
-        </div>
+        </div>` : ''}
 
         <!-- 5. Stay Dates Banner -->
         <div class="stay-banner">
