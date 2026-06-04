@@ -524,6 +524,13 @@ const generateItineraryHtml = (itinerary, settings = {}) => {
           .font-cursive { font-family: 'Satisfy', cursive; }
           .font-handwritten { font-family: 'Caveat', cursive; }
           
+          .policy-text, .policy-text p, .policy-text li, .policy-text span, .policy-text div {
+            font-size: 7.2px !important;
+            line-height: 1.22 !important;
+            margin: 0 0 3px 0 !important;
+            padding: 0 !important;
+          }
+          
           @media print {
             body { background: none; }
             .page { 
@@ -1238,7 +1245,7 @@ const generateItineraryHtml = (itinerary, settings = {}) => {
                   ${svgDocument}
                   <h4 style="font-family: 'Playfair Display', serif; font-size: 14px; font-weight: 700; color: var(--pdf-primary); text-transform: uppercase; margin: 0; letter-spacing: 0.5px;">Terms & Conditions</h4>
                 </div>
-                <div style="font-family: 'EB Garamond', serif; font-size: 8.5px; line-height: 1.3; color: #444; overflow: auto; padding-right: 5px; flex: 1;">
+                <div class="policy-text" style="font-family: 'EB Garamond', serif; color: #444; overflow: auto; padding-right: 5px; flex: 1;">
                   ${itinerary.packageTerms || itinerary.termsHtml || `
                     <p>&bull; All rates are subject to availability at the time of actual booking confirmation.</p>
                     <p>&bull; Standard check-in time at hotels is 14:00 hrs and check-out is 11:00 hrs.</p>
@@ -1257,7 +1264,7 @@ const generateItineraryHtml = (itinerary, settings = {}) => {
                     ${svgCreditCard}
                     <h4 style="font-family: 'Playfair Display', serif; font-size: 12px; font-weight: 700; color: var(--pdf-primary); text-transform: uppercase; margin: 0; letter-spacing: 0.5px;">Payment Policy</h4>
                   </div>
-                  <div style="font-family: 'EB Garamond', serif; font-size: 8.5px; line-height: 1.3; color: #444; overflow: auto; padding-right: 5px; flex: 1;">
+                  <div class="policy-text" style="font-family: 'EB Garamond', serif; color: #444; overflow: auto; padding-right: 5px; flex: 1;">
                     ${itinerary.paymentPolicyHtml || `
                       <p>&bull; 25% of the total package cost is required to initiate bookings.</p>
                       <p>&bull; 50% of the total package cost is due 30 days prior to departure.</p>
@@ -1273,7 +1280,7 @@ const generateItineraryHtml = (itinerary, settings = {}) => {
                     ${svgShield}
                     <h4 style="font-family: 'Playfair Display', serif; font-size: 12px; font-weight: 700; color: var(--pdf-primary); text-transform: uppercase; margin: 0; letter-spacing: 0.5px;">Cancellation Policy</h4>
                   </div>
-                  <div style="font-family: 'EB Garamond', serif; font-size: 8.5px; line-height: 1.3; color: #444; overflow: auto; padding-right: 5px; flex: 1;">
+                  <div class="policy-text" style="font-family: 'EB Garamond', serif; color: #444; overflow: auto; padding-right: 5px; flex: 1;">
                     ${itinerary.cancellationPolicyHtml || `
                       <p>&bull; Cancellation 30 days or more before departure: 10% of total cost is non-refundable.</p>
                       <p>&bull; Cancellation 15 to 29 days before departure: 50% of total package cost is charged.</p>
