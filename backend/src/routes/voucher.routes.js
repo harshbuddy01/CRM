@@ -7,6 +7,7 @@ const router = express.Router();
 const voucherService = require('../services/voucher.service');
 const orgSettingService = require('../services/org-setting.service');
 const { authenticate } = require('../middlewares/authenticate');
+const { sendVoucherEmail } = require('../services/email.service');
 
 const downloadPdfPublic = async (req, res, next) => {
   try {
@@ -126,12 +127,15 @@ router.post('/vouchers/:id/send', async (req, res, next) => {
 
     // Resolve recipient email
     let toEmail = req.body.email || null;
+    let recipientName = voucher.leadPaxName || voucher.query?.name || null;
+
     if (!toEmail) {
       if (voucher.voucherType === 'supplier') {
         const supplier = await prisma.supplier.findFirst({
           where: { companyName: { equals: voucher.supplierName, mode: 'insensitive' } }
         });
         toEmail = supplier?.email || null;
+        recipientName = voucher.supplierName || recipientName;
       } else {
         toEmail = voucher.query?.email || null;
       }
@@ -146,13 +150,33 @@ router.post('/vouchers/:id/send', async (req, res, next) => {
       });
     }
 
-    const commType = voucher.voucherType === 'supplier' ? 'supplier' : 'customer';
     const publicPdfUrl = `${process.env.API_URL || 'https://api.imagicaholidays.com/api/v1'}/public/vouchers/${voucher.id}/download-pdf`;
+    const subject = `Voucher ${voucher.voucherNumber} - ${voucher.voucherType === 'customer' ? 'Booking Confirmation' : 'Supplier Reservation'}`;
+    const commType = voucher.voucherType === 'supplier' ? 'supplier' : 'customer';
 
+    // === ACTUALLY SEND THE EMAIL via Brevo SMTP ===
+    try {
+      await sendVoucherEmail({
+        to: toEmail,
+        subject,
+        voucherNumber: voucher.voucherNumber,
+        recipientName,
+        pdfUrl: publicPdfUrl,
+        hotelName: voucher.hotelName,
+      });
+    } catch (emailErr) {
+      console.error('[VoucherSend] SMTP error:', emailErr.message);
+      return res.status(500).json({
+        success: false,
+        message: `Failed to send email: ${emailErr.message}. Check SMTP settings on server.`
+      });
+    }
+
+    // Log the sent email
     await prisma.emailLog.create({
       data: {
         queryId: voucher.queryId,
-        subject: `Voucher ${voucher.voucherNumber} - ${voucher.voucherType === 'customer' ? 'Booking Confirmation' : 'Supplier Reservation'}`,
+        subject,
         body: `Voucher ${voucher.voucherNumber} sent to ${toEmail}. PDF: ${publicPdfUrl}`,
         sentBy: req.user.id,
         communicationType: commType,
@@ -160,16 +184,21 @@ router.post('/vouchers/:id/send', async (req, res, next) => {
     });
 
     await voucherService.markSent(req.params.id);
-    res.json({ success: true, message: `Voucher sent to ${toEmail}` });
+    res.json({ success: true, message: `Voucher emailed to ${toEmail} successfully` });
   } catch (err) { next(err); }
 });
 
 // Delete a voucher
 router.delete('/vouchers/:id', async (req, res, next) => {
   try {
+    const voucher = await voucherService.getById(req.params.id);
+    if (!voucher) return res.status(404).json({ success: false, message: 'Voucher not found' });
     await voucherService.deleteVoucher(req.params.id);
     res.json({ success: true, message: 'Voucher deleted' });
-  } catch (err) { next(err); }
+  } catch (err) {
+    console.error('[VoucherDelete] error:', err.message);
+    next(err);
+  }
 });
 
 module.exports = router;
