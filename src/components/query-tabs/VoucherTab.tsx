@@ -129,15 +129,16 @@ export function VoucherTab({ queryId }: { queryId: string }) {
                   <span className={`px-2 py-1 rounded-full text-xs ${v.status === 'sent' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}`}>
                     {v.status}
                   </span>
-                  {!v.pdfUrl ? (
-                    <Button size="sm" variant="outline" onClick={() => generatePdfMutation.mutate(v.id)} disabled={generatePdfMutation.isPending}>
-                      Generate PDF
-                    </Button>
-                  ) : (
-                    <div className="flex items-center gap-1.5">
-                      <a href={v.pdfUrl} target="_blank" rel="noreferrer">
+                  {(
+                    <div className="flex items-center gap-1.5 flex-wrap justify-end">
+                      <a href={`https://api.imagicaholidays.com/api/v1/public/vouchers/${v.id}/download-pdf`} target="_blank" rel="noreferrer">
                         <Button size="sm" variant="outline" className="gap-1"><Download className="w-3 h-3" /> Download</Button>
                       </a>
+                      {!v.pdfUrl && (
+                        <Button size="sm" variant="outline" onClick={() => generatePdfMutation.mutate(v.id)} disabled={generatePdfMutation.isPending}>
+                          Generate PDF
+                        </Button>
+                      )}
                       <Button size="sm" variant="outline" className="gap-1 text-blue-600 hover:text-blue-700" onClick={() => sendEmailMutation.mutate(v.id)} disabled={sendEmailMutation.isPending}>
                         <Mail className="w-3 h-3" /> Email
                       </Button>
