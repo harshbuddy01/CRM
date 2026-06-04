@@ -800,22 +800,35 @@ const generateItineraryHtml = (itinerary, settings = {}) => {
 
           <!-- Content -->
           <div class="page-content" style="margin-top: 10mm; display: flex; flex-direction: column; padding-bottom: 38mm;">
-            <!-- Greeting & Background Watermark -->
-            <div style="position: relative; text-align: left; margin-bottom: 4mm;">
+            <!-- Greeting & Welcome Letter -->
+            <div style="position: relative; text-align: left; margin-bottom: 6mm; background: white; border: 1.5px solid #efe4d2; border-radius: 8px; padding: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.02);">
               <!-- Faint Train Background Watermark -->
-              ${pdfWatermark ? `<div style="position: absolute; right: 0; top: -10mm; width: 45mm; height: 35mm; background-image: url('${pdfWatermark}'); background-size: contain; background-repeat: no-repeat; opacity: 0.12; pointer-events: none;"></div>` : `
-              <svg viewBox="0 0 100 80" style="position: absolute; right: 0; top: -5mm; width: 40mm; height: 30mm; opacity: 0.08; fill: var(--pdf-primary); pointer-events: none;">
+              ${pdfWatermark ? `<div style="position: absolute; right: 20px; top: 20px; width: 45mm; height: 35mm; background-image: url('${pdfWatermark}'); background-size: contain; background-repeat: no-repeat; opacity: 0.1; pointer-events: none;"></div>` : `
+              <svg viewBox="0 0 100 80" style="position: absolute; right: 20px; top: 20px; width: 40mm; height: 30mm; opacity: 0.06; fill: var(--pdf-primary); pointer-events: none;">
                 <path d="M10 50 L90 50 L90 52 L10 52 Z M20 30 L45 30 L40 50 L25 50 Z M48 30 L70 30 L65 50 L53 50 Z M75 35 L85 35 L80 50 L77 50 Z M15 45 C15 40, 20 40, 20 45 Z" />
               </svg>
               `}
-              <h2 style="font-family: 'Playfair Display', serif; font-size: 20px; font-weight: 700; color: var(--pdf-primary); margin: 0 0 2px 0;">
-                Hello ${escapeHtml(guestName)},
+              <h2 style="font-family: 'Playfair Display', serif; font-size: 24px; font-weight: 700; color: var(--pdf-primary); margin: 0 0 4mm 0;">
+                Dear ${escapeHtml(guestName)},
               </h2>
-              <p style="font-family: 'EB Garamond', serif; font-size: 13.5px; color: #444; line-height: 1.45; margin: 0;">
-                Thank you for choosing ${escapeHtml(companyName)}.<br/>
-                We have carefully curated this journey through the tea gardens, monasteries and mountain landscapes of ${escapeHtml(destinations)}.<br/>
-                Below is your accommodation and travel summary.
+              <p style="font-family: 'EB Garamond', serif; font-size: 15px; color: #333; line-height: 1.55; margin: 0 0 4mm 0; text-align: justify;">
+                A warm welcome from all of us at <strong>${escapeHtml(companyName)}</strong>. We are absolutely thrilled to assist you in planning your upcoming vacation. Travel is not just about visiting new places; it is about the stories you bring back, the cultures that inspire you, and the moments that take your breath away. 
               </p>
+              <p style="font-family: 'EB Garamond', serif; font-size: 15px; color: #333; line-height: 1.55; margin: 0 0 4mm 0; text-align: justify;">
+                We have meticulously crafted this signature journey through the breathtaking tea plantations, sacred monasteries, and majestic mountain peaks of <strong>${escapeHtml(destinations)}</strong>. Every detail of this itinerary, from the properties we have selected to the private transfers and curated excursions, is designed to offer you the ultimate comfort and a deeply authentic experience of the Himalayas.
+              </p>
+              <p style="font-family: 'EB Garamond', serif; font-size: 15px; color: #333; line-height: 1.55; margin: 0; text-align: justify;">
+                Please find the detailed day-by-day travel details, hotels summary, and booking specifications in the pages that follow. We hope this proposal paints a perfect picture of your dream holiday. Should you wish to personalize any aspect of this itinerary, your dedicated Travel Consultant is always at your service.
+              </p>
+              <div style="margin-top: 5mm; display: flex; justify-content: space-between; align-items: center; border-top: 1px dashed #efe4d2; padding-top: 4mm;">
+                <div>
+                  <span style="font-family: 'Satisfy', cursive; font-size: 18px; color: var(--pdf-primary); font-weight: 500; display: block;">Warmest Regards,</span>
+                  <span style="font-family: 'Montserrat', sans-serif; font-size: 7.5px; font-weight: 700; color: var(--pdf-accent); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 1px; display: block;">Team Imagica Holidays</span>
+                </div>
+                <div style="font-family: 'Satisfy', cursive; font-size: 26px; color: var(--pdf-accent); opacity: 0.8;">
+                  Bon Voyage!
+                </div>
+              </div>
             </div>
 
             <!-- TRIP SUMMARY Card -->
@@ -1225,7 +1238,7 @@ const generateItineraryHtml = (itinerary, settings = {}) => {
                   ${svgDocument}
                   <h4 style="font-family: 'Playfair Display', serif; font-size: 14px; font-weight: 700; color: var(--pdf-primary); text-transform: uppercase; margin: 0; letter-spacing: 0.5px;">Terms & Conditions</h4>
                 </div>
-                <div style="font-family: 'EB Garamond', serif; font-size: 11px; line-height: 1.5; color: #444; overflow: auto; padding-right: 5px; flex: 1;">
+                <div style="font-family: 'EB Garamond', serif; font-size: 8.5px; line-height: 1.3; color: #444; overflow: auto; padding-right: 5px; flex: 1;">
                   ${itinerary.packageTerms || itinerary.termsHtml || `
                     <p>&bull; All rates are subject to availability at the time of actual booking confirmation.</p>
                     <p>&bull; Standard check-in time at hotels is 14:00 hrs and check-out is 11:00 hrs.</p>
@@ -1244,7 +1257,7 @@ const generateItineraryHtml = (itinerary, settings = {}) => {
                     ${svgCreditCard}
                     <h4 style="font-family: 'Playfair Display', serif; font-size: 12px; font-weight: 700; color: var(--pdf-primary); text-transform: uppercase; margin: 0; letter-spacing: 0.5px;">Payment Policy</h4>
                   </div>
-                  <div style="font-family: 'EB Garamond', serif; font-size: 11px; line-height: 1.4; color: #444; overflow: auto; padding-right: 5px; flex: 1;">
+                  <div style="font-family: 'EB Garamond', serif; font-size: 8.5px; line-height: 1.3; color: #444; overflow: auto; padding-right: 5px; flex: 1;">
                     ${itinerary.paymentPolicyHtml || `
                       <p>&bull; 25% of the total package cost is required to initiate bookings.</p>
                       <p>&bull; 50% of the total package cost is due 30 days prior to departure.</p>
@@ -1260,7 +1273,7 @@ const generateItineraryHtml = (itinerary, settings = {}) => {
                     ${svgShield}
                     <h4 style="font-family: 'Playfair Display', serif; font-size: 12px; font-weight: 700; color: var(--pdf-primary); text-transform: uppercase; margin: 0; letter-spacing: 0.5px;">Cancellation Policy</h4>
                   </div>
-                  <div style="font-family: 'EB Garamond', serif; font-size: 11px; line-height: 1.4; color: #444; overflow: auto; padding-right: 5px; flex: 1;">
+                  <div style="font-family: 'EB Garamond', serif; font-size: 8.5px; line-height: 1.3; color: #444; overflow: auto; padding-right: 5px; flex: 1;">
                     ${itinerary.cancellationPolicyHtml || `
                       <p>&bull; Cancellation 30 days or more before departure: 10% of total cost is non-refundable.</p>
                       <p>&bull; Cancellation 15 to 29 days before departure: 50% of total package cost is charged.</p>
