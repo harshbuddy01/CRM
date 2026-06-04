@@ -48,6 +48,8 @@ const createVoucher = async (data) => {
       paxDetails: data.paxDetails || null,
       checkIn: data.checkIn ? new Date(data.checkIn) : null,
       checkOut: data.checkOut ? new Date(data.checkOut) : null,
+      checkInTime: data.checkInTime || null,
+      checkOutTime: data.checkOutTime || null,
       roomType: data.roomType || null,
       mealPlan: data.mealPlan || null,
       greetingMessage: data.greetingMessage || null,
@@ -86,9 +88,9 @@ const getById = async (id) => {
   return prisma.voucher.findUnique({
     where: { id },
     include: {
-      query: { select: { id: true, name: true, phone: true, email: true, destination: true } },
+      query: { select: { id: true, name: true, phone: true, email: true, destination: true, queryCode: true } },
       bookingService: true,
-      creator: { select: { id: true, name: true } },
+      creator: { select: { id: true, name: true, mobile: true } },
     },
   });
 };

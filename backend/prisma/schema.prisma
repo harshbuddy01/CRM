@@ -947,6 +947,8 @@ model Voucher {
   paxDetails         String?   @map("pax_details") /// '2 Adults, 1 Child'
   checkIn            DateTime? @map("check_in") @db.Date
   checkOut           DateTime? @map("check_out") @db.Date
+  checkInTime        String?   @map("check_in_time")
+  checkOutTime       String?   @map("check_out_time")
   roomType           String?   @map("room_type")
   mealPlan           String?   @map("meal_plan")
   greetingMessage    String?   @map("greeting_message") @db.Text
