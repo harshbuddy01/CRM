@@ -102,48 +102,69 @@ const getBrowser = async () => {
  * Generates a PDF buffer from HTML content.
  */
 const generatePdfFromHtml = async (htmlContent) => {
-  let browser = null;
-  let page = null;
-  try {
-    browser = await getBrowser();
-    page = await browser.newPage();
+  let lastError = null;
+  const maxRetries = 2;
 
-    // Set viewport for consistent A4 scaling
-    await page.setViewport({ width: 1280, height: 1024, deviceScaleFactor: 1 });
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    let browser = null;
+    let page = null;
+    try {
+      browser = await getBrowser();
+      page = await browser.newPage();
 
-    await page.setContent(htmlContent, {
-      waitUntil: 'networkidle0',
-      timeout: 60000, // Increased to 60s for very slow image/font loading
-    });
+      // Set viewport for consistent A4 scaling
+      await page.setViewport({ width: 1280, height: 1024, deviceScaleFactor: 1 });
 
-    // CRITICAL: Wait for all fonts to be ready before printing to prevent blank text
-    await page.evaluateHandle('document.fonts.ready');
+      await page.setContent(htmlContent, {
+        waitUntil: 'networkidle2', // Safer fallback than networkidle0 to prevent hangs on minor assets
+        timeout: 45000,            // 45 seconds per attempt
+      });
 
-    const pdfOptions = {
-      format: 'A4',
-      printBackground: true,
-      margin: { top: '0', right: '0', bottom: '0', left: '0' }, // Zero margins — the HTML template handles all internal padding; allows footer to bleed to edges
-      displayHeaderFooter: false,
-    };
+      // CRITICAL: Wait for all fonts to be ready before printing to prevent blank text
+      await page.evaluateHandle('document.fonts.ready');
 
-    const pdfBuffer = await page.pdf(pdfOptions);
+      const pdfOptions = {
+        format: 'A4',
+        printBackground: true,
+        margin: { top: '0', right: '0', bottom: '0', left: '0' }, // Zero margins — the HTML template handles all internal padding
+        displayHeaderFooter: false,
+      };
 
-    // Reset the idle timer on successful use
-    startIdleTimer();
+      const pdfBuffer = await page.pdf(pdfOptions);
 
-    return pdfBuffer;
-  } catch (error) {
-    logger.error('PDF Generation Failed:', error.message);
-    // Crash detection
-    if (error.message.includes('browser has disconnected')) {
-      browserInstance = null;
-    }
-    throw new Error(`Failed to generate PDF: ${error.message}`);
-  } finally {
-    if (page) {
-      await page.close().catch(() => {});
+      // Reset the idle timer on successful use
+      startIdleTimer();
+
+      return pdfBuffer;
+    } catch (error) {
+      lastError = error;
+      logger.error(`PDF Generation Failed (attempt ${attempt}/${maxRetries}):`, error.message);
+
+      // Clean up the page
+      if (page) {
+        await page.close().catch(() => {});
+        page = null;
+      }
+
+      // Proactively destroy and recreate the browser instance on failure to clear crashed/detached states
+      if (browserInstance) {
+        logger.warn('Forcing browser close and recreation due to generation error.');
+        await browserInstance.close().catch(() => {});
+        browserInstance = null;
+      }
+
+      // Wait 1 second before retrying
+      if (attempt < maxRetries) {
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
+    } finally {
+      if (page) {
+        await page.close().catch(() => {});
+      }
     }
   }
+
+  throw new Error(`Failed to generate PDF after ${maxRetries} attempts: ${lastError.message}`);
 };
 
 module.exports = {
