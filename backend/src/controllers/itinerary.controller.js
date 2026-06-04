@@ -35,14 +35,14 @@ const escapeHtml = (text) => {
     .replace(/'/g, '&#039;');
 };
 
-/**
- * Helper to get a safe image URL for PDF rendering.
- */
 const getSafeImageUrl = (url) => {
   if (!url) return '';
-  // Ensure protocol is present
-  if (url.startsWith('//')) return `https:${url}`;
-  return url;
+  // Ensure protocol is present and secure
+  let processedUrl = url.startsWith('//') ? `https:${url}` : url;
+  if (processedUrl.startsWith('http://')) {
+    processedUrl = processedUrl.replace('http://', 'https://');
+  }
+  return processedUrl;
 };
 
 const loadCoverImageBase64 = () => {

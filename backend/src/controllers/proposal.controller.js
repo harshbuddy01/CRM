@@ -95,6 +95,9 @@ const generateProposalHtml = (proposal) => {
   const getSafeImageUrl = (url) => {
     if (!url) return '';
     let processedUrl = url.startsWith('//') ? `https:${url}` : url;
+    if (processedUrl.startsWith('http://')) {
+      processedUrl = processedUrl.replace('http://', 'https://');
+    }
     if (processedUrl.includes('res.cloudinary.com')) {
       processedUrl = processedUrl.replace('/upload/', '/upload/q_auto,f_auto,w_900/');
     }
