@@ -550,16 +550,18 @@ const generateItineraryHtml = (itinerary, settings = {}) => {
               </div>
 
               <!-- Compact Metadata Card -->
-              <div style="background: white; border-radius: 8px; border: 1.5px solid var(--pdf-accent); box-shadow: 0 8px 24px rgba(0,0,0,0.06); display: grid; grid-template-columns: repeat(4, 1fr); align-items: center; text-align: center; padding: 12px 10px;">
+              <div style="background: white; border-radius: 8px; border: 1.5px solid var(--pdf-accent); box-shadow: 0 8px 24px rgba(0,0,0,0.06); display: grid; grid-template-columns: ${fromDate ? 'repeat(4, 1fr)' : 'repeat(3, 1fr)'}; align-items: center; text-align: center; padding: 12px 10px;">
+                ${fromDate ? `
                 <div style="border-right: 1px solid #efe4d2; display: flex; flex-direction: column; align-items: center; justify-content: center;">
                   <div style="display: flex; align-items: center; gap: 4px; margin-bottom: 2px;">
                     ${svgCalendar}
                     <span style="font-family: 'Montserrat', sans-serif; font-size: 7px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 0.5px;">Departure</span>
                   </div>
                   <span style="font-family: 'Playfair Display', serif; font-size: 10px; font-weight: 700; color: var(--pdf-primary); margin-top: 2px;">
-                    ${fromDate ? new Date(fromDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Season TBD'}
+                    ${new Date(fromDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
                   </span>
                 </div>
+                ` : ''}
                 <div style="border-right: 1px solid #efe4d2; display: flex; flex-direction: column; align-items: center; justify-content: center;">
                   <div style="display: flex; align-items: center; gap: 4px; margin-bottom: 2px;">
                     ${svgClock}
@@ -569,7 +571,7 @@ const generateItineraryHtml = (itinerary, settings = {}) => {
                     ${computedTotalDays} Days
                   </span>
                 </div>
-                <div style="border-right: 1px solid #efe4d2; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                <div style="${fromDate ? 'border-right: 1px solid #efe4d2;' : ''} display: flex; flex-direction: column; align-items: center; justify-content: center;">
                   <div style="display: flex; align-items: center; gap: 4px; margin-bottom: 2px;">
                     ${svgUsers}
                     <span style="font-family: 'Montserrat', sans-serif; font-size: 7px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 0.5px;">Guests</span>
@@ -598,6 +600,20 @@ const generateItineraryHtml = (itinerary, settings = {}) => {
                   <span style="font-family: 'EB Garamond', serif; font-size: 9.5px; color: #555; display: block; margin-top: 1px;">📞 ${escapeHtml(companyPhone)} • ✉️ ${escapeHtml(companyEmail)}</span>
                 </div>
               </div>
+
+              <!-- PACKAGE VALUE section (Canva) -->
+              ${sellingPrice ? `
+              <div style="margin-top: 4mm; text-align: left; z-index: 10; position: relative;">
+                <div style="display: inline-block; background: white; border: 1.5px solid var(--pdf-accent); border-radius: 8px; padding: 6px 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.02);">
+                  <span style="font-family: 'Montserrat', sans-serif; font-size: 7px; font-weight: 700; color: var(--pdf-primary); letter-spacing: 1px; text-transform: uppercase; display: block; margin-bottom: 2px;">Estimated Investment</span>
+                  <span style="font-family: 'Playfair Display', serif; font-size: 20px; font-weight: 800; color: var(--pdf-primary); line-height: 1; display: block;">
+                    ₹${sellingPrice.toLocaleString('en-IN')}/-
+                  </span>
+                  <span style="font-family: 'EB Garamond', serif; font-size: 8.5px; color: #666; font-style: italic; display: block; margin-top: 1px;">Inclusive of GST & Services</span>
+                </div>
+              </div>
+              ` : ''}
+            </div>
             </div>
           ` : `
             <!-- Curved Top Header -->
@@ -639,16 +655,18 @@ const generateItineraryHtml = (itinerary, settings = {}) => {
             </div>
 
             <!-- Overlapping Meta Card -->
-            <div style="position: absolute; top: 140mm; left: 15mm; right: 15mm; height: 22mm; background: white; border-radius: 8px; border: 1.5px solid var(--pdf-accent); box-shadow: 0 8px 20px rgba(0,0,0,0.06); z-index: 10; display: grid; grid-template-columns: repeat(4, 1fr); align-items: center; text-align: center; padding: 0 10px;">
+            <div style="position: absolute; top: 140mm; left: 15mm; right: 15mm; height: 22mm; background: white; border-radius: 8px; border: 1.5px solid var(--pdf-accent); box-shadow: 0 8px 20px rgba(0,0,0,0.06); z-index: 10; display: grid; grid-template-columns: ${fromDate ? 'repeat(4, 1fr)' : 'repeat(3, 1fr)'}; align-items: center; text-align: center; padding: 0 10px;">
+              ${fromDate ? `
               <div style="border-right: 1px solid #efe4d2; height: 14mm; display: flex; flex-direction: column; justify-content: center; align-items: center;">
                 <div style="display: flex; align-items: center; gap: 4px; margin-bottom: 2px;">
                   ${svgCalendar}
                   <span style="font-family: 'Montserrat', sans-serif; font-size: 7px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 0.5px;">Departure</span>
                 </div>
                 <span style="font-family: 'Playfair Display', serif; font-size: 11px; font-weight: 700; color: var(--pdf-primary);">
-                  ${fromDate ? new Date(fromDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Season TBD'}
+                  ${new Date(fromDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
                 </span>
               </div>
+              ` : ''}
               <div style="border-right: 1px solid #efe4d2; height: 14mm; display: flex; flex-direction: column; justify-content: center; align-items: center;">
                 <div style="display: flex; align-items: center; gap: 4px; margin-bottom: 2px;">
                   ${svgClock}
@@ -658,7 +676,7 @@ const generateItineraryHtml = (itinerary, settings = {}) => {
                   ${computedTotalDays} Days / ${Math.max(1, computedTotalDays - 1)} Nights
                 </span>
               </div>
-              <div style="border-right: 1px solid #efe4d2; height: 14mm; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+              <div style="${fromDate ? 'border-right: 1px solid #efe4d2;' : ''} height: 14mm; display: flex; flex-direction: column; justify-content: center; align-items: center;">
                 <div style="display: flex; align-items: center; gap: 4px; margin-bottom: 2px;">
                   ${svgUsers}
                   <span style="font-family: 'Montserrat', sans-serif; font-size: 7px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 0.5px;">Guests</span>
@@ -733,8 +751,21 @@ const generateItineraryHtml = (itinerary, settings = {}) => {
               </div>
             </div>
 
+            <!-- PACKAGE VALUE section -->
+            ${sellingPrice ? `
+            <div style="margin-top: 5mm; text-align: center; z-index: 10; position: relative;">
+              <div style="display: inline-block; background: white; border: 1.5px solid var(--pdf-accent); border-radius: 8px; padding: 6px 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.02);">
+                <span style="font-family: 'Montserrat', sans-serif; font-size: 7.5px; font-weight: 700; color: var(--pdf-primary); letter-spacing: 1.2px; text-transform: uppercase; display: block; margin-bottom: 2px;">Estimated Investment</span>
+                <span style="font-family: 'Playfair Display', serif; font-size: 24px; font-weight: 800; color: var(--pdf-primary); line-height: 1; display: block;">
+                  ₹${sellingPrice.toLocaleString('en-IN')}/-
+                </span>
+                <span style="font-family: 'EB Garamond', serif; font-size: 9px; color: #666; font-style: italic; display: block; margin-top: 1px;">Inclusive of GST & Services</span>
+              </div>
+            </div>
+            ` : ''}
+
             <!-- Bottom Silhouette Background -->
-            ${pdfBottomSilhouette ? `<img src="${pdfBottomSilhouette}" style="position: absolute; bottom: 12mm; left: 0; width: 100%; height: 32mm; object-fit: cover; object-position: center bottom; opacity: 1.0; pointer-events: none;" />` : `
+            ${pdfBottomSilhouette ? `<img src="${pdfBottomSilhouette}" style="position: absolute; bottom: 12mm; left: 0; width: 100%; height: 25mm; object-fit: cover; object-position: center bottom; opacity: 1.0; pointer-events: none;" />` : `
             <svg viewBox="0 0 800 100" preserveAspectRatio="none" style="position: absolute; bottom: 12mm; left: 0; width: 100%; height: 25mm; opacity: 0.15; pointer-events: none;">
               <path d="M0 100 L50 70 L120 85 L200 60 L280 75 L380 45 L480 70 L580 50 L680 80 L800 65 L800 100 Z" fill="#94a3b8" />
               <path d="M0 100 L80 80 L160 90 L240 70 L340 85 L440 60 L540 80 L640 70 L720 90 L800 75 L800 100 Z" fill="#cbd5e1" />
@@ -792,16 +823,18 @@ const generateItineraryHtml = (itinerary, settings = {}) => {
               <div style="background: var(--pdf-primary); padding: 4px 15px; color: white; text-align: left; font-family: 'Montserrat', sans-serif; font-size: 8px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase;">
                 Trip Summary
               </div>
-              <div style="display: grid; grid-template-columns: repeat(4, 1fr); align-items: center; text-align: center; padding: 10px 5px; height: 16mm;">
+              <div style="display: grid; grid-template-columns: ${fromDate ? 'repeat(4, 1fr)' : 'repeat(3, 1fr)'}; align-items: center; text-align: center; padding: 10px 5px; height: 16mm;">
                 <div style="border-right: 1px solid #efe4d2; height: 10mm; display: flex; flex-direction: column; justify-content: center;">
                   <span style="font-family: 'Montserrat', sans-serif; font-size: 6.5px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 0.5px;">Destination</span>
                   <span style="font-family: 'Playfair Display', serif; font-size: 10px; font-weight: 700; color: var(--pdf-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0 4px;">${escapeHtml(destinations)}</span>
                 </div>
+                ${fromDate ? `
                 <div style="border-right: 1px solid #efe4d2; height: 10mm; display: flex; flex-direction: column; justify-content: center;">
                   <span style="font-family: 'Montserrat', sans-serif; font-size: 6.5px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 0.5px;">Travel Dates</span>
                   <span style="font-family: 'Playfair Display', serif; font-size: 9px; font-weight: 700; color: var(--pdf-primary);">${dateString}</span>
                 </div>
-                <div style="border-right: 1px solid #efe4d2; height: 10mm; display: flex; flex-direction: column; justify-content: center;">
+                ` : ''}
+                <div style="${fromDate ? 'border-right: 1px solid #efe4d2;' : ''} height: 10mm; display: flex; flex-direction: column; justify-content: center;">
                   <span style="font-family: 'Montserrat', sans-serif; font-size: 6.5px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 0.5px;">Guests</span>
                   <span style="font-family: 'Playfair Display', serif; font-size: 9px; font-weight: 700; color: var(--pdf-primary);">${itinerary.adults || 2} Adults ${itinerary.children ? `• ${itinerary.children} Child` : ''}</span>
                 </div>
@@ -821,67 +854,72 @@ const generateItineraryHtml = (itinerary, settings = {}) => {
               <!-- Stay Detail Grid -->
               ${(() => {
                 if (stays.length === 0) return `<div style="padding: 15px; font-style: italic; color: #666;">No accommodation settings specified. Stays will be managed as per flow.</div>`;
-                const firstStay = stays[0];
-                const stayImage = firstStay.imageUrl ? getSafeImageUrl(firstStay.imageUrl) : 'https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=600&auto=format&fit=crop';
-                const hotelName = firstStay.metadata?.hotelName || firstStay.title || 'Premium Hotel';
-                const roomType = firstStay.metadata?.roomType || 'Deluxe Room';
-                const mealPlan = firstStay.metadata?.mealPlan || 'Breakfast + Dinner Included';
-                const destination = firstStay.destination || 'Sikkim';
-                const nightsCount = firstStay.metadata?.nights || 3;
                 
-                const checkInDate = fromDate 
-                  ? new Date(new Date(fromDate).getTime() + (firstStay.dayNumber - 1) * 24 * 60 * 60 * 1000).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
-                  : 'Day ' + firstStay.dayNumber;
-                
-                const checkOutDate = fromDate
-                  ? new Date(new Date(fromDate).getTime() + (firstStay.dayNumber - 1 + nightsCount) * 24 * 60 * 60 * 1000).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
-                  : 'Day ' + (firstStay.dayNumber + nightsCount);
+                return stays.map((stay, index) => {
+                  const stayImage = stay.imageUrl ? getSafeImageUrl(stay.imageUrl) : 'https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=600&auto=format&fit=crop';
+                  const hotelName = stay.metadata?.hotelName || stay.title || 'Premium Hotel';
+                  const roomType = stay.metadata?.roomType || 'Deluxe Room';
+                  const mealPlan = stay.metadata?.mealPlan || 'Breakfast + Dinner Included';
+                  const destination = stay.destination || 'Sikkim';
+                  const nightsCount = stay.metadata?.nights || 3;
+                  
+                  const showDates = !!fromDate;
+                  const checkInDate = fromDate 
+                    ? new Date(new Date(fromDate).getTime() + (stay.dayNumber - 1) * 24 * 60 * 60 * 1000).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
+                    : '';
+                  
+                  const checkOutDate = fromDate
+                    ? new Date(new Date(fromDate).getTime() + (stay.dayNumber - 1 + nightsCount) * 24 * 60 * 60 * 1000).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
+                    : '';
 
-                return `
-                <div style="display: flex; height: 40mm;">
-                  <!-- Left side: Image and details bar -->
-                  <div style="width: 45%; position: relative; border-right: 1.5px solid #efe4d2;">
-                    <div style="height: 30mm; background-image: url('${stayImage}'); background-size: cover; background-position: center;"></div>
-                    <!-- Check-in / out bar -->
-                    <div style="height: 10mm; background: var(--pdf-primary); display: grid; grid-template-columns: repeat(3, 1fr); align-items: center; text-align: center; color: white; font-family: 'Montserrat', sans-serif; font-size: 6px;">
-                      <div style="border-right: 0.5px solid rgba(255,255,255,0.2); height: 7mm; display: flex; flex-direction: column; justify-content: center;">
-                        <span style="font-weight: 500; opacity: 0.8; text-transform: uppercase;">Check-in</span>
-                        <span style="font-weight: 700; margin-top: 1px;">${checkInDate}</span>
+                  return `
+                  <div style="display: flex; height: 40mm; ${index > 0 ? 'border-top: 1.5px solid #efe4d2;' : ''}">
+                    <!-- Left side: Image and details bar -->
+                    <div style="width: 45%; position: relative; border-right: 1.5px solid #efe4d2;">
+                      <div style="height: 30mm; background-image: url('${stayImage}'); background-size: cover; background-position: center;"></div>
+                      <!-- Check-in / out bar -->
+                      <div style="height: 10mm; background: var(--pdf-primary); display: grid; grid-template-columns: ${showDates ? 'repeat(3, 1fr)' : '1fr'}; align-items: center; text-align: center; color: white; font-family: 'Montserrat', sans-serif; font-size: 6px;">
+                        ${showDates ? `
+                        <div style="border-right: 0.5px solid rgba(255,255,255,0.2); height: 7mm; display: flex; flex-direction: column; justify-content: center;">
+                          <span style="font-weight: 500; opacity: 0.8; text-transform: uppercase;">Check-in</span>
+                          <span style="font-weight: 700; margin-top: 1px;">${checkInDate}</span>
+                        </div>
+                        <div style="border-right: 0.5px solid rgba(255,255,255,0.2); height: 7mm; display: flex; flex-direction: column; justify-content: center;">
+                          <span style="font-weight: 500; opacity: 0.8; text-transform: uppercase;">Check-out</span>
+                          <span style="font-weight: 700; margin-top: 1px;">${checkOutDate}</span>
+                        </div>
+                        ` : ''}
+                        <div style="height: 7mm; display: flex; flex-direction: column; justify-content: center;">
+                          <span style="font-weight: 500; opacity: 0.8; text-transform: uppercase;">Nights</span>
+                          <span style="font-weight: 700; margin-top: 1px;">${nightsCount} Night${nightsCount > 1 ? 's' : ''}</span>
+                        </div>
                       </div>
-                      <div style="border-right: 0.5px solid rgba(255,255,255,0.2); height: 7mm; display: flex; flex-direction: column; justify-content: center;">
-                        <span style="font-weight: 500; opacity: 0.8; text-transform: uppercase;">Check-out</span>
-                        <span style="font-weight: 700; margin-top: 1px;">${checkOutDate}</span>
+                    </div>
+
+                    <!-- Right side: Hotel specifications -->
+                    <div style="width: 55%; padding: 8px 14px; display: flex; flex-direction: column; text-align: left;">
+                      <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 2px;">
+                        ${svgMapPin}
+                        <span style="font-family: 'Montserrat', sans-serif; font-size: 8px; font-weight: 700; color: var(--pdf-accent); text-transform: uppercase; letter-spacing: 0.5px;">${escapeHtml(destination)}</span>
                       </div>
-                      <div style="height: 7mm; display: flex; flex-direction: column; justify-content: center;">
-                        <span style="font-weight: 500; opacity: 0.8; text-transform: uppercase;">Nights</span>
-                        <span style="font-weight: 700; margin-top: 1px;">${nightsCount} Night${nightsCount > 1 ? 's' : ''}</span>
+                      <h3 style="font-family: 'Playfair Display', serif; font-size: 15px; font-weight: 700; color: var(--pdf-primary); margin: 0 0 2px 0; line-height: 1.2;">
+                        ${escapeHtml(hotelName)}
+                      </h3>
+                      <div style="display: flex; gap: 2px; margin-bottom: 4px;">
+                        ${svgStar}${svgStar}${svgStar}${svgStar}${svgStar}
+                      </div>
+                      
+                      <div style="border-top: 1px dashed #efe4d2; padding-top: 6px; margin-top: 4px;">
+                        <ul style="margin: 0; padding: 0 0 0 12px; font-family: 'EB Garamond', serif; font-size: 11px; color: #444; display: flex; flex-direction: column; gap: 2px;">
+                          <li><strong>Room</strong>: ${escapeHtml(roomType)}</li>
+                          <li><strong>Meals</strong>: ${escapeHtml(mealPlan)}</li>
+                          <li><strong>Duration</strong>: ${nightsCount} Nights Overnight</li>
+                        </ul>
                       </div>
                     </div>
                   </div>
-
-                  <!-- Right side: Hotel specifications -->
-                  <div style="width: 55%; padding: 8px 14px; display: flex; flex-direction: column; text-align: left;">
-                    <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 2px;">
-                      ${svgMapPin}
-                      <span style="font-family: 'Montserrat', sans-serif; font-size: 8px; font-weight: 700; color: var(--pdf-accent); text-transform: uppercase; letter-spacing: 0.5px;">${escapeHtml(destination)}</span>
-                    </div>
-                    <h3 style="font-family: 'Playfair Display', serif; font-size: 15px; font-weight: 700; color: var(--pdf-primary); margin: 0 0 2px 0; line-height: 1.2;">
-                      ${escapeHtml(hotelName)}
-                    </h3>
-                    <div style="display: flex; gap: 2px; margin-bottom: 4px;">
-                      ${svgStar}${svgStar}${svgStar}${svgStar}${svgStar}
-                    </div>
-                    
-                    <div style="border-top: 1px dashed #efe4d2; padding-top: 6px; margin-top: 4px;">
-                      <ul style="margin: 0; padding: 0 0 0 12px; font-family: 'EB Garamond', serif; font-size: 11px; color: #444; display: flex; flex-direction: column; gap: 2px;">
-                        <li><strong>Room</strong>: ${escapeHtml(roomType)}</li>
-                        <li><strong>Meals</strong>: ${escapeHtml(mealPlan)}</li>
-                        <li><strong>Duration</strong>: ${nightsCount} Nights Overnight</li>
-                      </ul>
-                    </div>
-                  </div>
-                </div>
-                `;
+                  `;
+                }).join('');
               })()}
             </div>
 
