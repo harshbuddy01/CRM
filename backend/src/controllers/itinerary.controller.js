@@ -873,36 +873,36 @@ const generateItineraryHtml = (itinerary, settings = {}) => {
                     : '';
 
                   return `
-                  <div style="display: flex; height: 40mm; ${index > 0 ? 'border-top: 1.5px solid #efe4d2;' : ''}">
+                  <div style="display: flex; min-height: 42mm; ${index > 0 ? 'border-top: 1.5px solid #efe4d2;' : ''}">
                     <!-- Left side: Image and details bar -->
-                    <div style="width: 45%; position: relative; border-right: 1.5px solid #efe4d2;">
-                      <div style="height: 30mm; background-image: url('${stayImage}'); background-size: cover; background-position: center;"></div>
+                    <div style="width: 45%; display: flex; flex-direction: column; border-right: 1.5px solid #efe4d2; align-self: stretch;">
+                      <div style="flex: 1; min-height: 30mm; background-image: url('${stayImage}'); background-size: cover; background-position: center;"></div>
                       <!-- Check-in / out bar -->
-                      <div style="height: 10mm; background: var(--pdf-primary); display: grid; grid-template-columns: ${showDates ? 'repeat(3, 1fr)' : '1fr'}; align-items: center; text-align: center; color: white; font-family: 'Montserrat', sans-serif; font-size: 6px;">
+                      <div style="height: 12mm; flex-shrink: 0; background: var(--pdf-primary); display: grid; grid-template-columns: ${showDates ? 'repeat(3, 1fr)' : '1fr'}; align-items: center; text-align: center; color: white; font-family: 'Montserrat', sans-serif; font-size: 6px;">
                         ${showDates ? `
-                        <div style="border-right: 0.5px solid rgba(255,255,255,0.2); height: 7mm; display: flex; flex-direction: column; justify-content: center;">
-                          <span style="font-weight: 500; opacity: 0.8; text-transform: uppercase;">Check-in</span>
+                        <div style="border-right: 0.5px solid rgba(255,255,255,0.2); display: flex; flex-direction: column; justify-content: center; height: 100%;">
+                          <span style="font-weight: 500; opacity: 0.8; text-transform: uppercase; font-size: 5.5px;">Check-in</span>
                           <span style="font-weight: 700; margin-top: 1px;">${checkInDate}</span>
                         </div>
-                        <div style="border-right: 0.5px solid rgba(255,255,255,0.2); height: 7mm; display: flex; flex-direction: column; justify-content: center;">
-                          <span style="font-weight: 500; opacity: 0.8; text-transform: uppercase;">Check-out</span>
+                        <div style="border-right: 0.5px solid rgba(255,255,255,0.2); display: flex; flex-direction: column; justify-content: center; height: 100%;">
+                          <span style="font-weight: 500; opacity: 0.8; text-transform: uppercase; font-size: 5.5px;">Check-out</span>
                           <span style="font-weight: 700; margin-top: 1px;">${checkOutDate}</span>
                         </div>
                         ` : ''}
-                        <div style="height: 7mm; display: flex; flex-direction: column; justify-content: center;">
-                          <span style="font-weight: 500; opacity: 0.8; text-transform: uppercase;">Nights</span>
+                        <div style="display: flex; flex-direction: column; justify-content: center; height: 100%;">
+                          <span style="font-weight: 500; opacity: 0.8; text-transform: uppercase; font-size: 5.5px;">Nights</span>
                           <span style="font-weight: 700; margin-top: 1px;">${nightsCount} Night${nightsCount > 1 ? 's' : ''}</span>
                         </div>
                       </div>
                     </div>
 
                     <!-- Right side: Hotel specifications -->
-                    <div style="width: 55%; padding: 8px 14px; display: flex; flex-direction: column; text-align: left;">
+                    <div style="width: 55%; padding: 8px 14px; display: flex; flex-direction: column; text-align: left; justify-content: center;">
                       <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 2px;">
                         ${svgMapPin}
                         <span style="font-family: 'Montserrat', sans-serif; font-size: 8px; font-weight: 700; color: var(--pdf-accent); text-transform: uppercase; letter-spacing: 0.5px;">${escapeHtml(destination)}</span>
                       </div>
-                      <h3 style="font-family: 'Playfair Display', serif; font-size: 15px; font-weight: 700; color: var(--pdf-primary); margin: 0 0 2px 0; line-height: 1.2;">
+                      <h3 style="font-family: 'Playfair Display', serif; font-size: 14px; font-weight: 700; color: var(--pdf-primary); margin: 0 0 2px 0; line-height: 1.2;">
                         ${escapeHtml(hotelName)}
                       </h3>
                       <div style="display: flex; gap: 2px; margin-bottom: 4px;">
