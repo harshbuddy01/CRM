@@ -191,6 +191,7 @@ const publicRouter = express.Router();
 const wcCtrl = require('./controllers/website-content.controller');
 publicRouter.get('/journeys', wcCtrl.getPublicJourneys);
 publicRouter.get('/trending', wcCtrl.getPublicTrending);
+publicRouter.get('/vouchers/:id/download-pdf', require('./routes/voucher.routes').downloadPdfPublic);
 
 app.use('/v1/public', publicRouter);
 app.use('/api/v1/public', publicRouter);

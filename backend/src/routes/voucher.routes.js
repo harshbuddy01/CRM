@@ -8,8 +8,7 @@ const voucherService = require('../services/voucher.service');
 const orgSettingService = require('../services/org-setting.service');
 const { authenticate } = require('../middlewares/authenticate');
 
-// Public route to view/download voucher PDF directly (bypasses Cloudinary ACL issues for clients/suppliers)
-router.get('/vouchers/:id/download-pdf', async (req, res, next) => {
+const downloadPdfPublic = async (req, res, next) => {
   try {
     const voucher = await voucherService.getById(req.params.id);
     if (!voucher) return res.status(404).json({ success: false, message: 'Voucher not found' });
@@ -24,7 +23,7 @@ router.get('/vouchers/:id/download-pdf', async (req, res, next) => {
     res.setHeader('Content-Disposition', `inline; filename=Voucher-${voucher.voucherNumber}.pdf`);
     res.end(pdfBuffer);
   } catch (err) { next(err); }
-});
+};
 
 router.use(authenticate);
 
@@ -141,6 +140,7 @@ router.post('/vouchers/:id/send', async (req, res, next) => {
 });
 
 module.exports = router;
+module.exports.downloadPdfPublic = downloadPdfPublic;
 
 // ─── HTML Generator ───────────────────────────────────────────
 const esc = (s) => String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
