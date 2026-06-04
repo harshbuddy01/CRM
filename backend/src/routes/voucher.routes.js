@@ -259,7 +259,7 @@ function generateVoucherHtml(voucher, settings = {}) {
       <tr>
         <td style="padding: 10px 12px; border-bottom: 1px solid #efe4d2; font-family: 'Montserrat', sans-serif; font-size: 11px; color: #4b5563;">${getOrdinal(i)} Night</td>
         <td style="padding: 10px 12px; border-bottom: 1px solid #efe4d2; font-family: 'EB Garamond', serif; font-size: 13px; font-weight: bold; color: #1e3a8a;">${esc(voucher.mealPlan || 'Dinner + Breakfast')}</td>
-        <td style="padding: 10px 12px; border-bottom: 1px solid #efe4d2; font-family: 'EB Garamond', serif; font-size: 13px; color: #1f2937;">1 ${esc(voucher.roomType || 'Deluxe')} (${esc(voucher.paxDetails || '2 Pax')})</td>
+        <td style="padding: 10px 12px; border-bottom: 1px solid #efe4d2; font-family: 'EB Garamond', serif; font-size: 13px; color: #1f2937;">${esc(voucher.roomType || 'Deluxe')}</td>
       </tr>
     `;
   }
