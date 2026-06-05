@@ -1115,6 +1115,9 @@ model WebsiteJourney {
   overview        String?  @db.Text
   isActive        Boolean  @default(true) @map("is_active")
   sequence        Int      @default(0)
+  seoTitle        String?  @map("seo_title")
+  seoDescription  String?  @map("seo_description") @db.Text
+  seoKeywords     String?  @map("seo_keywords") @db.Text
   createdAt       DateTime @default(now()) @map("created_at")
   updatedAt       DateTime @updatedAt @map("updated_at")
 

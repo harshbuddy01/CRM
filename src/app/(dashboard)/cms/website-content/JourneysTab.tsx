@@ -82,6 +82,9 @@ function JourneyForm({ initial, onClose, onSaved }: { initial: any; onClose: () 
     overview: initial?.overview || '',
     isActive: initial?.isActive ?? true,
     sequence: initial?.sequence || 0,
+    seoTitle: initial?.seoTitle || '',
+    seoDescription: initial?.seoDescription || '',
+    seoKeywords: initial?.seoKeywords || '',
   });
   const [saving, setSaving] = useState(false);
   const [showDayForm, setShowDayForm] = useState(false);
@@ -289,6 +292,23 @@ function JourneyForm({ initial, onClose, onSaved }: { initial: any; onClose: () 
       <div className="space-y-1.5">
         <Label className="text-xs uppercase tracking-wide text-muted-foreground">Overview</Label>
         <textarea className="w-full px-3 py-2 border rounded-md text-sm bg-background resize-y min-h-[80px]" value={form.overview} onChange={e => set('overview', e.target.value)} />
+      </div>
+
+      {/* SEO Section */}
+      <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 space-y-4">
+        <p className="text-xs font-bold text-slate-800 uppercase tracking-wide">🔍 SEO Optimization</p>
+        <div className="space-y-1.5">
+          <Label className="text-xs text-muted-foreground">SEO Title (Title Tag)</Label>
+          <Input value={form.seoTitle} onChange={e => set('seoTitle', e.target.value)} placeholder="e.g. Premium Gangtok Tour Packages | Imagica Holidays" />
+        </div>
+        <div className="space-y-1.5">
+          <Label className="text-xs text-muted-foreground">SEO Meta Description</Label>
+          <textarea className="w-full px-3 py-2 border rounded-md text-sm bg-background resize-y min-h-[60px]" value={form.seoDescription} onChange={e => set('seoDescription', e.target.value)} placeholder="e.g. Plan your dream trip with our curated Gangtok tour packages. Premium hotels, transport, and customized itineraries." />
+        </div>
+        <div className="space-y-1.5">
+          <Label className="text-xs text-muted-foreground">SEO Keywords (Comma separated)</Label>
+          <Input value={form.seoKeywords} onChange={e => set('seoKeywords', e.target.value)} placeholder="e.g. Gangtok tour, Sikkim packages, Lachung trip" />
+        </div>
       </div>
 
       <div className="grid md:grid-cols-2 gap-4">

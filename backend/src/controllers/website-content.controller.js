@@ -98,6 +98,9 @@ const getPublicJourneys = async (req, res, next) => {
       images: j.images,
       mapImage: j.mapImage,
       overview: j.overview,
+      seoTitle: j.seoTitle,
+      seoDescription: j.seoDescription,
+      seoKeywords: j.seoKeywords,
       itinerary: (Array.isArray(j.days) ? j.days : []).map(d => ({
         day: `Day ${d.dayNumber}`,
         title: d.title,
