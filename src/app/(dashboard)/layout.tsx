@@ -14,7 +14,7 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { user, accessToken } = useAuthStore();
+  const { user, accessToken, logout } = useAuthStore();
   const [isMounted, setIsMounted] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const router = useRouter();
@@ -27,9 +27,10 @@ export default function DashboardLayout({
   // Strict client-side route guard: if hydration is done and user/token is missing, redirect immediately.
   useEffect(() => {
     if (isMounted && (!user || !accessToken)) {
+      logout(); // Clear stale cookies to prevent server-side middleware redirect loop
       router.replace('/login');
     }
-  }, [isMounted, user, accessToken, router]);
+  }, [isMounted, user, accessToken, router, logout]);
 
   // Prevent hydration mismatch — show nothing until Zustand has hydrated.
   if (!isMounted) return null;
