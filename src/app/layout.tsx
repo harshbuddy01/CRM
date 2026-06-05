@@ -3,6 +3,7 @@ import { Inter, Playfair_Display, Caveat } from "next/font/google";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 import Providers from "@/components/providers";
+import Script from "next/script";
 
 import { Toaster } from "@/components/ui/sonner";
 
@@ -39,6 +40,24 @@ export default function RootLayout({
   return (
     <html lang="en" className={cn("font-sans", inter.variable, playfair.variable, caveat.variable)}>
       <body className="antialiased">
+        {process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID && (
+          <>
+            <Script
+              src={`https://www.googletagmanager.com/gtag/js?id=${process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID}`}
+              strategy="afterInteractive"
+            />
+            <Script id="google-analytics" strategy="afterInteractive">
+              {`
+                window.dataLayer = window.dataLayer || [];
+                function gtag(){dataLayer.push(arguments);}
+                gtag('js', new Date());
+                gtag('config', '${process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID}', {
+                  page_path: window.location.pathname,
+                });
+              `}
+            </Script>
+          </>
+        )}
         <Providers>
           {children}
           <Toaster position="top-right" richColors />

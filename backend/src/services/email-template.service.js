@@ -160,15 +160,26 @@ const sendSupplierEmail = async ({ queryId, supplierIds, subject, body, cc, sent
   
   const logs = [];
 
+  const orgSettingsService = require('./org-setting.service');
+  const allSettings = await orgSettingsService.getAllSettings();
+  const signature = allSettings.emailSignature || '';
+
   for (const supplier of suppliers) {
     if (!supplier.email) continue; // skip suppliers without email
+
+    const wrappedBody = getArtisanalEmailFrame({
+      subject: subject,
+      bodyContent: body,
+      agentSignature: signature,
+      inviteType: 'general'
+    });
 
     // Send via SendGrid
     await queueService.enqueueEmailJob(
       queryId,
       supplier.email,
       subject,
-      body,
+      wrappedBody,
       cc
     );
 
@@ -179,7 +190,7 @@ const sendSupplierEmail = async ({ queryId, supplierIds, subject, body, cc, sent
         to: supplier.email,
         cc: cc || null,
         subject: subject,
-        body: body,
+        body: body, // Save raw body in log for clean CRM rendering
         sentBy,
         status: 'sent',
         communicationType: 'supplier',

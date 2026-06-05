@@ -32,26 +32,32 @@ export function SupplierCommTab({ queryId }: { queryId: string }) {
     const nights = (queryInfo.travelDateFrom && queryInfo.travelDateTo) ? Math.round((new Date(queryInfo.travelDateTo).getTime() - new Date(queryInfo.travelDateFrom).getTime()) / (1000 * 60 * 60 * 24)) : 0;
 
     let html = `<p>Dear Sir,</p><p>Kindly provide the best rates for below enquiry at the earliest:</p>`;
-    html += `<table border="1" style="width: 100%; border-collapse: collapse; margin-top: 15px;">
-      <tr style="background:#f1f5f9;"><th colspan="4" style="padding: 8px; text-align:left;">Enquiry Detail</th></tr>
-      <tr><td style="padding: 8px;"><strong>Customer Name</strong></td><td style="padding: 8px;">${queryInfo.name || ''}</td><td style="padding: 8px;"><strong>Enquiry ID</strong></td><td style="padding: 8px;">${queryInfo.queryCode || queryId}</td></tr>
-      <tr><td style="padding: 8px;"><strong>Check-In</strong></td><td style="padding: 8px;">${checkIn}</td><td style="padding: 8px;"><strong>Check-Out</strong></td><td style="padding: 8px;">${checkOut}</td></tr>
-      <tr><td style="padding: 8px;"><strong>Nights</strong></td><td style="padding: 8px;">${nights}</td><td style="padding: 8px;"><strong>Total Pax</strong></td><td style="padding: 8px;">${queryInfo.adults} Adult / ${queryInfo.children} Child</td></tr>
-    </table>`;
+    html += `<p><strong>Enquiry Details:</strong></p><ul>`;
+    html += `<li><strong>Customer Name:</strong> ${queryInfo.name || ''}</li>`;
+    html += `<li><strong>Enquiry ID:</strong> ${queryInfo.queryCode || queryId}</li>`;
+    html += `<li><strong>Check-In:</strong> ${checkIn}</li>`;
+    html += `<li><strong>Check-Out:</strong> ${checkOut}</li>`;
+    html += `<li><strong>Nights:</strong> ${nights}</li>`;
+    html += `<li><strong>Total Pax:</strong> ${queryInfo.adults} Adult / ${queryInfo.children} Child</li>`;
+    html += `</ul>`;
 
     if (confirmedProposal?.itinerary) {
         const events = (confirmedProposal.itinerary.days || []).flatMap((d: any) => d.events || []);
         const hotels = events.filter((e: any) => e.type === 'accommodation');
         const transports = events.filter((e: any) => ['transport', 'activity'].includes(e.type));
         if (hotels.length > 0) {
-            html += `<table border="1" style="width: 100%; border-collapse: collapse; margin-top: 15px;"><tr style="background:#f1f5f9;"><th style="padding: 8px; text-align:left;">Hotel</th><th style="padding: 8px; text-align:left;">Meal</th></tr>`;
-            hotels.forEach((h: any) => html += `<tr><td style="padding: 8px;"><strong>${h.title || ''}</strong></td><td style="padding: 8px;">${h.metadata?.mealPlan || '-'}</td></tr>`);
-            html += `</table>`;
+            html += `<p><strong>Hotel Preferences:</strong></p><ul>`;
+            hotels.forEach((h: any) => {
+                html += `<li><strong>${h.title || ''}</strong> - Meal Plan: ${h.metadata?.mealPlan || '-'}</li>`;
+            });
+            html += `</ul>`;
         }
         if (transports.length > 0) {
-            html += `<table border="1" style="width: 100%; border-collapse: collapse; margin-top: 15px;"><tr style="background:#f1f5f9;"><th style="padding: 8px; text-align:left;">Transfers / Activity</th></tr>`;
-            transports.forEach((t: any) => html += `<tr><td style="padding: 8px;">${t.title || ''}</td></tr>`);
-            html += `</table>`;
+            html += `<p><strong>Transfers & Activities:</strong></p><ul>`;
+            transports.forEach((t: any) => {
+                html += `<li>${t.title || ''}</li>`;
+            });
+            html += `</ul>`;
         }
     }
     setBody(html); setIsTemplateGenerated(true);
