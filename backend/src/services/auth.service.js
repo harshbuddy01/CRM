@@ -70,17 +70,114 @@ const login = async (email, password) => {
     throw new UnauthorizedError('Invalid credentials');
   }
 
+  // Generate 6-digit verification code (OTP)
+  const code = Math.floor(100000 + Math.random() * 900000).toString();
+  const twoFactorSessionId = require('crypto').randomBytes(32).toString('hex');
+  const twoFactorExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+  // Save 2FA state to the database
+  await prisma.user.update({
+    where: { id: user.id },
+    data: {
+      twoFactorCode: code,
+      twoFactorExpires,
+      twoFactorSessionId,
+    },
+  });
+
+  // Check email provider configuration
+  const brevoConfigured = process.env.BREVO_SMTP_USER && process.env.BREVO_SMTP_PASS;
+
+  if (!brevoConfigured) {
+    const logger = require('../utils/logger');
+    logger.info(`[Auth 2FA] Verification code for ${user.email} (no email provider): ${code}`);
+  } else {
+    try {
+      const { sendMail } = require('../config/mailer');
+      const adminFrom = `"${config.email.adminFromName}" <${config.email.adminFrom}>`;
+      await sendMail({
+        from: adminFrom,
+        to: user.email,
+        subject: 'TravelCRM — Two-Step Verification Code',
+        html: `
+          <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff;">
+            <div style="background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%); padding: 32px 24px; text-align: center; border-radius: 8px 8px 0 0;">
+              <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: 700;">✈️ TravelCRM</h1>
+            </div>
+            <div style="padding: 32px 24px;">
+              <h2 style="color: #1f2937; margin: 0 0 16px 0; font-size: 20px;">Two-Step Verification Code</h2>
+              <p style="color: #4b5563; font-size: 15px; line-height: 1.6; margin: 0 0 24px 0;">
+                Hi <strong>${user.name}</strong>,<br/>Here is your 6-digit verification code to log in to your account. This code is valid for <strong>10 minutes</strong>.
+              </p>
+              <div style="text-align: center; margin: 32px 0;">
+                <span style="font-size: 32px; font-weight: 800; letter-spacing: 6px; color: #4f46e5; border: 2px dashed #cbd5e1; padding: 12px 24px; border-radius: 8px; background: #f8fafc; font-family: monospace;">${code}</span>
+              </div>
+              <p style="color: #9ca3af; font-size: 13px; line-height: 1.5; margin: 0 0 16px 0; text-align: center;">
+                If you did not request this code, please secure your account immediately or contact your administrator.
+              </p>
+            </div>
+            <div style="background: #f8fafc; padding: 16px 24px; text-align: center; border-radius: 0 0 8px 8px; border-top: 1px solid #e2e8f0;">
+              <p style="color: #94a3b8; font-size: 12px; margin: 0;">${config.frontendUrl || 'TravelCRM'}</p>
+            </div>
+          </div>
+        `,
+      });
+    } catch (err) {
+      const logger = require('../utils/logger');
+      logger.error(`[Auth 2FA] Failed to send 2FA email to ${user.email}:`, err.message);
+    }
+  }
+
+  return {
+    requires2FA: true,
+    twoFactorSessionId,
+  };
+};
+
+const verify2FA = async (twoFactorSessionId, code) => {
+  const { ValidationError } = require('../utils/AppError');
+  if (!twoFactorSessionId || !code) {
+    throw new ValidationError('Verification session ID and code are required');
+  }
+
+  const user = await prisma.user.findFirst({
+    where: { twoFactorSessionId },
+    include: { role: true },
+  });
+
+  if (!user || !user.isActive) {
+    throw new UnauthorizedError('Invalid verification session');
+  }
+
+  if (!user.twoFactorExpires || user.twoFactorExpires < new Date()) {
+    throw new UnauthorizedError('Verification code has expired');
+  }
+
+  if (user.twoFactorCode !== code) {
+    throw new UnauthorizedError('Invalid verification code');
+  }
+
+  // Clear 2FA credentials once verified
+  await prisma.user.update({
+    where: { id: user.id },
+    data: {
+      twoFactorCode: null,
+      twoFactorExpires: null,
+      twoFactorSessionId: null,
+    },
+  });
+
   const permissions = await getUserPermissions(user.id);
   const tokens = generateTokens(user, { role: user.role.name, roleLabel: user.role.label, permissions });
 
   // Create session
   const refreshTokenHash = await bcrypt.hash(tokens.refreshToken, 10);
-  const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+  const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
   await prisma.userSession.create({
     data: {
       userId: user.id,
       refreshTokenHash,
-      deviceInfo: 'Web', 
+      deviceInfo: 'Web',
       expiresAt,
     }
   });
@@ -130,7 +227,7 @@ const refreshToken = async (token) => {
     const permissions = await getUserPermissions(user.id);
     const tokens = generateTokens(user, { role: user.role.name, roleLabel: user.role.label, permissions });
     const newHash = await bcrypt.hash(tokens.refreshToken, 10);
-    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours (was 7 days)
 
     // Update existing session record
     await prisma.userSession.update({

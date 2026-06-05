@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useAuthStore } from '@/lib/auth-store';
 import { api } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -19,6 +20,12 @@ export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<ForgotResult>(null);
+
+  const logout = useAuthStore((state) => state.logout);
+
+  useEffect(() => {
+    logout();
+  }, [logout]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

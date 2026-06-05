@@ -2,6 +2,7 @@
 
 import { useAuthStore } from '@/lib/auth-store';
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Sidebar } from '@/components/Sidebar';
 import { Topbar } from '@/components/Topbar';
 import { MobileNav } from '@/components/MobileNav';
@@ -13,22 +14,28 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { user } = useAuthStore();
+  const { user, accessToken } = useAuthStore();
   const [isMounted, setIsMounted] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const router = useRouter();
 
   // Wait for Zustand hydration before rendering to avoid SSR/client mismatch
   useEffect(() => {
     setIsMounted(true);
   }, []);
 
+  // Strict client-side route guard: if hydration is done and user/token is missing, redirect immediately.
+  useEffect(() => {
+    if (isMounted && (!user || !accessToken)) {
+      router.replace('/login');
+    }
+  }, [isMounted, user, accessToken, router]);
+
   // Prevent hydration mismatch — show nothing until Zustand has hydrated.
-  // Route protection is handled entirely by middleware.ts (server-side).
   if (!isMounted) return null;
 
-  // If user is not in Zustand store (e.g. after logout), render nothing.
-  // Middleware will redirect to /login on the next navigation.
-  if (!user) return null;
+  // If user is not in Zustand store, render nothing (the useEffect above will redirect them)
+  if (!user || !accessToken) return null;
 
   return (
     <div className="flex min-h-screen bg-background text-foreground">

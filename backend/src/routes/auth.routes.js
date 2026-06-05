@@ -11,6 +11,7 @@ const { can } = require('../middlewares/can');
 
 // Public routes
 router.post('/login', authValidator.validateLogin, authController.login);
+router.post('/verify-2fa', authController.verify2FA);
 router.post('/refresh', authController.refresh);
 router.post('/forgot-password', authController.forgotPassword);
 router.post('/reset-password', authController.resetPassword);

@@ -10,6 +10,20 @@ const login = async (req, res, next) => {
     const result = await authService.login(email, password);
     res.json({
       success: true,
+      message: result.requires2FA ? 'Verification code sent to your email' : 'Login successful',
+      data: result,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const verify2FA = async (req, res, next) => {
+  try {
+    const { twoFactorSessionId, code } = req.body;
+    const result = await authService.verify2FA(twoFactorSessionId, code);
+    res.json({
+      success: true,
       message: 'Login successful',
       data: result,
     });
@@ -109,6 +123,7 @@ const resetPassword = async (req, res, next) => {
 
 module.exports = {
   login,
+  verify2FA,
   register,
   refresh,
   changePassword,

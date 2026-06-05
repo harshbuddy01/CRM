@@ -134,6 +134,10 @@ model User {
   uploadedDocuments      QueryDocument[]    @relation("DocumentUploadedBy")
   itineraries            Itinerary[]        @relation("ItineraryCreatedBy")
 
+  twoFactorCode      String?   @map("two_factor_code")
+  twoFactorExpires   DateTime? @map("two_factor_expires")
+  twoFactorSessionId String?   @map("two_factor_session_id")
+
   @@index([roleId])
   @@index([isActive])
   @@index([lastAssignedAt])

@@ -138,9 +138,11 @@ const applyRateLimit = (req, res, next) => {
 app.use('/v1', applyRateLimit);
 app.use('/api/v1', applyRateLimit);
 
-// Apply login limiter strictly to the login route, not all auth APIs like logout/refresh
+// Apply login limiter strictly to the login and 2FA routes, not all auth APIs like logout/refresh
 app.use('/v1/auth/login', loginLimiter);
 app.use('/api/v1/auth/login', loginLimiter);
+app.use('/v1/auth/verify-2fa', loginLimiter);
+app.use('/api/v1/auth/verify-2fa', loginLimiter);
 
 // Base API Router to share between /v1 and /api/v1 prefixes
 const apiRouter = express.Router();
