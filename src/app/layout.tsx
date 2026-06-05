@@ -7,6 +7,8 @@ import Script from "next/script";
 
 import { Toaster } from "@/components/ui/sonner";
 
+export const dynamic = "force-dynamic";
+
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 const playfair = Playfair_Display({ subsets: ["latin"], variable: "--font-serif" });
 const caveat = Caveat({ subsets: ["latin"], variable: "--font-handwriting" });
