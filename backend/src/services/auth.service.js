@@ -392,6 +392,7 @@ const resetPassword = async (userId, token, newPassword) => {
 module.exports = {
   register,
   login,
+  verify2FA,
   refreshToken,
   changePassword,
   logout,
