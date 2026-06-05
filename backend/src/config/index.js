@@ -65,6 +65,31 @@ const config = {
     mode: process.env.WHATSAPP_MODE || 'manual', // was 'interakt'
     interaktApiKey: process.env.INTERAKT_API_KEY,
   },
+
+  // --- Google Ads Enhanced Conversions ---
+  googleAds: {
+    customerId: (process.env.GOOGLE_ADS_CUSTOMER_ID || '').replace(/-/g, ''), // Strip dashes: 123-456-7890 → 1234567890
+    developerToken: process.env.GOOGLE_ADS_DEVELOPER_TOKEN || '',
+    accessToken: process.env.GOOGLE_ADS_ACCESS_TOKEN || '',
+    refreshToken: process.env.GOOGLE_ADS_REFRESH_TOKEN || '',
+    clientId: process.env.GOOGLE_ADS_CLIENT_ID || '',
+    clientSecret: process.env.GOOGLE_ADS_CLIENT_SECRET || '',
+    loginCustomerId: (process.env.GOOGLE_ADS_LOGIN_CUSTOMER_ID || '').replace(/-/g, ''), // MCC account ID if applicable
+    apiVersion: process.env.GOOGLE_ADS_API_VERSION || 'v17',
+    conversionActionIds: {
+      Lead: process.env.GOOGLE_ADS_CONVERSION_ACTION_LEAD || '',
+      QualifiedLead: process.env.GOOGLE_ADS_CONVERSION_ACTION_QUALIFIED || '',
+      ConvertedLead: process.env.GOOGLE_ADS_CONVERSION_ACTION_CONVERTED || '',
+    },
+  },
+
+  // --- Meta Conversions API (CAPI) ---
+  meta: {
+    pixelId: process.env.META_PIXEL_ID || '',
+    accessToken: process.env.META_ACCESS_TOKEN || '',
+    apiVersion: process.env.META_API_VERSION || 'v24.0',
+    testEventCode: process.env.META_TEST_EVENT_CODE || '',
+  },
   
   // --- Operational Settings ---
   upload: {

@@ -33,32 +33,36 @@ const generateQueryCode = async () => {
 const MAX_CODE_RETRIES = 3;
 
 const createQuery = async (data) => {
+  const { clientInfo, ...cleanData } = data;
+
   // Simple duplicate check by phone number
   const existing = await prisma.query.findFirst({
-    where: { phone: data.phone, status: { notIn: ['lost', 'invalid'] } },
+    where: { phone: cleanData.phone, status: { notIn: ['lost', 'invalid'] } },
   });
 
   if (existing) {
-    throw new BusinessError(`Duplicate lead! An active query (${existing.queryCode}) already exists for phone ${data.phone}.`);
+    throw new BusinessError(`Duplicate lead! An active query (${existing.queryCode}) already exists for phone ${cleanData.phone}.`);
   }
 
-  if (data.assignedTo) {
-    const agent = await prisma.user.findUnique({ where: { id: data.assignedTo, isActive: true } });
+  if (cleanData.assignedTo) {
+    const agent = await prisma.user.findUnique({ where: { id: cleanData.assignedTo, isActive: true } });
     if (!agent) throw new BusinessError('Assigned user is invalid or inactive');
   }
 
   // Retry loop to handle race condition on queryCode unique constraint
+  let query;
   for (let attempt = 1; attempt <= MAX_CODE_RETRIES; attempt++) {
     try {
       const queryCode = await generateQueryCode();
-      return await prisma.query.create({
+      query = await prisma.query.create({
         data: {
-          ...data,
+          ...cleanData,
           queryCode,
-          travelDateFrom: data.travelDateFrom ? new Date(data.travelDateFrom) : null,
-          travelDateTo: data.travelDateTo ? new Date(data.travelDateTo) : null,
+          travelDateFrom: cleanData.travelDateFrom ? new Date(cleanData.travelDateFrom) : null,
+          travelDateTo: cleanData.travelDateTo ? new Date(cleanData.travelDateTo) : null,
         },
       });
+      break;
     } catch (error) {
       // Prisma unique constraint violation code = P2002
       if (error.code === 'P2002' && error.meta?.target?.includes('query_code') && attempt < MAX_CODE_RETRIES) {
@@ -68,6 +72,39 @@ const createQuery = async (data) => {
       throw error;
     }
   }
+
+  // Log tracking data if clientInfo was passed
+  if (query && clientInfo) {
+    try {
+      await prisma.integrationLog.create({
+        data: {
+          type: 'lead_tracking',
+          direction: 'inbound',
+          status: 'success',
+          payload: clientInfo,
+          relatedId: query.id,
+        }
+      });
+    } catch (err) {
+      logger.error('[Query] Failed to create lead_tracking integration log:', err.message);
+    }
+  }
+
+  // Fire CAPI & Google Ads conversions
+  if (query) {
+    try {
+      const googleAdsService = require('./google-ads.service');
+      const metaCapiService = require('./meta-capi.service');
+      
+      // Run asynchronously, non-blocking
+      googleAdsService.uploadConversion('Lead', query, clientInfo || {}).catch(() => {});
+      metaCapiService.sendEvent('Lead', query, clientInfo || {}).catch(() => {});
+    } catch (err) {
+      logger.error('[Query] Failed to trigger Lead conversions:', err.message);
+    }
+  }
+
+  return query;
 };
 
 const listQueries = async ({ 
@@ -356,6 +393,42 @@ const changeQueryStatus = async (id, status, userId, canViewAll, canEditAll) => 
         }
       });
     }
+  }
+
+  // Trigger Conversion API & Google Ads Conversion uploads
+  try {
+    let conversionEvent = null;
+    let metaEvent = null;
+
+    if ((status === 'quoted' || status === 'negotiation') && (existing.status !== 'quoted' && existing.status !== 'negotiation')) {
+      conversionEvent = 'QualifiedLead';
+      metaEvent = 'Schedule';
+    } else if (status === 'confirmed' && existing.status !== 'confirmed') {
+      conversionEvent = 'ConvertedLead';
+      metaEvent = 'Purchase';
+    }
+
+    if (conversionEvent || metaEvent) {
+      // Find the associated tracking info (gclid, fbp, fbc, etc.)
+      prisma.integrationLog.findFirst({
+        where: { relatedId: id, type: 'lead_tracking' },
+      }).then(async (trackingLog) => {
+        const clientInfo = trackingLog ? trackingLog.payload : {};
+        
+        if (conversionEvent) {
+          const googleAdsService = require('./google-ads.service');
+          await googleAdsService.uploadConversion(conversionEvent, updated, clientInfo).catch(() => {});
+        }
+        if (metaEvent) {
+          const metaCapiService = require('./meta-capi.service');
+          await metaCapiService.sendEvent(metaEvent, updated, clientInfo).catch(() => {});
+        }
+      }).catch((err) => {
+        logger.error(`[Conversions] Error processing tracking log for status change ${existing.queryCode}:`, err.message);
+      });
+    }
+  } catch (err) {
+    logger.error(`[Conversions] Error triggering conversions for status change ${existing.queryCode}:`, err.message);
   }
 
   return updated;

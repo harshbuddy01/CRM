@@ -185,6 +185,7 @@ apiRouter.use('/website-content', require('./routes/website-content.routes'));
 apiRouter.use('/', require('./routes/booking-service.routes'));
 apiRouter.use('/', require('./routes/voucher.routes'));
 apiRouter.use('/', require('./routes/query-document.routes'));
+apiRouter.use('/', require('./routes/meta-capi.routes'));
 
 // ── Public endpoints (no auth required) for website consumption ──
 const publicRouter = express.Router();

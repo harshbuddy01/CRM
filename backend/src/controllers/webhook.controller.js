@@ -83,6 +83,10 @@ const createFromWhatsapp = async (req, res, next) => {
       phone,
       leadSource: 'whatsapp',
       destination: notes || null,
+      clientInfo: {
+        clientIp: req.ip || req.headers?.['x-forwarded-for'] || null,
+        userAgent: req.headers?.['user-agent'] || null
+      }
     });
 
     logger.info(`[Webhook] WhatsApp lead created: ${query.queryCode}`);
@@ -181,6 +185,10 @@ const createFromFacebook = async (req, res, next) => {
       email,
       leadSource: 'facebook',
       campaignName,
+      clientInfo: {
+        clientIp: req.ip || req.headers?.['x-forwarded-for'] || null,
+        userAgent: req.headers?.['user-agent'] || null
+      }
     });
 
     logger.info(`[Webhook] Facebook lead created: ${query.queryCode}`);
@@ -259,6 +267,10 @@ const createFromGoogle = async (req, res, next) => {
       email,
       leadSource: 'google',
       campaignName,
+      clientInfo: {
+        clientIp: req.ip || req.headers?.['x-forwarded-for'] || null,
+        userAgent: req.headers?.['user-agent'] || null
+      }
     });
 
     logger.info(`[Webhook] Google lead created: ${query.queryCode}`);

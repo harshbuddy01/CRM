@@ -4,9 +4,31 @@
 
 const queryService = require('../services/query.service');
 
+const getClientInfoFromRequest = (req) => {
+  const body = req.body || {};
+  const clientInfo = body.clientInfo || {};
+  
+  const gclid = body.gclid || req.query?.gclid || clientInfo.gclid || null;
+  const gbraid = body.gbraid || req.query?.gbraid || clientInfo.gbraid || null;
+  const wbraid = body.wbraid || req.query?.wbraid || clientInfo.wbraid || null;
+  const fbp = body.fbp || req.cookies?.['_fbp'] || clientInfo.fbp || null;
+  const fbc = body.fbc || req.cookies?.['_fbc'] || req.query?.fbclid || clientInfo.fbc || null;
+  
+  return {
+    gclid,
+    gbraid,
+    wbraid,
+    fbp,
+    fbc,
+    clientIp: clientInfo.clientIp || req.ip || req.headers?.['x-forwarded-for'] || req.socket?.remoteAddress || null,
+    userAgent: clientInfo.userAgent || req.headers?.['user-agent'] || null,
+  };
+};
+
 const create = async (req, res, next) => {
   try {
-    const query = await queryService.createQuery(req.body);
+    const clientInfo = getClientInfoFromRequest(req);
+    const query = await queryService.createQuery({ ...req.body, clientInfo });
     res.status(201).json({ success: true, message: 'Query created successfully', data: query });
   } catch (error) {
     next(error);
@@ -16,10 +38,12 @@ const create = async (req, res, next) => {
 const createFromWebhook = async (req, res, next) => {
   try {
     // For external forms (e.g. Hostinger landing pages)
+    const clientInfo = getClientInfoFromRequest(req);
     const queryData = {
       ...req.body,
       leadSource: req.body.leadSource || 'website',
-      status: 'new', 
+      status: 'new',
+      clientInfo
     };
     
     const isDuplicate = await queryService.checkDuplicatePhone(queryData.phone);
