@@ -29,6 +29,16 @@ const webhookApiKeyGuard = (req, res, next) => {
 };
 
 /**
+ * GET handler to catch browser testing requests and offer clean guidance.
+ */
+router.get('/public/meta-capi/ai-booking', (req, res) => {
+  res.status(405).json({
+    success: false,
+    message: 'Method Not Allowed. This endpoint only accepts POST requests from your Vertex AI booking agent.'
+  });
+});
+
+/**
  * Public Endpoint for AI Agent Booking
  * Body parameters:
  *   - name (string)
