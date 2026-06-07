@@ -432,11 +432,25 @@ export default function SettingsPage() {
             </CardHeader>
             <CardContent className="space-y-4">
               <ImageUploadField 
-                label="Invoice Banner Image" 
-                placeholder="https://example.com/banner.jpg" 
-                value={formData.invoiceBannerUrl || ''} 
-                onChange={(val) => setFormData({ ...formData, invoiceBannerUrl: val })}
-                description="Upload an image (e.g. scenic view, toy train) to display on the Tax Invoice PDF next to the important notes."
+                label="Invoice Top Header Banner" 
+                placeholder="https://example.com/header-banner.jpg" 
+                value={formData.invoiceHeaderBannerUrl || ''} 
+                onChange={(val) => setFormData({ ...formData, invoiceHeaderBannerUrl: val })}
+                description="Upload the top header image banner (e.g. scenic views of Kashmir, Sikkim, Kerala)."
+              />
+              <ImageUploadField 
+                label="Invoice Middle Polaroid Banner" 
+                placeholder="https://example.com/middle-banner.jpg" 
+                value={formData.invoiceMiddleBannerUrl || ''} 
+                onChange={(val) => setFormData({ ...formData, invoiceMiddleBannerUrl: val })}
+                description="Upload the middle/footer polaroid pictures banner."
+              />
+              <ImageUploadField 
+                label="Feedback QR Code" 
+                placeholder="https://example.com/qr-code.png" 
+                value={formData.invoiceQrCodeUrl || ''} 
+                onChange={(val) => setFormData({ ...formData, invoiceQrCodeUrl: val })}
+                description="Upload a Google Review / Feedback QR Code to show in the feedback section."
               />
             </CardContent>
           </Card>

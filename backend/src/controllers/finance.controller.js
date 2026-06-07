@@ -168,7 +168,19 @@ const downloadBillingStatementPdf = async (req, res, next) => {
     const proposal = await prisma.proposal.findFirst({
       where: { queryId, deletedAt: null },
       orderBy: { version: 'desc' },
-      select: { sellingPrice: true, totalCost: true },
+      select: { 
+        sellingPrice: true, 
+        totalCost: true, 
+        markupPct: true,
+        itinerary: {
+          select: {
+            costingBreakdown: true,
+            sellingPrice: true,
+            totalCost: true,
+            markupPct: true
+          }
+        }
+      },
     });
 
     const customerPayments = await prisma.payment.findMany({
@@ -207,7 +219,8 @@ const downloadBillingStatementPdf = async (req, res, next) => {
       payments: customerPayments,
       date: new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }),
       orgSettings,
-      tourCode: tour?.tourCode || null
+      tourCode: tour?.tourCode || null,
+      proposal
     });
 
     const pdfBuffer = await pdfService.generatePdfFromHtml(html);
