@@ -78,14 +78,25 @@ const getBrowser = async () => {
       logger.warn('No Chromium executable found via native paths or sparticuz. Attempting fallback launch.');
     }
 
-    logger.info(`Launching browser. Executable: ${executablePath || 'default-bundled'}. Platform: ${process.platform}. Env: ${config.nodeEnv}`);
+    const isNative = executablePath && (
+      executablePath === '/usr/bin/chromium' || 
+      executablePath === '/usr/bin/chromium-browser' ||
+      executablePath.includes('google-chrome') ||
+      executablePath.includes('google-chrome-stable')
+    );
+
+    const launchArgs = isNative
+      ? ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--disable-gpu']
+      : (isProduction ? [...chromium.args, '--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--disable-gpu'] : ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']);
+
+    const launchHeadless = isNative ? true : (isProduction ? chromium.headless : 'new');
+
+    logger.info(`Launching browser. Executable: ${executablePath || 'default-bundled'}. Platform: ${process.platform}. Env: ${config.nodeEnv}. Native: ${isNative}`);
     browserInstance = await puppeteer.launch({
-      args: isProduction 
-        ? [...chromium.args, '--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--disable-gpu'] 
-        : ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
+      args: launchArgs,
       defaultViewport: { width: 1280, height: 1024, deviceScaleFactor: 1 },
       executablePath: executablePath || undefined,
-      headless: isProduction ? chromium.headless : 'new',
+      headless: launchHeadless,
     });
 
     browserInstance.on('disconnected', () => {
@@ -116,8 +127,8 @@ const generatePdfFromHtml = async (htmlContent) => {
       await page.setViewport({ width: 1280, height: 1024, deviceScaleFactor: 1 });
 
       await page.setContent(htmlContent, {
-        waitUntil: 'networkidle2', // Safer fallback than networkidle0 to prevent hangs on minor assets
-        timeout: 45000,            // 45 seconds per attempt
+        waitUntil: 'domcontentloaded', // Fast, doesn't hang on external assets (Unsplash/CDN)
+        timeout: 45000,                // 45 seconds per attempt
       });
 
       // CRITICAL: Wait for all fonts to be ready before printing to prevent blank text

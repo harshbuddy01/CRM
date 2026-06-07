@@ -78,13 +78,21 @@ export function InvoiceTab({ queryId }: { queryId: string }) {
                       variant="ghost" 
                       size="sm" 
                       className="h-8 w-8 p-0 rounded-lg hover:bg-primary/10 hover:text-primary transition-colors"
-                      onClick={async (e) => {
+                       onClick={async (e) => {
                         e.stopPropagation();
                         try {
                           const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || '/api/v1'}/finance/invoices/${inv.id}/pdf`, {
                             headers: { 'Authorization': `Bearer ${useAuthStore.getState().accessToken || localStorage.getItem('token')}` }
                           });
-                          if (!response.ok) throw new Error('Failed');
+                          if (!response.ok) {
+                            let errMsg = 'Failed to download PDF';
+                            try {
+                              const errText = await response.text();
+                              const errJson = JSON.parse(errText);
+                              if (errJson && errJson.message) errMsg = errJson.message;
+                            } catch (_) {}
+                            throw new Error(errMsg);
+                          }
                           const blob = await response.blob();
                           const url = window.URL.createObjectURL(blob);
                           const a = document.createElement('a');
@@ -93,9 +101,10 @@ export function InvoiceTab({ queryId }: { queryId: string }) {
                           document.body.appendChild(a);
                           a.click();
                           a.remove();
+                          window.URL.revokeObjectURL(url);
                           toast.success('Invoice PDF Downloaded');
-                        } catch (err) {
-                          toast.error('Could not download PDF');
+                        } catch (err: any) {
+                          toast.error(err.message || 'Could not download PDF');
                         }
                       }}
                     >

@@ -192,7 +192,15 @@ export default function InvoiceDetailPage() {
                 const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || '/api/v1'}/finance/invoices/${id}/pdf`, {
                   headers: { 'Authorization': `Bearer ${useAuthStore.getState().accessToken || localStorage.getItem('token')}` }
                 });
-                if (!response.ok) throw new Error('Failed to download PDF');
+                if (!response.ok) {
+                  let errMsg = 'Failed to download PDF';
+                  try {
+                    const errText = await response.text();
+                    const errJson = JSON.parse(errText);
+                    if (errJson && errJson.message) errMsg = errJson.message;
+                  } catch (_) {}
+                  throw new Error(errMsg);
+                }
                 const blob = await response.blob();
                 const url = window.URL.createObjectURL(blob);
                 const a = document.createElement('a');
@@ -201,8 +209,10 @@ export default function InvoiceDetailPage() {
                 document.body.appendChild(a);
                 a.click();
                 a.remove();
-              } catch (err) {
-                toast.error('Could not generate PDF. Please try again.');
+                window.URL.revokeObjectURL(url);
+                toast.success('Invoice PDF downloaded successfully');
+              } catch (err: any) {
+                toast.error(err.message || 'Could not generate PDF. Please try again.');
               }
             }}
           >

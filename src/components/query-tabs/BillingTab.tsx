@@ -618,6 +618,15 @@ export function BillingTab({ queryId }: { queryId: string }) {
                     const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || '/api/v1'}/finance/invoices/${invoice.id}/pdf`, {
                       headers: { 'Authorization': `Bearer ${useAuthStore.getState().accessToken || localStorage.getItem('token')}` }
                     });
+                    if (!response.ok) {
+                      let errMsg = 'Failed to generate PDF';
+                      try {
+                        const errText = await response.text();
+                        const errJson = JSON.parse(errText);
+                        if (errJson && errJson.message) errMsg = errJson.message;
+                      } catch (_) {}
+                      throw new Error(errMsg);
+                    }
                     const blob = await response.blob();
                     const url = window.URL.createObjectURL(blob);
                     const a = document.createElement('a');
@@ -626,8 +635,10 @@ export function BillingTab({ queryId }: { queryId: string }) {
                     document.body.appendChild(a);
                     a.click();
                     a.remove();
-                  } catch (err) {
-                    toast.error('Could not generate PDF');
+                    window.URL.revokeObjectURL(url);
+                    toast.success('Invoice PDF downloaded successfully');
+                  } catch (err: any) {
+                    toast.error(err.message || 'Could not generate PDF');
                   }
                 }}
               >

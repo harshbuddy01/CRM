@@ -9,7 +9,9 @@
     "worker": "node src/worker.js",
     "migrate": "prisma migrate deploy",
     "seed": "prisma db seed",
-    "generate": "prisma generate"
+    "generate": "prisma generate",
+    "test-template": "node test_template.js",
+    "test-pdf": "node test_pdf.js"
   },
   "prisma": {
     "seed": "node prisma/seeds/seed.js"
