@@ -7,6 +7,45 @@ const prisma = require('../config/prisma');
 const pdfService = require('../services/pdf.service');
 const { getArtisanalTemplate, getBillingStatementTemplate } = require('../templates/billingStatement.template');
 const orgSettingService = require('../services/org-setting.service');
+const cloudinary = require('../config/cloudinary');
+
+const uploadBase64Image = async (base64Str, folder = 'travelcrm/invoices') => {
+  if (!base64Str || !base64Str.startsWith('data:image/')) {
+    return base64Str;
+  }
+  try {
+    const uploadResult = await cloudinary.uploader.upload(base64Str, {
+      folder,
+      resource_type: 'auto',
+    });
+    return uploadResult.secure_url;
+  } catch (error) {
+    console.error('Failed to upload base64 image to Cloudinary:', error);
+    return base64Str;
+  }
+};
+
+const ensureCloudinaryImages = async (invoice) => {
+  let needsUpdate = false;
+  const updateData = {};
+  const imgFields = ['invoiceHeaderBannerUrl', 'invoiceMiddleBannerUrl', 'invoiceQrCodeUrl', 'invoiceLogoUrl'];
+  for (const field of imgFields) {
+    if (invoice[field] && invoice[field].startsWith('data:image/')) {
+      const cloudinaryUrl = await uploadBase64Image(invoice[field]);
+      if (cloudinaryUrl && cloudinaryUrl.startsWith('http')) {
+        invoice[field] = cloudinaryUrl;
+        updateData[field] = cloudinaryUrl;
+        needsUpdate = true;
+      }
+    }
+  }
+  if (needsUpdate) {
+    await prisma.invoice.update({
+      where: { id: invoice.id },
+      data: updateData,
+    });
+  }
+};
 
 const escapeHtml = (str) => String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
@@ -479,6 +518,9 @@ const downloadInvoicePdf = async (req, res, next) => {
     });
     if (!invoice) return res.status(404).json({ success: false, message: 'Invoice not found' });
     
+    // Auto-clean base64 strings to prevent Puppeteer crash / A4 bloat
+    await ensureCloudinaryImages(invoice);
+    
     if (invoice.queryId) {
       const billingData = await getBillingDataForQuery(invoice.queryId);
       if (billingData) {
@@ -526,6 +568,9 @@ const getInvoiceHtml = async (req, res, next) => {
       where: { id: req.params.id }
     });
     if (!invoice) return res.status(404).json({ success: false, message: 'Invoice not found' });
+    
+    // Auto-clean base64 strings to prevent Puppeteer crash / A4 bloat
+    await ensureCloudinaryImages(invoice);
     
     if (invoice.queryId) {
       const billingData = await getBillingDataForQuery(invoice.queryId);

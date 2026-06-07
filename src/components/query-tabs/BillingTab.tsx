@@ -129,6 +129,7 @@ export function BillingTab({ queryId }: { queryId: string }) {
 
   // ALL hooks must be declared ABOVE any conditional return (React rules of hooks)
   const [isDownloading, setIsDownloading] = useState(false);
+  const [downloadingInvoiceId, setDownloadingInvoiceId] = useState<string | null>(null);
   const downloadBillingPdf = useMutation({
     mutationFn: async () => {
       setIsDownloading(true);
@@ -613,8 +614,10 @@ export function BillingTab({ queryId }: { queryId: string }) {
                 variant="outline" 
                 size="sm" 
                 className="gap-1.5 h-8 text-xs bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100"
+                disabled={downloadingInvoiceId === invoice.id}
                 onClick={async () => {
                   try {
+                    setDownloadingInvoiceId(invoice.id);
                     const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || '/api/v1'}/finance/invoices/${invoice.id}/pdf`, {
                       headers: { 'Authorization': `Bearer ${useAuthStore.getState().accessToken || localStorage.getItem('token')}` }
                     });
@@ -639,10 +642,16 @@ export function BillingTab({ queryId }: { queryId: string }) {
                     toast.success('Invoice PDF downloaded successfully');
                   } catch (err: any) {
                     toast.error(err.message || 'Could not generate PDF');
+                  } finally {
+                    setDownloadingInvoiceId(null);
                   }
                 }}
               >
-                <Download className="w-3 h-3" />
+                {downloadingInvoiceId === invoice.id ? (
+                  <Loader2 className="w-3 h-3 animate-spin" />
+                ) : (
+                  <Download className="w-3 h-3" />
+                )}
                 Download
               </Button>
               <Button 

@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { Card, CardContent } from '@/components/ui/card';
@@ -10,6 +11,7 @@ import { toast } from 'sonner';
 import { useAuthStore } from '@/lib/auth-store';
 
 export function InvoiceTab({ queryId }: { queryId: string }) {
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
   const { data: invoices, isLoading: invoicesLoading } = useQuery({
     queryKey: ['query-invoices', queryId],
     queryFn: async () => {
@@ -78,9 +80,11 @@ export function InvoiceTab({ queryId }: { queryId: string }) {
                       variant="ghost" 
                       size="sm" 
                       className="h-8 w-8 p-0 rounded-lg hover:bg-primary/10 hover:text-primary transition-colors"
-                       onClick={async (e) => {
+                      disabled={downloadingId === inv.id}
+                      onClick={async (e) => {
                         e.stopPropagation();
                         try {
+                          setDownloadingId(inv.id);
                           const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || '/api/v1'}/finance/invoices/${inv.id}/pdf`, {
                             headers: { 'Authorization': `Bearer ${useAuthStore.getState().accessToken || localStorage.getItem('token')}` }
                           });
@@ -105,10 +109,16 @@ export function InvoiceTab({ queryId }: { queryId: string }) {
                           toast.success('Invoice PDF Downloaded');
                         } catch (err: any) {
                           toast.error(err.message || 'Could not download PDF');
+                        } finally {
+                          setDownloadingId(null);
                         }
                       }}
                     >
-                      <Download className="w-4 h-4" />
+                      {downloadingId === inv.id ? (
+                        <Loader2 className="w-4 h-4 animate-spin text-primary" />
+                      ) : (
+                        <Download className="w-4 h-4" />
+                      )}
                     </Button>
                     <Button 
                       variant="ghost" 

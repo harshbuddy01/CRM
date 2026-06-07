@@ -1,8 +1,21 @@
-// ============================================================
-// TravelCRM — Finance Service (Sprint 8)
-// ============================================================
-
 const prisma = require('../config/prisma');
+const cloudinary = require('../config/cloudinary');
+
+const uploadBase64Image = async (base64Str, folder = 'travelcrm/invoices') => {
+  if (!base64Str || !base64Str.startsWith('data:image/')) {
+    return base64Str;
+  }
+  try {
+    const uploadResult = await cloudinary.uploader.upload(base64Str, {
+      folder,
+      resource_type: 'auto',
+    });
+    return uploadResult.secure_url;
+  } catch (error) {
+    console.error('Failed to upload base64 image to Cloudinary:', error);
+    return base64Str;
+  }
+};
 
 // ─── Expenses ────────────────────────────────────────────────
 const listExpenses = async ({ category, from, to, page = 1, limit = 50 }) => {
@@ -148,7 +161,7 @@ const createInvoice = async (data) => {
   }
 };
 
-const updateInvoice = (id, data) => {
+const updateInvoice = async (id, data) => {
   if (data.subtotal !== undefined) data.subtotal = parseFloat(data.subtotal);
   if (data.taxPercent !== undefined) data.taxPercent = parseFloat(data.taxPercent);
   if (data.taxAmount !== undefined) data.taxAmount = parseFloat(data.taxAmount);
@@ -158,6 +171,21 @@ const updateInvoice = (id, data) => {
   if (typeof data.items === 'string') data.items = JSON.parse(data.items);
   if (data.status === 'sent' && !data.sentAt) data.sentAt = new Date();
   if (data.status === 'paid' && !data.paidAt) data.paidAt = new Date();
+
+  // Auto-detect and upload base64 images to Cloudinary to keep the database and PDF sizes small
+  if (data.invoiceHeaderBannerUrl && data.invoiceHeaderBannerUrl.startsWith('data:image/')) {
+    data.invoiceHeaderBannerUrl = await uploadBase64Image(data.invoiceHeaderBannerUrl);
+  }
+  if (data.invoiceMiddleBannerUrl && data.invoiceMiddleBannerUrl.startsWith('data:image/')) {
+    data.invoiceMiddleBannerUrl = await uploadBase64Image(data.invoiceMiddleBannerUrl);
+  }
+  if (data.invoiceQrCodeUrl && data.invoiceQrCodeUrl.startsWith('data:image/')) {
+    data.invoiceQrCodeUrl = await uploadBase64Image(data.invoiceQrCodeUrl);
+  }
+  if (data.invoiceLogoUrl && data.invoiceLogoUrl.startsWith('data:image/')) {
+    data.invoiceLogoUrl = await uploadBase64Image(data.invoiceLogoUrl);
+  }
+
   return prisma.invoice.update({ where: { id }, data });
 };
 

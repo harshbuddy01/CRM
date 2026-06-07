@@ -110,6 +110,7 @@ export default function InvoiceDetailPage() {
   const router = useRouter();
   const qc = useQueryClient();
   const [iframeKey, setIframeKey] = useState(0);
+  const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
 
   const { data: invoice, isLoading, isError } = useQuery({
     queryKey: ['invoice', id],
@@ -187,8 +188,10 @@ export default function InvoiceDetailPage() {
             variant="outline" 
             size="sm" 
             className="rounded-lg h-9 border-slate-200 text-slate-600 hover:bg-slate-50"
+            disabled={isDownloadingPdf}
             onClick={async () => {
               try {
+                setIsDownloadingPdf(true);
                 const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || '/api/v1'}/finance/invoices/${id}/pdf`, {
                   headers: { 'Authorization': `Bearer ${useAuthStore.getState().accessToken || localStorage.getItem('token')}` }
                 });
@@ -213,10 +216,20 @@ export default function InvoiceDetailPage() {
                 toast.success('Invoice PDF downloaded successfully');
               } catch (err: any) {
                 toast.error(err.message || 'Could not generate PDF. Please try again.');
+              } finally {
+                setIsDownloadingPdf(false);
               }
             }}
           >
-            <Download className="w-4 h-4 mr-2" /> Download Bill
+            {isDownloadingPdf ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Downloading...
+              </>
+            ) : (
+              <>
+                <Download className="w-4 h-4 mr-2" /> Download Bill
+              </>
+            )}
           </Button>
           <Button 
             variant="outline" 

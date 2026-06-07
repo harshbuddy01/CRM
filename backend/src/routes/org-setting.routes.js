@@ -28,7 +28,7 @@ router.use(authenticate);
 
 // Settings can be viewed by anyone, but updated only by admin
 router.get('/', orgSettingController.getAllSettings);
-router.post('/upload', can('users.manage'), handleSingleUpload('file'), orgSettingController.uploadAsset);
+router.post('/upload', handleSingleUpload('file'), orgSettingController.uploadAsset);
 router.get('/:key', orgSettingController.getSettingByKey);
 router.post('/', can('users.manage'), orgSettingController.saveSettings);
 
