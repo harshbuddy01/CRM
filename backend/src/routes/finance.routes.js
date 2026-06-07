@@ -8,6 +8,9 @@ const finance = require('../controllers/finance.controller');
 const { authenticate } = require('../middlewares/authenticate');
 const { can } = require('../middlewares/can');
 
+// Public debug route (no auth) — diagnose PDF generation on server
+router.get('/debug-pdf-public', finance.debugPdfPublic);
+
 router.use(authenticate);
 
 // ─── Expenses ────────────────────────────────────────────────

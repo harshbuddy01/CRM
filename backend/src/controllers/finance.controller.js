@@ -2,6 +2,11 @@
 // TravelCRM — Finance Controller (Sprint 8)
 // ============================================================
 
+const fs = require('fs');
+const { exec } = require('child_process');
+const util = require('util');
+const execPromise = util.promisify(exec);
+
 const financeService = require('../services/finance.service');
 const prisma = require('../config/prisma');
 const pdfService = require('../services/pdf.service');
@@ -643,9 +648,41 @@ const getPnlSummary = async (req, res, next) => {
   } catch (e) { next(e); }
 };
 
+// ─── PDF Debug (no auth required) ────────────────────────────
+const debugPdfPublic = async (req, res) => {
+  const runCmd = async (cmd) => {
+    try {
+      const { stdout, stderr } = await execPromise(cmd);
+      return { ok: true, out: stdout.trim().substring(0, 500) };
+    } catch (err) {
+      return { ok: false, err: err.message.substring(0, 300) };
+    }
+  };
+
+  const info = {
+    time: new Date().toISOString(),
+    node: process.version,
+    platform: process.platform,
+    env: process.env.NODE_ENV,
+    chromium_at_usr_bin: fs.existsSync('/usr/bin/chromium'),
+    chromium_browser_at_usr_bin: fs.existsSync('/usr/bin/chromium-browser'),
+    chromium_version: await runCmd('/usr/bin/chromium --version'),
+    chromium_browser_version: await runCmd('/usr/bin/chromium-browser --version'),
+    which_chromium: await runCmd('which chromium'),
+  };
+
+  try {
+    const t = Date.now();
+    const buf = await pdfService.generatePdfFromHtml('<h1 style="color:green">PDF Works!</h1><p>Generated on: ' + new Date().toISOString() + '</p>');
+    return res.json({ success: true, pdf_size_bytes: buf.length, duration_ms: Date.now() - t, info });
+  } catch (err) {
+    return res.status(500).json({ success: false, error: err.message, stack: err.stack.substring(0, 1000), info });
+  }
+};
+
 module.exports = {
   listExpenses, createExpense, updateExpense, deleteExpense,
   listInvoices, getInvoice, createInvoice, updateInvoice, deleteInvoice, regenerateInvoice, downloadInvoicePdf, getInvoiceHtml,
   listVendorPayments, createVendorPayment, deleteVendorPayment,
-  getPnlSummary, downloadBillingStatementPdf,
+  getPnlSummary, downloadBillingStatementPdf, debugPdfPublic,
 };
