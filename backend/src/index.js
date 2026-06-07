@@ -23,49 +23,43 @@ const server = app.listen(config.port, '0.0.0.0', () => {
   startCronJobs();
   console.log('✅ Cron Jobs initialized.');
 
-  // Purge any bloated base64 images from the database on startup (Query and Invoice models)
+  // Purge any bloated base64 images from the database on startup (Query and Invoice models) using raw SQL length checks
   try {
     const prisma = require('./config/prisma');
     
-    // Clean Invoice model
-    prisma.invoice.updateMany({
-      where: {
-        OR: [
-          { invoiceHeaderBannerUrl: { startsWith: 'data:image/' } },
-          { invoiceMiddleBannerUrl: { startsWith: 'data:image/' } },
-          { invoiceQrCodeUrl: { startsWith: 'data:image/' } },
-          { invoiceLogoUrl: { startsWith: 'data:image/' } },
-        ]
-      },
-      data: {
-        invoiceHeaderBannerUrl: null,
-        invoiceMiddleBannerUrl: null,
-        invoiceQrCodeUrl: null,
-        invoiceLogoUrl: null,
+    // Clean invoices table
+    prisma.$executeRawUnsafe(`
+      UPDATE invoices
+      SET 
+        invoice_header_banner_url = CASE WHEN LENGTH(invoice_header_banner_url) > 2000 THEN NULL ELSE invoice_header_banner_url END,
+        invoice_middle_banner_url = CASE WHEN LENGTH(invoice_middle_banner_url) > 2000 THEN NULL ELSE invoice_middle_banner_url END,
+        invoice_qr_code_url = CASE WHEN LENGTH(invoice_qr_code_url) > 2000 THEN NULL ELSE invoice_qr_code_url END,
+        invoice_logo_url = CASE WHEN LENGTH(invoice_logo_url) > 2000 THEN NULL ELSE invoice_logo_url END
+      WHERE 
+        LENGTH(invoice_header_banner_url) > 2000 OR 
+        LENGTH(invoice_middle_banner_url) > 2000 OR 
+        LENGTH(invoice_qr_code_url) > 2000 OR 
+        LENGTH(invoice_logo_url) > 2000
+    `).then(count => {
+      if (count > 0) {
+        console.log(`🧹 Raw SQL cleaned up ${count} invoices containing bloated base64 images.`);
       }
-    }).then(res => {
-      if (res.count > 0) {
-        console.log(`🧹 cleaned up ${res.count} invoices containing bloated base64 images.`);
-      }
-    }).catch(err => console.error('❌ Base64 invoice cleanup failed:', err));
+    }).catch(err => console.error('❌ Raw SQL invoice cleanup failed:', err));
 
-    // Clean Query model
-    prisma.query.updateMany({
-      where: {
-        OR: [
-          { invoiceHeaderBannerUrl: { startsWith: 'data:image/' } },
-          { invoiceMiddleBannerUrl: { startsWith: 'data:image/' } },
-        ]
-      },
-      data: {
-        invoiceHeaderBannerUrl: null,
-        invoiceMiddleBannerUrl: null,
+    // Clean queries table
+    prisma.$executeRawUnsafe(`
+      UPDATE queries
+      SET 
+        invoice_header_banner_url = CASE WHEN LENGTH(invoice_header_banner_url) > 2000 THEN NULL ELSE invoice_header_banner_url END,
+        invoice_middle_banner_url = CASE WHEN LENGTH(invoice_middle_banner_url) > 2000 THEN NULL ELSE invoice_middle_banner_url END
+      WHERE 
+        LENGTH(invoice_header_banner_url) > 2000 OR 
+        LENGTH(invoice_middle_banner_url) > 2000
+    `).then(count => {
+      if (count > 0) {
+        console.log(`🧹 Raw SQL cleaned up ${count} queries containing bloated base64 images.`);
       }
-    }).then(res => {
-      if (res.count > 0) {
-        console.log(`🧹 cleaned up ${res.count} queries containing bloated base64 images.`);
-      }
-    }).catch(err => console.error('❌ Base64 query cleanup failed:', err));
+    }).catch(err => console.error('❌ Raw SQL query cleanup failed:', err));
 
   } catch (e) {
     console.error('❌ Could not initialize database base64 cleanup:', e);
