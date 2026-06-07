@@ -6,6 +6,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Loader2, FileText, Download, ExternalLink } from 'lucide-react';
 import { format } from 'date-fns';
+import { toast } from 'sonner';
 
 export function InvoiceTab({ queryId }: { queryId: string }) {
   const { data: invoices, isLoading: invoicesLoading } = useQuery({
@@ -70,8 +71,35 @@ export function InvoiceTab({ queryId }: { queryId: string }) {
                     </div>
                     <p className="text-[10px] font-black uppercase text-slate-400">Issued: {format(new Date(inv.createdAt), 'dd MMM yyyy')}</p>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
                     <span className="text-sm font-black text-slate-900">₹{Number(inv.totalAmount).toLocaleString('en-IN')}</span>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="h-8 w-8 p-0 rounded-lg hover:bg-primary/10 hover:text-primary transition-colors"
+                      onClick={async (e) => {
+                        e.stopPropagation();
+                        try {
+                          const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || '/api/v1'}/finance/invoices/${inv.id}/pdf`, {
+                            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+                          });
+                          if (!response.ok) throw new Error('Failed');
+                          const blob = await response.blob();
+                          const url = window.URL.createObjectURL(blob);
+                          const a = document.createElement('a');
+                          a.href = url;
+                          a.download = `Invoice-${inv.invoiceNumber}.pdf`;
+                          document.body.appendChild(a);
+                          a.click();
+                          a.remove();
+                          toast.success('Invoice PDF Downloaded');
+                        } catch (err) {
+                          toast.error('Could not download PDF');
+                        }
+                      }}
+                    >
+                      <Download className="w-4 h-4" />
+                    </Button>
                     <Button 
                       variant="ghost" 
                       size="sm" 
