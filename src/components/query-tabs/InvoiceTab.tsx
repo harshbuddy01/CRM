@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Loader2, FileText, Download, ExternalLink } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
-import { useAuthStore } from '@/lib/auth-store';
+
 
 export function InvoiceTab({ queryId }: { queryId: string }) {
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
@@ -83,35 +83,23 @@ export function InvoiceTab({ queryId }: { queryId: string }) {
                       disabled={downloadingId === inv.id}
                       onClick={async (e) => {
                         e.stopPropagation();
-                        try {
-                          setDownloadingId(inv.id);
-                          const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || '/api/v1'}/finance/invoices/${inv.id}/pdf`, {
-                            headers: { 'Authorization': `Bearer ${useAuthStore.getState().accessToken || localStorage.getItem('token')}` }
-                          });
-                          if (!response.ok) {
-                            let errMsg = 'Failed to download PDF';
-                            try {
-                              const errText = await response.text();
-                              const errJson = JSON.parse(errText);
-                              if (errJson && errJson.message) errMsg = errJson.message;
-                            } catch (_) {}
-                            throw new Error(errMsg);
-                          }
-                          const blob = await response.blob();
-                          const url = window.URL.createObjectURL(blob);
-                          const a = document.createElement('a');
-                          a.href = url;
-                          a.download = `Invoice-${inv.invoiceNumber}.pdf`;
-                          document.body.appendChild(a);
-                          a.click();
-                          a.remove();
-                          window.URL.revokeObjectURL(url);
-                          toast.success('Invoice PDF Downloaded');
-                        } catch (err: any) {
-                          toast.error(err.message || 'Could not download PDF');
-                        } finally {
-                          setDownloadingId(null);
-                        }
+                         try {
+                           setDownloadingId(inv.id);
+                           const res = await api.get(`/finance/invoices/${inv.id}/pdf`, { responseType: 'blob' });
+                           const url = window.URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }));
+                           const a = document.createElement('a');
+                           a.href = url;
+                           a.download = `Invoice-${inv.invoiceNumber}.pdf`;
+                           document.body.appendChild(a);
+                           a.click();
+                           a.remove();
+                           window.URL.revokeObjectURL(url);
+                           toast.success('Invoice PDF Downloaded');
+                         } catch (err: any) {
+                           toast.error(err.response?.data?.message || err.message || 'Could not download PDF');
+                         } finally {
+                           setDownloadingId(null);
+                         }
                       }}
                     >
                       {downloadingId === inv.id ? (

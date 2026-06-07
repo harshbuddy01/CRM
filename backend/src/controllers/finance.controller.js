@@ -30,13 +30,27 @@ const ensureCloudinaryImages = async (invoice) => {
   const updateData = {};
   const imgFields = ['invoiceHeaderBannerUrl', 'invoiceMiddleBannerUrl', 'invoiceQrCodeUrl', 'invoiceLogoUrl'];
   for (const field of imgFields) {
-    if (invoice[field] && invoice[field].startsWith('data:image/')) {
-      const cloudinaryUrl = await uploadBase64Image(invoice[field]);
-      if (cloudinaryUrl && cloudinaryUrl.startsWith('http')) {
-        invoice[field] = cloudinaryUrl;
-        updateData[field] = cloudinaryUrl;
-        needsUpdate = true;
+    const val = invoice[field];
+    if (!val) continue;
+    // Catch ALL base64 data URLs (data:image/, data:application/octet-stream, etc.)
+    // AND any suspiciously long string that is NOT a real HTTP URL
+    const isBase64 = val.startsWith('data:');
+    const isTooLong = val.length > 2000 && !val.startsWith('http');
+    if (isBase64 || isTooLong) {
+      if (isBase64 && val.startsWith('data:image/')) {
+        // Try to upload to Cloudinary and get a real URL back
+        const cloudinaryUrl = await uploadBase64Image(val);
+        if (cloudinaryUrl && cloudinaryUrl.startsWith('http')) {
+          invoice[field] = cloudinaryUrl;
+          updateData[field] = cloudinaryUrl;
+          needsUpdate = true;
+          continue;
+        }
       }
+      // If it's not a valid image data URL or upload failed, just null it out
+      invoice[field] = null;
+      updateData[field] = null;
+      needsUpdate = true;
     }
   }
   if (needsUpdate) {
