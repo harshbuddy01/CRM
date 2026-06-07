@@ -7,24 +7,108 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { 
   Loader2, FileText, Download, ArrowLeft, 
-  Printer, Send, CheckCircle2, AlertCircle,
+  Printer, CheckCircle2, AlertCircle,
   Calendar, User, CreditCard, Hash
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
+import { useState, useRef } from 'react';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
-const STATUS_COLORS: Record<string, string> = {
-  draft: 'bg-slate-100 text-slate-600 border-slate-200',
-  sent: 'bg-blue-50 text-blue-700 border-blue-100',
-  paid: 'bg-emerald-50 text-emerald-700 border-emerald-100',
-  cancelled: 'bg-red-50 text-red-600 border-red-100'
-};
+interface ImageUploadFieldProps {
+  label: string;
+  placeholder: string;
+  value: string;
+  onChange: (val: string) => void;
+  description?: string;
+}
+
+function ImageUploadField({ label, placeholder, value, onChange, description }: ImageUploadFieldProps) {
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const res = await api.post('/settings/upload', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      if (res.data?.success && res.data?.url) {
+        onChange(res.data.url);
+        toast.success(`${label} uploaded successfully!`);
+      } else {
+        toast.error('Upload response invalid');
+      }
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Failed to upload image');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  return (
+    <div className="space-y-2">
+      <Label className="flex justify-between items-center text-[10px] font-black text-slate-400 uppercase tracking-widest">
+        <span>{label}</span>
+        {value && (
+          <button
+            type="button"
+            onClick={() => onChange('')}
+            className="text-[10px] text-red-500 hover:text-red-700 flex items-center gap-1 font-bold transition-colors lowercase tracking-normal"
+          >
+            Clear
+          </button>
+        )}
+      </Label>
+      <div className="flex gap-2">
+        <div className="relative flex-1">
+          <Input
+            placeholder={placeholder}
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            className="pr-10 h-9 rounded-xl bg-slate-50 border-slate-200 text-xs"
+          />
+          {value && (
+            <div className="absolute right-2 top-2.5 w-4 h-4 rounded border overflow-hidden bg-muted flex items-center justify-center">
+              <img src={value} alt="Preview" className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLElement).style.display = 'none'; }} />
+            </div>
+          )}
+        </div>
+        <input
+          type="file"
+          ref={fileInputRef}
+          onChange={handleFileChange}
+          accept="image/*"
+          className="hidden"
+        />
+        <Button
+          type="button"
+          variant="outline"
+          className="h-9 rounded-xl border-slate-200 text-xs font-bold"
+          onClick={() => fileInputRef.current?.click()}
+          disabled={uploading}
+        >
+          {uploading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Upload'}
+        </Button>
+      </div>
+      {description && <p className="text-[9px] text-slate-400 font-medium leading-none mt-1">{description}</p>}
+    </div>
+  );
+}
 
 export default function InvoiceDetailPage() {
   const { id } = useParams();
   const router = useRouter();
   const qc = useQueryClient();
+  const [iframeKey, setIframeKey] = useState(0);
 
   const { data: invoice, isLoading, isError } = useQuery({
     queryKey: ['invoice', id],
@@ -38,7 +122,25 @@ export default function InvoiceDetailPage() {
     mutationFn: (status: string) => api.put(`/finance/invoices/${id}`, { status }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['invoice', id] });
+      setIframeKey(prev => prev + 1);
       toast.success('Invoice status updated');
+    }
+  });
+
+  const updateImagesMut = useMutation({
+    mutationFn: (data: {
+      invoiceHeaderBannerUrl?: string;
+      invoiceMiddleBannerUrl?: string;
+      invoiceQrCodeUrl?: string;
+      invoiceLogoUrl?: string;
+    }) => api.put(`/finance/invoices/${id}`, data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['invoice', id] });
+      setIframeKey(prev => prev + 1);
+      toast.success('Invoice assets updated successfully');
+    },
+    onError: (err: any) => {
+      toast.error(err.response?.data?.message || 'Failed to update invoice images');
     }
   });
 
@@ -63,7 +165,7 @@ export default function InvoiceDetailPage() {
   );
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6 pb-20 md:pb-10 px-4 md:px-0">
+    <div className="max-w-6xl mx-auto space-y-6 pb-20 md:pb-10 px-4 md:px-0">
       {/* Header Actions */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <Button variant="ghost" size="sm" onClick={() => router.back()} className="w-fit -ml-2 rounded-lg text-slate-500">
@@ -127,7 +229,8 @@ export default function InvoiceDetailPage() {
         {/* Main Invoice Card (Premium PDF Preview) */}
         <div className="md:col-span-2 shadow-xl shadow-slate-200/50 border border-slate-200 overflow-hidden rounded-2xl bg-white p-0 h-[1050px] relative">
           <iframe 
-            src={`${process.env.NEXT_PUBLIC_API_URL || '/api/v1'}/finance/invoices/${id}/html?token=${typeof window !== 'undefined' ? localStorage.getItem('token') : ''}`}
+            key={iframeKey}
+            src={`${process.env.NEXT_PUBLIC_API_URL || '/api/v1'}/finance/invoices/${id}/html?token=${typeof window !== 'undefined' ? localStorage.getItem('token') : ''}&v=${iframeKey}`}
             className="w-full h-full border-none"
             title="Invoice Preview"
           />
@@ -171,6 +274,45 @@ export default function InvoiceDetailPage() {
                   </>
                 );
               })()}
+            </CardContent>
+          </Card>
+
+          {/* Invoice Custom Images Card */}
+          <Card className="shadow-lg border-slate-200 rounded-2xl overflow-hidden">
+            <CardHeader className="p-4 border-b bg-slate-50">
+              <CardTitle className="text-xs font-black uppercase tracking-widest flex items-center gap-2">
+                <FileText className="w-3.5 h-3.5 text-primary" /> Custom Invoice Assets
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-4 space-y-4">
+              <ImageUploadField
+                label="Invoice Top Header Image"
+                placeholder="https://example.com/banner-header.jpg"
+                value={invoice.invoiceHeaderBannerUrl || ''}
+                onChange={(val) => updateImagesMut.mutate({ invoiceHeaderBannerUrl: val })}
+                description="Overrides the header landscape banner."
+              />
+              <ImageUploadField
+                label="Company Logo Image"
+                placeholder="https://example.com/logo.png"
+                value={invoice.invoiceLogoUrl || ''}
+                onChange={(val) => updateImagesMut.mutate({ invoiceLogoUrl: val })}
+                description="Overrides the top logo image."
+              />
+              <ImageUploadField
+                label="Middle Polaroid Banner"
+                placeholder="https://example.com/banner-middle.jpg"
+                value={invoice.invoiceMiddleBannerUrl || ''}
+                onChange={(val) => updateImagesMut.mutate({ invoiceMiddleBannerUrl: val })}
+                description="Overrides the middle polaroid collage banner."
+              />
+              <ImageUploadField
+                label="Google Review QR Code"
+                placeholder="https://example.com/qr.png"
+                value={invoice.invoiceQrCodeUrl || ''}
+                onChange={(val) => updateImagesMut.mutate({ invoiceQrCodeUrl: val })}
+                description="Overrides the review QR code image."
+              />
             </CardContent>
           </Card>
 

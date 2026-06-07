@@ -827,6 +827,11 @@ model Invoice {
   createdAt     DateTime  @default(now()) @map("created_at")
   updatedAt     DateTime  @updatedAt @map("updated_at")
 
+  invoiceHeaderBannerUrl String?   @map("invoice_header_banner_url")
+  invoiceMiddleBannerUrl String?   @map("invoice_middle_banner_url")
+  invoiceQrCodeUrl       String?   @map("invoice_qr_code_url")
+  invoiceLogoUrl         String?   @map("invoice_logo_url")
+
   creator User @relation("InvoiceCreatedBy", fields: [createdBy], references: [id])
 
   @@index([status])

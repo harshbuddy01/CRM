@@ -110,20 +110,6 @@ export function BillingTab({ queryId }: { queryId: string }) {
     },
   });
 
-  const updateQueryImagesMutation = useMutation({
-    mutationFn: async (images: { invoiceHeaderBannerUrl?: string; invoiceMiddleBannerUrl?: string }) => {
-      const res = await api.put(`/queries/${queryId}`, images);
-      return res.data;
-    },
-    onSuccess: () => {
-      toast.success('Invoice banners updated!');
-      queryClient.invalidateQueries({ queryKey: ['query', queryId] });
-    },
-    onError: (err: any) => {
-      toast.error('Failed to update invoice banners', { description: err.response?.data?.message || err.message });
-    }
-  });
-
   const { data: proposals, isLoading: proposalsLoading, isError: proposalsError } = useQuery({
     queryKey: ['proposals', queryId],
     queryFn: async () => {
@@ -673,30 +659,6 @@ export function BillingTab({ queryId }: { queryId: string }) {
             </CardContent>
           </Card>
         )}
-      </div>
-
-      <div>
-        <h3 className="font-semibold text-lg mb-3">Invoice Custom Banners</h3>
-        <Card className="rounded-2xl border-slate-200 shadow-sm overflow-hidden">
-          <CardContent className="p-6 space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <ImageUploadField
-                label="Invoice Top Header Image"
-                placeholder="https://example.com/banner-header.jpg"
-                value={queryObj?.invoiceHeaderBannerUrl || ''}
-                onChange={(val) => updateQueryImagesMutation.mutate({ invoiceHeaderBannerUrl: val })}
-                description="Overrides the global top header banner for this specific query's PDF."
-              />
-              <ImageUploadField
-                label="Invoice Middle Polaroid Image"
-                placeholder="https://example.com/banner-middle.jpg"
-                value={queryObj?.invoiceMiddleBannerUrl || ''}
-                onChange={(val) => updateQueryImagesMutation.mutate({ invoiceMiddleBannerUrl: val })}
-                description="Overrides the global middle collage poster for this specific query's PDF."
-              />
-            </div>
-          </CardContent>
-        </Card>
       </div>
     </div>
   );

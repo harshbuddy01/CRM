@@ -5,7 +5,7 @@
 const financeService = require('../services/finance.service');
 const prisma = require('../config/prisma');
 const pdfService = require('../services/pdf.service');
-const { getArtisanalTemplate } = require('../templates/billingStatement.template');
+const { getArtisanalTemplate, getBillingStatementTemplate } = require('../templates/billingStatement.template');
 const orgSettingService = require('../services/org-setting.service');
 
 const escapeHtml = (str) => String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -225,7 +225,7 @@ const downloadBillingStatementPdf = async (req, res, next) => {
       return res.status(403).json({ success: false, message: 'You do not have access to this billing statement' });
     }
 
-    const html = getArtisanalTemplate({
+    const html = getBillingStatementTemplate({
       ...billingData,
       date: new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }),
     });
@@ -487,6 +487,10 @@ const downloadInvoicePdf = async (req, res, next) => {
           invoiceNumber: invoice.invoiceNumber,
           invoiceDate: new Date(invoice.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }),
           dueDate: invoice.dueDate ? new Date(invoice.dueDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : new Date(invoice.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }),
+          invoiceHeaderBannerUrl: invoice.invoiceHeaderBannerUrl,
+          invoiceMiddleBannerUrl: invoice.invoiceMiddleBannerUrl,
+          invoiceQrCodeUrl: invoice.invoiceQrCodeUrl,
+          invoiceLogoUrl: invoice.invoiceLogoUrl,
         });
         const pdfBuffer = await pdfService.generatePdfFromHtml(html);
         res.set({
@@ -531,6 +535,10 @@ const getInvoiceHtml = async (req, res, next) => {
           invoiceNumber: invoice.invoiceNumber,
           invoiceDate: new Date(invoice.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }),
           dueDate: invoice.dueDate ? new Date(invoice.dueDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : new Date(invoice.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }),
+          invoiceHeaderBannerUrl: invoice.invoiceHeaderBannerUrl,
+          invoiceMiddleBannerUrl: invoice.invoiceMiddleBannerUrl,
+          invoiceQrCodeUrl: invoice.invoiceQrCodeUrl,
+          invoiceLogoUrl: invoice.invoiceLogoUrl,
         });
         res.set('Content-Type', 'text/html');
         return res.send(html);
