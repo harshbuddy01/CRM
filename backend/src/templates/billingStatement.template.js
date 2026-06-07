@@ -240,7 +240,8 @@ const getArtisanalTemplate = (data) => {
         .top-banner-container {
           position: relative;
           width: 100%;
-          background: #ffffff;
+          aspect-ratio: 1000 / 350;
+          background: #f7fafc;
           overflow: hidden;
           margin-bottom: 10px;
           display: block;
@@ -248,7 +249,8 @@ const getArtisanalTemplate = (data) => {
         
         .top-banner-img {
           width: 100%;
-          height: auto;
+          height: 100%;
+          object-fit: fill;
           display: block;
         }
         
@@ -288,7 +290,7 @@ const getArtisanalTemplate = (data) => {
         .details-card-body {
           padding: 6px 8px;
           display: grid;
-          grid-template-columns: 1fr 1fr;
+          grid-template-columns: 1fr 1.05fr;
           gap: 8px;
         }
         
@@ -579,6 +581,8 @@ const getArtisanalTemplate = (data) => {
         .middle-poster-container {
           position: relative;
           width: 100%;
+          aspect-ratio: 1000 / 185;
+          background: #f7fafc;
           border-radius: 5px;
           overflow: hidden;
           margin-bottom: 10px;
@@ -587,7 +591,8 @@ const getArtisanalTemplate = (data) => {
         
         .middle-poster-img {
           width: 100%;
-          height: auto;
+          height: 100%;
+          object-fit: fill;
           display: block;
         }
 
@@ -630,7 +635,14 @@ const getArtisanalTemplate = (data) => {
         }
         
         .footer-card {
-          padding: 5px;
+          border: 1px solid #e2e8f0;
+          border-radius: 6px;
+          background: #ffffff;
+          padding: 10px;
+          box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+          min-height: 128px;
+          display: flex;
+          flex-direction: column;
         }
         
         .footer-card-title {
@@ -671,7 +683,8 @@ const getArtisanalTemplate = (data) => {
           display: flex;
           justify-content: space-between;
           align-items: center;
-          gap: 8px;
+          gap: 12px;
+          flex-grow: 1;
         }
         
         .feedback-text {
@@ -689,7 +702,7 @@ const getArtisanalTemplate = (data) => {
         .feedback-btn {
           margin-top: 5px;
           background: #ffffff;
-          border: 1px solid #cbd5e0;
+          border: 1px solid #c5a059;
           border-radius: 4px;
           padding: 3px 6px;
           display: inline-flex;
@@ -697,18 +710,26 @@ const getArtisanalTemplate = (data) => {
           gap: 3px;
           font-size: 7.5px;
           font-weight: 700;
-          color: #4a5568;
+          color: #0f3d2f;
           cursor: pointer;
         }
         
         .feedback-qr-img {
-          width: 48px;
-          height: 48px;
+          width: 72px;
+          height: 72px;
           object-fit: contain;
-          border: 1px solid #cbd5e0;
-          border-radius: 4px;
-          padding: 1px;
+          border: 2px solid #c5a059;
+          border-radius: 6px;
+          padding: 2px;
           background: #ffffff;
+          box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        
+        .feedback-arrow {
+          margin-left: 2px;
+          vertical-align: middle;
+          align-self: flex-end;
+          margin-bottom: 2px;
         }
         
         /* 8. Bottom Footer Bar with gradient */
@@ -731,7 +752,7 @@ const getArtisanalTemplate = (data) => {
         }
         
         .bottom-logo-img {
-          height: 18px;
+          height: 30px;
           object-fit: contain;
         }
         
@@ -813,31 +834,43 @@ const getArtisanalTemplate = (data) => {
             </div>
             <div class="details-card-body">
               <div>
-                <div class="details-row">
-                  <span class="details-label">Invoice No.</span>
-                  <span class="details-value">: ${invoiceNumber}</span>
+                <div class="info-row">
+                  <span class="info-icon-wrapper">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+                  </span>
+                  <span class="info-text" style="font-weight: 500;">Invoice No.: <span style="font-weight: 700; color: #0f3d2f;">${invoiceNumber}</span></span>
                 </div>
-                <div class="details-row">
-                  <span class="details-label">Reference ID</span>
-                  <span class="details-value">: ${referenceId}</span>
+                <div class="info-row">
+                  <span class="info-icon-wrapper">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7.01" y2="7"></line></svg>
+                  </span>
+                  <span class="info-text" style="font-weight: 500;">Ref ID: <span style="font-weight: 700;">${referenceId}</span></span>
                 </div>
-                <div class="details-row">
-                  <span class="details-label">Trip ID</span>
-                  <span class="details-value">: ${tripId}</span>
+                <div class="info-row">
+                  <span class="info-icon-wrapper">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"></circle><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon></svg>
+                  </span>
+                  <span class="info-text" style="font-weight: 500;">Trip ID: <span style="font-weight: 700;">${tripId}</span></span>
                 </div>
               </div>
               <div>
-                <div class="details-row">
-                  <span class="details-label">Invoice Date</span>
-                  <span class="details-value">: ${invoiceDate}</span>
+                <div class="info-row">
+                  <span class="info-icon-wrapper">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                  </span>
+                  <span class="info-text" style="font-weight: 500;">Inv Date: <span style="font-weight: 700;">${invoiceDate}</span></span>
                 </div>
-                <div class="details-row">
-                  <span class="details-label">Due Date</span>
-                  <span class="details-value red-due">: ${dueDate}</span>
+                <div class="info-row">
+                  <span class="info-icon-wrapper">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line><line x1="12" y1="14" x2="12" y2="18"></line></svg>
+                  </span>
+                  <span class="info-text" style="font-weight: 500;">Due Date: <span style="font-weight: 700; color: #e53e3e;">${dueDate}</span></span>
                 </div>
-                <div class="details-row">
-                  <span class="details-label">Place of Supply</span>
-                  <span class="details-value">: ${placeOfSupply}</span>
+                <div class="info-row">
+                  <span class="info-icon-wrapper">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                  </span>
+                  <span class="info-text" style="font-weight: 500;">Supply: <span style="font-weight: 700;">${placeOfSupply}</span></span>
                 </div>
               </div>
             </div>
@@ -901,30 +934,47 @@ const getArtisanalTemplate = (data) => {
               Bill To
             </div>
             <div class="middle-card-body">
-              <div class="billto-name">${query.name}</div>
-              <div class="billto-row">
-                <span class="billto-lbl">Phone</span>
-                <span class="billto-val">: ${query.phone}</span>
+              <div class="info-row" style="margin-bottom: 6px;">
+                <span class="info-icon-wrapper">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                </span>
+                <span class="info-text" style="font-weight: 700; font-size: 9.5px; color: #0f3d2f;">${query.name}</span>
               </div>
-              <div class="billto-row">
-                <span class="billto-lbl">Email</span>
-                <span class="billto-val">: ${query.email || '—'}</span>
+              <div class="info-row">
+                <span class="info-icon-wrapper">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+                </span>
+                <span class="info-text">${query.phone}</span>
               </div>
-              <div class="billto-row" style="margin-top: 6px; border-top: 1px dashed #edf2f7; padding-top: 5px;">
-                <span class="billto-lbl">Destination</span>
-                <span class="billto-val">: ${query.destination || '—'}</span>
+              <div class="info-row">
+                <span class="info-icon-wrapper">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+                </span>
+                <span class="info-text">${query.email || '—'}</span>
               </div>
-              <div class="billto-row">
-                <span class="billto-lbl">Travel Dates</span>
-                <span class="billto-val">: ${travelDatesFormatted}</span>
+              <div class="info-row" style="margin-top: 6px; border-top: 1px dashed #edf2f7; padding-top: 5px;">
+                <span class="info-icon-wrapper">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                </span>
+                <span class="info-text" style="font-weight: 600;">Dest: ${query.destination || '—'}</span>
               </div>
-              <div class="billto-row">
-                <span class="billto-lbl">Guests</span>
-                <span class="billto-val">: ${guestsText}</span>
+              <div class="info-row">
+                <span class="info-icon-wrapper">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                </span>
+                <span class="info-text">Dates: ${travelDatesFormatted}</span>
               </div>
-              <div class="billto-row">
-                <span class="billto-lbl">Duration</span>
-                <span class="billto-val">: ${durationText}</span>
+              <div class="info-row">
+                <span class="info-icon-wrapper">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                </span>
+                <span class="info-text">Guests: ${guestsText}</span>
+              </div>
+              <div class="info-row">
+                <span class="info-icon-wrapper">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                </span>
+                <span class="info-text">Duration: ${durationText}</span>
               </div>
             </div>
           </div>
@@ -1162,9 +1212,10 @@ const getArtisanalTemplate = (data) => {
                 Your feedback motivates us to create more amazing journeys.
                 <br />
                 <div class="feedback-btn">
-                  <svg width="8" height="8" viewBox="0 0 24 24" fill="currentColor" style="color: #4285F4;"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"></path><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"></path><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l3.66-2.85z"></path><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.85c.87-2.6 3.3-4.53 6.16-4.53z"></path></svg>
+                  <svg width="8" height="8" viewBox="0 0 24 24" fill="currentColor" style="color: #4285F4; margin-right: 2px;"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"></path><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"></path><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l3.66-2.85z"></path><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.85c.87-2.6 3.3-4.53 6.16-4.53z"></path></svg>
                   Review us on Google
                 </div>
+                <svg class="feedback-arrow" width="22" height="15" viewBox="0 0 30 20" fill="none" style="color: #c5a059; transform: rotate(10deg);"><path d="M2 15 C 10 15, 15 5, 25 10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M25 10 L 20 8 M 25 10 L 22 14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
               </div>
               <img src="${invoiceQrCodeUrl}" class="feedback-qr-img" alt="QR Code" />
             </div>
