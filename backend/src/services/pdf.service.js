@@ -86,8 +86,8 @@ const getBrowser = async () => {
     );
 
     const launchArgs = isNative
-      ? ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--disable-gpu']
-      : (isProduction ? [...chromium.args, '--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--disable-gpu'] : ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']);
+      ? ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--disable-gpu', '--disable-web-security', '--disable-features=IsolateOrigins,site-per-process']
+      : (isProduction ? [...chromium.args, '--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--disable-gpu', '--disable-web-security'] : ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--disable-web-security']);
 
     const launchHeadless = isNative ? true : (isProduction ? chromium.headless : 'new');
 
@@ -131,8 +131,10 @@ const generatePdfFromHtml = async (htmlContent) => {
         timeout: 45000,                // 45 seconds per attempt
       });
 
-      // CRITICAL: Wait for all fonts to be ready before printing to prevent blank text
-      await page.evaluateHandle('document.fonts.ready');
+      // Wait a short fixed time for fonts/images to partially render.
+      // We do NOT use document.fonts.ready because it blocks indefinitely waiting
+      // for Google Fonts CDN which may be slow or unavailable inside the Docker container.
+      await new Promise(resolve => setTimeout(resolve, 800));
 
       const pdfOptions = {
         format: 'A4',
