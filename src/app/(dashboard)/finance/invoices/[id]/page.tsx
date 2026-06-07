@@ -16,6 +16,7 @@ import { toast } from 'sonner';
 import { useState, useRef } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useAuthStore } from '@/lib/auth-store';
 
 interface ImageUploadFieldProps {
   label: string;
@@ -189,7 +190,7 @@ export default function InvoiceDetailPage() {
             onClick={async () => {
               try {
                 const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || '/api/v1'}/finance/invoices/${id}/pdf`, {
-                  headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+                  headers: { 'Authorization': `Bearer ${useAuthStore.getState().accessToken || localStorage.getItem('token')}` }
                 });
                 if (!response.ok) throw new Error('Failed to download PDF');
                 const blob = await response.blob();
@@ -230,7 +231,7 @@ export default function InvoiceDetailPage() {
         <div className="md:col-span-2 shadow-xl shadow-slate-200/50 border border-slate-200 overflow-hidden rounded-2xl bg-white p-0 h-[1050px] relative">
           <iframe 
             key={iframeKey}
-            src={`${process.env.NEXT_PUBLIC_API_URL || '/api/v1'}/finance/invoices/${id}/html?token=${typeof window !== 'undefined' ? localStorage.getItem('token') : ''}&v=${iframeKey}`}
+            src={`${process.env.NEXT_PUBLIC_API_URL || '/api/v1'}/finance/invoices/${id}/html?token=${useAuthStore.getState().accessToken || localStorage.getItem('token') || ''}&v=${iframeKey}`}
             className="w-full h-full border-none"
             title="Invoice Preview"
           />

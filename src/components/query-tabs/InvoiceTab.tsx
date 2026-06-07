@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Loader2, FileText, Download, ExternalLink } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
+import { useAuthStore } from '@/lib/auth-store';
 
 export function InvoiceTab({ queryId }: { queryId: string }) {
   const { data: invoices, isLoading: invoicesLoading } = useQuery({
@@ -81,7 +82,7 @@ export function InvoiceTab({ queryId }: { queryId: string }) {
                         e.stopPropagation();
                         try {
                           const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || '/api/v1'}/finance/invoices/${inv.id}/pdf`, {
-                            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+                            headers: { 'Authorization': `Bearer ${useAuthStore.getState().accessToken || localStorage.getItem('token')}` }
                           });
                           if (!response.ok) throw new Error('Failed');
                           const blob = await response.blob();

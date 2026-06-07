@@ -11,6 +11,7 @@ import { useState, useRef } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useAuthStore } from '@/lib/auth-store';
 
 interface ImageUploadFieldProps {
   label: string;
@@ -615,7 +616,7 @@ export function BillingTab({ queryId }: { queryId: string }) {
                 onClick={async () => {
                   try {
                     const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || '/api/v1'}/finance/invoices/${invoice.id}/pdf`, {
-                      headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+                      headers: { 'Authorization': `Bearer ${useAuthStore.getState().accessToken || localStorage.getItem('token')}` }
                     });
                     const blob = await response.blob();
                     const url = window.URL.createObjectURL(blob);
