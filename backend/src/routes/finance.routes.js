@@ -23,6 +23,7 @@ router.post('/invoices', can('payment.view_all'), finance.createInvoice);
 router.put('/invoices/:id', can('payment.view_all'), finance.updateInvoice);
 router.put('/invoices/:id/regenerate', can('payment.view_all'), finance.regenerateInvoice);
 router.get('/invoices/:id/pdf', can('payment.view_all'), finance.downloadInvoicePdf);
+router.get('/invoices/:id/html', can('payment.view_all'), finance.getInvoiceHtml);
 router.delete('/invoices/:id', can('payment.view_all'), finance.deleteInvoice);
 
 // ─── Vendor Payments ─────────────────────────────────────────

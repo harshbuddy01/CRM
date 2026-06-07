@@ -7,13 +7,122 @@ import { Loader2, IndianRupee, TrendingUp, CreditCard, Copy, ExternalLink, Send,
 import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
+interface ImageUploadFieldProps {
+  label: string;
+  placeholder: string;
+  value: string;
+  onChange: (val: string) => void;
+  description?: string;
+}
+
+function ImageUploadField({ label, placeholder, value, onChange, description }: ImageUploadFieldProps) {
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const res = await api.post('/settings/upload', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      if (res.data?.success && res.data?.url) {
+        onChange(res.data.url);
+        toast.success(`${label} uploaded successfully!`);
+      } else {
+        toast.error('Upload response invalid');
+      }
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Failed to upload image');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  return (
+    <div className="space-y-2">
+      <Label className="flex justify-between items-center text-xs font-bold text-slate-500 uppercase tracking-wider">
+        <span>{label}</span>
+        {value && (
+          <button
+            type="button"
+            onClick={() => onChange('')}
+            className="text-[10px] text-red-500 hover:text-red-700 flex items-center gap-1 font-normal transition-colors lowercase tracking-normal"
+          >
+            Clear Image
+          </button>
+        )}
+      </Label>
+      <div className="flex gap-2">
+        <div className="relative flex-1">
+          <Input
+            placeholder={placeholder}
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            className="pr-10 h-10 rounded-xl bg-slate-50 border-slate-200"
+          />
+          {value && (
+            <div className="absolute right-2 top-2 w-6 h-6 rounded border overflow-hidden bg-muted flex items-center justify-center">
+              <img src={value} alt="Preview" className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLElement).style.display = 'none'; }} />
+            </div>
+          )}
+        </div>
+        <input
+          type="file"
+          ref={fileInputRef}
+          onChange={handleFileChange}
+          accept="image/*"
+          className="hidden"
+        />
+        <Button
+          type="button"
+          variant="outline"
+          className="h-10 rounded-xl border-slate-200 font-bold"
+          onClick={() => fileInputRef.current?.click()}
+          disabled={uploading}
+        >
+          {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Upload'}
+        </Button>
+      </div>
+      {description && <p className="text-[10px] text-slate-400 font-medium">{description}</p>}
+    </div>
+  );
+}
+
 export function BillingTab({ queryId }: { queryId: string }) {
   const queryClient = useQueryClient();
+
+  const { data: queryObj, isLoading: queryLoading } = useQuery({
+    queryKey: ['query', queryId],
+    queryFn: async () => {
+      const res = await api.get(`/queries/${queryId}`);
+      return res.data.data;
+    },
+  });
+
+  const updateQueryImagesMutation = useMutation({
+    mutationFn: async (images: { invoiceHeaderBannerUrl?: string; invoiceMiddleBannerUrl?: string }) => {
+      const res = await api.put(`/queries/${queryId}`, images);
+      return res.data;
+    },
+    onSuccess: () => {
+      toast.success('Invoice banners updated!');
+      queryClient.invalidateQueries({ queryKey: ['query', queryId] });
+    },
+    onError: (err: any) => {
+      toast.error('Failed to update invoice banners', { description: err.response?.data?.message || err.message });
+    }
+  });
 
   const { data: proposals, isLoading: proposalsLoading, isError: proposalsError } = useQuery({
     queryKey: ['proposals', queryId],
@@ -564,6 +673,30 @@ export function BillingTab({ queryId }: { queryId: string }) {
             </CardContent>
           </Card>
         )}
+      </div>
+
+      <div>
+        <h3 className="font-semibold text-lg mb-3">Invoice Custom Banners</h3>
+        <Card className="rounded-2xl border-slate-200 shadow-sm overflow-hidden">
+          <CardContent className="p-6 space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <ImageUploadField
+                label="Invoice Top Header Image"
+                placeholder="https://example.com/banner-header.jpg"
+                value={queryObj?.invoiceHeaderBannerUrl || ''}
+                onChange={(val) => updateQueryImagesMutation.mutate({ invoiceHeaderBannerUrl: val })}
+                description="Overrides the global top header banner for this specific query's PDF."
+              />
+              <ImageUploadField
+                label="Invoice Middle Polaroid Image"
+                placeholder="https://example.com/banner-middle.jpg"
+                value={queryObj?.invoiceMiddleBannerUrl || ''}
+                onChange={(val) => updateQueryImagesMutation.mutate({ invoiceMiddleBannerUrl: val })}
+                description="Overrides the global middle collage poster for this specific query's PDF."
+              />
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

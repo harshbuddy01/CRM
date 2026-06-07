@@ -105,111 +105,33 @@ export default function InvoiceDetailPage() {
           >
             <Download className="w-4 h-4 mr-2" /> Download Bill
           </Button>
-          <Button variant="outline" size="sm" className="rounded-lg h-9" onClick={() => window.print()}>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="rounded-lg h-9" 
+            onClick={() => {
+              const iframe = document.querySelector('iframe');
+              if (iframe && iframe.contentWindow) {
+                iframe.contentWindow.print();
+              } else {
+                window.print();
+              }
+            }}
+          >
             <Printer className="w-4 h-4" />
           </Button>
         </div>
       </div>
 
       <div className="grid md:grid-cols-3 gap-6">
-        {/* Main Invoice Card */}
-        <Card className="md:col-span-2 shadow-xl shadow-slate-200/50 border-slate-200 overflow-hidden rounded-2xl">
-          <CardHeader className="border-b bg-slate-50/50 p-6 md:p-8">
-            <div className="flex justify-between items-start">
-              <div className="space-y-1">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center text-white shadow-lg shadow-primary/20">
-                    <FileText className="w-6 h-6" />
-                  </div>
-                  <h1 className="text-2xl font-black tracking-tight text-slate-900">{invoice.invoiceNumber}</h1>
-                </div>
-                <p className="text-slate-400 text-[10px] font-black uppercase tracking-wider pl-13">Invoice for Travel Booking</p>
-              </div>
-              <div className={cn(
-                "px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border",
-                STATUS_COLORS[invoice.status]
-              )}>
-                {invoice.status}
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent className="p-6 md:p-8 space-y-8">
-            {/* Info Grid */}
-            <div className="grid grid-cols-2 gap-8 pb-8 border-b border-slate-100">
-              <div className="space-y-4">
-                <div>
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">Billed To</label>
-                  <p className="font-bold text-slate-900 leading-tight">{invoice.clientName}</p>
-                  <p className="text-sm text-slate-500 mt-1">{invoice.clientEmail}</p>
-                  <p className="text-sm text-slate-500">{invoice.clientPhone}</p>
-                </div>
-              </div>
-              <div className="space-y-4 text-right">
-                <div className="grid grid-cols-2 gap-y-2 text-right">
-                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Date Issued</span>
-                  <span className="text-sm font-bold text-slate-900">{format(new Date(invoice.createdAt), 'dd MMM yyyy')}</span>
-                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Due Date</span>
-                  <span className="text-sm font-bold text-red-500">{invoice.dueDate ? format(new Date(invoice.dueDate), 'dd MMM yyyy') : 'On Receipt'}</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Items Table */}
-            <div className="space-y-4">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Line Items</label>
-              <div className="rounded-xl border border-slate-100 overflow-hidden">
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="bg-slate-50 text-[10px] font-black uppercase tracking-widest text-slate-500">
-                      <th className="px-4 py-3">Description</th>
-                      <th className="px-4 py-3 text-center w-20">Qty</th>
-                      <th className="px-4 py-3 text-right w-32">Rate</th>
-                      <th className="px-4 py-3 text-right w-32">Amount</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {(invoice.items || []).map((item: any, i: number) => (
-                      <tr key={i} className="text-sm group hover:bg-slate-50/50 transition-colors">
-                        <td className="px-4 py-4 font-medium text-slate-700">{item.description}</td>
-                        <td className="px-4 py-4 text-center text-slate-500 font-medium">{item.qty}</td>
-                        <td className="px-4 py-4 text-right text-slate-500 font-medium whitespace-nowrap">₹{Number(item.rate).toLocaleString('en-IN')}</td>
-                        <td className="px-4 py-4 text-right font-bold text-slate-900 whitespace-nowrap">₹{Number(item.amount).toLocaleString('en-IN')}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-            {/* Summary */}
-            <div className="flex justify-end pt-4">
-              <div className="w-full sm:w-64 space-y-2">
-                <div className="flex justify-between text-xs font-bold text-slate-500">
-                  <span className="uppercase tracking-wider">Subtotal</span>
-                  <span>₹{Number(invoice.subtotal).toLocaleString('en-IN')}</span>
-                </div>
-                <div className="flex justify-between text-xs font-bold text-slate-500">
-                  <span className="uppercase tracking-wider">Tax ({invoice.taxPercent}%)</span>
-                  <span>₹{Number(invoice.taxAmount).toLocaleString('en-IN')}</span>
-                </div>
-                <div className="flex justify-between items-center bg-slate-900 text-white p-3 rounded-xl mt-4 shadow-lg shadow-slate-900/10">
-                  <span className="text-[10px] font-black uppercase tracking-widest">Grand Total</span>
-                  <span className="text-xl font-black">₹{Number(invoice.totalAmount).toLocaleString('en-IN')}</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Notes */}
-            {invoice.notes && (
-              <div className="pt-8 border-t border-slate-100">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">Internal Notes</label>
-                <div className="bg-slate-50 rounded-xl p-4 text-xs text-slate-600 leading-relaxed italic border-l-4 border-slate-200">
-                  "{invoice.notes}"
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+        {/* Main Invoice Card (Premium PDF Preview) */}
+        <div className="md:col-span-2 shadow-xl shadow-slate-200/50 border border-slate-200 overflow-hidden rounded-2xl bg-white p-0 h-[1050px] relative">
+          <iframe 
+            src={`${process.env.NEXT_PUBLIC_API_URL || '/api/v1'}/finance/invoices/${id}/html?token=${typeof window !== 'undefined' ? localStorage.getItem('token') : ''}`}
+            className="w-full h-full border-none"
+            title="Invoice Preview"
+          />
+        </div>
 
         {/* Sidebar Info */}
         <div className="space-y-6">

@@ -107,7 +107,7 @@ const createInvoice = async (data) => {
       }
       // If totalAmount is provided manually, ensure other fields are initialized
       data.subtotal = data.subtotal || data.totalAmount;
-      data.items = data.items || [{ description: 'Manual Invoice Item', amount: data.totalAmount, quantity: 1, unitPrice: data.totalAmount }];
+      data.items = data.items || [{ description: 'Manual Invoice Item', amount: data.totalAmount, qty: 1, rate: data.totalAmount }];
     } else {
       data.subtotal = Number(proposal.sellingPrice);
       data.taxPercent = Number(data.taxPercent || 0);
@@ -118,7 +118,7 @@ const createInvoice = async (data) => {
         data.dueDate = new Date();
         data.dueDate.setDate(data.dueDate.getDate() + 7); 
       }
-      data.items = data.items || [{ description: 'Tour Package', amount: data.subtotal, quantity: 1, unitPrice: data.subtotal }];
+      data.items = data.items || [{ description: 'Tour Package', amount: data.subtotal, qty: 1, rate: data.subtotal }];
     }
   } else {
     data.subtotal = parseFloat(data.subtotal || 0);
@@ -194,7 +194,7 @@ const regenerateInvoice = async (id) => {
     updateData.subtotal = Number(proposal.sellingPrice);
     updateData.taxAmount = (Number(updateData.subtotal) * Number(existing.taxPercent)) / 100;
     updateData.totalAmount = Number(updateData.subtotal) + Number(updateData.taxAmount);
-    updateData.items = [{ description: 'Tour Package', amount: updateData.subtotal, quantity: 1, unitPrice: updateData.subtotal }];
+    updateData.items = [{ description: 'Tour Package', amount: updateData.subtotal, qty: 1, rate: updateData.subtotal }];
   }
 
   // Fetch customer payments to update invoice status

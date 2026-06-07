@@ -10,6 +10,70 @@ const orgSettingService = require('../services/org-setting.service');
 
 const escapeHtml = (str) => String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
+const getBillingDataForQuery = async (queryId) => {
+  const query = await prisma.query.findUnique({ 
+    where: { id: queryId },
+    include: { assignedUser: true }
+  });
+  if (!query) return null;
+
+  const proposal = await prisma.proposal.findFirst({
+    where: { queryId, deletedAt: null },
+    orderBy: { version: 'desc' },
+    select: { 
+      sellingPrice: true, 
+      totalCost: true, 
+      markupPct: true,
+      itinerary: {
+        select: {
+          costingBreakdown: true,
+          sellingPrice: true,
+          totalCost: true,
+          markupPct: true
+        }
+      }
+    },
+  });
+
+  const customerPayments = await prisma.payment.findMany({
+    where: { queryId, deletedAt: null, status: { in: ['verified', 'banked'] } },
+    include: { user: { select: { name: true } } },
+    orderBy: { paymentDate: 'asc' },
+  });
+
+  const orgSettings = await orgSettingService.getAllSettings();
+
+  const tour = await prisma.tour.findFirst({
+    where: { queryId, deletedAt: null },
+    orderBy: { createdAt: 'desc' },
+    select: { tourCode: true }
+  });
+
+  const bookingServices = await prisma.bookingService.findMany({ where: { queryId } });
+  const vendorPayments = await prisma.vendorPayment.findMany({ where: { queryId, deletedAt: null } });
+
+  const totalAmount = Number(proposal?.sellingPrice || 0);
+  const totalReceived = customerPayments.reduce((sum, p) => sum + Number(p.amount || 0), 0);
+  const totalPending = Math.max(0, totalAmount - totalReceived);
+
+  const supplierAmount = bookingServices.reduce((sum, bs) => sum + Number(bs.totalCost || 0), 0);
+  const supplierReceived = vendorPayments.length > 0 
+    ? vendorPayments.reduce((sum, vp) => sum + Number(vp.amount || 0), 0)
+    : bookingServices.reduce((sum, bs) => sum + Number(bs.supplierAmountPaid || 0), 0);
+  const supplierPending = Math.max(0, supplierAmount - supplierReceived);
+  const grossProfit = totalAmount - supplierAmount;
+
+  return {
+    query,
+    customer: { totalAmount, totalReceived, totalPending, grossProfit },
+    supplier: { supplierAmount, supplierReceived, supplierPending },
+    payments: customerPayments,
+    orgSettings,
+    tourCode: tour?.tourCode || null,
+    proposal
+  };
+};
+
 const generateBillingStatementHtml = (data) => {
   const { query, customer, supplier, payments } = data;
   const escape = (str) => escapeHtml(str);
@@ -153,74 +217,17 @@ const downloadBillingStatementPdf = async (req, res, next) => {
     const queryId = req.params.id;
     const canViewAll = req.user?.permissions?.['query.view_all'] || false;
     
-    // 1. Re-calculate billing data precisely as the summary route does
-    const query = await prisma.query.findUnique({ 
-      where: { id: queryId },
-      include: { assignedUser: true }
-    });
-    if (!query) return res.status(404).json({ success: false, message: 'Query not found' });
+    const billingData = await getBillingDataForQuery(queryId);
+    if (!billingData) return res.status(404).json({ success: false, message: 'Query not found' });
 
     // Ownership check: only the assigned user or admins can generate this PDF
-    if (!canViewAll && query.assignedTo !== req.user.id) {
+    if (!canViewAll && billingData.query.assignedTo !== req.user.id) {
       return res.status(403).json({ success: false, message: 'You do not have access to this billing statement' });
     }
 
-    const proposal = await prisma.proposal.findFirst({
-      where: { queryId, deletedAt: null },
-      orderBy: { version: 'desc' },
-      select: { 
-        sellingPrice: true, 
-        totalCost: true, 
-        markupPct: true,
-        itinerary: {
-          select: {
-            costingBreakdown: true,
-            sellingPrice: true,
-            totalCost: true,
-            markupPct: true
-          }
-        }
-      },
-    });
-
-    const customerPayments = await prisma.payment.findMany({
-      where: { queryId, deletedAt: null, status: { in: ['verified', 'banked'] } },
-      include: { user: { select: { name: true } } },
-      orderBy: { paymentDate: 'asc' },
-    });
-
-    const orgSettings = await orgSettingService.getAllSettings();
-
-    const tour = await prisma.tour.findFirst({
-      where: { queryId, deletedAt: null },
-      orderBy: { createdAt: 'desc' },
-      select: { tourCode: true }
-    });
-
-    const bookingServices = await prisma.bookingService.findMany({ where: { queryId } });
-    const vendorPayments = await prisma.vendorPayment.findMany({ where: { queryId, deletedAt: null } });
-
-    const totalAmount = Number(proposal?.sellingPrice || 0);
-    const totalReceived = customerPayments.reduce((sum, p) => sum + Number(p.amount || 0), 0);
-    const totalPending = Math.max(0, totalAmount - totalReceived);
-
-    const supplierAmount = bookingServices.reduce((sum, bs) => sum + Number(bs.totalCost || 0), 0);
-    const supplierReceived = vendorPayments.length > 0 
-      ? vendorPayments.reduce((sum, vp) => sum + Number(vp.amount || 0), 0)
-      : bookingServices.reduce((sum, bs) => sum + Number(bs.supplierAmountPaid || 0), 0);
-    const supplierPending = Math.max(0, supplierAmount - supplierReceived);
-    const grossProfit = totalAmount - supplierAmount;
-
-    // 2. Generate PDF using Artisanal Template
     const html = getArtisanalTemplate({
-      query,
-      customer: { totalAmount, totalReceived, totalPending, grossProfit },
-      supplier: { supplierAmount, supplierReceived, supplierPending },
-      payments: customerPayments,
+      ...billingData,
       date: new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }),
-      orgSettings,
-      tourCode: tour?.tourCode || null,
-      proposal
     });
 
     const pdfBuffer = await pdfService.generatePdfFromHtml(html);
@@ -229,7 +236,7 @@ const downloadBillingStatementPdf = async (req, res, next) => {
     res.set({
       'Content-Type': 'application/pdf',
       'Content-Length': buffer.length,
-      'Content-Disposition': `attachment; filename="Billing-Statement-${query.queryCode || queryId.slice(0,8)}.pdf"`,
+      'Content-Disposition': `attachment; filename="Billing-Statement-${billingData.query.queryCode || queryId.slice(0,8)}.pdf"`,
     });
     res.send(buffer);
   } catch (err) {
@@ -467,14 +474,34 @@ const regenerateInvoice = async (req, res, next) => {
 };
 const downloadInvoicePdf = async (req, res, next) => {
   try {
-    const invoice = await financeService.getInvoice(req.params.id);
+    const invoice = await prisma.invoice.findUnique({
+      where: { id: req.params.id }
+    });
     if (!invoice) return res.status(404).json({ success: false, message: 'Invoice not found' });
     
-    // Fetch payments tied to this query to show on the invoice
+    if (invoice.queryId) {
+      const billingData = await getBillingDataForQuery(invoice.queryId);
+      if (billingData) {
+        const html = getArtisanalTemplate({
+          ...billingData,
+          invoiceNumber: invoice.invoiceNumber,
+          invoiceDate: new Date(invoice.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }),
+          dueDate: invoice.dueDate ? new Date(invoice.dueDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : new Date(invoice.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }),
+        });
+        const pdfBuffer = await pdfService.generatePdfFromHtml(html);
+        res.set({
+          'Content-Type': 'application/pdf',
+          'Content-Length': pdfBuffer.length,
+          'Content-Disposition': `attachment; filename="${invoice.invoiceNumber}.pdf"`,
+        });
+        return res.send(pdfBuffer);
+      }
+    }
+      
+    // Fallback if not linked to a query
     const payments = invoice.queryId 
       ? await prisma.payment.findMany({ where: { queryId: invoice.queryId, status: { in: ['verified', 'banked'] }, deletedAt: null } })
       : [];
-      
     const htmlContent = generateInvoiceHtml(invoice, payments);
     const pdfBuffer = await pdfService.generatePdfFromHtml(htmlContent);
 
@@ -484,6 +511,39 @@ const downloadInvoicePdf = async (req, res, next) => {
       'Content-Disposition': `attachment; filename="${invoice.invoiceNumber}.pdf"`,
     });
     res.send(pdfBuffer);
+  } catch (e) {
+    next(e);
+  }
+};
+
+const getInvoiceHtml = async (req, res, next) => {
+  try {
+    const invoice = await prisma.invoice.findUnique({
+      where: { id: req.params.id }
+    });
+    if (!invoice) return res.status(404).json({ success: false, message: 'Invoice not found' });
+    
+    if (invoice.queryId) {
+      const billingData = await getBillingDataForQuery(invoice.queryId);
+      if (billingData) {
+        const html = getArtisanalTemplate({
+          ...billingData,
+          invoiceNumber: invoice.invoiceNumber,
+          invoiceDate: new Date(invoice.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }),
+          dueDate: invoice.dueDate ? new Date(invoice.dueDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : new Date(invoice.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }),
+        });
+        res.set('Content-Type', 'text/html');
+        return res.send(html);
+      }
+    }
+      
+    // Fallback
+    const payments = invoice.queryId 
+      ? await prisma.payment.findMany({ where: { queryId: invoice.queryId, status: { in: ['verified', 'banked'] }, deletedAt: null } })
+      : [];
+    const htmlContent = generateInvoiceHtml(invoice, payments);
+    res.set('Content-Type', 'text/html');
+    res.send(htmlContent);
   } catch (e) {
     next(e);
   }
@@ -518,7 +578,7 @@ const getPnlSummary = async (req, res, next) => {
 
 module.exports = {
   listExpenses, createExpense, updateExpense, deleteExpense,
-  listInvoices, getInvoice, createInvoice, updateInvoice, deleteInvoice, regenerateInvoice, downloadInvoicePdf,
+  listInvoices, getInvoice, createInvoice, updateInvoice, deleteInvoice, regenerateInvoice, downloadInvoicePdf, getInvoiceHtml,
   listVendorPayments, createVendorPayment, deleteVendorPayment,
   getPnlSummary, downloadBillingStatementPdf,
 };

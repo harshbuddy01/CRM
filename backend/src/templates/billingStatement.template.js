@@ -12,6 +12,16 @@ const formatCurrencyDec = (amount) => {
   return '₹' + Number(amount).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 };
 
+const formatNumberDec = (amount) => {
+  if (amount === null || amount === undefined || isNaN(Number(amount))) return '0.00';
+  return Number(amount).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+};
+
+const getCapitalizedDestination = (dest) => {
+  if (!dest) return 'Sikkim & Darjeeling';
+  return dest.split(/\s+/).map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+};
+
 const formatDate = (dateStr) => {
   if (!dateStr) return '—';
   try {
@@ -125,20 +135,20 @@ const getArtisanalTemplate = (data) => {
   const bankIfscCode = settings.bankIfscCode || 'YESB0002308';
   
   // Custom Settings Banner and QR assets
-  const invoiceHeaderBannerUrl = settings.invoiceHeaderBannerUrl || 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=1400&auto=format&fit=crop';
-  const invoiceMiddleBannerUrl = settings.invoiceMiddleBannerUrl || 'https://images.unsplash.com/photo-1544735716-392fe2489ffa?q=80&w=1400&auto=format&fit=crop';
+  const invoiceHeaderBannerUrl = query.invoiceHeaderBannerUrl || settings.invoiceHeaderBannerUrl || 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=1400&auto=format&fit=crop';
+  const invoiceMiddleBannerUrl = query.invoiceMiddleBannerUrl || settings.invoiceMiddleBannerUrl || 'https://images.unsplash.com/photo-1544735716-392fe2489ffa?q=80&w=1400&auto=format&fit=crop';
   const invoiceQrCodeUrl = settings.invoiceQrCodeUrl || 'https://images.unsplash.com/photo-1571867424488-456593dc3f8f?q=80&w=300&auto=format&fit=crop';
   
   const companyAbbr = getAbbr(companyName);
   const year = new Date().getFullYear();
   const queryNum = query.queryCode ? query.queryCode.split('-').pop() : query.id.slice(0, 6).toUpperCase();
-  const invoiceNumber = `${companyAbbr}/INV/${year}/${queryNum.padStart(6, '0')}`;
+  const invoiceNumber = data.invoiceNumber || `${companyAbbr}/INV/${year}/${queryNum.padStart(6, '0')}`;
   
   const referenceId = `#${(query.queryCode || query.id.slice(0, 8)).replace(/-/g, '').toUpperCase()}`;
   const tripId = tourCode || `${companyAbbr}-${queryNum}`;
   const placeOfSupply = getPlaceOfSupply(query.destination);
-  const invoiceDate = date;
-  const dueDate = date; // standard due date same as invoice date
+  const invoiceDate = data.invoiceDate || date;
+  const dueDate = data.dueDate || date; // standard due date same as invoice date
   
   let guestsText = `${query.adults} Adults`;
   if (query.children > 0) {
@@ -187,7 +197,8 @@ const getArtisanalTemplate = (data) => {
     }
   }
   
-  const descriptionText = `${query.destination || 'Sikkim & Darjeeling'} Tour Package`;
+  const capitalizedDest = getCapitalizedDestination(query.destination);
+  const descriptionText = `${capitalizedDest} Tour Package`;
   const amountInWordsText = numberToWords(totalAmount);
 
   return `
@@ -846,6 +857,14 @@ const getArtisanalTemplate = (data) => {
           font-weight: 600;
           letter-spacing: 0.05em;
         }
+        .amount-highlight {
+          font-weight: 700;
+          color: #0f3d2f;
+        }
+        .amount-green {
+          font-weight: 700;
+          color: #38a169;
+        }
       </style>
     </head>
     <body>
@@ -1032,8 +1051,8 @@ const getArtisanalTemplate = (data) => {
                     <td style="font-weight: 600;">${descriptionText}</td>
                     <td class="text-center">998552</td>
                     <td class="text-center">1</td>
-                    <td class="text-right">${formatCurrencyDec(subtotal)}</td>
-                    <td class="text-right amount-highlight">${formatCurrencyDec(subtotal)}</td>
+                    <td class="text-right">${formatNumberDec(subtotal)}</td>
+                    <td class="text-right amount-highlight">${formatNumberDec(subtotal)}</td>
                   </tr>
                   
                   <!-- Subtotal row -->
@@ -1091,15 +1110,15 @@ const getArtisanalTemplate = (data) => {
               <div>
                 <div class="payment-summary-row">
                   <span class="payment-summary-lbl">Package Amount</span>
-                  <span class="payment-summary-val">${formatCurrency(totalAmount)}</span>
+                  <span class="payment-summary-val">${formatCurrencyDec(totalAmount)}</span>
                 </div>
                 <div class="payment-summary-row">
                   <span class="payment-summary-lbl">Amount Received</span>
-                  <span class="payment-summary-val green">${formatCurrency(totalReceived)}</span>
+                  <span class="payment-summary-val green">${formatCurrencyDec(totalReceived)}</span>
                 </div>
                 <div class="payment-summary-row">
                   <span class="payment-summary-lbl">Balance Due</span>
-                  <span class="payment-summary-val red">${formatCurrency(balanceDue)}</span>
+                  <span class="payment-summary-val red">${formatCurrencyDec(balanceDue)}</span>
                 </div>
               </div>
               
@@ -1184,13 +1203,13 @@ const getArtisanalTemplate = (data) => {
                       <td>${formatDate(p.paymentDate)}</td>
                       <td style="text-transform: uppercase; font-weight: 600;">${p.mode}</td>
                       <td>${p.referenceUtr || p.id.slice(0, 18).toUpperCase()}</td>
-                      <td class="text-right amount-highlight">${formatCurrency(p.amount)}</td>
+                      <td class="text-right amount-highlight">${formatCurrencyDec(p.amount)}</td>
                     </tr>
                   `).join('')}
                   
                   <tr style="background: #fafafc; font-weight: 800; border-top: 1.5px solid #0f3d2f;">
                     <td colspan="3" style="color: #0f3d2f; padding: 6px 10px;">TOTAL RECEIVED</td>
-                    <td class="text-right amount-green" style="padding: 6px 10px;">${formatCurrency(totalReceived)}</td>
+                    <td class="text-right amount-green" style="padding: 6px 10px;">${formatCurrencyDec(totalReceived)}</td>
                   </tr>
                 </tbody>
               </table>

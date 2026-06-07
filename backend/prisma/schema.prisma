@@ -188,6 +188,9 @@ model Query {
   createdAt      DateTime  @default(now()) @map("created_at")
   updatedAt      DateTime  @updatedAt @map("updated_at")
 
+  invoiceHeaderBannerUrl String?   @map("invoice_header_banner_url")
+  invoiceMiddleBannerUrl String?   @map("invoice_middle_banner_url")
+
   assignedUser User?       @relation("QueryAssignedTo", fields: [assignedTo], references: [id])
   client       Client?     @relation(fields: [clientId], references: [id])
   b2bAgent     B2BAgent?   @relation(fields: [b2bAgentId], references: [id])
