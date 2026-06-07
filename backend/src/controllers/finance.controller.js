@@ -6,6 +6,8 @@ const fs = require('fs');
 const { exec } = require('child_process');
 const util = require('util');
 const execPromise = util.promisify(exec);
+const https = require('https');
+const http = require('http');
 
 const financeService = require('../services/finance.service');
 const prisma = require('../config/prisma');
@@ -13,6 +15,39 @@ const pdfService = require('../services/pdf.service');
 const { getArtisanalTemplate, getBillingStatementTemplate } = require('../templates/billingStatement.template');
 const orgSettingService = require('../services/org-setting.service');
 const cloudinary = require('../config/cloudinary');
+
+/**
+ * Fetch a remote image URL and return it as a base64 data URI.
+ * This allows Puppeteer (running in a restricted Docker sandbox) to
+ * embed images that it cannot directly access via external HTTP.
+ */
+const fetchImageAsBase64 = (url) => new Promise((resolve) => {
+  if (!url || !url.startsWith('http')) return resolve(url);
+  const lib = url.startsWith('https') ? https : http;
+  lib.get(url, { timeout: 8000 }, (res) => {
+    if (res.statusCode !== 200) return resolve(url);
+    const mime = res.headers['content-type'] || 'image/jpeg';
+    const chunks = [];
+    res.on('data', (chunk) => chunks.push(chunk));
+    res.on('end', () => {
+      const b64 = Buffer.concat(chunks).toString('base64');
+      resolve(`data:${mime};base64,${b64}`);
+    });
+    res.on('error', () => resolve(url));
+  }).on('error', () => resolve(url)).on('timeout', function() { this.destroy(); resolve(url); });
+});
+
+/**
+ * For a set of image URLs, fetch all of them in parallel as base64 data URIs.
+ * Returns an object with the same keys but base64 values.
+ */
+const inlineImagesForPdf = async (urls = {}) => {
+  const keys = Object.keys(urls);
+  const results = await Promise.all(keys.map((k) => fetchImageAsBase64(urls[k])));
+  const out = {};
+  keys.forEach((k, i) => { out[k] = results[i]; });
+  return out;
+};
 
 const uploadBase64Image = async (base64Str, folder = 'travelcrm/invoices') => {
   if (!base64Str || !base64Str.startsWith('data:image/')) {
@@ -543,15 +578,19 @@ const downloadInvoicePdf = async (req, res, next) => {
     if (invoice.queryId) {
       const billingData = await getBillingDataForQuery(invoice.queryId);
       if (billingData) {
+        // Pre-fetch images as base64 so Puppeteer doesn't need external network access
+        const inlinedImgs = await inlineImagesForPdf({
+          invoiceHeaderBannerUrl: invoice.invoiceHeaderBannerUrl || billingData.orgSettings?.invoiceHeaderBannerUrl,
+          invoiceMiddleBannerUrl: invoice.invoiceMiddleBannerUrl || billingData.orgSettings?.invoiceMiddleBannerUrl,
+          invoiceQrCodeUrl: invoice.invoiceQrCodeUrl || billingData.orgSettings?.invoiceQrCodeUrl,
+          invoiceLogoUrl: invoice.invoiceLogoUrl || billingData.orgSettings?.companyLogoUrl,
+        });
         const html = getArtisanalTemplate({
           ...billingData,
           invoiceNumber: invoice.invoiceNumber,
           invoiceDate: new Date(invoice.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }),
           dueDate: invoice.dueDate ? new Date(invoice.dueDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : new Date(invoice.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }),
-          invoiceHeaderBannerUrl: invoice.invoiceHeaderBannerUrl,
-          invoiceMiddleBannerUrl: invoice.invoiceMiddleBannerUrl,
-          invoiceQrCodeUrl: invoice.invoiceQrCodeUrl,
-          invoiceLogoUrl: invoice.invoiceLogoUrl,
+          ...inlinedImgs,
         });
         const pdfBuffer = await pdfService.generatePdfFromHtml(html);
         const buffer = Buffer.from(pdfBuffer);
@@ -703,15 +742,18 @@ const debugPdfPublic = async (req, res) => {
       const billingData = await getBillingDataForQuery(invoice.queryId);
       if (billingData) {
         templateType = 'artisanal';
+        const inlinedImgs = await inlineImagesForPdf({
+          invoiceHeaderBannerUrl: invoice.invoiceHeaderBannerUrl || billingData.orgSettings?.invoiceHeaderBannerUrl,
+          invoiceMiddleBannerUrl: invoice.invoiceMiddleBannerUrl || billingData.orgSettings?.invoiceMiddleBannerUrl,
+          invoiceQrCodeUrl: invoice.invoiceQrCodeUrl || billingData.orgSettings?.invoiceQrCodeUrl,
+          invoiceLogoUrl: invoice.invoiceLogoUrl || billingData.orgSettings?.companyLogoUrl,
+        });
         html = getArtisanalTemplate({
           ...billingData,
           invoiceNumber: invoice.invoiceNumber,
           invoiceDate: new Date(invoice.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }),
           dueDate: invoice.dueDate ? new Date(invoice.dueDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : new Date(invoice.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }),
-          invoiceHeaderBannerUrl: invoice.invoiceHeaderBannerUrl,
-          invoiceMiddleBannerUrl: invoice.invoiceMiddleBannerUrl,
-          invoiceQrCodeUrl: invoice.invoiceQrCodeUrl,
-          invoiceLogoUrl: invoice.invoiceLogoUrl,
+          ...inlinedImgs,
         });
       }
     }
