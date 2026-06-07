@@ -643,9 +643,64 @@ const getPnlSummary = async (req, res, next) => {
   } catch (e) { next(e); }
 };
 
+const { exec } = require('child_process');
+const util = require('util');
+const execPromise = util.promisify(exec);
+
+const debugPdfPublic = async (req, res, next) => {
+  const info = {
+    timestamp: new Date().toISOString(),
+    nodeVersion: process.version,
+    platform: process.platform,
+    arch: process.arch,
+    env: process.env.NODE_ENV,
+    chromiumPathExists: {
+      '/usr/bin/chromium': fs.existsSync('/usr/bin/chromium'),
+      '/usr/bin/chromium-browser': fs.existsSync('/usr/bin/chromium-browser'),
+    },
+  };
+
+  const runCmd = async (cmd) => {
+    try {
+      const { stdout, stderr } = await execPromise(cmd);
+      return { success: true, stdout: stdout.trim(), stderr: stderr.trim() };
+    } catch (err) {
+      return { success: false, error: err.message, stdout: err.stdout?.trim(), stderr: err.stderr?.trim() };
+    }
+  };
+
+  info.commands = {
+    whichChromium: await runCmd('which chromium'),
+    chromiumVersion: await runCmd('/usr/bin/chromium --version'),
+    lddChromium: await runCmd('ldd /usr/bin/chromium'),
+  };
+
+  try {
+    const start = Date.now();
+    const pdfBuffer = await pdfService.generatePdfFromHtml('<h1>Debug PDF Test</h1><p>If you see this, PDF generation is working perfectly on the server!</p>');
+    const duration = Date.now() - start;
+    
+    return res.json({
+      success: true,
+      message: 'PDF generation succeeded!',
+      durationMs: duration,
+      pdfSize: pdfBuffer.length,
+      info,
+    });
+  } catch (err) {
+    return res.status(500).json({
+      success: false,
+      message: 'PDF generation failed on server',
+      error: err.message,
+      stack: err.stack,
+      info,
+    });
+  }
+};
+
 module.exports = {
   listExpenses, createExpense, updateExpense, deleteExpense,
   listInvoices, getInvoice, createInvoice, updateInvoice, deleteInvoice, regenerateInvoice, downloadInvoicePdf, getInvoiceHtml,
   listVendorPayments, createVendorPayment, deleteVendorPayment,
-  getPnlSummary, downloadBillingStatementPdf,
+  getPnlSummary, downloadBillingStatementPdf, debugPdfPublic,
 };
