@@ -554,12 +554,13 @@ const downloadInvoicePdf = async (req, res, next) => {
           invoiceLogoUrl: invoice.invoiceLogoUrl,
         });
         const pdfBuffer = await pdfService.generatePdfFromHtml(html);
+        const buffer = Buffer.from(pdfBuffer);
         res.set({
           'Content-Type': 'application/pdf',
-          'Content-Length': pdfBuffer.length,
+          'Content-Length': buffer.length,
           'Content-Disposition': `attachment; filename="${invoice.invoiceNumber}.pdf"`,
         });
-        return res.send(pdfBuffer);
+        return res.send(buffer);
       }
     }
       
@@ -569,13 +570,14 @@ const downloadInvoicePdf = async (req, res, next) => {
       : [];
     const htmlContent = generateInvoiceHtml(invoice, payments);
     const pdfBuffer = await pdfService.generatePdfFromHtml(htmlContent);
+    const buffer = Buffer.from(pdfBuffer);
 
     res.set({
       'Content-Type': 'application/pdf',
-      'Content-Length': pdfBuffer.length,
+      'Content-Length': buffer.length,
       'Content-Disposition': `attachment; filename="${invoice.invoiceNumber}.pdf"`,
     });
-    res.send(pdfBuffer);
+    res.send(buffer);
   } catch (e) {
     next(e);
   }
@@ -729,14 +731,15 @@ const debugPdfPublic = async (req, res) => {
 
     const t = Date.now();
     const pdfBuffer = await pdfService.generatePdfFromHtml(html);
+    const buffer = Buffer.from(pdfBuffer);
     
     if (format === 'pdf') {
       res.set({
         'Content-Type': 'application/pdf',
-        'Content-Length': pdfBuffer.length,
+        'Content-Length': buffer.length,
         'Content-Disposition': `inline; filename="${invoice.invoiceNumber}.pdf"`,
       });
-      return res.send(pdfBuffer);
+      return res.send(buffer);
     }
 
     return res.json({
@@ -744,7 +747,7 @@ const debugPdfPublic = async (req, res) => {
       invoiceNumber: invoice.invoiceNumber,
       templateType,
       html_length: html.length,
-      pdf_size_bytes: pdfBuffer.length,
+      pdf_size_bytes: buffer.length,
       duration_ms: Date.now() - t,
       info
     });
