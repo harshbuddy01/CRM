@@ -352,6 +352,24 @@ export default function SettingsPage() {
                   onChange={(e) => setFormData({ ...formData, companyAddress: e.target.value })}
                 />
               </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                <div className="space-y-2">
+                  <Label>GSTIN</Label>
+                  <Input 
+                    placeholder="E.g. 19AABC1234K1ZV" 
+                    value={formData.companyGst || ''}
+                    onChange={(e) => setFormData({ ...formData, companyGst: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>PAN</Label>
+                  <Input 
+                    placeholder="E.g. AABC1234K" 
+                    value={formData.companyPan || ''}
+                    onChange={(e) => setFormData({ ...formData, companyPan: e.target.value })}
+                  />
+                </div>
+              </div>
               <div className="pt-2">
                 <ImageUploadField 
                   label="Company Logo" 
@@ -361,6 +379,65 @@ export default function SettingsPage() {
                   description="Provide a company logo to display on PDF itineraries and signatures. Direct URL or upload an image."
                 />
               </div>
+            </CardContent>
+          </Card>
+
+          <Card className="mt-6">
+            <CardHeader>
+              <CardTitle>Bank Details</CardTitle>
+              <CardDescription>These details appear at the bottom of tax invoices for bank transfer payment instructions.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Account Name</Label>
+                  <Input 
+                    placeholder="E.g. Imagica Holidays Pvt. Ltd." 
+                    value={formData.bankAccountName || ''}
+                    onChange={(e) => setFormData({ ...formData, bankAccountName: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Bank Name</Label>
+                  <Input 
+                    placeholder="E.g. Yes Bank" 
+                    value={formData.bankName || ''}
+                    onChange={(e) => setFormData({ ...formData, bankName: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Account Number</Label>
+                  <Input 
+                    placeholder="E.g. 002300800123456" 
+                    value={formData.bankAccountNumber || ''}
+                    onChange={(e) => setFormData({ ...formData, bankAccountNumber: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>IFSC Code</Label>
+                  <Input 
+                    placeholder="E.g. YESB0002308" 
+                    value={formData.bankIfscCode || ''}
+                    onChange={(e) => setFormData({ ...formData, bankIfscCode: e.target.value })}
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="mt-6">
+            <CardHeader>
+              <CardTitle>Tax Invoice Customization</CardTitle>
+              <CardDescription>Customize the visual assets displayed on generated Tax Invoice PDFs.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <ImageUploadField 
+                label="Invoice Banner Image" 
+                placeholder="https://example.com/banner.jpg" 
+                value={formData.invoiceBannerUrl || ''} 
+                onChange={(val) => setFormData({ ...formData, invoiceBannerUrl: val })}
+                description="Upload an image (e.g. scenic view, toy train) to display on the Tax Invoice PDF next to the important notes."
+              />
             </CardContent>
           </Card>
         </TabsContent>

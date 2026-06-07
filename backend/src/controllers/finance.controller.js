@@ -6,6 +6,7 @@ const financeService = require('../services/finance.service');
 const prisma = require('../config/prisma');
 const pdfService = require('../services/pdf.service');
 const { getArtisanalTemplate } = require('../templates/billingStatement.template');
+const orgSettingService = require('../services/org-setting.service');
 
 const escapeHtml = (str) => String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
@@ -172,7 +173,16 @@ const downloadBillingStatementPdf = async (req, res, next) => {
 
     const customerPayments = await prisma.payment.findMany({
       where: { queryId, deletedAt: null, status: { in: ['verified', 'banked'] } },
-      orderBy: { paymentDate: 'desc' },
+      include: { user: { select: { name: true } } },
+      orderBy: { paymentDate: 'asc' },
+    });
+
+    const orgSettings = await orgSettingService.getAllSettings();
+
+    const tour = await prisma.tour.findFirst({
+      where: { queryId, deletedAt: null },
+      orderBy: { createdAt: 'desc' },
+      select: { tourCode: true }
     });
 
     const bookingServices = await prisma.bookingService.findMany({ where: { queryId } });
@@ -195,7 +205,9 @@ const downloadBillingStatementPdf = async (req, res, next) => {
       customer: { totalAmount, totalReceived, totalPending, grossProfit },
       supplier: { supplierAmount, supplierReceived, supplierPending },
       payments: customerPayments,
-      date: new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
+      date: new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }),
+      orgSettings,
+      tourCode: tour?.tourCode || null
     });
 
     const pdfBuffer = await pdfService.generatePdfFromHtml(html);
