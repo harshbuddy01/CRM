@@ -78,6 +78,7 @@ const getArtisanalTemplate = (data) => {
   const referenceId = `#${(query.queryCode || query.id.slice(0, 8)).replace(/-/g, '').toUpperCase()}`;
   const tripId = tourCode || `${companyAbbr}-${queryNum}`;
   const placeOfSupply = getPlaceOfSupply(query.destination);
+  const invoiceDate = date;
   
   let guestsText = `${query.adults} Adults`;
   if (query.children > 0) {
