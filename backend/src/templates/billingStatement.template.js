@@ -209,7 +209,7 @@ const getArtisanalTemplate = (data) => {
       <title>Tax Invoice - ${invoiceNumber}</title>
       <link rel="preconnect" href="https://fonts.googleapis.com">
       <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-      <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Playfair+Display:ital,wght@0,500;0,700;0,800;1,500;1,700&family=Pinyon+Script&display=swap" rel="stylesheet">
+      <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;800&family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Pinyon+Script&display=swap" rel="stylesheet">
       <style>
         * { box-sizing: border-box; }
         @page { size: A4; margin: 0; }
@@ -218,7 +218,7 @@ const getArtisanalTemplate = (data) => {
           padding: 0;
           width: 210mm;
           height: 297mm;
-          font-family: 'Outfit', sans-serif;
+          font-family: 'Inter', sans-serif;
           font-size: 9px;
           color: #2d3748;
           background: #ffffff;
@@ -240,107 +240,24 @@ const getArtisanalTemplate = (data) => {
         .top-banner-container {
           position: relative;
           width: 100%;
-          height: 140px;
-          background: #0f3d2f;
+          background: #ffffff;
           overflow: hidden;
-          margin-bottom: 15px;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          color: #ffffff;
+          margin-bottom: 10px;
+          display: block;
         }
         
         .top-banner-img {
-          position: absolute;
-          top: 0; left: 0; width: 100%; height: 100%;
-          object-fit: cover;
-          opacity: 0.35;
-          z-index: 1;
-        }
-        
-        .top-banner-content {
-          position: relative;
-          z-index: 2;
-          text-align: center;
           width: 100%;
-        }
-        
-        .top-logo-img {
-          max-height: 40px;
-          object-fit: contain;
-          margin-bottom: 2px;
-        }
-        
-        .top-company-name {
-          font-family: 'Playfair Display', serif;
-          font-size: 19px;
-          font-weight: 700;
-          color: #ffffff;
-          margin: 0;
-          letter-spacing: 0.1em;
-          text-shadow: 1px 1px 3px rgba(0,0,0,0.5);
-        }
-        
-        .top-company-slogan {
-          font-size: 7px;
-          letter-spacing: 0.25em;
-          color: #c5a059;
-          font-weight: 700;
-          margin-top: 1px;
-          text-transform: uppercase;
-        }
-        
-        .top-invoice-title {
-          font-family: 'Playfair Display', serif;
-          font-size: 26px;
-          font-weight: 800;
-          color: #ffffff;
-          letter-spacing: 0.08em;
-          margin: 6px 0 0 0;
-          text-shadow: 1px 1px 4px rgba(0,0,0,0.6);
-        }
-        
-        .top-divider-line {
-          width: 140px;
-          height: 1.5px;
-          background: #c5a059;
-          margin: 4px auto;
-        }
-        
-        /* 2. Top Location Icons Bar */
-        .locations-bar {
-          display: flex;
-          justify-content: center;
-          align-items: center;
-          gap: 25px;
-          background: #ffffff;
-          padding: 8px 0;
-          border-bottom: 1.5px solid #edf2f7;
-          margin-bottom: 15px;
-        }
-        
-        .location-item {
-          display: flex;
-          align-items: center;
-          gap: 4px;
-          font-size: 8.5px;
-          font-weight: 700;
-          color: #4a5568;
-          text-transform: uppercase;
-          letter-spacing: 0.1em;
-        }
-        
-        .location-item svg {
-          color: #c5a059;
+          height: auto;
+          display: block;
         }
         
         /* 3. Details Row Grid (Invoice & Company Details) */
         .details-grid {
           display: grid;
           grid-template-columns: 1.25fr 1fr;
-          gap: 15px;
-          margin-bottom: 15px;
+          gap: 10px;
+          margin-bottom: 10px;
         }
         
         .details-card {
@@ -353,9 +270,10 @@ const getArtisanalTemplate = (data) => {
         .details-card-header {
           background: #0f3d2f;
           color: #ffffff;
-          font-size: 8px;
-          font-weight: 800;
-          letter-spacing: 0.12em;
+          font-family: 'Cinzel', serif;
+          font-size: 9px;
+          font-weight: 700;
+          letter-spacing: 0.05em;
           padding: 5px 8px;
           text-transform: uppercase;
           display: flex;
@@ -368,10 +286,10 @@ const getArtisanalTemplate = (data) => {
         }
         
         .details-card-body {
-          padding: 8px 10px;
+          padding: 6px 8px;
           display: grid;
           grid-template-columns: 1fr 1fr;
-          gap: 10px;
+          gap: 8px;
         }
         
         .details-col-val {
@@ -419,8 +337,8 @@ const getArtisanalTemplate = (data) => {
         .middle-block {
           display: grid;
           grid-template-columns: 1fr 2.1fr 1.05fr;
-          gap: 12px;
-          margin-bottom: 15px;
+          gap: 10px;
+          margin-bottom: 10px;
         }
         
         .middle-card {
@@ -433,9 +351,10 @@ const getArtisanalTemplate = (data) => {
         .middle-card-header {
           background: #0f3d2f;
           color: #ffffff;
-          font-size: 8px;
-          font-weight: 800;
-          letter-spacing: 0.12em;
+          font-family: 'Cinzel', serif;
+          font-size: 9px;
+          font-weight: 700;
+          letter-spacing: 0.05em;
           padding: 5px 8px;
           text-transform: uppercase;
           display: flex;
@@ -660,47 +579,44 @@ const getArtisanalTemplate = (data) => {
         .middle-poster-container {
           position: relative;
           width: 100%;
-          height: 110px;
-          background: #0f3d2f;
           border-radius: 5px;
           overflow: hidden;
-          margin-bottom: 15px;
+          margin-bottom: 10px;
           box-shadow: 0 4px 6px rgba(0,0,0,0.05);
         }
         
         .middle-poster-img {
           width: 100%;
-          height: 100%;
-          object-fit: cover;
-          opacity: 0.95;
+          height: auto;
+          display: block;
         }
-        
-        .middle-poster-overlay {
-          position: absolute;
-          top: 0; left: 0; right: 0; bottom: 0;
-          background: linear-gradient(90deg, rgba(15, 61, 47, 0.92) 0%, rgba(15, 61, 47, 0.4) 60%, rgba(15, 61, 47, 0) 100%);
-          padding: 15px 25px;
+
+        /* Elegant Company Details Info Row */
+        .info-row {
           display: flex;
-          flex-direction: column;
+          align-items: center;
+          gap: 6px;
+          margin-bottom: 4px;
+        }
+        .info-icon-wrapper {
+          background: #f7fafc;
+          border: 1px solid #edf2f7;
+          border-radius: 50%;
+          width: 16px;
+          height: 16px;
+          display: flex;
+          align-items: center;
           justify-content: center;
-          color: #ffffff;
-        }
-        
-        .middle-poster-quote {
-          font-family: 'Playfair Display', serif;
-          font-size: 11px;
-          font-style: italic;
-          line-height: 1.45;
-          font-weight: 500;
-          max-width: 65%;
-          text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.8);
-        }
-        
-        .middle-poster-author {
-          font-family: 'Pinyon Script', cursive;
-          font-size: 20px;
           color: #c5a059;
-          margin-top: 5px;
+          flex-shrink: 0;
+        }
+        .info-icon-wrapper svg {
+          width: 9px;
+          height: 9px;
+        }
+        .info-text {
+          font-size: 8px;
+          color: #2d3748;
         }
         
         /* 7. Footer Cards Layout */
@@ -718,14 +634,15 @@ const getArtisanalTemplate = (data) => {
         }
         
         .footer-card-title {
-          font-size: 8px;
-          font-weight: 800;
-          letter-spacing: 0.08em;
+          font-family: 'Cinzel', serif;
+          font-size: 9px;
+          font-weight: 700;
           color: #0f3d2f;
-          text-transform: uppercase;
-          border-bottom: 1.5px solid #0f3d2f;
-          padding-bottom: 3px;
+          border-bottom: 1.5px solid #edf2f7;
+          padding-bottom: 4px;
           margin-bottom: 6px;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
         }
         
         .footer-card-list {
@@ -809,6 +726,17 @@ const getArtisanalTemplate = (data) => {
         
         .bottom-logo-group {
           display: flex;
+          align-items: center;
+          gap: 6px;
+        }
+        
+        .bottom-logo-img {
+          height: 18px;
+          object-fit: contain;
+        }
+        
+        .bottom-logo-text-group {
+          display: flex;
           flex-direction: column;
         }
         
@@ -871,40 +799,6 @@ const getArtisanalTemplate = (data) => {
       <!-- 1. Top Header Banner -->
       <div class="top-banner-container">
         <img src="${invoiceHeaderBannerUrl}" class="top-banner-img" alt="Header Banner" />
-        <div class="top-banner-content">
-          ${companyLogoUrl ? `
-            <img src="${companyLogoUrl}" class="top-logo-img" alt="${companyName}" />
-          ` : `
-            <div class="top-company-name">${companyName}</div>
-            <div class="top-company-slogan">CURATED JOURNEYS. LASTING MEMORIES.</div>
-          `}
-          <h1 class="top-invoice-title">TAX INVOICE</h1>
-          <div class="top-divider-line"></div>
-        </div>
-      </div>
-      
-      <!-- 2. Locations Bar -->
-      <div class="locations-bar">
-        <div class="location-item">
-          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"></path></svg>
-          Kashmir
-        </div>
-        <div class="location-item">
-          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
-          Sikkim
-        </div>
-        <div class="location-item">
-          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="9" y1="3" x2="9" y2="21"></line></svg>
-          Gangtok
-        </div>
-        <div class="location-item">
-          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
-          Kerala
-        </div>
-        <div class="location-item">
-          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M8 14s1.5 2 4 2 4-2 4-2"></path><line x1="9" y1="9" x2="9.01" y2="9"></line><line x1="15" y1="9" x2="15.01" y2="9"></line></svg>
-          Across India
-        </div>
       </div>
       
       <!-- Wrapper for main body cards with margins -->
@@ -967,22 +861,30 @@ const getArtisanalTemplate = (data) => {
                 ` : ''}
               </div>
               <div style="padding-top: 2px;">
-                <div class="details-row">
-                  <span class="details-label">Phone</span>
-                  <span class="details-value">: ${companyPhone}</span>
+                <div class="info-row">
+                  <span class="info-icon-wrapper">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+                  </span>
+                  <span class="info-text">${companyPhone}</span>
                 </div>
-                <div class="details-row">
-                  <span class="details-label">Email</span>
-                  <span class="details-value">: ${companyEmail}</span>
+                <div class="info-row">
+                  <span class="info-icon-wrapper">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+                  </span>
+                  <span class="info-text">${companyEmail}</span>
                 </div>
-                <div class="details-row">
-                  <span class="details-label">Website</span>
-                  <span class="details-value">: ${companyWebsite}</span>
+                <div class="info-row">
+                  <span class="info-icon-wrapper">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+                  </span>
+                  <span class="info-text">${companyWebsite}</span>
                 </div>
                 ${companyPan ? `
-                  <div class="details-row">
-                    <span class="details-label">PAN</span>
-                    <span class="details-value">: ${companyPan}</span>
+                  <div class="info-row">
+                    <span class="info-icon-wrapper">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="4" width="18" height="16" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="4"></line><line x1="8" y1="2" x2="8" y2="4"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                    </span>
+                    <span class="info-text">PAN: ${companyPan}</span>
                   </div>
                 ` : ''}
               </div>
@@ -1220,12 +1122,6 @@ const getArtisanalTemplate = (data) => {
         <!-- 6. Middle Polaroid Poster Section -->
         <div class="middle-poster-container">
           <img src="${invoiceMiddleBannerUrl}" class="middle-poster-img" alt="Middle Poster" />
-          <div class="middle-poster-overlay">
-            <p class="middle-poster-quote">
-              "Thank you for travelling with us. We hope your journey creates memories that last a lifetime."
-            </p>
-            <div class="middle-poster-author">Team ${companyName.split(' ')[0]}</div>
-          </div>
         </div>
       </div>
       
@@ -1274,39 +1170,38 @@ const getArtisanalTemplate = (data) => {
             </div>
           </div>
           
-          <!-- Card 3: Journey Highlights -->
+          <!-- Card 3: Bank Details -->
           <div class="footer-card">
-            <div class="footer-card-title">Journey Highlights</div>
-            <ul class="footer-card-list">
-              <li class="footer-card-item">
-                <span class="footer-card-check-icon">✔</span>
-                <span>Handpicked Destinations</span>
-              </li>
-              <li class="footer-card-item">
-                <span class="footer-card-check-icon">✔</span>
-                <span>Comfort & Luxury</span>
-              </li>
-              <li class="footer-card-item">
-                <span class="footer-card-check-icon">✔</span>
-                <span>Best Price Guarantee</span>
-              </li>
-              <li class="footer-card-item">
-                <span class="footer-card-check-icon">✔</span>
-                <span>24x7 Customer Support</span>
-              </li>
-              <li class="footer-card-item">
-                <span class="footer-card-check-icon">✔</span>
-                <span>Safe & Memorable Experiences</span>
-              </li>
-            </ul>
+            <div class="footer-card-title">Bank Details</div>
+            <div class="bank-details-wrapper" style="padding-top: 2px;">
+              <div class="bank-row" style="margin-bottom: 4px; font-size: 8px;">
+                <span style="font-weight: 700; color: #4a5568;">Bank Name:</span>
+                <span style="color: #2d3748; margin-left: 2px;">${bankName}</span>
+              </div>
+              <div class="bank-row" style="margin-bottom: 4px; font-size: 8px;">
+                <span style="font-weight: 700; color: #4a5568;">A/C Name:</span>
+                <span style="color: #2d3748; margin-left: 2px;">${bankAccountName}</span>
+              </div>
+              <div class="bank-row" style="margin-bottom: 4px; font-size: 8px;">
+                <span style="font-weight: 700; color: #4a5568;">A/C Number:</span>
+                <span style="color: #2d3748; margin-left: 2px;">${bankAccountNumber}</span>
+              </div>
+              <div class="bank-row" style="margin-bottom: 4px; font-size: 8px;">
+                <span style="font-weight: 700; color: #4a5568;">IFSC Code:</span>
+                <span style="color: #2d3748; margin-left: 2px;">${bankIfscCode}</span>
+              </div>
+            </div>
           </div>
         </div>
         
         <!-- 8. Bottom Footer Bar with gradient -->
         <div class="bottom-footer-bar">
           <div class="bottom-logo-group">
-            <div class="bottom-logo-title">${companyName}</div>
-            <div class="bottom-logo-slogan">Curated Journeys. Lasting Memories.</div>
+            ${companyLogoUrl ? `<img src="${companyLogoUrl}" class="bottom-logo-img" alt="${companyName}" />` : ''}
+            <div class="bottom-logo-text-group">
+              <div class="bottom-logo-title">${companyName}</div>
+              <div class="bottom-logo-slogan">Curated Journeys. Lasting Memories.</div>
+            </div>
           </div>
           <div class="bottom-contact-group">
             <div class="bottom-contact-item">
