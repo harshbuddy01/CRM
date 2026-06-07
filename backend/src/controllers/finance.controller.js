@@ -649,10 +649,13 @@ const getPnlSummary = async (req, res, next) => {
 };
 
 // ─── PDF Debug (no auth required) ────────────────────────────
+// ─── PDF Debug (no auth required) ────────────────────────────
 const debugPdfPublic = async (req, res) => {
+  const { id, invoiceNumber, format = 'json' } = req.query;
+
   const runCmd = async (cmd) => {
     try {
-      const { stdout, stderr } = await execPromise(cmd);
+      const { stdout } = await execPromise(cmd);
       return { ok: true, out: stdout.trim().substring(0, 500) };
     } catch (err) {
       return { ok: false, err: err.message.substring(0, 300) };
@@ -671,12 +674,88 @@ const debugPdfPublic = async (req, res) => {
     which_chromium: await runCmd('which chromium'),
   };
 
+  if (!id && !invoiceNumber) {
+    try {
+      const t = Date.now();
+      const buf = await pdfService.generatePdfFromHtml('<h1 style="color:green">PDF Works!</h1><p>Generated on: ' + new Date().toISOString() + '</p>');
+      return res.json({ success: true, pdf_size_bytes: buf.length, duration_ms: Date.now() - t, info });
+    } catch (err) {
+      return res.status(500).json({ success: false, error: err.message, stack: err.stack, info });
+    }
+  }
+
   try {
+    const invoice = await prisma.invoice.findFirst({
+      where: id ? { id } : { invoiceNumber }
+    });
+
+    if (!invoice) {
+      return res.status(404).json({ success: false, error: 'Invoice not found', info });
+    }
+
+    await ensureCloudinaryImages(invoice);
+
+    let html = '';
+    let templateType = '';
+    if (invoice.queryId) {
+      const billingData = await getBillingDataForQuery(invoice.queryId);
+      if (billingData) {
+        templateType = 'artisanal';
+        html = getArtisanalTemplate({
+          ...billingData,
+          invoiceNumber: invoice.invoiceNumber,
+          invoiceDate: new Date(invoice.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }),
+          dueDate: invoice.dueDate ? new Date(invoice.dueDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : new Date(invoice.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }),
+          invoiceHeaderBannerUrl: invoice.invoiceHeaderBannerUrl,
+          invoiceMiddleBannerUrl: invoice.invoiceMiddleBannerUrl,
+          invoiceQrCodeUrl: invoice.invoiceQrCodeUrl,
+          invoiceLogoUrl: invoice.invoiceLogoUrl,
+        });
+      }
+    }
+
+    if (!html) {
+      templateType = 'fallback';
+      const payments = invoice.queryId 
+        ? await prisma.payment.findMany({ where: { queryId: invoice.queryId, status: { in: ['verified', 'banked'] }, deletedAt: null } })
+        : [];
+      html = generateInvoiceHtml(invoice, payments);
+    }
+
+    if (format === 'html') {
+      res.set('Content-Type', 'text/html');
+      return res.send(html);
+    }
+
     const t = Date.now();
-    const buf = await pdfService.generatePdfFromHtml('<h1 style="color:green">PDF Works!</h1><p>Generated on: ' + new Date().toISOString() + '</p>');
-    return res.json({ success: true, pdf_size_bytes: buf.length, duration_ms: Date.now() - t, info });
+    const pdfBuffer = await pdfService.generatePdfFromHtml(html);
+    
+    if (format === 'pdf') {
+      res.set({
+        'Content-Type': 'application/pdf',
+        'Content-Length': pdfBuffer.length,
+        'Content-Disposition': `inline; filename="${invoice.invoiceNumber}.pdf"`,
+      });
+      return res.send(pdfBuffer);
+    }
+
+    return res.json({
+      success: true,
+      invoiceNumber: invoice.invoiceNumber,
+      templateType,
+      html_length: html.length,
+      pdf_size_bytes: pdfBuffer.length,
+      duration_ms: Date.now() - t,
+      info
+    });
+
   } catch (err) {
-    return res.status(500).json({ success: false, error: err.message, stack: err.stack.substring(0, 1000), info });
+    return res.status(500).json({
+      success: false,
+      error: err.message,
+      stack: err.stack,
+      info
+    });
   }
 };
 
