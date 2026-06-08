@@ -240,7 +240,6 @@ const getArtisanalTemplate = (data) => {
         .top-banner-container {
           position: relative;
           width: 100%;
-          aspect-ratio: 1000 / 260;
           background: #f7fafc;
           overflow: hidden;
           margin-bottom: 10px;
@@ -249,8 +248,7 @@ const getArtisanalTemplate = (data) => {
         
         .top-banner-img {
           width: 100%;
-          height: 100%;
-          object-fit: cover;
+          height: auto;
           display: block;
         }
         
