@@ -12,7 +12,8 @@ const http = require('http');
 const financeService = require('../services/finance.service');
 const prisma = require('../config/prisma');
 const pdfService = require('../services/pdf.service');
-const { getArtisanalTemplate, getBillingStatementTemplate } = require('../templates/billingStatement.template');
+const { getArtisanalTemplate } = require('../templates/invoice.template');
+const { getBillingStatementTemplate } = require('../templates/billingStatement.template');
 const orgSettingService = require('../services/org-setting.service');
 const cloudinary = require('../config/cloudinary');
 

@@ -1,4 +1,5 @@
-const { getArtisanalTemplate, getBillingStatementTemplate } = require('./src/templates/billingStatement.template');
+const { getArtisanalTemplate } = require('./src/templates/invoice.template');
+const { getBillingStatementTemplate } = require('./src/templates/billingStatement.template');
 
 const mockData = {
   query: {
