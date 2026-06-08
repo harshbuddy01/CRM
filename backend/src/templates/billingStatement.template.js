@@ -240,7 +240,7 @@ const getArtisanalTemplate = (data) => {
         .top-banner-container {
           position: relative;
           width: 100%;
-          aspect-ratio: 1000 / 350;
+          aspect-ratio: 1000 / 260;
           background: #f7fafc;
           overflow: hidden;
           margin-bottom: 10px;
@@ -250,7 +250,7 @@ const getArtisanalTemplate = (data) => {
         .top-banner-img {
           width: 100%;
           height: 100%;
-          object-fit: fill;
+          object-fit: cover;
           display: block;
         }
         
@@ -732,79 +732,141 @@ const getArtisanalTemplate = (data) => {
           margin-bottom: 2px;
         }
         
-        /* 8. Bottom Footer Bar with gradient */
+        /* 8. Bottom Footer Bar with premium design */
         .bottom-footer-bar {
           background: #0f3d2f;
           color: #ffffff;
-          padding: 6px 12px;
+          padding: 12px 20px;
           border-radius: 4px;
+          position: relative;
+          overflow: hidden;
+          margin-top: 5px;
+          margin-bottom: 5px;
+        }
+        
+        .footer-top-row {
           display: flex;
           justify-content: space-between;
           align-items: center;
-          font-size: 8px;
-          margin-bottom: 4px;
+          width: 100%;
         }
-        
+
         .bottom-logo-group {
           display: flex;
           align-items: center;
-          gap: 6px;
+          gap: 8px;
         }
-        
+
         .bottom-logo-img {
-          height: 30px;
+          height: 25px;
           object-fit: contain;
         }
-        
+
         .bottom-logo-text-group {
           display: flex;
           flex-direction: column;
         }
-        
+
         .bottom-logo-title {
-          font-weight: 800;
+          font-family: 'Cinzel', serif;
+          font-weight: 700;
+          font-size: 10px;
           letter-spacing: 0.05em;
           text-transform: uppercase;
         }
-        
+
         .bottom-logo-slogan {
           font-size: 6px;
           color: #a0aec0;
-          letter-spacing: 0.15em;
+          letter-spacing: 0.12em;
           text-transform: uppercase;
           margin-top: 1px;
         }
-        
-        .bottom-contact-group {
+
+        .footer-contact-social-row {
           display: flex;
+          align-items: center;
           gap: 15px;
         }
-        
+
+        .bottom-contact-group {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+        }
+
         .bottom-contact-item {
           display: flex;
           align-items: center;
-          gap: 3px;
+          gap: 4px;
+          color: #ffffff;
+          font-size: 7.5px;
         }
-        
+
         .bottom-contact-item svg {
           color: #c5a059;
         }
-        
+
+        .footer-separator-pipe {
+          color: #c5a059;
+          font-weight: 300;
+          opacity: 0.7;
+          font-size: 8px;
+        }
+
         .bottom-social-group {
           display: flex;
           align-items: center;
           gap: 6px;
         }
-        
-        .bottom-gradient-block {
-          background: linear-gradient(90deg, #0f3d2f 0%, #c5a059 50%, #0f3d2f 100%);
+
+        .bottom-social-group svg {
           color: #ffffff;
-          padding: 5px;
-          border-radius: 4px;
+          cursor: pointer;
+        }
+
+        .footer-divider-line {
+          border: 0;
+          border-top: 1px solid #c5a059;
+          margin: 6px 0;
+          opacity: 0.6;
+          width: 100%;
+        }
+
+        .footer-bottom-row {
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          width: 100%;
+          position: relative;
+          padding-top: 2px;
+        }
+
+        .footer-thanks-text {
           text-align: center;
+          color: #c5a059;
           font-size: 8px;
           font-weight: 600;
-          letter-spacing: 0.05em;
+          line-height: 1.4;
+        }
+
+        .footer-thanks-text .slogan-line2 {
+          color: #e2e8f0;
+          font-weight: 400;
+          font-size: 7.5px;
+        }
+
+        .airplane-path-animation {
+          position: absolute;
+          right: 0;
+          bottom: -2px;
+          display: flex;
+          align-items: center;
+        }
+
+        .airplane-path-svg {
+          color: #c5a059;
+          opacity: 0.7;
         }
         .amount-highlight {
           font-weight: 700;
@@ -1245,41 +1307,64 @@ const getArtisanalTemplate = (data) => {
           </div>
         </div>
         
-        <!-- 8. Bottom Footer Bar with gradient -->
+        <!-- 8. Bottom Footer Bar with premium design -->
         <div class="bottom-footer-bar">
-          <div class="bottom-logo-group">
-            ${companyLogoUrl ? `<img src="${companyLogoUrl}" class="bottom-logo-img" alt="${companyName}" />` : ''}
-            <div class="bottom-logo-text-group">
-              <div class="bottom-logo-title">${companyName}</div>
-              <div class="bottom-logo-slogan">Curated Journeys. Lasting Memories.</div>
+          <div class="footer-top-row">
+            <div class="bottom-logo-group">
+              ${companyLogoUrl ? `<img src="${companyLogoUrl}" class="bottom-logo-img" alt="${companyName}" />` : ''}
+              <div class="bottom-logo-text-group">
+                <div class="bottom-logo-title">${companyName}</div>
+                <div class="bottom-logo-slogan">Curated Journeys. Lasting Memories.</div>
+              </div>
+            </div>
+            
+            <div class="footer-contact-social-row">
+              <div class="bottom-contact-group">
+                <div class="bottom-contact-item">
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+                  ${companyPhone}
+                </div>
+                <span class="footer-separator-pipe">|</span>
+                <div class="bottom-contact-item">
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+                  ${companyEmail}
+                </div>
+                <span class="footer-separator-pipe">|</span>
+                <div class="bottom-contact-item">
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+                  ${companyWebsite}
+                </div>
+              </div>
+              <span class="footer-separator-pipe">|</span>
+              <div class="bottom-social-group">
+                <!-- Facebook Icon -->
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M9 8H7v3h2v9h3v-9h3.6l.4-3H12V6c0-.9.2-1.2 1-1.2h2.5V1h-4C8.7 1 7 2.5 7 5.5V8h2z"></path></svg>
+                <!-- Instagram Icon -->
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
+                <!-- Youtube Icon -->
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M23.498 6.163a3.003 3.003 0 0 0-2.11-2.11C19.517 3.545 12 3.545 12 3.545s-7.517 0-9.388.508a3.003 3.003 0 0 0-2.11 2.11C0 8.033 0 12 0 12s0 3.967.502 5.837a3.003 3.003 0 0 0 2.11 2.11c1.871.508 9.388.508 9.388.508s7.517 0 9.388-.508a3.003 3.003 0 0 0 2.11-2.11C24 15.967 24 12 24 12s0-3.967-.502-5.837zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"></path></svg>
+              </div>
             </div>
           </div>
-          <div class="bottom-contact-group">
-            <div class="bottom-contact-item">
-              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
-              ${companyPhone}
+          
+          <hr class="footer-divider-line" />
+          
+          <div class="footer-bottom-row">
+            <div class="footer-thanks-text">
+              Thank you for choosing ${companyName.replace(' Pvt. Ltd.', '')}.
+              <br />
+              <span class="slogan-line2">We look forward to hosting you again on your next adventure!</span>
             </div>
-            <div class="bottom-contact-item">
-              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
-              ${companyEmail}
-            </div>
-            <div class="bottom-contact-item">
-              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
-              ${companyWebsite}
+            
+            <div class="airplane-path-animation">
+              <svg width="100" height="20" viewBox="0 0 100 20" fill="none" class="airplane-path-svg">
+                <path d="M5,15 C30,15 45,2 75,10" stroke="#c5a059" stroke-width="1" stroke-linecap="round" stroke-dasharray="3,3" />
+                <g transform="translate(75, 10) rotate(15)">
+                  <path d="M-6,0 L2,-2 L8,-7 L10,-7 L6,-2 L11,0 L14,-2 L15,-1 L13,1 L15,3 L14,4 L11,2 L6,4 L10,9 L8,9 L2,4 L-6,2 Z" fill="#c5a059" />
+                </g>
+              </svg>
             </div>
           </div>
-          <div class="bottom-social-group">
-            <!-- Facebook Icon -->
-            <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M9 8H7v3h2v9h3v-9h3.6l.4-3H12V6c0-.9.2-1.2 1-1.2h2.5V1h-4C8.7 1 7 2.5 7 5.5V8h2z"></path></svg>
-            <!-- Instagram Icon -->
-            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
-            <!-- Youtube Icon -->
-            <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M23.498 6.163a3.003 3.003 0 0 0-2.11-2.11C19.517 3.545 12 3.545 12 3.545s-7.517 0-9.388.508a3.003 3.003 0 0 0-2.11 2.11C0 8.033 0 12 0 12s0 3.967.502 5.837a3.003 3.003 0 0 0 2.11 2.11c1.871.508 9.388.508 9.388.508s7.517 0 9.388-.508a3.003 3.003 0 0 0 2.11-2.11C24 15.967 24 12 24 12s0-3.967-.502-5.837zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"></path></svg>
-          </div>
-        </div>
-        
-        <div class="bottom-gradient-block">
-          Thank you for choosing ${companyName}. We look forward to hosting you again on your next adventure! ✈️
         </div>
       </div>
     </body>
