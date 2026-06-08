@@ -137,7 +137,7 @@ const getArtisanalTemplate = (data) => {
   // Custom Settings Banner and QR assets
   const invoiceHeaderBannerUrl = customHeaderUrl || query?.invoiceHeaderBannerUrl || settings.invoiceHeaderBannerUrl || 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=1400&auto=format&fit=crop';
   const invoiceMiddleBannerUrl = customMiddleUrl || query?.invoiceMiddleBannerUrl || settings.invoiceMiddleBannerUrl || 'https://images.unsplash.com/photo-1544735716-392fe2489ffa?q=80&w=1400&auto=format&fit=crop';
-  const invoiceQrCodeUrl = customQrUrl || settings.invoiceQrCodeUrl || 'https://images.unsplash.com/photo-1571867424488-456593dc3f8f?q=80&w=300&auto=format&fit=crop';
+  const invoiceQrCodeUrl = customQrUrl || settings.invoiceQrCodeUrl || 'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https%3A%2F%2Fimagicaholidays.com%2Frate-us';
   
   const companyAbbr = getAbbr(companyName);
   const year = new Date().getFullYear();
@@ -1263,21 +1263,14 @@ const getArtisanalTemplate = (data) => {
           
           <!-- Card 2: Google Review Feedback QR -->
           <div class="footer-card">
-            <div class="footer-card-title">We Value Your Feedback</div>
-            <div class="feedback-content">
-              <div class="feedback-text">
-                <div class="feedback-stars">★★★★★</div>
-                If you enjoyed our service, please take a moment to review us on Google.
-                <br />
-                Your feedback motivates us to create more amazing journeys.
-                <br />
-                <div class="feedback-btn">
-                  <svg width="8" height="8" viewBox="0 0 24 24" fill="currentColor" style="color: #4285F4; margin-right: 2px;"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"></path><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"></path><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l3.66-2.85z"></path><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.85c.87-2.6 3.3-4.53 6.16-4.53z"></path></svg>
-                  Review us on Google
-                </div>
-                <svg class="feedback-arrow" width="22" height="15" viewBox="0 0 30 20" fill="none" style="color: #c5a059; transform: rotate(10deg);"><path d="M2 15 C 10 15, 15 5, 25 10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M25 10 L 20 8 M 25 10 L 22 14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            <div class="footer-card-title">RATE YOUR EXPERIENCE</div>
+            <div class="feedback-content" style="display: flex; justify-content: space-between; align-items: center; height: calc(100% - 20px);">
+              <div class="feedback-text" style="display: flex; flex-direction: column; justify-content: center; gap: 4px;">
+                <div class="feedback-stars" style="color: #c5a059; font-size: 11px; font-weight: bold; letter-spacing: 1px;">★★★★★</div>
+                <div style="font-size: 7.5px; color: #4a5568; font-weight: 500;">Scan to leave a Google Review</div>
+                <div style="font-size: 7.5px; color: #0f3d2f; font-weight: 700; margin-top: 3px; font-family: 'Inter', sans-serif;">imagicaholidays.com/rate-us</div>
               </div>
-              <img src="${invoiceQrCodeUrl}" class="feedback-qr-img" alt="QR Code" />
+              <img src="${invoiceQrCodeUrl}" class="feedback-qr-img" style="width: 55px; height: 55px; border: 1.5px solid #c5a059; border-radius: 4px; padding: 1px; object-fit: contain;" alt="QR Code" />
             </div>
           </div>
           
