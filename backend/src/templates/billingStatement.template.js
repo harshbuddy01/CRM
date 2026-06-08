@@ -1916,7 +1916,7 @@ const getBillingStatementTemplate = (data) => {
           height: 100%;
           object-fit: cover;
           object-position: center;
-          opacity: 0.65;
+          opacity: 0.95;
         }
         
         .quote-overlay-content {
@@ -1926,7 +1926,7 @@ const getBillingStatementTemplate = (data) => {
           display: flex;
           flex-direction: column;
           justify-content: space-between;
-          background: linear-gradient(90deg, rgba(15, 61, 47, 0.95) 0%, rgba(15, 61, 47, 0.75) 50%, rgba(15, 61, 47, 0.1) 100%);
+          background: linear-gradient(90deg, rgba(15, 61, 47, 0.7) 0%, rgba(15, 61, 47, 0.4) 60%, rgba(15, 61, 47, 0.1) 100%);
           color: #ffffff;
         }
         
@@ -2108,9 +2108,9 @@ const getBillingStatementTemplate = (data) => {
           
           <!-- Tax Invoice Title Block -->
           <div class="invoice-header-title">
-            <h1 class="invoice-title-text">TAX INVOICE</h1>
+            <h1 class="invoice-title-text">BILLING STATEMENT</h1>
             <div class="double-divider"></div>
-            <div class="invoice-subtitle-text">Thank You For Travelling With Us</div>
+            <div class="invoice-subtitle-text">Imagica Holidays — Internal Ledger Report</div>
           </div>
           
           <!-- Status Stamp Badge -->
@@ -2352,27 +2352,23 @@ const getBillingStatementTemplate = (data) => {
         <div class="bottom-split">
           <!-- Notes Section -->
           <div class="notes-card">
-            <div class="notes-title">Important Notes</div>
+            <div class="notes-title">Internal Accounting Notes</div>
             <ul class="notes-list">
               <li class="notes-item">
                 <span class="notes-check-icon">✔</span>
-                <span>Thank you for choosing ${companyName}.</span>
+                <span>This document is for internal records and bookkeeping verification only.</span>
               </li>
               <li class="notes-item">
                 <span class="notes-check-icon">✔</span>
-                <span>This invoice is valid for all payments received.</span>
+                <span>Verify all transactions against bank ledger and gateway dashboards.</span>
               </li>
               <li class="notes-item">
                 <span class="notes-check-icon">✔</span>
-                <span>${isPaidInFull ? 'No further payment is due for this booking.' : 'Kindly clear the remaining balance before travel start.'}</span>
+                <span>${isPaidInFull ? 'Booking payment is fully settled in the internal system.' : 'Follow up internally for the outstanding balance.'}</span>
               </li>
               <li class="notes-item">
                 <span class="notes-check-icon">✔</span>
-                <span>For any queries, contact our support team.</span>
-              </li>
-              <li class="notes-item">
-                <span class="notes-check-icon">✔</span>
-                <span>We look forward to hosting you again!</span>
+                <span>Do not share this internal ledger report directly with the customer.</span>
               </li>
             </ul>
           </div>
@@ -2386,9 +2382,9 @@ const getBillingStatementTemplate = (data) => {
                 <span>🏔️✈✨</span>
               </div>
               <p class="quote-text">
-                "Thank you for travelling with us. We hope your Himalayan journey creates beautiful memories for life."
+                "Thank you for travelling with Imagica Holidays."
               </p>
-              <div class="quote-author">Team ${companyName.split(' ')[0]} 🌸</div>
+              <div class="quote-author">Team Imagica</div>
             </div>
           </div>
         </div>
@@ -2399,12 +2395,12 @@ const getBillingStatementTemplate = (data) => {
         <div class="bottom-details-grid">
           <!-- Terms -->
           <div class="terms-block">
-            <div class="terms-title-text">Terms & Conditions</div>
+            <div class="terms-title-text">Internal Ledger Guidelines</div>
             <ul class="terms-list-ul">
-              <li>Check-in: 02:00 PM | Check-out: 11:00 AM (Varies by hotel)</li>
-              <li>Early check-in/late check-out is subject to availability.</li>
-              <li>Cancellation & refund policy as per booking terms.</li>
-              <li>This is a system generated invoice and does not require signature.</li>
+              <li>For internal bookkeeping and audit purposes only. Do not share with customers.</li>
+              <li>Reconcile transaction entries against bank statements on a daily basis.</li>
+              <li>Ensure bank reference UTR and payment mode details are fully populated.</li>
+              <li>Report accounting discrepancies to the team immediately for settlement.</li>
             </ul>
           </div>
           
