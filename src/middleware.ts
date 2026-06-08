@@ -7,7 +7,7 @@ export function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname;
 
   const isSharePage = path.startsWith('/share');
-  const publicAuthPaths = ['/login', '/forgot-password', '/reset-password', '/share'];
+  const publicAuthPaths = ['/login', '/forgot-password', '/reset-password', '/share', '/rate-us'];
   const isPublicPath = publicAuthPaths.some(p => path.startsWith(p));
 
   if (isSharePage) {
