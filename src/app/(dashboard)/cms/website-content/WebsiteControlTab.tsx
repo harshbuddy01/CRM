@@ -1,17 +1,41 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { toast } from 'sonner';
 import { 
-  Play, Plus, Trash2, Loader2, X, Check, Upload, Image as ImageIcon, 
-  MapPin, HelpCircle, ArrowRight, Eye, Video, Compass, Sparkles, LayoutGrid
+  Plus, Trash2, Loader2, Check, Upload, Image as ImageIcon, 
+  MapPin, Video, Compass, Sparkles, LayoutGrid
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card } from '@/components/ui/card';
+
+// ─── Skeleton loader for instant perceived load ───
+function Skeleton({ className = '' }: { className?: string }) {
+  return <div className={`animate-pulse bg-slate-100 rounded-lg ${className}`} />;
+}
+
+function SidebarSkeleton() {
+  return (
+    <div className="grid md:grid-cols-[240px_1fr] gap-8">
+      <div className="flex flex-col gap-2 border-r pr-6">
+        <Skeleton className="h-3 w-24 mb-2" />
+        {Array.from({ length: 6 }).map((_, i) => (
+          <Skeleton key={i} className="h-9 w-full" />
+        ))}
+      </div>
+      <div className="bg-white rounded-xl shadow-sm border p-6 space-y-4">
+        <Skeleton className="h-6 w-48" />
+        <Skeleton className="h-4 w-72" />
+        <Skeleton className="h-32 w-full" />
+        <Skeleton className="h-32 w-full" />
+      </div>
+    </div>
+  );
+}
 
 // ─── Direct File Upload Component ───
 interface R2UploadButtonProps {
@@ -84,19 +108,49 @@ export default function WebsiteControlTab() {
   const qc = useQueryClient();
   const [activeSubTab, setActiveSubTab] = useState<'hero' | 'odyssey' | 'destinations' | 'activities' | 'villas' | 'inside-pages'>('hero');
 
-  // Fetch full configuration & destinations list
+  // ── Auto-polling queries: stale data shows instantly, background refresh every 30s ──
   const { data: configData, isLoading: configLoading } = useQuery({
     queryKey: ['wc-configs'],
     queryFn: () => api.get('/website-config/public').then(r => r.data.data),
+    staleTime: 30_000,          // treat data as fresh for 30s — no spinner on re-visit
+    refetchInterval: 30_000,    // silently re-fetch every 30s so team sees updates
+    refetchOnWindowFocus: true, // re-fetch when team switches back to this tab
   });
 
   const { data: destinationsList = [], isLoading: destsLoading } = useQuery({
     queryKey: ['wc-destinations-list'],
     queryFn: () => api.get('/masters/destinations').then(r => r.data.data),
+    staleTime: 120_000,         // destinations list changes rarely — cache for 2 min
+    refetchOnWindowFocus: false,
   });
 
   const config = configData?.config || {};
   const destinationsCms = configData?.destinations || [];
+
+  // ── Hoisted form states — prevent sub-editors from losing state on re-render ──
+  const [heroForm, setHeroForm] = useState<any>(null);
+  const [odysseyForm, setOdysseyForm] = useState<any>(null);
+  const [destsList, setDestsList] = useState<any[]>([]);
+  const [activitiesList, setActivitiesList] = useState<any[]>([]);
+  const [villasList, setVillasList] = useState<any[]>([]);
+  const [configSeeded, setConfigSeeded] = useState(false);
+
+  // Seed form states once when config loads (only on first load, not on bg refresh)
+  useEffect(() => {
+    if (!configData || configSeeded) return;
+    const c = configData.config || {};
+    setHeroForm(c.hero || {
+      useVideo: true,
+      videoUrl1: 'https://media.imagicaholidays.com/imagica-assets/hero-1-hq-compressed.mp4',
+      videoUrl2: 'https://media.imagicaholidays.com/imagica-assets/hero-1-hq-compressed.mp4',
+      fallbackSlides: [{ title: 'Sacred Serenity', subtitle: 'Discover the peace within.', image: '', location: 'Varanasi' }]
+    });
+    setOdysseyForm(c.odyssey || { title: 'A Himalayan Odyssey', subtitle: 'Exquisite Locations', spots: [] });
+    setDestsList(c.destinations || []);
+    setActivitiesList(c.activities || []);
+    setVillasList(c.villas || []);
+    setConfigSeeded(true);
+  }, [configData, configSeeded]);
 
   // Mutations
   const updateSectionMut = useMutation({
@@ -125,16 +179,10 @@ export default function WebsiteControlTab() {
 
   // ─── Sub-Tab 1: Hero Video / Banners Editor ───
   function HeroEditor() {
-    const initialHero = config.hero || {
-      useVideo: true,
-      videoUrl1: 'https://media.imagicaholidays.com/imagica-assets/hero-1-hq-compressed.mp4',
-      videoUrl2: 'https://media.imagicaholidays.com/imagica-assets/hero-1-hq-compressed.mp4',
-      fallbackSlides: [
-        { title: 'Sacred Serenity', subtitle: 'Discover the peace within.', image: '', location: 'Varanasi' }
-      ]
-    };
-
-    const [form, setForm] = useState(initialHero);
+    // Uses hoisted heroForm state — no re-mount, no state loss
+    const form = heroForm;
+    const setForm = setHeroForm;
+    if (!form) return <SidebarSkeleton />;
 
     const handleSave = () => {
       updateSectionMut.mutate({ section: 'hero', data: form });
@@ -254,13 +302,9 @@ export default function WebsiteControlTab() {
 
   // ─── Sub-Tab 2: Himalayan Odyssey Editor ───
   function OdysseyEditor() {
-    const initialOdyssey = config.odyssey || {
-      title: 'A Himalayan Odyssey',
-      subtitle: 'Exquisite Locations',
-      spots: []
-    };
-
-    const [form, setForm] = useState(initialOdyssey);
+    const form = odysseyForm;
+    const setForm = setOdysseyForm;
+    if (!form) return <SidebarSkeleton />;
 
     const handleSave = () => {
       updateSectionMut.mutate({ section: 'odyssey', data: form });
@@ -351,8 +395,8 @@ export default function WebsiteControlTab() {
 
   // ─── Sub-Tab 3: Destinations Carousel Editor ───
   function DestinationsEditor() {
-    const initialDestinations = config.destinations || [];
-    const [list, setList] = useState(initialDestinations);
+    const list = destsList;
+    const setList = setDestsList;
 
     const handleSave = () => {
       updateSectionMut.mutate({ section: 'destinations', data: list });
@@ -453,8 +497,8 @@ export default function WebsiteControlTab() {
 
   // ─── Sub-Tab 4: Activities Section Editor ───
   function ActivitiesEditor() {
-    const initialActivities = config.activities || [];
-    const [list, setList] = useState(initialActivities);
+    const list = activitiesList;
+    const setList = setActivitiesList;
 
     const handleSave = () => {
       updateSectionMut.mutate({ section: 'activities', data: list });
@@ -522,8 +566,8 @@ export default function WebsiteControlTab() {
 
   // ─── Sub-Tab 5: Villas / Exclusive Stay Editor ───
   function VillasEditor() {
-    const initialVillas = config.villas || [];
-    const [list, setList] = useState(initialVillas);
+    const list = villasList;
+    const setList = setVillasList;
 
     const handleSave = () => {
       updateSectionMut.mutate({ section: 'villas', data: list });
@@ -803,10 +847,9 @@ export default function WebsiteControlTab() {
     { id: 'inside-pages', label: 'Destination Pages', icon: MapPin },
   ] as const;
 
-  if (configLoading || destsLoading) {
-    return (
-      <div className="flex justify-center py-24"><Loader2 className="w-8 h-8 animate-spin text-muted-foreground" /></div>
-    );
+  // Show skeleton only on very first load — cached visits show instantly
+  if (configLoading && !configData) {
+    return <SidebarSkeleton />;
   }
 
   return (
