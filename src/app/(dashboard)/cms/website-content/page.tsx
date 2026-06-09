@@ -49,9 +49,15 @@ export default function WebsiteContentPage() {
       </div>
 
       {/* Tab Content */}
-      {activeTab === 'journeys' && <JourneysTab />}
-      {activeTab === 'trending' && <TrendingTab />}
-      {activeTab === 'control' && <WebsiteControlTab />}
+      <div className={activeTab === 'journeys' ? '' : 'hidden'}>
+        <JourneysTab />
+      </div>
+      <div className={activeTab === 'trending' ? '' : 'hidden'}>
+        <TrendingTab />
+      </div>
+      <div className={activeTab === 'control' ? '' : 'hidden'}>
+        <WebsiteControlTab />
+      </div>
     </div>
   );
 }
