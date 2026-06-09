@@ -108,19 +108,19 @@ export default function WebsiteControlTab() {
   const qc = useQueryClient();
   const [activeSubTab, setActiveSubTab] = useState<'hero' | 'odyssey' | 'destinations' | 'activities' | 'villas' | 'inside-pages'>('hero');
 
-  // ── Auto-polling queries: stale data shows instantly, background refresh every 30s ──
+  // ── Queries: load once, cache for session — NO auto-refresh, only manual save ──
   const { data: configData, isLoading: configLoading } = useQuery({
     queryKey: ['wc-configs'],
     queryFn: () => api.get('/website-config/public').then(r => r.data.data),
-    staleTime: 30_000,          // treat data as fresh for 30s — no spinner on re-visit
-    refetchInterval: 30_000,    // silently re-fetch every 30s so team sees updates
-    refetchOnWindowFocus: true, // re-fetch when team switches back to this tab
+    staleTime: Infinity,          // never auto-refetch — data stays until you save
+    refetchOnWindowFocus: false,  // switching tabs won't reset your form
+    refetchOnReconnect: false,    // reconnecting to internet won't reset your form
   });
 
   const { data: destinationsList = [], isLoading: destsLoading } = useQuery({
     queryKey: ['wc-destinations-list'],
     queryFn: () => api.get('/masters/destinations').then(r => r.data.data),
-    staleTime: 120_000,         // destinations list changes rarely — cache for 2 min
+    staleTime: Infinity,
     refetchOnWindowFocus: false,
   });
 
