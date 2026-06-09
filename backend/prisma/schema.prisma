@@ -758,6 +758,7 @@ model DestinationCms {
   seoTitle      String? @map("seo_title")
   seoDesc       String? @map("seo_desc")
   isPublished   Boolean @default(false) @map("is_published")
+  pageContent   Json?   @map("page_content")
 
   destination Destination @relation(fields: [destinationId], references: [id])
 
@@ -1167,4 +1168,15 @@ model TrendingDestination {
 
   @@index([isActive])
   @@map("trending_destinations")
+}
+
+/// General website sections config
+model WebsiteConfig {
+  id        String   @id @default(uuid())
+  key       String   @unique
+  value     Json
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("website_configs")
 }

@@ -182,6 +182,7 @@ apiRouter.use('/itineraries', require('./routes/itinerary.routes'));
 apiRouter.use('/admin', require('./routes/admin.routes'));
 // Website Content Management (Journeys, Trending)
 apiRouter.use('/website-content', require('./routes/website-content.routes'));
+apiRouter.use('/website-configs', require('./routes/website-config.routes'));
 
 apiRouter.use('/', require('./routes/meta-capi.routes'));
 
@@ -193,8 +194,10 @@ apiRouter.use('/', require('./routes/query-document.routes'));
 // ── Public endpoints (no auth required) for website consumption ──
 const publicRouter = express.Router();
 const wcCtrl = require('./controllers/website-content.controller');
+const websiteConfigCtrl = require('./controllers/website-config.controller');
 publicRouter.get('/journeys', wcCtrl.getPublicJourneys);
 publicRouter.get('/trending', wcCtrl.getPublicTrending);
+publicRouter.get('/website-config', websiteConfigCtrl.getWebsiteConfig);
 publicRouter.get('/vouchers/:id/download-pdf', require('./routes/voucher.routes').downloadPdfPublic);
 
 app.use('/v1/public', publicRouter);

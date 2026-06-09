@@ -1,13 +1,79 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { toast } from 'sonner';
-import { Plus, Edit2, Trash2, Loader2, X, Check, ChevronDown, ChevronUp, Eye, EyeOff } from 'lucide-react';
+import { Plus, Edit2, Trash2, Loader2, X, Check, ChevronDown, ChevronUp, Eye, EyeOff, Upload, Image as ImageIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+
+// ─── Direct File Upload Component ───
+interface R2UploadButtonProps {
+  label: string;
+  onUploaded: (url: string) => void;
+  accept?: string;
+  section?: string;
+}
+
+function R2UploadButton({ label, onUploaded, accept = 'image/*', section = 'general' }: R2UploadButtonProps) {
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const res = await api.post(`/website-configs/cms/upload?section=${section}`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      if (res.data.success && res.data.url) {
+        onUploaded(res.data.url);
+        toast.success('Uploaded successfully!');
+      } else {
+        toast.error('Invalid response format');
+      }
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Upload failed');
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  return (
+    <div>
+      <input
+        type="file"
+        ref={fileInputRef}
+        onChange={handleFileChange}
+        accept={accept}
+        className="hidden"
+      />
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        disabled={uploading}
+        onClick={() => fileInputRef.current?.click()}
+        className="h-8 text-xs font-bold"
+      >
+        {uploading ? (
+          <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+        ) : (
+          <Upload className="w-3.5 h-3.5 mr-1.5 text-slate-500" />
+        )}
+        {label}
+      </Button>
+    </div>
+  );
+}
 
 function DayForm({ day, onSave, onCancel, saving }: any) {
   const [f, setF] = useState({
@@ -47,8 +113,15 @@ function DayForm({ day, onSave, onCancel, saving }: any) {
         <textarea className="w-full px-3 py-2 border rounded-md text-sm bg-background resize-y min-h-[60px]" value={f.description} onChange={e => set('description', e.target.value)} />
       </div>
       <div className="space-y-1">
-        <Label className="text-[10px] uppercase tracking-wide text-muted-foreground">Image URL</Label>
-        <Input value={f.image} onChange={e => set('image', e.target.value)} placeholder="https://..." />
+        <Label className="text-[10px] uppercase tracking-wide text-muted-foreground">Image</Label>
+        <div className="flex gap-2 items-center">
+          <Input value={f.image} onChange={e => set('image', e.target.value)} placeholder="https://..." className="flex-1" />
+          <R2UploadButton
+            label="Upload Image"
+            onUploaded={(url) => set('image', url)}
+            section="journeys"
+          />
+        </div>
       </div>
       <div className="flex gap-2 justify-end">
         <Button type="button" variant="ghost" size="sm" onClick={onCancel}>Cancel</Button>
@@ -91,6 +164,7 @@ function JourneyForm({ initial, onClose, onSaved }: { initial: any; onClose: () 
   const [editingDay, setEditingDay] = useState<any>(null);
   const [daySaving, setDaySaving] = useState(false);
   const [dayDeleting, setDayDeleting] = useState(false);
+  const [showRawImages, setShowRawImages] = useState(false);
   const qc = useQueryClient();
   const set = (k: string, v: any) => setForm(f => ({ ...f, [k]: v }));
 
@@ -279,14 +353,120 @@ function JourneyForm({ initial, onClose, onSaved }: { initial: any; onClose: () 
           <Input value={form.badges} onChange={e => set('badges', e.target.value)} placeholder='["SIKKIM"]' />
         </div>
         <div className="space-y-1.5">
-          <Label className="text-xs uppercase tracking-wide text-muted-foreground">Map Image URL</Label>
-          <Input value={form.mapImage} onChange={e => set('mapImage', e.target.value)} placeholder="https://..." />
+          <Label className="text-xs uppercase tracking-wide text-muted-foreground">Map Image</Label>
+          <div className="flex gap-2 items-center">
+            <Input value={form.mapImage} onChange={e => set('mapImage', e.target.value)} placeholder="https://..." className="flex-1" />
+            <R2UploadButton
+              label="Upload Map"
+              onUploaded={(url) => set('mapImage', url)}
+              section="journeys"
+            />
+          </div>
+          {form.mapImage && (
+            <div className="relative w-20 h-16 border rounded bg-slate-100 overflow-hidden mt-1 group">
+              <img src={form.mapImage} alt="Map preview" className="w-full h-full object-cover" />
+              <button
+                type="button"
+                onClick={() => set('mapImage', '')}
+                className="absolute top-0 right-0 bg-red-500 text-white rounded-bl p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
-      <div className="space-y-1.5">
-        <Label className="text-xs uppercase tracking-wide text-muted-foreground">Images (JSON array of URLs)</Label>
-        <textarea className="w-full px-3 py-2 border rounded-md text-sm bg-background font-mono resize-y min-h-[60px]" value={form.images} onChange={e => set('images', e.target.value)} placeholder='["https://url1", "https://url2"]' />
+      <div className="space-y-2 border-t pt-4">
+        <div className="flex items-center justify-between">
+          <Label className="text-xs uppercase tracking-wide text-muted-foreground font-semibold">Gallery Images</Label>
+          <R2UploadButton
+            label="Add Image to Gallery"
+            section="journeys"
+            onUploaded={(url) => {
+              // Parse images list
+              let currentList: string[] = [];
+              try {
+                currentList = typeof form.images === 'string' ? JSON.parse(form.images) : (form.images || []);
+                if (!Array.isArray(currentList)) currentList = [];
+              } catch (e) {
+                currentList = [];
+              }
+              const newList = [...currentList, url];
+              set('images', JSON.stringify(newList));
+            }}
+          />
+        </div>
+        
+        {(() => {
+          let currentList: string[] = [];
+          try {
+            currentList = typeof form.images === 'string' ? JSON.parse(form.images) : (form.images || []);
+            if (!Array.isArray(currentList)) currentList = [];
+          } catch (e) {
+            currentList = [];
+          }
+          
+          return currentList.length > 0 ? (
+            <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-3 p-3 border rounded-lg bg-slate-50">
+              {currentList.map((url, index) => (
+                <div key={index} className="relative aspect-video rounded-md border bg-white overflow-hidden group shadow-sm">
+                  <img src={url} alt={`Gallery ${index + 1}`} className="w-full h-full object-cover" />
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const newList = currentList.filter((_, i) => i !== index);
+                        set('images', JSON.stringify(newList));
+                      }}
+                      className="p-1 bg-red-600 hover:bg-red-700 text-white rounded transition-colors"
+                      title="Delete image"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                    <a
+                      href={url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="p-1 bg-slate-800 hover:bg-slate-700 text-white rounded transition-colors"
+                      title="View full image"
+                    >
+                      <Eye className="w-3.5 h-3.5" />
+                    </a>
+                  </div>
+                  <div className="absolute bottom-1 left-1 bg-black/60 text-white text-[9px] px-1 rounded">
+                    #{index + 1}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="border border-dashed rounded-lg p-6 text-center text-xs text-muted-foreground bg-slate-50">
+              No gallery images uploaded yet. Click the button above to upload.
+            </div>
+          );
+        })()}
+
+        <div className="text-right">
+          <button
+            type="button"
+            onClick={() => setShowRawImages(!showRawImages)}
+            className="text-[10px] text-slate-500 hover:underline"
+          >
+            {showRawImages ? 'Hide raw JSON editor' : 'Show raw JSON editor'}
+          </button>
+        </div>
+
+        {showRawImages && (
+          <div className="space-y-1 mt-1">
+            <textarea
+              className="w-full px-3 py-2 border rounded-md text-xs bg-background font-mono resize-y min-h-[60px]"
+              value={form.images}
+              onChange={e => set('images', e.target.value)}
+              placeholder='["https://url1", "https://url2"]'
+            />
+          </div>
+        )}
       </div>
 
       <div className="space-y-1.5">

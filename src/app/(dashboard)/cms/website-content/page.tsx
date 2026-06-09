@@ -1,13 +1,15 @@
 'use client';
 
 import { useState } from 'react';
-import { Compass, MapPin, TrendingUp } from 'lucide-react';
+import { Compass, MapPin, TrendingUp, Laptop } from 'lucide-react';
 import JourneysTab from './JourneysTab';
 import TrendingTab from './TrendingTab';
+import WebsiteControlTab from './WebsiteControlTab';
 
 const tabs = [
   { id: 'journeys', label: 'Journeys', icon: MapPin },
   { id: 'trending', label: 'Trending Destinations', icon: TrendingUp },
+  { id: 'control', label: 'Website Control', icon: Laptop },
 ];
 
 export default function WebsiteContentPage() {
@@ -21,7 +23,7 @@ export default function WebsiteContentPage() {
           <h1 className="text-2xl font-bold">Website Content</h1>
         </div>
         <p className="text-muted-foreground text-sm ml-10">
-          Manage journey packages, pricing, itineraries and trending destinations on the ImagicaHolidays website.
+          Manage journeys, trending lists, landing sections, cover banners, and destination details for the public website.
         </p>
       </div>
 
@@ -49,6 +51,7 @@ export default function WebsiteContentPage() {
       {/* Tab Content */}
       {activeTab === 'journeys' && <JourneysTab />}
       {activeTab === 'trending' && <TrendingTab />}
+      {activeTab === 'control' && <WebsiteControlTab />}
     </div>
   );
 }
