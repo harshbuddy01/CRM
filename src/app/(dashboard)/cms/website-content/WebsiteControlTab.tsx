@@ -13,6 +13,228 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card } from '@/components/ui/card';
 
+// ─── Default Static Data Fallbacks ───────────────────────────────────────────
+const DEFAULT_HERO_SLIDES = [
+  {
+    title: "Sacred Serenity",
+    subtitle: "Discover the peace within.",
+    image: "https://unsplash.com/photos/GdlEMsUsOy0/download?force=true&w=1800",
+    location: "Varanasi"
+  },
+  {
+    title: "Mountain Heights",
+    subtitle: "Breathtaking views.",
+    image: "https://unsplash.com/photos/-umeutkfZew/download?force=true&w=1800",
+    location: "Ladakh"
+  },
+  {
+    title: "Wildlife Wonders",
+    subtitle: "Embrace nature.",
+    image: "https://unsplash.com/photos/A0vabw8DVx0/download?force=true&w=1800",
+    location: "Madhya Pradesh"
+  },
+  {
+    title: "Concrete Coast",
+    subtitle: "Modern marvels.",
+    image: "https://unsplash.com/photos/yjQQO8hIH6A/download?force=true&w=1800",
+    location: "Maharashtra"
+  },
+  {
+    title: "Green Valleys",
+    subtitle: "Endless horizons.",
+    image: "https://unsplash.com/photos/ilrO9BN7QSE/download?force=true&w=1800",
+    location: "Himachal Pradesh"
+  },
+  {
+    title: "Tranquil Waters",
+    subtitle: "A journey of peace.",
+    image: "https://unsplash.com/photos/29ezCWtMtnM/download?force=true&w=1800",
+    location: "Kerala"
+  }
+];
+
+const DEFAULT_ODYSSEY_SPOTS = [
+  { id: "tiger-hill", name: "Tiger Hill", location: "Darjeeling", image: "https://images.pexels.com/photos/33736751/pexels-photo-33736751.jpeg?auto=compress&cs=tinysrgb&w=800" },
+  { id: "hawa-mahal", name: "Hawa Mahal", location: "Jaipur", image: "https://images.pexels.com/photos/19195937/pexels-photo-19195937.jpeg?auto=compress&cs=tinysrgb&w=800" },
+  { id: "rumtek", name: "Rumtek Monastery", location: "Gangtok", image: "https://images.pexels.com/photos/35431355/pexels-photo-35431355.jpeg?auto=compress&cs=tinysrgb&w=800" },
+  { id: "city-palace", name: "City Palace", location: "Udaipur", image: "https://images.pexels.com/photos/29824639/pexels-photo-29824639.jpeg?auto=compress&cs=tinysrgb&w=800" },
+  { id: "varanasi", name: "Dashashwamedh Ghat", location: "Varanasi", image: "https://images.unsplash.com/photo-1561361513-2d000a50f0dc?auto=format&fit=crop&w=800&q=80" },
+  { id: "shanti-stupa", name: "Shanti Stupa", location: "Leh", image: "https://images.unsplash.com/photo-1543336775-49935ed6e76d?auto=format&fit=crop&w=800&q=80" },
+  { id: "tea-gardens", name: "Tea Gardens", location: "Munnar", image: "https://images.pexels.com/photos/31758870/pexels-photo-31758870.jpeg?auto=compress&cs=tinysrgb&w=800" },
+  { id: "backwaters", name: "Vembanad Lake", location: "Alleppey", image: "https://images.pexels.com/photos/29801456/pexels-photo-29801456.jpeg?auto=compress&cs=tinysrgb&w=800" }
+];
+
+const DEFAULT_DESTINATIONS = [
+  {
+    id: "gangtok",
+    title: "Gangtok",
+    tagline: "Sikkim",
+    description: "A sanctuary in the Himalayas where tradition meets tranquility.",
+    mainImage: "https://images.pexels.com/photos/33547415/pexels-photo-33547415.jpeg?auto=compress&cs=tinysrgb&w=1200",
+    overlayImage: "https://images.pexels.com/photos/33547415/pexels-photo-33547415.jpeg?auto=compress&cs=tinysrgb&w=1200",
+    link: "/destinations/gangtok"
+  },
+  {
+    id: "darjeeling",
+    title: "Darjeeling",
+    tagline: "West Bengal",
+    description: "Mist-kissed peaks and rolling tea gardens in the Queen of Hills.",
+    mainImage: "https://images.pexels.com/photos/33736751/pexels-photo-33736751.jpeg?auto=compress&cs=tinysrgb&w=1200",
+    overlayImage: "https://images.pexels.com/photos/33736751/pexels-photo-33736751.jpeg?auto=compress&cs=tinysrgb&w=1200",
+    link: "/destinations/darjeeling"
+  },
+  {
+    id: "pelling",
+    title: "Pelling",
+    tagline: "West Sikkim",
+    description: "Sacred lakes and ancient monasteries with a view of the gods.",
+    mainImage: "https://images.pexels.com/photos/34032592/pexels-photo-34032592.jpeg?auto=compress&cs=tinysrgb&w=1200",
+    overlayImage: "https://images.pexels.com/photos/34032592/pexels-photo-34032592.jpeg?auto=compress&cs=tinysrgb&w=1200",
+    link: "/destinations/pelling"
+  },
+  {
+    id: "udaipur",
+    title: "Udaipur",
+    tagline: "Rajasthan",
+    description: "A golden sunset over the legendary City of Lakes.",
+    mainImage: "https://images.pexels.com/photos/29801402/pexels-photo-29801402.jpeg?auto=compress&cs=tinysrgb&w=1200",
+    overlayImage: "https://images.pexels.com/photos/29801402/pexels-photo-29801402.jpeg?auto=compress&cs=tinysrgb&w=1200",
+    link: "/destinations/udaipur"
+  },
+  {
+    id: "jaipur",
+    title: "Jaipur",
+    tagline: "Rajasthan",
+    description: "The Pink City where history is written in sandstone and light.",
+    mainImage: "https://images.pexels.com/photos/19195937/pexels-photo-19195937.jpeg?auto=compress&cs=tinysrgb&w=1200",
+    overlayImage: "https://images.pexels.com/photos/19195937/pexels-photo-19195937.jpeg?auto=compress&cs=tinysrgb&w=1200",
+    link: "/destinations/jaipur"
+  },
+  {
+    id: "munnar",
+    title: "Munnar",
+    tagline: "Kerala",
+    description: "The emerald heaven where clouds rest upon velvet green hills.",
+    mainImage: "https://images.pexels.com/photos/31758870/pexels-photo-31758870.jpeg?auto=compress&cs=tinysrgb&w=1200",
+    overlayImage: "https://images.pexels.com/photos/31758870/pexels-photo-31758870.jpeg?auto=compress&cs=tinysrgb&w=1200",
+    link: "/destinations/munnar"
+  },
+  {
+    id: "goa",
+    title: "Goa",
+    tagline: "West Coast",
+    description: "Pristine sands and colonial whispers on the edge of the Arabian Sea.",
+    mainImage: "https://images.pexels.com/photos/2432269/pexels-photo-2432269.jpeg?auto=compress&cs=tinysrgb&w=1200",
+    overlayImage: "https://images.pexels.com/photos/2432269/pexels-photo-2432269.jpeg?auto=compress&cs=tinysrgb&w=1200",
+    link: "/destinations/goa"
+  },
+  {
+    id: "wayanad",
+    title: "Wayanad",
+    tagline: "Kerala",
+    description: "Ancient caves and misty plantations in the heart of the Western Ghats.",
+    mainImage: "https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?auto=format&fit=crop&w=1400&q=80",
+    overlayImage: "https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?auto=format&fit=crop&w=1400&q=80",
+    link: "/destinations/wayanad"
+  }
+];
+
+const DEFAULT_ACTIVITIES = [
+  {
+    title: "Trekking",
+    subtitle: "Himalayan Trails",
+    image: "https://images.unsplash.com/photo-1551632811-561732d1e306?q=80&w=1200&auto=format&fit=crop",
+    alt: "Trekking through the Himalayan mountains",
+  },
+  {
+    title: "Yak Safari",
+    subtitle: "Highland Rides",
+    image: "https://images.unsplash.com/photo-1605296867304-46d5465a13f1?q=80&w=1200&auto=format&fit=crop",
+    alt: "Yak safari across high-altitude pastures",
+  },
+  {
+    title: "Bike Ride",
+    subtitle: "Mountain Roads",
+    image: "https://images.unsplash.com/photo-1558618666-fcd25c85f82e?q=80&w=1200&auto=format&fit=crop",
+    alt: "Bike riding on scenic mountain roads",
+  },
+  {
+    title: "Camping",
+    subtitle: "Under the Stars",
+    image: "https://images.unsplash.com/photo-1504851149312-7a075b496cc7?q=80&w=1200&auto=format&fit=crop",
+    alt: "Camping under a starry sky in the mountains",
+  },
+  {
+    title: "Rope Course",
+    subtitle: "Adventure Heights",
+    image: "https://images.unsplash.com/photo-1502904550040-7534597429ae?q=80&w=1200&auto=format&fit=crop",
+    alt: "Rope course adventure in the forest",
+  },
+  {
+    title: "Food",
+    subtitle: "Local Flavours",
+    image: "https://images.unsplash.com/photo-1567337710282-00832b415979?q=80&w=1200&auto=format&fit=crop",
+    alt: "Traditional Indian food spread",
+  },
+  {
+    title: "Paragliding",
+    subtitle: "Soar the Skies",
+    image: "https://images.unsplash.com/photo-1503220317375-aaad61436b1b?q=80&w=1200&auto=format&fit=crop",
+    alt: "Paragliding over mountain valleys",
+  },
+  {
+    title: "Khangchendzonga Trek",
+    subtitle: "Summit Dreams",
+    image: "https://images.unsplash.com/photo-1585409677599-f5476da95f71?q=80&w=1200&auto=format&fit=crop",
+    alt: "Khangchendzonga mountain peak trail",
+  },
+  {
+    title: "Coronation Trek",
+    subtitle: "Royal Pathways",
+    image: "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?q=80&w=1200&auto=format&fit=crop",
+    alt: "Mountain trail through alpine meadows",
+  },
+  {
+    title: "River Rafting",
+    subtitle: "White Water Rush",
+    image: "https://images.unsplash.com/photo-1530866495561-507c83d09e79?q=80&w=1200&auto=format&fit=crop",
+    alt: "River rafting through rapids",
+  },
+  {
+    title: "Parks & Sanctuaries",
+    subtitle: "Wildlife Haven",
+    image: "https://images.unsplash.com/photo-1535338454528-1b5304d1ac73?q=80&w=1200&auto=format&fit=crop",
+    alt: "Lush green forest sanctuary",
+  },
+];
+
+const DEFAULT_VILLAS = [
+  {
+    id: "v1",
+    title: "Vela One Bedroom Ocean Front Villa",
+    description: "Poised on a cliffside with sweeping ocean views, complemented by personalized butler services to cater to your every desire.",
+    image: "https://images.unsplash.com/photo-1582719508461-905c673771fd?auto=format&fit=crop&w=1600&q=80"
+  },
+  {
+    id: "v2",
+    title: "Vela Two Bedroom Family Villa",
+    description: "A spacious sanctuary designed for families, featuring a private pool and lush garden surroundings.",
+    image: "https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?auto=format&fit=crop&w=1600&q=80"
+  },
+  {
+    id: "v3",
+    title: "Vela Ocean View Cliff Villa",
+    description: "Experience the ultimate in privacy and luxury with unobstructed views of the Indian Ocean.",
+    image: "https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?auto=format&fit=crop&w=1600&q=80"
+  },
+  {
+    id: "v4",
+    title: "Vela River Front Villa",
+    description: "Nestled along the gentle river, this villa offers a tranquil escape into nature's embrace.",
+    image: "https://images.unsplash.com/photo-1596394516093-501ba68a0ba6?auto=format&fit=crop&w=1600&q=80"
+  }
+];
+
 // ─── Skeleton ────────────────────────────────────────────────────────────────
 function Skeleton({ className = '' }: { className?: string }) {
   return <div className={`animate-pulse bg-slate-100 rounded-lg ${className}`} />;
@@ -545,11 +767,38 @@ export default function WebsiteControlTab() {
   useEffect(() => {
     if (!configData || seeded) return;
     const c = configData.config || {};
-    setHeroForm(c.hero || { useVideo: true, videoUrl1: '', videoUrl2: '', fallbackSlides: [] });
-    setOdysseyForm(c.odyssey || { title: 'A Himalayan Odyssey', subtitle: 'Exquisite Locations', spots: [] });
-    setDestsList(c.destinations || []);
-    setActivitiesList(c.activities || []);
-    setVillasList(c.villas || []);
+    
+    // Hero Banner & Video
+    const hero = c.hero || {};
+    const fallbackSlides = hero.fallbackSlides && hero.fallbackSlides.length > 0 ? hero.fallbackSlides : DEFAULT_HERO_SLIDES;
+    setHeroForm({
+      useVideo: hero.useVideo ?? true,
+      videoUrl1: hero.videoUrl1 || '',
+      videoUrl2: hero.videoUrl2 || '',
+      fallbackSlides,
+    });
+
+    // Himalayan Odyssey
+    const odyssey = c.odyssey || {};
+    const spots = odyssey.spots && odyssey.spots.length > 0 ? odyssey.spots : DEFAULT_ODYSSEY_SPOTS;
+    setOdysseyForm({
+      title: odyssey.title || 'A Himalayan Odyssey',
+      subtitle: odyssey.subtitle || 'Exquisite Locations',
+      spots,
+    });
+
+    // Featured Grid (Destinations)
+    const destinations = c.destinations && c.destinations.length > 0 ? c.destinations : DEFAULT_DESTINATIONS;
+    setDestsList(destinations);
+
+    // Activities
+    const activities = c.activities && c.activities.length > 0 ? c.activities : DEFAULT_ACTIVITIES;
+    setActivitiesList(activities);
+
+    // Villas & Stays
+    const villas = c.villas && c.villas.length > 0 ? c.villas : DEFAULT_VILLAS;
+    setVillasList(villas);
+
     setSeeded(true);
   }, [configData, seeded]);
 

@@ -39,12 +39,26 @@ const TRENDING_DATA = [
 
 async function autoSeedWebsiteContent() {
   try {
-    // Check if we already have data
+    // 1. Check persistent flag in OrgSetting to prevent re-seeding after deletion
+    const seedFlag = await prisma.orgSetting.findUnique({
+      where: { key: 'website_content_seeded' }
+    });
+
+    if (seedFlag && seedFlag.value === 'true') {
+      return;
+    }
+
     const journeyCount = await prisma.websiteJourney.count();
     const trendingCount = await prisma.trendingDestination.count();
 
-    if (journeyCount > 0 && trendingCount > 0) {
-      console.log(`✅ Website content already seeded (${journeyCount} journeys, ${trendingCount} trending). Skipping.`);
+    // 2. If already populated, set the flag and skip
+    if (journeyCount > 0 || trendingCount > 0) {
+      await prisma.orgSetting.upsert({
+        where: { key: 'website_content_seeded' },
+        update: { value: 'true' },
+        create: { key: 'website_content_seeded', value: 'true', description: 'Flag to prevent website content re-seeding' }
+      });
+      console.log(`✅ Website content already populated (${journeyCount} journeys, ${trendingCount} trending). Set OrgSetting flag.`);
       return;
     }
 
@@ -99,6 +113,13 @@ async function autoSeedWebsiteContent() {
       }
       console.log(`  ✅ Seeded ${TRENDING_DATA.length} trending destinations`);
     }
+
+    // 3. Mark as seeded
+    await prisma.orgSetting.upsert({
+      where: { key: 'website_content_seeded' },
+      update: { value: 'true' },
+      create: { key: 'website_content_seeded', value: 'true', description: 'Flag to prevent website content re-seeding' }
+    });
 
     console.log('✨ Auto-seed complete!');
   } catch (err) {
