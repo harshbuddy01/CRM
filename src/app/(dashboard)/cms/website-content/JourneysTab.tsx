@@ -559,6 +559,9 @@ export default function JourneysTab() {
   const { data: journeys, isLoading } = useQuery({
     queryKey: ['wc-journeys'],
     queryFn: () => api.get('/website-content/journeys').then(r => r.data.data),
+    staleTime: Infinity,
+    refetchInterval: false,
+    refetchOnWindowFocus: false,
   });
 
   const deleteMut = useMutation({

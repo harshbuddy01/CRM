@@ -519,8 +519,9 @@ export default function WebsiteControlTab() {
   // Load once — NO auto-refresh. Only refreshes after you save.
   const { data: configData, isLoading: configLoading } = useQuery({
     queryKey: ['wc-configs'],
-    queryFn: () => api.get('/website-config/public').then(r => r.data.data),
+    queryFn: () => api.get('/website-configs/public').then(r => r.data.data),
     staleTime: Infinity,
+    refetchInterval: false,
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
   });
@@ -528,6 +529,7 @@ export default function WebsiteControlTab() {
     queryKey: ['wc-destinations-list'],
     queryFn: () => api.get('/masters/destinations').then(r => r.data.data),
     staleTime: Infinity,
+    refetchInterval: false,
     refetchOnWindowFocus: false,
   });
 

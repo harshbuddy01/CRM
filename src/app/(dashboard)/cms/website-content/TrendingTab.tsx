@@ -109,6 +109,9 @@ export default function TrendingTab() {
   const { data: items, isLoading } = useQuery({
     queryKey: ['wc-trending'],
     queryFn: () => api.get('/website-content/trending').then(r => r.data.data),
+    staleTime: Infinity,
+    refetchInterval: false,
+    refetchOnWindowFocus: false,
   });
 
   const deleteMut = useMutation({
