@@ -5,10 +5,10 @@ const controller = require('../controllers/website-config.controller');
 const { authenticate } = require('../middlewares/authenticate');
 const { can } = require('../middlewares/can');
 
-// Multer memory storage config
+// Multer memory storage config — 100 MB to allow hero background videos
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 30 * 1024 * 1024 }, // 30MB limit (videos can be up to 20MB)
+  limits: { fileSize: 100 * 1024 * 1024 }, // 100MB limit for video uploads
 });
 
 // Image / Video type check

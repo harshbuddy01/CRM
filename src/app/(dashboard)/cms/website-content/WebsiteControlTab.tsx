@@ -263,17 +263,37 @@ interface R2UploadButtonProps {
 }
 function R2UploadButton({ label, onUploaded, accept = 'image/*', section = 'general' }: R2UploadButtonProps) {
   const [uploading, setUploading] = useState(false);
+  const [progress, setProgress] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const MAX_FILE_SIZE_MB = 100; // 100 MB max
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    // Client-side file size check
+    const fileSizeMB = file.size / (1024 * 1024);
+    if (fileSizeMB > MAX_FILE_SIZE_MB) {
+      toast.error(`File is too large (${fileSizeMB.toFixed(1)} MB). Maximum allowed: ${MAX_FILE_SIZE_MB} MB.`);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      return;
+    }
+
     setUploading(true);
+    setProgress(0);
     const formData = new FormData();
     formData.append('file', file);
     try {
       const res = await api.post(`/website-configs/cms/upload?section=${section}`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
+        timeout: 5 * 60 * 1000, // 5 minute timeout for large video uploads
+        onUploadProgress: (progressEvent) => {
+          if (progressEvent.total) {
+            const pct = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+            setProgress(pct);
+          }
+        },
       });
       if (res.data.success && res.data.url) {
         onUploaded(res.data.url);
@@ -282,9 +302,16 @@ function R2UploadButton({ label, onUploaded, accept = 'image/*', section = 'gene
         toast.error('Invalid upload response format');
       }
     } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Failed to upload file');
+      if (err.code === 'ECONNABORTED') {
+        toast.error('Upload timed out. The file may be too large or network too slow.');
+      } else if (err.response?.status === 413) {
+        toast.error(err.response?.data?.message || 'File is too large for the server to accept.');
+      } else {
+        toast.error(err.response?.data?.message || 'Failed to upload file. Please try again.');
+      }
     } finally {
       setUploading(false);
+      setProgress(0);
       if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
@@ -296,8 +323,13 @@ function R2UploadButton({ label, onUploaded, accept = 'image/*', section = 'gene
         onClick={() => fileInputRef.current?.click()}
         className="h-8 text-xs font-bold rounded-lg border-slate-300 hover:bg-slate-50 transition-colors">
         {uploading ? <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> : <Upload className="w-3.5 h-3.5 mr-1.5 text-slate-500" />}
-        {label}
+        {uploading ? `Uploading ${progress}%` : label}
       </Button>
+      {uploading && (
+        <div className="mt-1.5 w-full bg-slate-200 rounded-full h-1.5 overflow-hidden">
+          <div className="bg-blue-500 h-full rounded-full transition-all duration-300 ease-out" style={{ width: `${progress}%` }} />
+        </div>
+      )}
     </div>
   );
 }

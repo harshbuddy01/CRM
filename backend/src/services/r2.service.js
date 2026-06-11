@@ -47,9 +47,13 @@ const optimizeImage = async (buffer, section = 'general') => {
  * @returns {Promise<string>} - The public CDN URL of the uploaded asset
  */
 const uploadAsset = async (file, section = 'general') => {
-  if (!process.env.R2_ACCESS_KEY_ID) {
-    console.warn('⚠️ [R2] Credentials missing, using mock/local fallback.');
-    // Return a dummy placeholder or fallback to prevent failure
+  const accessKey = process.env.R2_ACCESS_KEY_ID || '';
+  const secretKey = process.env.R2_SECRET_ACCESS_KEY || '';
+  const isPlaceholder = (val) => !val || val.startsWith('YOUR_') || val === 'dummy';
+
+  if (isPlaceholder(accessKey) || isPlaceholder(secretKey)) {
+    console.warn('⚠️ [R2] Credentials missing or placeholder, using mock/local fallback.');
+    // Return a dummy placeholder to prevent failure
     return `https://images.unsplash.com/photo-1542223189-67a03fa0f0bd?w=1000`;
   }
 
@@ -57,7 +61,7 @@ const uploadAsset = async (file, section = 'general') => {
   let filename = `${section}/${uuidv4()}-${file.originalname.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
   let contentType = file.mimetype;
 
-  // Optimize image
+  // Only optimize images (skip videos entirely)
   if (file.mimetype.startsWith('image/')) {
     try {
       buffer = await optimizeImage(file.buffer, section);
@@ -67,6 +71,9 @@ const uploadAsset = async (file, section = 'general') => {
     } catch (err) {
       console.error('❌ [R2] Image optimization failed, uploading raw image:', err.message);
     }
+  } else if (file.mimetype.startsWith('video/')) {
+    // Videos pass through without any transformation
+    console.log(`📹 [R2] Uploading video (${(file.buffer.length / 1024 / 1024).toFixed(1)} MB): ${file.originalname}`);
   }
 
   const command = new PutObjectCommand({

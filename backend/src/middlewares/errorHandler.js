@@ -11,6 +11,7 @@
 
 const logger = require('../utils/logger');
 const { AppError } = require('../utils/AppError');
+const multer = require('multer');
 
 /**
  * Global error handling middleware.
@@ -19,6 +20,22 @@ const { AppError } = require('../utils/AppError');
  */
 // eslint-disable-next-line no-unused-vars
 const errorHandler = (err, req, res, next) => {
+  // ── Multer-specific errors (file too large, unexpected field, etc.) ──
+  if (err instanceof multer.MulterError) {
+    const multerMessages = {
+      LIMIT_FILE_SIZE: 'File is too large. Maximum allowed size is 100 MB for videos, 30 MB for images.',
+      LIMIT_UNEXPECTED_FILE: 'Unexpected file field. Please check the upload form.',
+      LIMIT_FILE_COUNT: 'Too many files uploaded at once.',
+    };
+    const message = multerMessages[err.code] || `Upload error: ${err.message}`;
+    logger.error(`[Multer] ${err.code}: ${err.message}`);
+    return res.status(413).json({
+      success: false,
+      status: 'fail',
+      message,
+    });
+  }
+
   // Default values
   err.statusCode = err.statusCode || 500;
   err.status = err.status || 'error';
