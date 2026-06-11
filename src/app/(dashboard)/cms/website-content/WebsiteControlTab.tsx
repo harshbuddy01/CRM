@@ -518,19 +518,25 @@ function DestinationsEditor({ list, setList, onSave, saving }: DestsEditorProps)
           <Card key={idx} className="p-5 bg-slate-50/50 border border-slate-200 grid md:grid-cols-[1.5fr_3fr_auto] gap-6 items-start relative">
             <Button variant="ghost" size="icon" className="absolute top-3 right-3 text-red-500 h-8 w-8" onClick={() => removeItem(idx)}><Trash2 className="w-4 h-4" /></Button>
             <div className="space-y-4">
-              <div className="space-y-1">
+              <div className="space-y-1.5">
                 <Label className="text-[10px] font-black uppercase text-slate-400">Main Poster Photo</Label>
-                <div className="relative w-full h-44 bg-slate-100 rounded-xl overflow-hidden border">
+                <div className="relative w-full h-36 bg-slate-100 rounded-xl overflow-hidden border">
                   {dest.mainImage ? <img src={dest.mainImage} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-slate-400"><ImageIcon className="w-8 h-8" /></div>}
                 </div>
-                <R2UploadButton label="Upload Poster" section="destinations" onUploaded={url => updateItem(idx, 'mainImage', url)} />
+                <div className="flex gap-1.5 items-center">
+                  <Input value={dest.mainImage || ''} onChange={e => updateItem(idx, 'mainImage', e.target.value)} placeholder="Poster Path/URL" className="flex-1 text-xs h-9" />
+                  <R2UploadButton label="Upload" section="destinations" onUploaded={url => updateItem(idx, 'mainImage', url)} />
+                </div>
               </div>
-              <div className="space-y-1">
+              <div className="space-y-1.5">
                 <Label className="text-[10px] font-black uppercase text-slate-400">Overlay Grayscale Photo</Label>
-                <div className="relative w-full h-32 bg-slate-100 rounded-xl overflow-hidden border">
+                <div className="relative w-full h-28 bg-slate-100 rounded-xl overflow-hidden border">
                   {dest.overlayImage ? <img src={dest.overlayImage} className="w-full h-full object-cover grayscale" /> : <div className="w-full h-full flex items-center justify-center text-slate-400"><ImageIcon className="w-8 h-8" /></div>}
                 </div>
-                <R2UploadButton label="Upload Overlay" section="destinations" onUploaded={url => updateItem(idx, 'overlayImage', url)} />
+                <div className="flex gap-1.5 items-center">
+                  <Input value={dest.overlayImage || ''} onChange={e => updateItem(idx, 'overlayImage', e.target.value)} placeholder="Overlay Path/URL" className="flex-1 text-xs h-9" />
+                  <R2UploadButton label="Upload" section="destinations" onUploaded={url => updateItem(idx, 'overlayImage', url)} />
+                </div>
               </div>
             </div>
             <div className="space-y-3 pt-4">
@@ -645,10 +651,13 @@ function VillasEditor({ form, setForm, onSave, saving }: VillasEditorProps) {
           <Card key={idx} className="p-4 bg-white border border-slate-200 grid md:grid-cols-[1.2fr_3fr_auto] gap-4 items-start relative">
             <Button variant="ghost" size="icon" className="absolute top-2 right-2 text-red-500 h-8 w-8" onClick={() => removeItem(idx)}><Trash2 className="w-4 h-4" /></Button>
             <div className="space-y-2">
-              <div className="relative w-full h-32 bg-slate-100 rounded-lg overflow-hidden border">
-                {vil.image ? <img src={vil.image} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-slate-400"><ImageIcon className="w-8 h-8" /></div>}
+              <div className="relative w-full h-24 bg-slate-100 rounded-lg overflow-hidden border">
+                {vil.image ? <img src={vil.image} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-slate-400"><ImageIcon className="w-6 h-6" /></div>}
               </div>
-              <R2UploadButton label="Upload Photo" section="villas" onUploaded={url => updateItem(idx, 'image', url)} />
+              <div className="flex gap-1.5 items-center">
+                <Input value={vil.image || ''} onChange={e => updateItem(idx, 'image', e.target.value)} placeholder="Image Path/URL" className="flex-1 text-xs h-9" />
+                <R2UploadButton label="Upload" section="villas" onUploaded={url => updateItem(idx, 'image', url)} />
+              </div>
             </div>
             <div className="space-y-3 pt-3">
               <div className="grid grid-cols-2 gap-2">
@@ -716,10 +725,13 @@ function InsidePagesEditor({ destinationsList, destinationsCms, onSave, saving }
           <div className="bg-slate-50/50 rounded-xl border p-5 grid md:grid-cols-[1.5fr_3fr] gap-6 items-center">
             <div className="space-y-2">
               <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">Destination Page Cover Photo</Label>
-              <div className="relative w-full h-36 bg-slate-100 rounded-lg overflow-hidden border">
+              <div className="relative w-full h-32 bg-slate-100 rounded-lg overflow-hidden border">
                 {pageForm.pageContent.heroImage || pageForm.heroImage ? <img src={pageForm.pageContent.heroImage || pageForm.heroImage} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-slate-400"><ImageIcon className="w-8 h-8" /></div>}
               </div>
-              <R2UploadButton label="Upload Cover Image" section="destinations" onUploaded={url => setPageForm((f: any) => ({ ...f, heroImage: url, pageContent: { ...f.pageContent, heroImage: url } }))} />
+              <div className="flex gap-1.5 items-center">
+                <Input value={pageForm.pageContent.heroImage || pageForm.heroImage || ''} onChange={e => setPageForm((f: any) => ({ ...f, heroImage: e.target.value, pageContent: { ...f.pageContent, heroImage: e.target.value } }))} placeholder="Cover Image Path/URL" className="flex-1 text-xs h-9" />
+                <R2UploadButton label="Upload" section="destinations" onUploaded={url => setPageForm((f: any) => ({ ...f, heroImage: url, pageContent: { ...f.pageContent, heroImage: url } }))} />
+              </div>
             </div>
             <div className="space-y-3">
               <div className="grid grid-cols-2 gap-3">
