@@ -45,12 +45,13 @@ const allowedOrigins = [
   'https://crm.imagicaholidays.com',
   'https://api.imagicaholidays.com'
 ];
+
 app.use(
   cors({
     origin: (origin, callback) => {
       // Allow requests with no origin (server-to-server, mobile apps, curl)
-      // and requests from whitelisted origins
-      if (!origin || allowedOrigins.includes(origin)) {
+      // and requests from whitelisted origins or Hostinger preview sites
+      if (!origin || allowedOrigins.includes(origin) || origin.endsWith('.hostingersite.com')) {
         callback(null, true);
       } else {
         callback(new Error(`CORS: Origin ${origin} not allowed`));
