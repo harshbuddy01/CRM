@@ -862,7 +862,7 @@ export default function WebsiteControlTab() {
       ? villas
       : (villas.items && villas.items.length > 0 ? villas.items : DEFAULT_VILLAS);
     setVillasForm({
-      title: villas.title || 'VELA',
+      title: villas.title || 'Exclusive Stays',
       subtitle: villas.subtitle || 'Your Exclusive Tranquil Haven at IMAGICA HOLIDAYS',
       items: villasItems,
     });
