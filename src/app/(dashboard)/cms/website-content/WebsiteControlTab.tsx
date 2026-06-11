@@ -661,10 +661,10 @@ function VillasEditor({ form, setForm, onSave, saving }: VillasEditorProps) {
             </div>
             <div className="space-y-3 pt-3">
               <div className="grid grid-cols-2 gap-2">
-                <Input value={vil.id} onChange={e => updateItem(idx, 'id', e.target.value)} placeholder="Villa ID (e.g. v1)" />
-                <Input value={vil.title} onChange={e => updateItem(idx, 'title', e.target.value)} placeholder="Villa Title" />
+                <Input value={vil.id} onChange={e => updateItem(idx, 'id', e.target.value)} placeholder="Hotel/Villa Name (e.g. Rambagh Palace)" />
+                <Input value={vil.title} onChange={e => updateItem(idx, 'title', e.target.value)} placeholder="Tagline / Subtitle (e.g. The Jewel of Jaipur)" />
               </div>
-              <textarea className="w-full px-3 py-2 border rounded-md text-sm bg-background resize-y min-h-[60px]" value={vil.description} onChange={e => updateItem(idx, 'description', e.target.value)} placeholder="Villa description/tagline..." />
+              <textarea className="w-full px-3 py-2 border rounded-md text-sm bg-background resize-y min-h-[60px]" value={vil.description} onChange={e => updateItem(idx, 'description', e.target.value)} placeholder="Description (e.g. Occupying a 70-acre estate...)" />
             </div>
           </Card>
         ))}
