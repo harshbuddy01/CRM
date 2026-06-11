@@ -79,9 +79,10 @@ const updateWebsiteSection = async (req, res, next) => {
         } else if (parts[0] === 'activity' && Array.isArray(payload)) {
           const idx = parseInt(parts[1], 10);
           if (payload[idx]) payload[idx].image = url;
-        } else if (parts[0] === 'villa' && Array.isArray(payload)) {
+        } else if (parts[0] === 'villa') {
           const idx = parseInt(parts[1], 10);
-          if (payload[idx]) payload[idx].image = url;
+          const targetArray = Array.isArray(payload) ? payload : (payload.items || []);
+          if (targetArray[idx]) targetArray[idx].image = url;
         } else if (fieldname === 'video1') {
           payload.videoUrl1 = url;
         } else if (fieldname === 'video2') {

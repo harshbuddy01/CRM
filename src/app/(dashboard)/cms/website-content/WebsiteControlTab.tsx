@@ -601,30 +601,47 @@ function ActivitiesEditor({ list, setList, onSave, saving }: ActivitiesEditorPro
 }
 
 interface VillasEditorProps {
-  list: any[]; setList: (fn: (l: any[]) => any[]) => void;
+  form: any; setForm: (fn: (f: any) => any) => void;
   onSave: () => void; saving: boolean;
 }
-function VillasEditor({ list, setList, onSave, saving }: VillasEditorProps) {
-  const addItem = () => setList((d: any[]) => [...d, { id: '', title: '', description: '', image: '' }]);
-  const removeItem = (idx: number) => setList((d: any[]) => d.filter((_: any, i: number) => i !== idx));
-  const updateItem = (idx: number, key: string, val: any) => setList((d: any[]) => { const u = [...d]; u[idx] = { ...u[idx], [key]: val }; return u; });
+function VillasEditor({ form, setForm, onSave, saving }: VillasEditorProps) {
+  if (!form) return <PageSkeleton />;
+
+  const addItem = () => setForm((f: any) => ({ ...f, items: [...(f.items || []), { id: '', title: '', description: '', image: '' }] }));
+  const removeItem = (idx: number) => setForm((f: any) => ({ ...f, items: f.items.filter((_: any, i: number) => i !== idx) }));
+  const updateItem = (idx: number, key: string, val: any) => setForm((f: any) => {
+    const list = [...f.items]; list[idx] = { ...list[idx], [key]: val }; return { ...f, items: list };
+  });
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between border-b pb-4">
         <div>
-          <h3 className="font-bold text-lg text-slate-800">Exclusive Stay / Villas</h3>
-          <p className="text-xs text-muted-foreground">Manage the slideshow of luxury Villas on the homepage.</p>
+          <h3 className="font-bold text-lg text-slate-800">Exclusive Stays (Villas & Stays)</h3>
+          <p className="text-xs text-muted-foreground">Manage the heading titles and slideshow of luxury Villas on the homepage.</p>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={addItem}><Plus className="w-3.5 h-3.5 mr-1" /> Add Villa</Button>
-          <Button onClick={onSave} disabled={saving} size="sm">
-            {saving ? <Loader2 className="w-4 h-4 animate-spin mr-1.5" /> : <Check className="w-4 h-4 mr-1.5" />}Save Villas
-          </Button>
+        <Button onClick={onSave} disabled={saving} size="sm">
+          {saving ? <Loader2 className="w-4 h-4 animate-spin mr-1.5" /> : <Check className="w-4 h-4 mr-1.5" />}Save Stays
+        </Button>
+      </div>
+
+      <div className="grid md:grid-cols-2 gap-4 bg-slate-50/50 rounded-xl border p-5">
+        <div className="space-y-1.5">
+          <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">Section Title</Label>
+          <Input value={form.title} onChange={e => setForm((f: any) => ({ ...f, title: e.target.value }))} placeholder="VELA" />
+        </div>
+        <div className="space-y-1.5">
+          <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">Section Tagline / Subtitle</Label>
+          <Input value={form.subtitle} onChange={e => setForm((f: any) => ({ ...f, subtitle: e.target.value }))} placeholder="Your Exclusive Tranquil Haven at IMAGICA HOLIDAYS" />
         </div>
       </div>
+
       <div className="space-y-4">
-        {list.map((vil: any, idx: number) => (
+        <div className="flex items-center justify-between border-t pt-4">
+          <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">Slideshow Items</Label>
+          <Button variant="outline" size="sm" onClick={addItem}><Plus className="w-3.5 h-3.5 mr-1" /> Add Stay</Button>
+        </div>
+        {form.items?.map((vil: any, idx: number) => (
           <Card key={idx} className="p-4 bg-white border border-slate-200 grid md:grid-cols-[1.2fr_3fr_auto] gap-4 items-start relative">
             <Button variant="ghost" size="icon" className="absolute top-2 right-2 text-red-500 h-8 w-8" onClick={() => removeItem(idx)}><Trash2 className="w-4 h-4" /></Button>
             <div className="space-y-2">
@@ -760,7 +777,7 @@ const SUB_TABS = [
   { id: 'odyssey',      label: 'Himalayan Odyssey',    icon: Sparkles },
   { id: 'destinations', label: 'Featured Grid',        icon: LayoutGrid },
   { id: 'activities',   label: 'Activities',           icon: Compass },
-  { id: 'villas',       label: 'Villas & Stays',       icon: ImageIcon },
+  { id: 'villas',       label: 'Exclusive Stays (Villas)',       icon: ImageIcon },
   { id: 'inside-pages', label: 'Destination Pages',    icon: MapPin },
 ] as const;
 
@@ -792,7 +809,7 @@ export default function WebsiteControlTab() {
   const [odysseyForm,     setOdysseyForm]     = useState<any>(null);
   const [destsList,       setDestsList]       = useState<any[]>([]);
   const [activitiesList,  setActivitiesList]  = useState<any[]>([]);
-  const [villasList,      setVillasList]      = useState<any[]>([]);
+  const [villasForm,      setVillasForm]      = useState<any>(null);
   const [seeded,          setSeeded]          = useState(false);
 
   // Seed ONCE on first load — background refetches after save don't reset forms
@@ -828,8 +845,15 @@ export default function WebsiteControlTab() {
     setActivitiesList(activities);
 
     // Villas & Stays
-    const villas = c.villas && c.villas.length > 0 ? c.villas : DEFAULT_VILLAS;
-    setVillasList(villas);
+    const villas = c.villas || {};
+    const villasItems = Array.isArray(villas)
+      ? villas
+      : (villas.items && villas.items.length > 0 ? villas.items : DEFAULT_VILLAS);
+    setVillasForm({
+      title: villas.title || 'VELA',
+      subtitle: villas.subtitle || 'Your Exclusive Tranquil Haven at IMAGICA HOLIDAYS',
+      items: villasItems,
+    });
 
     setSeeded(true);
   }, [configData, seeded]);
@@ -889,8 +913,8 @@ export default function WebsiteControlTab() {
             onSave={() => sectionMut.mutate({ section: 'activities', data: activitiesList })} saving={sectionMut.isPending} />
         )}
         {activeSubTab === 'villas' && (
-          <VillasEditor list={villasList} setList={setVillasList}
-            onSave={() => sectionMut.mutate({ section: 'villas', data: villasList })} saving={sectionMut.isPending} />
+          <VillasEditor form={villasForm} setForm={setVillasForm}
+            onSave={() => sectionMut.mutate({ section: 'villas', data: villasForm })} saving={sectionMut.isPending} />
         )}
         {activeSubTab === 'inside-pages' && (
           <InsidePagesEditor
