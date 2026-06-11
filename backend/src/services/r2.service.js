@@ -1,6 +1,19 @@
 const { S3Client, PutObjectCommand, DeleteObjectCommand } = require('@aws-sdk/client-s3');
 const sharp = require('sharp');
 const { v4: uuidv4 } = require('uuid');
+const fs = require('fs');
+const path = require('path');
+const os = require('os');
+const { execSync } = require('child_process');
+
+const hasFfmpeg = () => {
+  try {
+    execSync('ffmpeg -version', { stdio: 'ignore' });
+    return true;
+  } catch (e) {
+    return false;
+  }
+};
 
 const r2Client = new S3Client({
   endpoint: process.env.R2_ENDPOINT,
@@ -40,6 +53,82 @@ const optimizeImage = async (buffer, section = 'general') => {
 };
 
 /**
+ * Transcodes a video file to HLS playlist and segment files, and uploads all of them to R2.
+ * Returns the public URL of the playlist.m3u8 file.
+ */
+const transcodeAndUploadHls = async (file, section) => {
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'hls-'));
+  const inputPath = path.join(tempDir, 'input.mp4');
+  
+  try {
+    fs.writeFileSync(inputPath, file.buffer);
+    
+    const folderId = uuidv4();
+    const r2Folder = `${section}/hls/${folderId}`;
+    const playlistName = 'playlist.m3u8';
+    const playlistPath = path.join(tempDir, playlistName);
+    
+    console.log(`🎬 [HLS] Transcoding video to HLS: ${r2Folder}`);
+    execSync(
+      `ffmpeg -y -i "${inputPath}" ` +
+      `-codec:v libx264 -profile:v main -preset medium -crf 22 ` +
+      `-g 100 -keyint_min 100 -sc_threshold 0 ` +
+      `-codec:a aac -b:a 128k ` +
+      `-hls_time 4 ` +
+      `-hls_playlist_type vod ` +
+      `-hls_segment_filename "${tempDir}/segment_%03d.ts" ` +
+      `"${playlistPath}"`,
+      { stdio: 'pipe' }
+    );
+    
+    const files = fs.readdirSync(tempDir);
+    let playlistUrl = '';
+    
+    for (const filename of files) {
+      if (filename === 'input.mp4') continue;
+      
+      const filePath = path.join(tempDir, filename);
+      const fileBuffer = fs.readFileSync(filePath);
+      const fileKey = `${r2Folder}/${filename}`;
+      
+      let contentType = 'application/octet-stream';
+      if (filename.endsWith('.m3u8')) {
+        contentType = 'application/x-mpegURL';
+      } else if (filename.endsWith('.ts')) {
+        contentType = 'video/MP2T';
+      }
+      
+      const command = new PutObjectCommand({
+        Bucket: BUCKET_NAME,
+        Key: fileKey,
+        Body: fileBuffer,
+        ContentType: contentType,
+      });
+      
+      await r2Client.send(command);
+      
+      if (filename === playlistName) {
+        playlistUrl = `${PUBLIC_URL}/${fileKey}`;
+      }
+    }
+    
+    console.log(`✅ [HLS] Video transcoded and uploaded to R2 successfully: ${playlistUrl}`);
+    return playlistUrl;
+  } catch (error) {
+    console.error('❌ [HLS] Transcoding failed, falling back to raw upload:', error.message);
+    throw error;
+  } finally {
+    try {
+      if (fs.existsSync(tempDir)) {
+        fs.rmSync(tempDir, { recursive: true, force: true });
+      }
+    } catch (cleanupError) {
+      console.error('⚠️ [HLS] Failed to clean up temp files:', cleanupError.message);
+    }
+  }
+};
+
+/**
  * Uploads a file buffer (image or video) to Cloudflare R2.
  * If the file is an image, it optimizes it to WebP first.
  * @param {object} file - Multer file object (has buffer, originalname, mimetype)
@@ -72,8 +161,17 @@ const uploadAsset = async (file, section = 'general') => {
       console.error('❌ [R2] Image optimization failed, uploading raw image:', err.message);
     }
   } else if (file.mimetype.startsWith('video/')) {
-    // Videos pass through without any transformation
-    console.log(`📹 [R2] Uploading video (${(file.buffer.length / 1024 / 1024).toFixed(1)} MB): ${file.originalname}`);
+    console.log(`📹 [R2] Processing video upload (${(file.buffer.length / 1024 / 1024).toFixed(1)} MB): ${file.originalname}`);
+    if (hasFfmpeg()) {
+      try {
+        const playlistUrl = await transcodeAndUploadHls(file, section);
+        return playlistUrl;
+      } catch (err) {
+        console.warn('⚠️ [R2] HLS transcoding failed. Falling back to normal video upload.');
+      }
+    } else {
+      console.log('⚠️ [R2] ffmpeg not found. Skipping HLS transcoding and uploading raw video.');
+    }
   }
 
   const command = new PutObjectCommand({
