@@ -102,20 +102,39 @@ const startCronJobs = () => {
 
   // Run every day at Midnight (00:00) server time
   cron.schedule('0 0 * * *', async () => {
-    console.log('[CRON] Starting midnight session cleanup...');
+    console.log('[CRON] Starting midnight cleanup tasks...');
+
+    // ── Task 1: Clean up expired user sessions ──
     try {
-      const result = await prisma.userSession.deleteMany({
+      const sessionResult = await prisma.userSession.deleteMany({
         where: { expiresAt: { lt: new Date() } }
       });
-      console.log(`[CRON] Cleaned up ${result.count} expired sessions.`);
+      console.log(`[CRON] Cleaned up ${sessionResult.count} expired sessions.`);
     } catch (error) {
-      console.error('[CRON Error] Midnight cleanup failed:', error);
+      console.error('[CRON Error] Session cleanup failed:', error);
     }
+
+    // ── Task 2: Purge Activity Logs older than 7 days ──
+    // This keeps the DB lean — only the last 7 days of team activity
+    // are retained. Older logs are permanently deleted every night.
+    try {
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+      const purgeResult = await prisma.activityLog.deleteMany({
+        where: { createdAt: { lt: sevenDaysAgo } }
+      });
+
+      console.log(`[CRON] 🧹 Purged ${purgeResult.count} activity log entries older than 7 days.`);
+    } catch (error) {
+      console.error('[CRON Error] Activity log purge failed:', error);
+    }
+
   }, {
     timezone: "Asia/Kolkata"
   });
 
-  console.log('⏰ Midnight Cron scheduler active.');
+  console.log('⏰ Midnight Cron scheduler active (sessions + 7-day activity log purge).');
 };
 
 module.exports = { startCronJobs };
