@@ -23,9 +23,11 @@ export function ImageCropperModal({ isOpen, onClose, imageFile, onCropComplete }
   useEffect(() => {
     if (imageFile) {
       setCrop(undefined); // Reset crop state for new images
-      const reader = new FileReader();
-      reader.addEventListener('load', () => setImgSrc(reader.result?.toString() || ''));
-      reader.readAsDataURL(imageFile);
+      const objectUrl = URL.createObjectURL(imageFile);
+      setImgSrc(objectUrl);
+      return () => {
+        URL.revokeObjectURL(objectUrl);
+      };
     } else {
       setImgSrc('');
     }
