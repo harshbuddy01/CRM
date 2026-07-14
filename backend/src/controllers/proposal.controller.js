@@ -263,7 +263,7 @@ const generateProposalHtml = (proposal) => {
             border-radius: 15px 225px 15px 255px/255px 15px 225px 15px;
             pointer-events: none;
           }
-          .price-val { font-size: 42px; font-weight: 900; font-family: 'Playfair Display', serif; color: #8b6e4b; letter-spacing: 1px; }
+          .price-val { font-size: 42px; font-weight: 700; font-family: 'Montserrat', sans-serif; color: #8b6e4b; letter-spacing: 1px; }
           .price-lbl { font-size: 11px; text-transform: uppercase; letter-spacing: 3px; color: #666; margin-top: 12px; font-weight: 600; }
           .price-meta { font-size: 9px; color: #999; margin-top: 6px; font-style: italic; }
 
@@ -332,7 +332,7 @@ const generateProposalHtml = (proposal) => {
           <div style="padding: 0 60px;">
             <div class="price-block" style="margin-top: 0; margin-bottom: 30px;">
               <div class="price-val">₹${Number(proposal.sellingPrice || 0).toLocaleString('en-IN')}</div>
-              <div class="price-lbl">Total Investment For Curated Travel</div>
+              <div class="price-lbl">Proposed Tour Cost</div>
               <div class="price-meta">Calculated for ${escapeHtml(paxString)}</div>
               <div style="margin-top: 15px; font-size: 8px; color: #888; font-style: normal; line-height: 1.4; max-width: 80%; margin-left: auto; margin-right: auto;">
                 Note: All prices are subject to change without prior notice as per availability, 

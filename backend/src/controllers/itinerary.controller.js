@@ -730,8 +730,8 @@ const generateItineraryHtml = (itinerary, settings = {}) => {
               ${sellingPrice ? `
               <div style="margin-top: 4mm; text-align: left; z-index: 10; position: relative;">
                 <div style="display: inline-block; background: white; border: 1.5px solid var(--pdf-accent); border-radius: 8px; padding: 6px 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.02);">
-                  <span style="font-family: 'Montserrat', sans-serif; font-size: 7px; font-weight: 700; color: var(--pdf-primary); letter-spacing: 1px; text-transform: uppercase; display: block; margin-bottom: 2px;">Estimated Investment</span>
-                  <span style="font-family: 'Playfair Display', serif; font-size: 20px; font-weight: 800; color: var(--pdf-primary); line-height: 1; display: block;">
+                  <span style="font-family: 'Montserrat', sans-serif; font-size: 7px; font-weight: 700; color: var(--pdf-primary); letter-spacing: 1px; text-transform: uppercase; display: block; margin-bottom: 2px;">Proposed Tour Cost</span>
+                  <span style="font-family: 'Montserrat', sans-serif; font-size: 20px; font-weight: 700; color: var(--pdf-primary); line-height: 1; display: block;">
                     ₹${sellingPrice.toLocaleString('en-IN')}/-
                   </span>
                   <span style="font-family: 'EB Garamond', serif; font-size: 8.5px; color: #666; font-style: italic; display: block; margin-top: 1px;">Inclusive of GST & Services</span>
@@ -880,8 +880,8 @@ const generateItineraryHtml = (itinerary, settings = {}) => {
             ${sellingPrice ? `
             <div style="margin-top: 5mm; text-align: center; z-index: 10; position: relative;">
               <div style="display: inline-block; background: white; border: 1.5px solid var(--pdf-accent); border-radius: 8px; padding: 6px 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.02);">
-                <span style="font-family: 'Montserrat', sans-serif; font-size: 7.5px; font-weight: 700; color: var(--pdf-primary); letter-spacing: 1.2px; text-transform: uppercase; display: block; margin-bottom: 2px;">Estimated Investment</span>
-                <span style="font-family: 'Playfair Display', serif; font-size: 24px; font-weight: 800; color: var(--pdf-primary); line-height: 1; display: block;">
+                <span style="font-family: 'Montserrat', sans-serif; font-size: 7.5px; font-weight: 700; color: var(--pdf-primary); letter-spacing: 1.2px; text-transform: uppercase; display: block; margin-bottom: 2px;">Proposed Tour Cost</span>
+                <span style="font-family: 'Montserrat', sans-serif; font-size: 24px; font-weight: 700; color: var(--pdf-primary); line-height: 1; display: block;">
                   ₹${sellingPrice.toLocaleString('en-IN')}/-
                 </span>
                 <span style="font-family: 'EB Garamond', serif; font-size: 9px; color: #666; font-style: italic; display: block; margin-top: 1px;">Inclusive of GST & Services</span>
