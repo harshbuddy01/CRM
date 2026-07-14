@@ -1018,10 +1018,14 @@ const generateItineraryHtml = (itinerary, settings = {}) => {
           <!-- Bottom Silhouette Background -->
           ${pdfBottomSilhouette ? `<img src="${pdfBottomSilhouette}" style="position: absolute; bottom: 12mm; left: 0; width: 100%; height: 25mm; object-fit: cover; object-position: center bottom; opacity: 1.0; pointer-events: none;" />` : `
           <svg viewBox="0 0 800 100" preserveAspectRatio="none" style="position: absolute; bottom: 12mm; left: 0; width: 100%; height: 25mm; opacity: 0.15; pointer-events: none;">
-<path d="M0 100 L50 70 L120 85 L200 60 L280 75 L380 45 L480 70 L580 50 L680 80 L800 65 L800 100 Z" fill="#94a3b8" />
+            <path d="M0 100 L50 70 L120 85 L200 60 L280 75 L380 45 L480 70 L580 50 L680 80 L800 65 L800 100 Z" fill="#94a3b8" />
             <path d="M0 100 L80 80 L160 90 L240 70 L340 85 L440 60 L540 80 L640 70 L720 90 L800 75 L800 100 Z" fill="#cbd5e1" />
           </svg>
           `}
+
+          <!-- Standard Footer -->
+          ${standardFooterHtml}
+        </div>
 
         <!-- PAGE 3: ACCOMMODATION SUMMARY -->
         ${stayChunks.map((chunk, chunkIdx) => {
