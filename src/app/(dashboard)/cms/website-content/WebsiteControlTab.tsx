@@ -346,6 +346,8 @@ interface HeroEditorProps {
 function HeroEditor({ form, setForm, onSave, saving }: HeroEditorProps) {
   if (!form) return <PageSkeleton />;
 
+  const [deletingVideos, setDeletingVideos] = useState<Record<string, boolean>>({});
+
   const addSlide = () => setForm((f: any) => ({ ...f, fallbackSlides: [...(f.fallbackSlides || []), { title: '', subtitle: '', image: '', location: '' }] }));
   const removeSlide = (idx: number) => setForm((f: any) => ({ ...f, fallbackSlides: f.fallbackSlides.filter((_: any, i: number) => i !== idx) }));
   const updateSlide = (idx: number, key: string, val: any) => setForm((f: any) => {
@@ -379,15 +381,15 @@ function HeroEditor({ form, setForm, onSave, saving }: HeroEditorProps) {
           </div>
         </div>
         {form.useVideo ? (
-        <div className="grid md:grid-cols-2 gap-4 border-t pt-4">
+          <div className="grid md:grid-cols-2 gap-4 border-t pt-4">
             {(['videoUrl1', 'videoUrl2'] as const).map((key, i) => {
               const videoUrl = form[key];
-              const [deleting, setDeleting] = useState(false);
+              const deleting = !!deletingVideos[key];
 
               const handleDeleteVideo = async () => {
                 if (!videoUrl) return;
                 if (!confirm(`Delete Video Loop ${i + 1} from Cloudflare R2? This cannot be undone.`)) return;
-                setDeleting(true);
+                setDeletingVideos(prev => ({ ...prev, [key]: true }));
                 try {
                   await api.delete('/website-configs/cms/delete-asset', { data: { url: videoUrl } });
                   setForm((f: any) => ({ ...f, [key]: '' }));
@@ -397,7 +399,7 @@ function HeroEditor({ form, setForm, onSave, saving }: HeroEditorProps) {
                   setForm((f: any) => ({ ...f, [key]: '' }));
                   toast.warning(`URL cleared. R2 delete may have failed: ${err?.response?.data?.message || err.message}`);
                 } finally {
-                  setDeleting(false);
+                  setDeletingVideos(prev => ({ ...prev, [key]: false }));
                 }
               };
 
@@ -427,7 +429,6 @@ function HeroEditor({ form, setForm, onSave, saving }: HeroEditorProps) {
                 </div>
               );
             })}
-          </div>
           </div>
         ) : (
           <div className="space-y-4 border-t pt-4">
