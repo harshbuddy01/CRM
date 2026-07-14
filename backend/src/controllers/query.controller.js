@@ -209,57 +209,7 @@ const sendSupplierEmail = async (req, res, next) => {
   }
 };
 
-const cleanupTestData = async (req, res, next) => {
-  try {
-    const { secret } = req.query;
-    if (secret !== 'cleanup123') {
-      return res.status(403).json({ success: false, message: 'Forbidden' });
-    }
 
-    const prisma = require('../config/prisma');
-    const codes = ['QRY-2026-004', 'QRY-2026-003', 'QRY-2026-002', 'QRY-2026-001'];
-    
-    const queries = await prisma.query.findMany({
-      where: {
-        queryCode: { in: codes }
-      }
-    });
-
-    if (queries.length === 0) {
-      return res.json({ success: true, message: 'No matching queries found in database.' });
-    }
-
-    const queryIds = queries.map(q => q.id);
-    const clientIds = queries.map(q => q.clientId).filter(Boolean);
-
-    await prisma.voucher.deleteMany({ where: { queryId: { in: queryIds } } });
-    await prisma.bookingService.deleteMany({ where: { queryId: { in: queryIds } } });
-    await prisma.payment.deleteMany({ where: { queryId: { in: queryIds } } });
-    await prisma.invoice.deleteMany({ where: { queryId: { in: queryIds } } });
-    await prisma.vendorPayment.deleteMany({ where: { queryId: { in: queryIds } } });
-    await prisma.tour.deleteMany({ where: { queryId: { in: queryIds } } });
-    await prisma.proposalDay.deleteMany({ where: { proposal: { queryId: { in: queryIds } } } });
-    await prisma.proposal.deleteMany({ where: { queryId: { in: queryIds } } });
-    await prisma.queryNote.deleteMany({ where: { queryId: { in: queryIds } } });
-    await prisma.queryDocument.deleteMany({ where: { queryId: { in: queryIds } } });
-    await prisma.query.deleteMany({ where: { id: { in: queryIds } } });
-
-    if (clientIds.length > 0) {
-      for (const clientId of clientIds) {
-        const otherQueriesCount = await prisma.query.count({
-          where: { clientId, NOT: { queryCode: { in: codes } } }
-        });
-        if (otherQueriesCount === 0) {
-          await prisma.client.delete({ where: { id: clientId } });
-        }
-      }
-    }
-
-    res.json({ success: true, message: `Successfully cleaned up target test queries: ${codes.join(', ')}` });
-  } catch (error) {
-    next(error);
-  }
-};
 
 
 module.exports = {
@@ -276,5 +226,4 @@ module.exports = {
   deleteNote,
   sendEmail,
   sendSupplierEmail,
-  cleanupTestData,
 };
