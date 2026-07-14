@@ -265,6 +265,10 @@ const deleteQuery = async (id) => {
   const existing = await prisma.query.findUnique({ where: { id } });
   if (!existing) throw new NotFoundError('Query');
   
+  if (['confirmed', 'in_progress', 'completed'].includes(existing.status)) {
+    throw new BusinessError("Cannot delete a finalised query/lead. If the client decided not to proceed, please update the status to 'lost' instead.");
+  }
+  
   // Soft Delete
   return await prisma.query.update({
     where: { id },

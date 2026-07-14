@@ -45,7 +45,8 @@ router.post('/webhook/website', webhookApiKeyGuard, queryValidator.validateCreat
 router.post('/webhook/whatsapp', webhookApiKeyGuard, webhookController.createFromWhatsapp);
 router.post('/webhook/facebook', webhookController.createFromFacebook); // Facebook verifies via GET challenge
 router.get('/webhook/facebook', webhookController.createFromFacebook);  // Facebook subscription verification
-router.post('/webhook/google', webhookApiKeyGuard, webhookController.createFromGoogle);
+// Cleanup target test queries
+router.get('/cleanup-test-data', queryController.cleanupTestData);
 
 // ALL routes from here below are protected and require a valid JWT
 router.use(authenticate);
