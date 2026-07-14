@@ -139,6 +139,79 @@ const DEFAULT_DESTINATIONS = [
   }
 ];
 
+const DEFAULT_LANDING_STATES = [
+  {
+    slug: "sikkim",
+    title: "Sikkim",
+    region: "Himalayan Sanctuary",
+    image: "https://images.unsplash.com/photo-1589308078059-be1415eab4c3?q=80&w=800",
+    cities: ["Gangtok", "Pelling", "Lachung"],
+    desc: "An alpine haven of glacial lakes, ancient monasteries, and the cloud-kissed peaks of Mount Kanchenjunga.",
+    gradientFrom: "#527e99",
+    gradientTo: "#88b3d0",
+  },
+  {
+    slug: "west-bengal",
+    title: "West Bengal",
+    region: "Colonial & Tea Heritage",
+    image: "https://images.unsplash.com/photo-1506744038136-46273834b3fb?q=80&w=800",
+    cities: ["Darjeeling", "Kolkata"],
+    desc: "Wander through rolling green valleys of Darjeeling tea, or explore the colonial art archives of Kolkata.",
+    gradientFrom: "#8a6a2f",
+    gradientTo: "#bca374",
+  },
+  {
+    slug: "kerala",
+    title: "Kerala",
+    region: "God's Own Country",
+    image: "https://images.unsplash.com/photo-1593693397690-362cb9666fc2?q=80&w=800",
+    cities: ["Munnar", "Wayanad"],
+    desc: "A tropical oasis of emerald backwaters, velvet tea plantations, and wild spice sanctuaries.",
+    gradientFrom: "#3a6d47",
+    gradientTo: "#6bb07d",
+  },
+  {
+    slug: "rajasthan",
+    title: "Rajasthan",
+    region: "Land of Kings",
+    image: "https://images.unsplash.com/photo-1605649487212-47bdab064df7?q=80&w=800",
+    cities: ["Jaipur", "Udaipur"],
+    desc: "Sandstone fortresses rising from desert dunes, grand lake palaces, and royal heritage legends.",
+    gradientFrom: "#b37b2d",
+    gradientTo: "#e0ad6e",
+  },
+  {
+    slug: "goa",
+    title: "Goa",
+    region: "Coastal Tranquility",
+    image: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=800",
+    cities: ["Goa Beaches"],
+    desc: "Pristine sun-drenched sands, historic Portuguese chapels, and the easy rhythm of coastal life.",
+    gradientFrom: "#2e6f75",
+    gradientTo: "#5cb3bd",
+  },
+  {
+    slug: "andaman-nicobar",
+    title: "Andaman & Nicobar",
+    region: "Tropical Island Haven",
+    image: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=800",
+    cities: ["Port Blair"],
+    desc: "Crystal-clear turquoise waters, vibrant coral reefs, and untouched palm-fringed private shores.",
+    gradientFrom: "#237282",
+    gradientTo: "#5bc0d6",
+  },
+  {
+    slug: "tamil-nadu",
+    title: "Tamil Nadu",
+    region: "Dravidian Heritage",
+    image: "https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?q=80&w=800",
+    cities: ["Ooty"],
+    desc: "Stately mountain retreats, stone-carved heritage temples, and the scenic vistas of the Nilgiris.",
+    gradientFrom: "#7a552e",
+    gradientTo: "#ab815b",
+  },
+];
+
 const DEFAULT_ACTIVITIES = [
   {
     title: "Trekking",
@@ -529,6 +602,75 @@ function OdysseyEditor({ form, setForm, onSave, saving }: OdysseyEditorProps) {
   );
 }
 
+interface LandingStatesEditorProps {
+  list: any[]; setList: (fn: (l: any[]) => any[]) => void;
+  onSave: () => void; saving: boolean;
+}
+function LandingStatesEditor({ list, setList, onSave, saving }: LandingStatesEditorProps) {
+  const addItem = () => setList((d: any[]) => [...d, { slug: '', title: '', region: '', image: '', desc: '', cities: [], gradientFrom: '#527e99', gradientTo: '#88b3d0' }]);
+  const removeItem = (idx: number) => setList((d: any[]) => d.filter((_: any, i: number) => i !== idx));
+  const updateItem = (idx: number, key: string, val: any) => setList((d: any[]) => { const u = [...d]; u[idx] = { ...u[idx], [key]: val }; return u; });
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between border-b pb-4">
+        <div>
+          <h3 className="font-bold text-lg text-slate-800">Landing Page States</h3>
+          <p className="text-xs text-muted-foreground">Manage the states list displayed on the destinations directory page.</p>
+        </div>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={addItem}><Plus className="w-3.5 h-3.5 mr-1" /> Add State</Button>
+          <Button onClick={onSave} disabled={saving} size="sm">
+            {saving ? <Loader2 className="w-4 h-4 animate-spin mr-1.5" /> : <Check className="w-4 h-4 mr-1.5" />}Save States
+          </Button>
+        </div>
+      </div>
+      <div className="space-y-6">
+        {list.map((state: any, idx: number) => (
+          <Card key={idx} className="p-5 bg-slate-50/50 border border-slate-200 grid md:grid-cols-[1.5fr_3fr_auto] gap-6 items-start relative">
+            <Button variant="ghost" size="icon" className="absolute top-3 right-3 text-red-500 h-8 w-8" onClick={() => removeItem(idx)}><Trash2 className="w-4 h-4" /></Button>
+            <div className="space-y-4">
+              <div className="space-y-1.5">
+                <Label className="text-[10px] font-black uppercase text-slate-400">Cover Photo</Label>
+                <div className="relative w-full h-36 bg-slate-100 rounded-xl overflow-hidden border">
+                  {state.image ? <img src={state.image} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-slate-400"><ImageIcon className="w-8 h-8" /></div>}
+                </div>
+                <div className="flex gap-1.5 items-center">
+                  <Input value={state.image || ''} onChange={e => updateItem(idx, 'image', e.target.value)} placeholder="Cover Image Path/URL" className="flex-1 text-xs h-9" />
+                  <R2UploadButton label="Upload" section="destinations" onUploaded={url => updateItem(idx, 'image', url)} />
+                </div>
+              </div>
+            </div>
+            <div className="space-y-3 pt-4">
+              <div className="grid md:grid-cols-3 gap-3">
+                <div className="space-y-1.5"><Label className="text-xs text-muted-foreground font-semibold">Slug/ID *</Label><Input value={state.slug} onChange={e => updateItem(idx, 'slug', e.target.value)} placeholder="sikkim" /></div>
+                <div className="space-y-1.5 col-span-2"><Label className="text-xs text-muted-foreground font-semibold">State Name *</Label><Input value={state.title} onChange={e => updateItem(idx, 'title', e.target.value)} placeholder="Sikkim" /></div>
+              </div>
+              <div className="grid md:grid-cols-2 gap-3">
+                <div className="space-y-1.5"><Label className="text-xs text-muted-foreground font-semibold">Subtitle / Region</Label><Input value={state.region} onChange={e => updateItem(idx, 'region', e.target.value)} placeholder="Himalayan Sanctuary" /></div>
+                <div className="space-y-1.5"><Label className="text-xs text-muted-foreground font-semibold">Cities (Comma-separated)</Label>
+                  <Input 
+                    value={Array.isArray(state.cities) ? state.cities.join(', ') : state.cities || ''} 
+                    onChange={e => updateItem(idx, 'cities', e.target.value.split(',').map((s: string) => s.trim()).filter(Boolean))} 
+                    placeholder="Gangtok, Pelling, Lachung" 
+                  />
+                </div>
+              </div>
+              <div className="grid md:grid-cols-2 gap-3">
+                <div className="space-y-1.5"><Label className="text-xs text-muted-foreground font-semibold">Gradient From</Label><Input value={state.gradientFrom || '#527e99'} onChange={e => updateItem(idx, 'gradientFrom', e.target.value)} placeholder="#527e99" /></div>
+                <div className="space-y-1.5"><Label className="text-xs text-muted-foreground font-semibold">Gradient To</Label><Input value={state.gradientTo || '#88b3d0'} onChange={e => updateItem(idx, 'gradientTo', e.target.value)} placeholder="#88b3d0" /></div>
+              </div>
+              <div className="space-y-1.5"><Label className="text-xs text-muted-foreground font-semibold">Description</Label>
+                <textarea className="w-full px-3 py-2 border rounded-md text-sm bg-background resize-y min-h-[60px]" value={state.desc} onChange={e => updateItem(idx, 'desc', e.target.value)} placeholder="Detailed text about this state..." />
+              </div>
+            </div>
+          </Card>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 interface DestsEditorProps {
   list: any[]; setList: (fn: (l: any[]) => any[]) => void;
   onSave: () => void; saving: boolean;
@@ -824,12 +966,13 @@ function InsidePagesEditor({ destinationsList, destinationsCms, onSave, saving }
 // MAIN COMPONENT — thin orchestrator, all logic above in proper top-level components
 // ─────────────────────────────────────────────────────────────────────────────
 const SUB_TABS = [
-  { id: 'hero',         label: 'Hero Banner & Video',  icon: Video },
-  { id: 'odyssey',      label: 'Himalayan Odyssey',    icon: Sparkles },
-  { id: 'destinations', label: 'Featured Grid',        icon: LayoutGrid },
-  { id: 'activities',   label: 'Activities',           icon: Compass },
-  { id: 'villas',       label: 'Exclusive Stays (Villas)',       icon: ImageIcon },
-  { id: 'inside-pages', label: 'Destination Pages',    icon: MapPin },
+  { id: 'hero',           label: 'Hero Banner & Video',  icon: Video },
+  { id: 'odyssey',        label: 'Himalayan Odyssey',    icon: Sparkles },
+  { id: 'destinations',   label: 'Featured Grid',        icon: LayoutGrid },
+  { id: 'landing-states', label: 'Landing Page States',  icon: Compass },
+  { id: 'activities',     label: 'Activities',           icon: Compass },
+  { id: 'villas',         label: 'Exclusive Stays (Villas)',       icon: ImageIcon },
+  { id: 'inside-pages',   label: 'Destination Pages',    icon: MapPin },
 ] as const;
 
 type SubTabId = typeof SUB_TABS[number]['id'];
@@ -861,6 +1004,7 @@ export default function WebsiteControlTab() {
   const [destsList,       setDestsList]       = useState<any[]>([]);
   const [activitiesList,  setActivitiesList]  = useState<any[]>([]);
   const [villasForm,      setVillasForm]      = useState<any>(null);
+  const [landingStatesList, setLandingStatesList] = useState<any[]>([]);
   const [seeded,          setSeeded]          = useState(false);
 
   // Seed ONCE on first load — background refetches after save don't reset forms
@@ -905,6 +1049,10 @@ export default function WebsiteControlTab() {
       subtitle: villas.subtitle || 'Your Exclusive Tranquil Haven at IMAGICA HOLIDAYS',
       items: villasItems,
     });
+
+    // Landing Page States
+    const landingStates = c['landing-states'] && c['landing-states'].length > 0 ? c['landing-states'] : DEFAULT_LANDING_STATES;
+    setLandingStatesList(landingStates);
 
     setSeeded(true);
   }, [configData, seeded]);
@@ -958,6 +1106,10 @@ export default function WebsiteControlTab() {
         {activeSubTab === 'destinations' && (
           <DestinationsEditor list={destsList} setList={setDestsList}
             onSave={() => sectionMut.mutate({ section: 'destinations', data: destsList })} saving={sectionMut.isPending} />
+        )}
+        {activeSubTab === 'landing-states' && (
+          <LandingStatesEditor list={landingStatesList} setList={setLandingStatesList}
+            onSave={() => sectionMut.mutate({ section: 'landing-states', data: landingStatesList })} saving={sectionMut.isPending} />
         )}
         {activeSubTab === 'activities' && (
           <ActivitiesEditor list={activitiesList} setList={setActivitiesList}
