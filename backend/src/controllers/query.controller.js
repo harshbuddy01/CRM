@@ -207,6 +207,8 @@ const sendSupplierEmail = async (req, res, next) => {
   } catch (error) {
     next(error);
   }
+};
+
 const cleanupTestData = async (req, res, next) => {
   try {
     const { secret } = req.query;
