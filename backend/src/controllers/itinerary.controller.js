@@ -64,6 +64,95 @@ const loadCoverImageBase64 = () => {
 const generateItineraryHtml = (itinerary, settings = {}) => {
   const escapeHtml = (str) => String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   
+  const chunkArray = (arr, size) => {
+    const chunks = [];
+    for (let i = 0; i < arr.length; i += size) {
+      chunks.push(arr.slice(i, i + size));
+    }
+    return chunks;
+  };
+
+  const formatPointwiseList = (html, type = 'inclusion') => {
+    if (!html) return '';
+    let text = html
+      .replace(/<\/p>/gi, '\n')
+      .replace(/<p>/gi, '')
+      .replace(/<br\s*\/?>/gi, '\n')
+      .replace(/&bull;/gi, '\n')
+      .replace(/&nbsp;/gi, ' ');
+    text = text.replace(/<[^>]*>/g, '');
+    const separators = /[✔✓✅✖❌•●▪*-]|\n+/;
+    const items = text
+      .split(separators)
+      .map(item => item.trim())
+      .filter(item => item.length > 2);
+    if (items.length === 0) {
+      return html;
+    }
+    const bulletColor = type === 'inclusion' ? 'var(--pdf-primary)' : '#5c1d1d';
+    const bulletSvg = type === 'inclusion' 
+      ? `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="${bulletColor}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 6px; flex-shrink: 0; margin-top: 4px;"><polyline points="20 6 9 17 4 12"></polyline></svg>`
+      : `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="${bulletColor}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 6px; flex-shrink: 0; margin-top: 4px;"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>`;
+    return `
+      <ul style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 6px;">
+        ${items.map(item => `
+          <li style="display: flex; align-items: flex-start; font-family: 'EB Garamond', serif; font-size: 11.5px; line-height: 1.35; color: #333;">
+            ${bulletSvg}
+            <span>${escapeHtml(item)}</span>
+          </li>
+        `).join('')}
+      </ul>
+    `;
+  };
+
+  const formatPointwiseTerms = (html) => {
+    if (!html) return '';
+    let text = html
+      .replace(/<\/p>/gi, '\n')
+      .replace(/<p>/gi, '')
+      .replace(/<br\s*\/?>/gi, '\n')
+      .replace(/&bull;/gi, '\n')
+      .replace(/&nbsp;/gi, ' ');
+    text = text.replace(/<[^>]*>/g, '');
+    let normalizedText = text.replace(/(?:\s+|\n|^)(\d+)[\.\)\-]\s+/g, '|||$1. ');
+    let items = [];
+    if (normalizedText.includes('|||')) {
+      items = normalizedText
+        .split('|||')
+        .map(item => item.trim())
+        .filter(item => item.length > 0);
+    } else {
+      items = text
+        .split(/\n+/)
+        .map(item => item.trim())
+        .filter(item => item.length > 2);
+    }
+    if (items.length === 0) {
+      return html;
+    }
+    return `
+      <div style="display: flex; flex-direction: column; gap: 4px;">
+        ${items.map(item => {
+          const match = item.match(/^(\d+)[\.\)\-]\s+(.*)$/);
+          if (match) {
+            return `
+              <div style="display: flex; align-items: flex-start; font-family: 'EB Garamond', serif; font-size: 7.2px; line-height: 1.25; color: #333;">
+                <span style="font-weight: 700; color: var(--pdf-primary); margin-right: 4px; flex-shrink: 0; min-width: 12px; text-align: right;">${match[1]}.</span>
+                <span style="flex: 1;">${escapeHtml(match[2])}</span>
+              </div>
+            `;
+          }
+          return `
+            <div style="display: flex; align-items: flex-start; font-family: 'EB Garamond', serif; font-size: 7.2px; line-height: 1.25; color: #333;">
+              <span style="font-weight: 700; color: var(--pdf-primary); margin-right: 4px; flex-shrink: 0;">•</span>
+              <span style="flex: 1;">${escapeHtml(item)}</span>
+            </div>
+          `;
+        }).join('')}
+      </div>
+    `;
+  };
+  
   const days = itinerary?.days || [];
   const totalDays = days.length;
   const destinations = [...new Set(days.map(d => d.destination?.name).filter(Boolean))].join(' & ') || 'Sikkim & Darjeeling';
@@ -220,6 +309,8 @@ const generateItineraryHtml = (itinerary, settings = {}) => {
       }
     });
   });
+
+  const stayChunks = stays.length > 0 ? chunkArray(stays, 4) : [[]];
 
   const trans = [];
   days.forEach((day) => {
@@ -927,49 +1018,84 @@ const generateItineraryHtml = (itinerary, settings = {}) => {
           <!-- Bottom Silhouette Background -->
           ${pdfBottomSilhouette ? `<img src="${pdfBottomSilhouette}" style="position: absolute; bottom: 12mm; left: 0; width: 100%; height: 25mm; object-fit: cover; object-position: center bottom; opacity: 1.0; pointer-events: none;" />` : `
           <svg viewBox="0 0 800 100" preserveAspectRatio="none" style="position: absolute; bottom: 12mm; left: 0; width: 100%; height: 25mm; opacity: 0.15; pointer-events: none;">
-            <path d="M0 100 L50 70 L120 85 L200 60 L280 75 L380 45 L480 70 L580 50 L680 80 L800 65 L800 100 Z" fill="#94a3b8" />
+<path d="M0 100 L50 70 L120 85 L200 60 L280 75 L380 45 L480 70 L580 50 L680 80 L800 65 L800 100 Z" fill="#94a3b8" />
             <path d="M0 100 L80 80 L160 90 L240 70 L340 85 L440 60 L540 80 L640 70 L720 90 L800 75 L800 100 Z" fill="#cbd5e1" />
           </svg>
           `}
 
-          <!-- Standard Footer -->
-          ${standardFooterHtml}
-        </div>
-
         <!-- PAGE 3: ACCOMMODATION SUMMARY -->
-        <div class="page">
-          <!-- Curved Top Header -->
-          <div class="page-header" style="height: 34mm;">
-            <svg viewBox="0 0 800 130" preserveAspectRatio="none" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: -1;">
-              <path d="M 0 0 L 800 0 L 800 115 Q 400 95 0 115 Z" fill="white" />
-              <path d="M 0 115 Q 400 95 800 115" stroke="${pdfAccentColor}" stroke-width="2" fill="none" />
-            </svg>
-            <div style="display: flex; align-items: center; gap: 10px; margin-top: 4mm;">
-              ${companyLogo ? `<img src="${getSafeImageUrl(companyLogo)}" alt="Logo" style="height: 12mm; max-width: 30mm; object-fit: contain;" />` : `<div style="font-family: 'Playfair Display', serif; font-size: 16px; font-weight: bold; color: var(--pdf-primary); border: 2px solid var(--pdf-accent); padding: 2px 6px;">IH</div>`}
-              <div style="display: flex; flex-direction: column;">
-                <span style="font-family: 'Playfair Display', serif; font-size: 15px; font-weight: 700; color: var(--pdf-primary); letter-spacing: 0.5px; text-transform: uppercase;">${escapeHtml(companyName)}</span>
-                <span style="font-family: 'Montserrat', sans-serif; font-size: 6px; font-weight: 600; color: #888; letter-spacing: 1px; text-transform: uppercase;">${escapeHtml(companySlogan)}</span>
+        ${stayChunks.map((chunk, chunkIdx) => {
+          if (chunk.length === 0) {
+            return `
+            <div class="page">
+              <!-- Curved Top Header -->
+              <div class="page-header" style="height: 34mm;">
+                <svg viewBox="0 0 800 130" preserveAspectRatio="none" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: -1;">
+                  <path d="M 0 0 L 800 0 L 800 115 Q 400 95 0 115 Z" fill="white" />
+                  <path d="M 0 115 Q 400 95 800 115" stroke="${pdfAccentColor}" stroke-width="2" fill="none" />
+                </svg>
+                <div style="display: flex; align-items: center; gap: 10px; margin-top: 4mm;">
+                  ${companyLogo ? `<img src="${getSafeImageUrl(companyLogo)}" alt="Logo" style="height: 12mm; max-width: 30mm; object-fit: contain;" />` : `<div style="font-family: 'Playfair Display', serif; font-size: 16px; font-weight: bold; color: var(--pdf-primary); border: 2px solid var(--pdf-accent); padding: 2px 6px;">IH</div>`}
+                  <div style="display: flex; flex-direction: column;">
+                    <span style="font-family: 'Playfair Display', serif; font-size: 15px; font-weight: 700; color: var(--pdf-primary); letter-spacing: 0.5px; text-transform: uppercase;">${escapeHtml(companyName)}</span>
+                    <span style="font-family: 'Montserrat', sans-serif; font-size: 6px; font-weight: 600; color: #888; letter-spacing: 1px; text-transform: uppercase;">${escapeHtml(companySlogan)}</span>
+                  </div>
+                </div>
+                <div style="text-align: right; margin-top: 5mm;">
+                  <span style="font-family: 'Playfair Display', serif; font-size: 14px; font-weight: 700; color: var(--pdf-primary); letter-spacing: 1px; text-transform: uppercase;">${escapeHtml(destinations)}</span>
+                  <span style="font-family: 'EB Garamond', serif; font-size: 10px; font-style: italic; color: var(--pdf-accent); display: block; margin-top: 2px;">${computedTotalDays} Days / ${Math.max(1, computedTotalDays - 1)} Nights</span>
+                </div>
+              </div>
+              <div class="page-content" style="margin-top: 10mm; display: flex; flex-direction: column; padding-bottom: 38mm;">
+                <div style="background: white; border: 1.5px solid #efe4d2; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.03); margin-bottom: 5mm;">
+                  <div style="background: var(--pdf-primary); padding: 4px 15px; color: white; text-align: left; font-family: 'Montserrat', sans-serif; font-size: 8px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; display: flex; align-items: center; gap: 6px;">
+                    <span>${svgHotel}</span> <span>Your Accommodation</span>
+                  </div>
+                  <div style="padding: 15px; font-style: italic; color: #666;">No accommodation settings specified. Stays will be managed as per flow.</div>
+                </div>
+              </div>
+              ${pdfBottomSilhouette ? `<img src="${pdfBottomSilhouette}" style="position: absolute; bottom: 12mm; left: 0; width: 100%; height: 25mm; object-fit: cover; object-position: center bottom; opacity: 1.0; pointer-events: none;" />` : `
+              <svg viewBox="0 0 800 100" preserveAspectRatio="none" style="position: absolute; bottom: 12mm; left: 0; width: 100%; height: 25mm; opacity: 0.15; pointer-events: none;">
+                <path d="M0 100 L50 70 L120 85 L200 60 L280 75 L380 45 L480 70 L580 50 L680 80 L800 65 L800 100 Z" fill="#94a3b8" />
+                <path d="M0 100 L80 80 L160 90 L240 70 L340 85 L440 60 L540 80 L640 70 L720 90 L800 75 L800 100 Z" fill="#cbd5e1" />
+              </svg>
+              `}
+              ${standardFooterHtml}
+            </div>
+            `;
+          }
+          
+          return `
+          <div class="page">
+            <!-- Curved Top Header -->
+            <div class="page-header" style="height: 34mm;">
+              <svg viewBox="0 0 800 130" preserveAspectRatio="none" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: -1;">
+                <path d="M 0 0 L 800 0 L 800 115 Q 400 95 0 115 Z" fill="white" />
+                <path d="M 0 115 Q 400 95 800 115" stroke="${pdfAccentColor}" stroke-width="2" fill="none" />
+              </svg>
+              <div style="display: flex; align-items: center; gap: 10px; margin-top: 4mm;">
+                ${companyLogo ? `<img src="${getSafeImageUrl(companyLogo)}" alt="Logo" style="height: 12mm; max-width: 30mm; object-fit: contain;" />` : `<div style="font-family: 'Playfair Display', serif; font-size: 16px; font-weight: bold; color: var(--pdf-primary); border: 2px solid var(--pdf-accent); padding: 2px 6px;">IH</div>`}
+                <div style="display: flex; flex-direction: column;">
+                  <span style="font-family: 'Playfair Display', serif; font-size: 15px; font-weight: 700; color: var(--pdf-primary); letter-spacing: 0.5px; text-transform: uppercase;">${escapeHtml(companyName)}</span>
+                  <span style="font-family: 'Montserrat', sans-serif; font-size: 6px; font-weight: 600; color: #888; letter-spacing: 1px; text-transform: uppercase;">${escapeHtml(companySlogan)}</span>
+                </div>
+              </div>
+              <div style="text-align: right; margin-top: 5mm;">
+                <span style="font-family: 'Playfair Display', serif; font-size: 14px; font-weight: 700; color: var(--pdf-primary); letter-spacing: 1px; text-transform: uppercase;">${escapeHtml(destinations)}</span>
+                <span style="font-family: 'EB Garamond', serif; font-size: 10px; font-style: italic; color: var(--pdf-accent); display: block; margin-top: 2px;">${computedTotalDays} Days / ${Math.max(1, computedTotalDays - 1)} Nights</span>
               </div>
             </div>
-            <div style="text-align: right; margin-top: 5mm;">
-              <span style="font-family: 'Playfair Display', serif; font-size: 14px; font-weight: 700; color: var(--pdf-primary); letter-spacing: 1px; text-transform: uppercase;">${escapeHtml(destinations)}</span>
-              <span style="font-family: 'EB Garamond', serif; font-size: 10px; font-style: italic; color: var(--pdf-accent); display: block; margin-top: 2px;">${computedTotalDays} Days / ${Math.max(1, computedTotalDays - 1)} Nights</span>
-            </div>
-          </div>
 
-          <!-- Content -->
-          <div class="page-content" style="margin-top: 10mm; display: flex; flex-direction: column; padding-bottom: 38mm;">
-            <!-- ACCOMMODATION section -->
-            <div style="background: white; border: 1.5px solid #efe4d2; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.03); margin-bottom: 5mm;">
-              <div style="background: var(--pdf-primary); padding: 4px 15px; color: white; text-align: left; font-family: 'Montserrat', sans-serif; font-size: 8px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; display: flex; align-items: center; gap: 6px;">
-                <span>${svgHotel}</span> <span>Your Accommodation</span>
-              </div>
-              
-              <!-- Stay Detail Grid -->
-              ${(() => {
-                if (stays.length === 0) return `<div style="padding: 15px; font-style: italic; color: #666;">No accommodation settings specified. Stays will be managed as per flow.</div>`;
+            <!-- Content -->
+            <div class="page-content" style="margin-top: 10mm; display: flex; flex-direction: column; padding-bottom: 38mm;">
+              <!-- ACCOMMODATION section -->
+              <div style="background: white; border: 1.5px solid #efe4d2; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.03); margin-bottom: 5mm;">
+                <div style="background: var(--pdf-primary); padding: 4px 15px; color: white; text-align: left; font-family: 'Montserrat', sans-serif; font-size: 8px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; display: flex; align-items: center; gap: 6px;">
+                  <span>${svgHotel}</span> <span>Your Accommodation ${stayChunks.length > 1 ? `(Part ${chunkIdx + 1} of ${stayChunks.length})` : ''}</span>
+                </div>
                 
-                return stays.map((stay, index) => {
+                <!-- Stay Detail Grid -->
+                ${chunk.map((stay, index) => {
                   const stayImage = stay.imageUrl ? getSafeImageUrl(stay.imageUrl) : 'https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=600&auto=format&fit=crop';
                   const hotelName = stay.metadata?.hotelName || stay.title || 'Premium Hotel';
                   const roomType = stay.metadata?.roomType || 'Deluxe Room';
@@ -1051,22 +1177,23 @@ const generateItineraryHtml = (itinerary, settings = {}) => {
                     </div>
                   </div>
                   `;
-                }).join('');
-              })()}
+                }).join('')}
+              </div>
             </div>
+
+            <!-- Bottom Silhouette Background -->
+            ${pdfBottomSilhouette ? `<img src="${pdfBottomSilhouette}" style="position: absolute; bottom: 12mm; left: 0; width: 100%; height: 25mm; object-fit: cover; object-position: center bottom; opacity: 1.0; pointer-events: none;" />` : `
+            <svg viewBox="0 0 800 100" preserveAspectRatio="none" style="position: absolute; bottom: 12mm; left: 0; width: 100%; height: 25mm; opacity: 0.15; pointer-events: none;">
+              <path d="M0 100 L50 70 L120 85 L200 60 L280 75 L380 45 L480 70 L580 50 L680 80 L800 65 L800 100 Z" fill="#94a3b8" />
+              <path d="M0 100 L80 80 L160 90 L240 70 L340 85 L440 60 L540 80 L640 70 L720 90 L800 75 L800 100 Z" fill="#cbd5e1" />
+            </svg>
+            `}
+
+            <!-- Standard Footer -->
+            ${standardFooterHtml}
           </div>
-
-          <!-- Bottom Silhouette Background -->
-          ${pdfBottomSilhouette ? `<img src="${pdfBottomSilhouette}" style="position: absolute; bottom: 12mm; left: 0; width: 100%; height: 25mm; object-fit: cover; object-position: center bottom; opacity: 1.0; pointer-events: none;" />` : `
-          <svg viewBox="0 0 800 100" preserveAspectRatio="none" style="position: absolute; bottom: 12mm; left: 0; width: 100%; height: 25mm; opacity: 0.15; pointer-events: none;">
-            <path d="M0 100 L50 70 L120 85 L200 60 L280 75 L380 45 L480 70 L580 50 L680 80 L800 65 L800 100 Z" fill="#94a3b8" />
-            <path d="M0 100 L80 80 L160 90 L240 70 L340 85 L440 60 L540 80 L640 70 L720 90 L800 75 L800 100 Z" fill="#cbd5e1" />
-          </svg>
-          `}
-
-          <!-- Standard Footer -->
-          ${standardFooterHtml}
-        </div>
+          `;
+        }).join('')}
 
         <!-- PAGE 3: TRANSPORTATION -->
         <div class="page">
@@ -1107,15 +1234,9 @@ const generateItineraryHtml = (itinerary, settings = {}) => {
             </div>
             
             <div style="background: white; border: 1.5px solid #efe4d2; border-radius: 0 0 8px 8px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.02); max-height: 125mm; overflow-y: auto;">
-              <table style="width: 100%; border-collapse: collapse; text-align: left;">
-                <thead>
-                  <tr style="background: #f4f7f2; border-bottom: 2.5px solid #efe4d2;">
-                    <th style="font-family: 'Montserrat', sans-serif; font-size: 8px; font-weight: 700; color: var(--pdf-primary); padding: 8px 12px; text-transform: uppercase; width: 18%; text-align: center;">Day</th>
-                    <th style="font-family: 'Montserrat', sans-serif; font-size: 8px; font-weight: 700; color: var(--pdf-primary); padding: 8px 12px; text-transform: uppercase; width: 82%;">Route & Service Details</th>
-                  </tr>
-                </thead>
+              <table style="width: 100%; border-collapse: collapse;">
                 <tbody>
-                  ${transportList.slice(0, 8).map((tr, idx) => {
+                  ${transportList.map((tr, idx) => {
                     const dayDate = fromDate 
                       ? new Date(new Date(fromDate).getTime() + (tr.dayNumber - 1) * 24 * 60 * 60 * 1000).toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' })
                       : `Day ${tr.dayNumber}`;
@@ -1222,7 +1343,7 @@ const generateItineraryHtml = (itinerary, settings = {}) => {
                   <h4 style="font-family: 'Playfair Display', serif; font-size: 14px; font-weight: 700; color: var(--pdf-primary); text-transform: uppercase; margin: 0; letter-spacing: 0.5px;">Package Inclusions</h4>
                 </div>
                 <div style="font-family: 'EB Garamond', serif; font-size: 12.5px; line-height: 1.5; color: #444; overflow: auto; padding-right: 5px; flex: 1;">
-                  ${itinerary.inclusionsHtml || '<p>&bull; Accommodation as per selection<br/>&bull; Daily breakfast at all hotels<br/>&bull; Private transfers & sightseeing as per itinerary<br/>&bull; Driver allowances, toll taxes, and parking fees</p>'}
+                  ${formatPointwiseList(itinerary.inclusionsHtml || '<p>&bull; Accommodation as per selection<br/>&bull; Daily breakfast at all hotels<br/>&bull; Private transfers & sightseeing as per itinerary<br/>&bull; Driver allowances, toll taxes, and parking fees</p>', 'inclusion')}
                 </div>
               </div>
               
@@ -1232,7 +1353,7 @@ const generateItineraryHtml = (itinerary, settings = {}) => {
                   <h4 style="font-family: 'Playfair Display', serif; font-size: 14px; font-weight: 700; color: #5c1d1d; text-transform: uppercase; margin: 0; letter-spacing: 0.5px;">Package Exclusions</h4>
                 </div>
                 <div style="font-family: 'EB Garamond', serif; font-size: 12.5px; line-height: 1.5; color: #444; overflow: auto; padding-right: 5px; flex: 1;">
-                  ${itinerary.exclusionsHtml || '<p>&bull; Airfare / Train fare to destination<br/>&bull; Personal expenses like laundry, phone calls, tips<br/>&bull; Entry fees at sightseeing points & adventure activity costs<br/>&bull; Any meal not specified in inclusions</p>'}
+                  ${formatPointwiseList(itinerary.exclusionsHtml || '<p>&bull; Airfare / Train fare to destination<br/>&bull; Personal expenses like laundry, phone calls, tips<br/>&bull; Entry fees at sightseeing points & adventure activity costs<br/>&bull; Any meal not specified in inclusions</p>', 'exclusion')}
                 </div>
               </div>
             </div>
@@ -1291,13 +1412,13 @@ const generateItineraryHtml = (itinerary, settings = {}) => {
                   <h4 style="font-family: 'Playfair Display', serif; font-size: 14px; font-weight: 700; color: var(--pdf-primary); text-transform: uppercase; margin: 0; letter-spacing: 0.5px;">Terms & Conditions</h4>
                 </div>
                 <div class="policy-text terms-text" style="font-family: 'EB Garamond', serif; color: #444; max-height: 110mm; overflow: hidden; padding-right: 5px; flex: 1;">
-                  ${itinerary.packageTerms || itinerary.termsHtml || `
+                  ${formatPointwiseTerms(itinerary.packageTerms || itinerary.termsHtml || `
                     <p>&bull; All rates are subject to availability at the time of actual booking confirmation.</p>
                     <p>&bull; Standard check-in time at hotels is 14:00 hrs and check-out is 11:00 hrs.</p>
                     <p>&bull; Any increase in government taxes, fuel costs or airline fares will be charged extra.</p>
                     <p>&bull; Personal expenses like laundry, phone calls, drinks and entry tickets are not included.</p>
                     <p>&bull; Imagica Holidays reserves the right to rearrange day-wise schedules due to weather/traffic.</p>
-                  `}
+                  `)}
                 </div>
               </div>
 
@@ -1310,12 +1431,12 @@ const generateItineraryHtml = (itinerary, settings = {}) => {
                     <h4 style="font-family: 'Playfair Display', serif; font-size: 12px; font-weight: 700; color: var(--pdf-primary); text-transform: uppercase; margin: 0; letter-spacing: 0.5px;">Payment Policy</h4>
                   </div>
                   <div class="policy-text" style="font-family: 'EB Garamond', serif; color: #444; max-height: 45mm; overflow: hidden; padding-right: 5px; flex: 1;">
-                    ${itinerary.paymentPolicyHtml || `
+                    ${formatPointwiseTerms(itinerary.paymentPolicyHtml || `
                       <p>&bull; 25% of the total package cost is required to initiate bookings.</p>
                       <p>&bull; 50% of the total package cost is due 30 days prior to departure.</p>
                       <p>&bull; Remaining 25% is due 15 days prior to arrival at the destination.</p>
                       <p>&bull; For peak season travel, 100% advance payment may be required at confirmation.</p>
-                    `}
+                    `)}
                   </div>
                 </div>
 
@@ -1326,12 +1447,12 @@ const generateItineraryHtml = (itinerary, settings = {}) => {
                     <h4 style="font-family: 'Playfair Display', serif; font-size: 12px; font-weight: 700; color: var(--pdf-primary); text-transform: uppercase; margin: 0; letter-spacing: 0.5px;">Cancellation Policy</h4>
                   </div>
                   <div class="policy-text" style="font-family: 'EB Garamond', serif; color: #444; max-height: 45mm; overflow: hidden; padding-right: 5px; flex: 1;">
-                    ${itinerary.cancellationPolicyHtml || `
+                    ${formatPointwiseTerms(itinerary.cancellationPolicyHtml || `
                       <p>&bull; Cancellation 30 days or more before departure: 10% of total cost is non-refundable.</p>
                       <p>&bull; Cancellation 15 to 29 days before departure: 50% of total package cost is charged.</p>
                       <p>&bull; Cancellation less than 15 days before departure: 100% of package cost is charged.</p>
                       <p>&bull; Peak season bookings (Oct-Jan, Apr-Jun) are completely non-refundable once confirmed.</p>
-                    `}
+                    `)}
                   </div>
                 </div>
               </div>
