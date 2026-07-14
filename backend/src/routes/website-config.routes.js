@@ -49,4 +49,7 @@ router.put('/destinations/:destinationId', can('master.manage_destinations'), up
 // Generic R2 file upload for Itinerary Days / Banners / Map images
 router.post('/cms/upload', upload.single('file'), checkFileTypes, controller.uploadJourneyFile);
 
+// Delete a file from Cloudflare R2 by public URL
+router.delete('/cms/delete-asset', can('master.manage_destinations'), controller.deleteAssetFromR2);
+
 module.exports = router;

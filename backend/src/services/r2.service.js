@@ -53,15 +53,46 @@ const optimizeImage = async (buffer, section = 'general') => {
 };
 
 /**
+ * Auto-compresses a video to H.264 MP4 at 1080p with CRF 28 (web-optimized).
+ * Target output: 10–20 MB regardless of input size.
+ * Uses -movflags +faststart so playback begins before full download.
+ */
+const compressVideoMp4 = (inputPath, outputPath) => {
+  console.log('🗜️  [R2] Auto-compressing video to 1080p H.264 MP4 (CRF 28)...');
+  execSync(
+    `ffmpeg -y -i "${inputPath}" ` +
+    `-vf "scale='min(1920,iw)':-2" ` +         // max 1920px wide, keep aspect
+    `-c:v libx264 -crf 28 -preset fast ` +     // quality/size balance
+    `-profile:v main -level 4.0 ` +
+    `-c:a aac -b:a 128k ` +
+    `-movflags +faststart ` +                  // critical: stream before full download
+    `"${outputPath}"`,
+    { stdio: 'pipe' }
+  );
+};
+
+/**
  * Transcodes a video file to HLS playlist and segment files, and uploads all of them to R2.
  * Returns the public URL of the playlist.m3u8 file.
  */
 const transcodeAndUploadHls = async (file, section) => {
   const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'hls-'));
-  const inputPath = path.join(tempDir, 'input.mp4');
+  const inputPath = path.join(tempDir, 'input_raw.mp4');
+  const compressedPath = path.join(tempDir, 'input.mp4');
   
   try {
     fs.writeFileSync(inputPath, file.buffer);
+    
+    // Step 1: Auto-compress before HLS segmenting (saves upload bandwidth & speeds streaming)
+    try {
+      compressVideoMp4(inputPath, compressedPath);
+      const origMB = (file.buffer.length / 1024 / 1024).toFixed(1);
+      const compMB = (fs.statSync(compressedPath).size / 1024 / 1024).toFixed(1);
+      console.log(`📉 [R2] Compressed ${origMB} MB → ${compMB} MB before HLS segmenting`);
+    } catch (compErr) {
+      console.warn('⚠️  [R2] Compression failed, using raw input for HLS:', compErr.message);
+      fs.copyFileSync(inputPath, compressedPath);
+    }
     
     const folderId = uuidv4();
     const r2Folder = `${section}/hls/${folderId}`;
@@ -70,10 +101,8 @@ const transcodeAndUploadHls = async (file, section) => {
     
     console.log(`🎬 [HLS] Transcoding video to HLS: ${r2Folder}`);
     execSync(
-      `ffmpeg -y -i "${inputPath}" ` +
-      `-codec:v libx264 -profile:v main -preset medium -crf 22 ` +
-      `-g 100 -keyint_min 100 -sc_threshold 0 ` +
-      `-codec:a aac -b:a 128k ` +
+      `ffmpeg -y -i "${compressedPath}" ` +
+      `-codec:v copy -codec:a copy ` +          // re-use compressed stream, no re-encode
       `-hls_time 4 ` +
       `-hls_playlist_type vod ` +
       `-hls_segment_filename "${tempDir}/segment_%03d.ts" ` +
@@ -85,7 +114,7 @@ const transcodeAndUploadHls = async (file, section) => {
     let playlistUrl = '';
     
     for (const filename of files) {
-      if (filename === 'input.mp4') continue;
+      if (filename === 'input_raw.mp4' || filename === 'input.mp4') continue;
       
       const filePath = path.join(tempDir, filename);
       const fileBuffer = fs.readFileSync(filePath);
@@ -161,16 +190,34 @@ const uploadAsset = async (file, section = 'general') => {
       console.error('❌ [R2] Image optimization failed, uploading raw image:', err.message);
     }
   } else if (file.mimetype.startsWith('video/')) {
-    console.log(`📹 [R2] Processing video upload (${(file.buffer.length / 1024 / 1024).toFixed(1)} MB): ${file.originalname}`);
+    const fileSizeMB = (file.buffer.length / 1024 / 1024).toFixed(1);
+    console.log(`📹 [R2] Processing video upload (${fileSizeMB} MB): ${file.originalname}`);
     if (hasFfmpeg()) {
       try {
+        // Always attempt HLS (with auto-compression built in now)
         const playlistUrl = await transcodeAndUploadHls(file, section);
         return playlistUrl;
       } catch (err) {
-        console.warn('⚠️ [R2] HLS transcoding failed. Falling back to normal video upload.');
+        console.warn('⚠️ [R2] HLS transcoding failed. Falling back to MP4 compress + direct upload.');
+        // Fallback: compress to MP4 and upload directly
+        const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'mp4-'));
+        try {
+          const inputPath = path.join(tempDir, 'input_raw.mp4');
+          const outputPath = path.join(tempDir, 'output.mp4');
+          fs.writeFileSync(inputPath, file.buffer);
+          compressVideoMp4(inputPath, outputPath);
+          buffer = fs.readFileSync(outputPath);
+          filename = `${section}/${uuidv4()}-compressed.mp4`;
+          contentType = 'video/mp4';
+          console.log(`📦 [R2] Fallback compressed MP4 ready: ${(buffer.length / 1024 / 1024).toFixed(1)} MB`);
+        } catch (compErr) {
+          console.warn('⚠️ [R2] MP4 compression also failed, uploading raw video.');
+        } finally {
+          fs.rmSync(tempDir, { recursive: true, force: true });
+        }
       }
     } else {
-      console.log('⚠️ [R2] ffmpeg not found. Skipping HLS transcoding and uploading raw video.');
+      console.log('⚠️ [R2] ffmpeg not found. Skipping compression and uploading raw video.');
     }
   }
 

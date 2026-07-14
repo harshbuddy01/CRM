@@ -186,9 +186,25 @@ const uploadJourneyFile = async (req, res, next) => {
   }
 };
 
+/**
+ * Delete a file from Cloudflare R2 by its public URL.
+ * Body: { url: string }
+ */
+const deleteAssetFromR2 = async (req, res, next) => {
+  try {
+    const { url } = req.body;
+    if (!url) return res.status(400).json({ success: false, message: 'URL is required' });
+    await r2Service.deleteAsset(url);
+    res.json({ success: true, message: 'Asset deleted from R2' });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   getWebsiteConfig,
   updateWebsiteSection,
   updateDestinationCmsPage,
   uploadJourneyFile,
+  deleteAssetFromR2,
 };

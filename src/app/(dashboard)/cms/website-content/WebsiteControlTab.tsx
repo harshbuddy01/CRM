@@ -6,7 +6,7 @@ import { api } from '@/lib/api';
 import { toast } from 'sonner';
 import {
   Plus, Trash2, Loader2, Check, Upload, Image as ImageIcon,
-  MapPin, Video, Compass, Sparkles, LayoutGrid,
+  MapPin, Video, Compass, Sparkles, LayoutGrid, X,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -379,17 +379,55 @@ function HeroEditor({ form, setForm, onSave, saving }: HeroEditorProps) {
           </div>
         </div>
         {form.useVideo ? (
-          <div className="grid md:grid-cols-2 gap-4 border-t pt-4">
-            {(['videoUrl1', 'videoUrl2'] as const).map((key, i) => (
-              <div key={key} className="space-y-2">
-                <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">Video Loop {i + 1}</Label>
-                <div className="flex gap-2">
-                  <Input value={form[key]} onChange={e => setForm((f: any) => ({ ...f, [key]: e.target.value }))} placeholder="https://..." className="flex-1" />
-                  <R2UploadButton label="Upload Video" accept="video/*" section="hero" onUploaded={url => setForm((f: any) => ({ ...f, [key]: url }))} />
+        <div className="grid md:grid-cols-2 gap-4 border-t pt-4">
+            {(['videoUrl1', 'videoUrl2'] as const).map((key, i) => {
+              const videoUrl = form[key];
+              const [deleting, setDeleting] = useState(false);
+
+              const handleDeleteVideo = async () => {
+                if (!videoUrl) return;
+                if (!confirm(`Delete Video Loop ${i + 1} from Cloudflare R2? This cannot be undone.`)) return;
+                setDeleting(true);
+                try {
+                  await api.delete('/website-configs/cms/delete-asset', { data: { url: videoUrl } });
+                  setForm((f: any) => ({ ...f, [key]: '' }));
+                  toast.success(`Video ${i + 1} deleted from R2 successfully.`);
+                } catch (err: any) {
+                  // Still clear the URL in the form even if R2 delete fails
+                  setForm((f: any) => ({ ...f, [key]: '' }));
+                  toast.warning(`URL cleared. R2 delete may have failed: ${err?.response?.data?.message || err.message}`);
+                } finally {
+                  setDeleting(false);
+                }
+              };
+
+              return (
+                <div key={key} className="space-y-2">
+                  <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">Video Loop {i + 1}</Label>
+                  <div className="flex gap-2">
+                    <Input value={videoUrl || ''} onChange={e => setForm((f: any) => ({ ...f, [key]: e.target.value }))} placeholder="https://..." className="flex-1" />
+                    <R2UploadButton label="Upload Video" accept="video/*" section="hero" onUploaded={url => setForm((f: any) => ({ ...f, [key]: url }))} />
+                    {videoUrl && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        disabled={deleting}
+                        onClick={handleDeleteVideo}
+                        className="h-8 px-2 text-red-500 hover:text-red-700 hover:bg-red-50 border border-red-200 rounded-lg"
+                        title="Delete video from R2"
+                      >
+                        {deleting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <X className="w-3.5 h-3.5" />}
+                      </Button>
+                    )}
+                  </div>
+                  {videoUrl && (
+                    <video src={videoUrl} controls className="w-full h-32 rounded-lg bg-black object-cover mt-2" />
+                  )}
                 </div>
-                {form[key] && <video src={form[key]} controls className="w-full h-32 rounded-lg bg-black object-cover mt-2" />}
-              </div>
-            ))}
+              );
+            })}
+          </div>
           </div>
         ) : (
           <div className="space-y-4 border-t pt-4">
