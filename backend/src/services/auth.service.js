@@ -134,7 +134,7 @@ const login = async (email, password) => {
   };
 };
 
-const verify2FA = async (twoFactorSessionId, code) => {
+const verify2FA = async (twoFactorSessionId, code, ipAddress) => {
   const { ValidationError } = require('../utils/AppError');
   if (!twoFactorSessionId || !code) {
     throw new ValidationError('Verification session ID and code are required');
@@ -181,6 +181,22 @@ const verify2FA = async (twoFactorSessionId, code) => {
       expiresAt,
     }
   });
+
+  // Log successful login
+  try {
+    await prisma.activityLog.create({
+      data: {
+        userId: user.id,
+        action: 'user.login',
+        entityType: 'user',
+        entityId: user.id,
+        ipAddress: ipAddress || null,
+        newValue: { email: user.email, name: user.name }
+      }
+    });
+  } catch (err) {
+    console.error('[Auth Service] Login log error:', err.message);
+  }
 
   return {
     user: {
@@ -265,7 +281,22 @@ const changePassword = async (userId, oldPassword, newPassword) => {
   return true;
 };
 
-const logout = async (userId, refreshTokenStr) => {
+const logout = async (userId, refreshTokenStr, ipAddress) => {
+  // Log logout event
+  try {
+    await prisma.activityLog.create({
+      data: {
+        userId,
+        action: 'user.logout',
+        entityType: 'user',
+        entityId: userId,
+        ipAddress: ipAddress || null,
+      }
+    });
+  } catch (err) {
+    console.error('[Auth Service] Logout log error:', err.message);
+  }
+
   if (!refreshTokenStr) {
     // Fallback: delete all if specific token not provided
     await prisma.userSession.deleteMany({ where: { userId } });

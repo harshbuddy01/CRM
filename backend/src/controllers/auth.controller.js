@@ -21,7 +21,8 @@ const login = async (req, res, next) => {
 const verify2FA = async (req, res, next) => {
   try {
     const { twoFactorSessionId, code } = req.body;
-    const result = await authService.verify2FA(twoFactorSessionId, code);
+    const ipAddress = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+    const result = await authService.verify2FA(twoFactorSessionId, code, ipAddress);
     res.json({
       success: true,
       message: 'Login successful',
@@ -82,7 +83,8 @@ const changePassword = async (req, res, next) => {
 const logout = async (req, res, next) => {
   try {
     const { refreshToken } = req.body;
-    await authService.logout(req.user.id, refreshToken);
+    const ipAddress = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+    await authService.logout(req.user.id, refreshToken, ipAddress);
     res.json({
       success: true,
       message: 'Logged out successfully',

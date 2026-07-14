@@ -84,6 +84,8 @@ services:
       - DB_POSTGRESDB_USER=postgres
       - DB_POSTGRESDB_PASSWORD=${DB_PASSWORD}
       - N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY}
+      - WEBHOOK_URL=https://n8n.imagicaholidays.com
+      - N8N_EDITOR_BASE_URL=https://n8n.imagicaholidays.com
     depends_on:
       - postgres
     volumes:

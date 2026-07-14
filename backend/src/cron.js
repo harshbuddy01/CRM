@@ -106,6 +106,25 @@ const startCronJobs = () => {
 
     // ── Task 1: Clean up expired user sessions ──
     try {
+      const expiredSessions = await prisma.userSession.findMany({
+        where: { expiresAt: { lt: new Date() } },
+        select: { userId: true }
+      });
+
+      if (expiredSessions.length > 0) {
+        const logData = expiredSessions.map(session => ({
+          userId: session.userId,
+          action: 'user.logout',
+          entityType: 'user',
+          entityId: session.userId,
+          newValue: { reason: 'Session expired (system auto logout)' }
+        }));
+
+        await prisma.activityLog.createMany({
+          data: logData
+        });
+      }
+
       const sessionResult = await prisma.userSession.deleteMany({
         where: { expiresAt: { lt: new Date() } }
       });
