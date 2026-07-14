@@ -1014,7 +1014,7 @@ export default function WebsiteControlTab() {
     
     // Hero Banner & Video
     const hero = c.hero || {};
-    const fallbackSlides = hero.fallbackSlides && hero.fallbackSlides.length > 0 ? hero.fallbackSlides : DEFAULT_HERO_SLIDES;
+    const fallbackSlides = Array.isArray(hero.fallbackSlides) ? hero.fallbackSlides : DEFAULT_HERO_SLIDES;
     setHeroForm({
       useVideo: hero.useVideo ?? true,
       videoUrl1: hero.videoUrl1 || '',
