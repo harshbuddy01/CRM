@@ -27,7 +27,8 @@ import {
   Sheet,
   CalendarRange,
   Image as ImageIcon,
-  Compass
+  Compass,
+  Activity
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { X } from 'lucide-react';
@@ -78,6 +79,7 @@ export function Sidebar({ open, setOpen }: SidebarProps) {
     { href: '/branches', label: 'Branches', icon: Building2, show: user?.permissions['users.manage'], isSetting: true },
     { href: '/integrations/sheets', label: 'Integrations (Coming Soon)', icon: Sheet, show: user?.permissions['users.manage'], isSetting: true },
     { href: '/users', label: 'Team', icon: Users, show: user?.permissions['users.manage'], isSetting: true },
+    { href: '/activity', label: 'My Activity', icon: Activity, show: !user?.permissions['users.manage'], isSetting: true },
     { href: '/settings', label: 'Settings', icon: Settings, show: user?.role === 'admin', isSetting: true },
   ];
 

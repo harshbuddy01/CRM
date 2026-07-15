@@ -176,4 +176,93 @@ router.get('/activity-logs/users', authenticate, can('users.manage'), async (req
   }
 });
 
+/**
+ * @route   GET /api/v1/admin/my-activity-logs
+ * @desc    Fetch the current user's own activity logs (any authenticated user)
+ *          Only shows last 7 days of data (older logs are auto-purged nightly)
+ * @access  Any authenticated user
+ * @query   entityType, search, page (default 1), limit (default 50)
+ */
+router.get('/my-activity-logs', authenticate, async (req, res, next) => {
+  try {
+    const {
+      entityType,
+      search,
+      page = '1',
+      limit = '50',
+    } = req.query;
+
+    const pageNum = Math.max(1, parseInt(page, 10) || 1);
+    const limitNum = Math.min(100, Math.max(1, parseInt(limit, 10) || 50));
+    const skip = (pageNum - 1) * limitNum;
+
+    // Always cap to last 7 days
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+    // HARD-SCOPE to the current user — non-admins can never see others' activity
+    const where = {
+      userId: req.user.id,
+      createdAt: {
+        gte: sevenDaysAgo,
+        lte: new Date(),
+      },
+    };
+
+    if (entityType && entityType !== 'all') {
+      where.entityType = entityType;
+    }
+
+    if (search && search.trim()) {
+      const searchTerm = search.trim();
+      where.OR = [
+        { action: { contains: searchTerm, mode: 'insensitive' } },
+        { entityId: { contains: searchTerm, mode: 'insensitive' } },
+      ];
+    }
+
+    const [logs, total] = await Promise.all([
+      prisma.activityLog.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limitNum,
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              profilePhoto: true,
+              role: { select: { label: true, name: true } },
+              department: true,
+            },
+          },
+        },
+      }),
+      prisma.activityLog.count({ where }),
+    ]);
+
+    const totalPages = Math.ceil(total / limitNum);
+
+    res.json({
+      success: true,
+      data: {
+        logs,
+        pagination: {
+          total,
+          page: pageNum,
+          limit: limitNum,
+          totalPages,
+          hasMore: pageNum < totalPages,
+        },
+        retentionDays: 7,
+        oldestAllowed: sevenDaysAgo.toISOString(),
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
 module.exports = router;
