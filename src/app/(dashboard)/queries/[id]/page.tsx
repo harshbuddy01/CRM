@@ -590,6 +590,48 @@ export default function QueryDetailPage() {
             </CardContent>
           </Card>
 
+          {/* Notes Log Card */}
+          <Card>
+            <CardHeader className="py-3 px-4 flex flex-row items-center justify-between border-b">
+              <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                <FileText className="w-4 h-4 text-primary" /> Notes Log ({query.notes?.length || 0})
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-4 space-y-4 max-h-[350px] overflow-y-auto">
+              {!query.notes || query.notes.length === 0 ? (
+                <p className="text-xs text-muted-foreground text-center py-4">No notes created yet.</p>
+              ) : (
+                <div className="space-y-3">
+                  {query.notes.map((note) => (
+                    <div key={note.id} className="text-xs p-3 bg-muted/40 border rounded-lg space-y-2 relative group hover:bg-muted/70 transition-colors">
+                      <div className="flex justify-between items-start pr-6">
+                        <p className="font-medium text-slate-800 break-words whitespace-pre-wrap leading-relaxed">{note.note}</p>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-6 w-6 absolute right-2 top-2 opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:bg-destructive/10"
+                          onClick={() => handleDeleteNote(note.id)}
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </Button>
+                      </div>
+                      <div className="flex justify-between items-center text-[10px] text-muted-foreground pt-1 border-t border-slate-100">
+                        <span>By {note.user?.name || 'Unknown'}</span>
+                        <span>{format(new Date(note.createdAt), 'PPp')}</span>
+                      </div>
+                      {note.followUpAt && (
+                        <div className="flex items-center gap-1 text-[10px] text-amber-600 bg-amber-50/50 px-2 py-0.5 rounded border border-amber-100 w-fit">
+                          <CalendarIcon className="w-3 h-3" />
+                          <span>Follow up: {format(new Date(note.followUpAt), 'PP')}</span>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
            {/* 10-Tab CRM Workflow */}
           <Card>
             <CardContent className="p-0">

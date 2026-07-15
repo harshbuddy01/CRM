@@ -6,7 +6,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Loader2, Plus, CheckCircle, Clock } from 'lucide-react';
+import { Loader2, Plus, CheckCircle, Clock, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { useState } from 'react';
 import { toast } from 'sonner';
@@ -47,6 +47,18 @@ export function FollowupsTab({ queryId }: { queryId: string }) {
     onError: (err: any) => toast.error(err.response?.data?.message || 'Failed'),
   });
 
+  const deleteMutation = useMutation({
+    mutationFn: async (noteId: string) => {
+      await api.delete(`/queries/${queryId}/notes/${noteId}`);
+    },
+    onSuccess: () => {
+      toast.success('Followup deleted');
+      queryClient.invalidateQueries({ queryKey: ['followups', queryId] });
+      queryClient.invalidateQueries({ queryKey: ['query', queryId] });
+    },
+    onError: (err: any) => toast.error(err.response?.data?.message || 'Failed to delete'),
+  });
+
   if (isLoading) return <div className="flex justify-center p-8"><Loader2 className="w-6 h-6 animate-spin" /></div>;
 
   return (
@@ -70,14 +82,29 @@ export function FollowupsTab({ queryId }: { queryId: string }) {
                     <p className="text-xs text-muted-foreground mt-1">By {note.user?.name || 'Unknown'} • {format(new Date(note.createdAt), 'PPp')}</p>
                   </div>
                   <div className="text-right flex items-center gap-2">
-                    {isOverdue ? (
-                      <span className="inline-flex items-center gap-1 text-xs text-amber-600 font-medium"><Clock className="w-3 h-3" /> Overdue</span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1 text-xs text-green-600 font-medium"><CheckCircle className="w-3 h-3" /> Pending</span>
-                    )}
-                    <span className="text-xs text-muted-foreground">
-                      {note.followUpAt && format(new Date(note.followUpAt), 'PP')}
-                    </span>
+                    <div className="flex flex-col items-end gap-1">
+                      {isOverdue ? (
+                        <span className="inline-flex items-center gap-1 text-xs text-amber-600 font-medium"><Clock className="w-3 h-3" /> Overdue</span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 text-xs text-green-600 font-medium"><CheckCircle className="w-3 h-3" /> Pending</span>
+                      )}
+                      <span className="text-xs text-muted-foreground">
+                        {note.followUpAt && format(new Date(note.followUpAt), 'PP')}
+                      </span>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-destructive hover:bg-destructive/10 shrink-0"
+                      onClick={() => {
+                        if (confirm('Are you sure you want to delete this followup?')) {
+                          deleteMutation.mutate(note.id);
+                        }
+                      }}
+                      disabled={deleteMutation.isPending}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
                   </div>
                 </CardContent>
               </Card>
