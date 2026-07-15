@@ -28,7 +28,7 @@ const getClientInfoFromRequest = (req) => {
 const create = async (req, res, next) => {
   try {
     const clientInfo = getClientInfoFromRequest(req);
-    const query = await queryService.createQuery({ ...req.body, clientInfo });
+    const query = await queryService.createQuery({ ...req.body, clientInfo }, req.user?.id);
     res.status(201).json({ success: true, message: 'Query created successfully', data: query });
   } catch (error) {
     next(error);
@@ -51,7 +51,7 @@ const createFromWebhook = async (req, res, next) => {
        return res.status(409).json({ success: false, message: 'Lead already exists' });
     }
 
-    const query = await queryService.createQuery(queryData);
+    const query = await queryService.createQuery(queryData, req.user?.id);
     res.status(201).json({ success: true, message: 'Lead captured successfully', queryId: query.id });
   } catch (error) {
     next(error);
@@ -105,7 +105,7 @@ const assign = async (req, res, next) => {
 
 const remove = async (req, res, next) => {
   try {
-    await queryService.deleteQuery(req.params.id);
+    await queryService.deleteQuery(req.params.id, req.user.id);
     res.json({ success: true, message: 'Query soft-deleted successfully' });
   } catch (error) {
     next(error);

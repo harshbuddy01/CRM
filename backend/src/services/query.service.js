@@ -32,7 +32,7 @@ const generateQueryCode = async () => {
 
 const MAX_CODE_RETRIES = 3;
 
-const createQuery = async (data) => {
+const createQuery = async (data, creatorId = null) => {
   const { clientInfo, ...cleanData } = data;
 
   // Simple duplicate check by phone number
@@ -101,6 +101,21 @@ const createQuery = async (data) => {
       metaCapiService.sendEvent('Lead', query, clientInfo || {}).catch(() => {});
     } catch (err) {
       logger.error('[Query] Failed to trigger Lead conversions:', err.message);
+    }
+
+    // Log Activity
+    try {
+      await prisma.activityLog.create({
+        data: {
+          userId: creatorId,
+          action: 'query.created',
+          entityType: 'query',
+          entityId: query.id,
+          newValue: { queryCode: query.queryCode, name: query.name }
+        }
+      });
+    } catch (err) {
+      logger.error('[Query] Failed to create activity log for query creation:', err.message);
     }
   }
 
@@ -202,10 +217,27 @@ const updateQuery = async (id, data, userId, canViewAll, canEditAll) => {
   if (data.travelDateFrom) data.travelDateFrom = new Date(data.travelDateFrom);
   if (data.travelDateTo) data.travelDateTo = new Date(data.travelDateTo);
 
-  return await prisma.query.update({
+  const updated = await prisma.query.update({
     where: { id },
     data,
   });
+
+  // Log activity
+  try {
+    await prisma.activityLog.create({
+      data: {
+        userId,
+        action: 'query.updated',
+        entityType: 'query',
+        entityId: id,
+        newValue: { name: updated.name, status: updated.status }
+      }
+    });
+  } catch (err) {
+    logger.error('[Query] Failed to create activity log for query update:', err.message);
+  }
+
+  return updated;
 };
 
 const assignQuery = async (id, assignedToUserId, currentUserId) => {
@@ -258,10 +290,25 @@ const assignQuery = async (id, assignedToUserId, currentUserId) => {
     });
   }
 
+  // Log activity
+  try {
+    await prisma.activityLog.create({
+      data: {
+        userId: currentUserId,
+        action: 'query.assigned',
+        entityType: 'query',
+        entityId: id,
+        newValue: { assignedTo: agent.name }
+      }
+    });
+  } catch (err) {
+    logger.error('[Query] Failed to create activity log for assignment:', err.message);
+  }
+
   return updatedEntity;
 };
 
-const deleteQuery = async (id) => {
+const deleteQuery = async (id, userId = null) => {
   const existing = await prisma.query.findUnique({ where: { id } });
   if (!existing) throw new NotFoundError('Query');
   
@@ -270,10 +317,27 @@ const deleteQuery = async (id) => {
   }
   
   // Soft Delete
-  return await prisma.query.update({
+  const deleted = await prisma.query.update({
     where: { id },
     data: { deletedAt: new Date(), status: 'invalid' }
   });
+
+  // Log activity
+  try {
+    await prisma.activityLog.create({
+      data: {
+        userId,
+        action: 'query.deleted',
+        entityType: 'query',
+        entityId: id,
+        newValue: { name: existing.name, queryCode: existing.queryCode }
+      }
+    });
+  } catch (err) {
+    logger.error('[Query] Failed to create activity log for query deletion:', err.message);
+  }
+
+  return deleted;
 }
 
 const checkDuplicatePhone = async (phone) => {
@@ -306,6 +370,21 @@ const addNote = async (queryId, userId, note, followUpAt) => {
     });
   }
 
+  // Log activity
+  try {
+    await prisma.activityLog.create({
+      data: {
+        userId,
+        action: 'note.created',
+        entityType: 'query',
+        entityId: queryId,
+        newValue: { noteSnippet: note.slice(0, 60) }
+      }
+    });
+  } catch (err) {
+    logger.error('[Query] Failed to create activity log for note creation:', err.message);
+  }
+
   return created;
 };
 
@@ -319,6 +398,20 @@ const deleteNote = async (queryId, noteId, userId) => {
     },
     data: { deletedAt: new Date() }
   });
+
+  // Log activity
+  try {
+    await prisma.activityLog.create({
+      data: {
+        userId,
+        action: 'note.deleted',
+        entityType: 'query',
+        entityId: queryId
+      }
+    });
+  } catch (err) {
+    logger.error('[Query] Failed to create activity log for note deletion:', err.message);
+  }
 };
 
 const changeQueryStatus = async (id, status, userId, canViewAll, canEditAll) => {
@@ -378,6 +471,21 @@ const changeQueryStatus = async (id, status, userId, canViewAll, canEditAll) => 
     where: { id },
     data: { status },
   });
+
+  // Log activity
+  try {
+    await prisma.activityLog.create({
+      data: {
+        userId,
+        action: 'query.status_changed',
+        entityType: 'query',
+        entityId: id,
+        newValue: { oldStatus: existing.status, newStatus: status }
+      }
+    });
+  } catch (err) {
+    logger.error('[Query] Failed to create activity log for status change:', err.message);
+  }
 
   if (status === 'confirmed') {
     const clientService = require('./client.service');
