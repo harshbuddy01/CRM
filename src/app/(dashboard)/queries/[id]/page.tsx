@@ -86,6 +86,7 @@ type QueryDetail = {
   travelDateTo: string | null;
   assignedTo: string | null;
   assignedUser?: { id: string; name: string } | null;
+  tourId?: string | null;
   notes: Note[];
 };
 
@@ -394,6 +395,33 @@ export default function QueryDetailPage() {
             </div>
           </CardContent>
         </Card>
+      )}
+
+      {/* CONFIRMED TOUR BANNER */}
+      {query.status === 'confirmed' && query.tourId && (
+        <div className="bg-gradient-to-r from-emerald-500 to-teal-500 rounded-2xl p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-lg shadow-emerald-100">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center shrink-0">
+              <CheckCircle2 className="w-7 h-7 text-white" />
+            </div>
+            <div>
+              <p className="text-white font-black text-lg leading-tight">🎉 Booking Confirmed!</p>
+              <p className="text-emerald-100 text-sm font-medium mt-0.5">Assign driver, hotels & generate guest credentials from Tour Operations.</p>
+            </div>
+          </div>
+          <div className="flex gap-2 shrink-0">
+            <Link href={`/tours/${query.tourId}`}>
+              <Button variant="outline" className="bg-white/10 border-white/30 text-white hover:bg-white/20 font-bold rounded-xl h-10">
+                View Tour
+              </Button>
+            </Link>
+            <Link href={`/tours/${query.tourId}/dispatch`}>
+              <Button className="bg-white text-emerald-700 hover:bg-emerald-50 font-black rounded-xl h-10 shadow-md">
+                Open Operations →
+              </Button>
+            </Link>
+          </div>
+        </div>
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
@@ -749,10 +777,15 @@ function QueryProposalsList({ queryId, queryCode, customerName, customerEmail }:
       const res = await api.post(`/proposals/${proposalId}/confirm`);
       return res.data;
     },
-    onSuccess: () => {
-      toast.success('Proposal confirmed! Query moved to operations.');
+    onSuccess: (data) => {
+      toast.success('Proposal confirmed! Redirecting to Tour Operations...');
       queryClient.invalidateQueries({ queryKey: ['proposals', queryId] });
       queryClient.invalidateQueries({ queryKey: ['query', queryId] });
+      // Redirect to tour dispatch if tourId returned
+      const tourId = data?.data?.tourId || data?.tourId;
+      if (tourId) {
+        setTimeout(() => router.push(`/tours/${tourId}/dispatch`), 1500);
+      }
     },
     onError: (err: any) => toast.error(err.response?.data?.message || 'Failed to confirm proposal')
   });
@@ -960,6 +993,16 @@ function QueryProposalsList({ queryId, queryCode, customerName, customerEmail }:
                   {p.status === 'confirmed' && (
                     <div className="absolute -top-2 -right-2 bg-emerald-500 text-white rounded-full p-1.5 shadow-lg border-2 border-white">
                       <CheckCircle2 className="w-4 h-4" />
+                    </div>
+                  )}
+
+                  {/* CONFIRMED BANNER — Go to Operations */}
+                  {p.status === 'confirmed' && p.tourId && (
+                    <div className="absolute -bottom-px left-0 right-0 bg-gradient-to-r from-emerald-500 to-teal-500 text-white text-[10px] font-black uppercase tracking-widest px-3 py-1 flex items-center justify-between">
+                      <span>✅ Confirmed Tour</span>
+                      <Link href={`/tours/${p.tourId}/dispatch`} className="bg-white/20 hover:bg-white/30 px-2 py-0.5 rounded text-white font-black transition-colors">
+                        Open Operations →
+                      </Link>
                     </div>
                   )}
                   {p.status === 'rejected' && (
