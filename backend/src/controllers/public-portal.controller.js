@@ -139,7 +139,8 @@ const getGuestTrip = async (req, res, next) => {
 
     // Current day's driver (for home screen)
     const today = new Date().toISOString().split('T')[0];
-    const startStr = new Date(tour.startDate).toISOString().split('T')[0];
+    const safeStartDate = tour.startDate ? new Date(tour.startDate) : new Date();
+    const startStr = (isNaN(safeStartDate.getTime()) ? new Date() : safeStartDate).toISOString().split('T')[0];
     const daysDiff = Math.floor((new Date(today) - new Date(startStr)) / 86400000);
     const currentDayNum = Math.max(1, daysDiff + 1);
     const currentDayDriver = tour.tourDrivers.find(d => d.dayNumber === currentDayNum);
