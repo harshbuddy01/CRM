@@ -285,40 +285,49 @@ export default function GuestWebApp() {
                     </div>
                   </div>
 
-                  {/* Hotel Card */}
-                  <div className="bg-white rounded-3xl p-4 shadow-sm border border-gray-100">
-                    <div className="flex items-start justify-between">
-                      <div className="flex gap-3">
-                        <div className="w-12 h-12 rounded-xl bg-orange-50 border border-orange-100 flex items-center justify-center text-orange-600 font-serif font-bold shadow-sm">
-                          H4S
-                        </div>
-                        <div>
-                          <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Current Stay</span>
-                          <h3 className="text-base font-bold text-gray-900 mt-0.5">Hotel 4 Season</h3>
-                          <p className="text-xs text-gray-500 mt-0.5 flex items-center gap-1">
-                            <MapPin className="w-3.5 h-3.5" /> Pelling, Sikkim
-                          </p>
-                        </div>
+                  {/* Premium Hotel Card (MakeMyTrip Style) */}
+                  <div className="bg-white rounded-[24px] shadow-sm border border-gray-100 overflow-hidden">
+                    <div className="relative h-44 w-full">
+                      <img src="https://images.unsplash.com/photo-1542314831-c6a4d1409a50?auto=format&fit=crop&q=80&w=1000" alt="Hotel" className="w-full h-full object-cover" />
+                      <div className="absolute top-3 left-3 bg-white/95 backdrop-blur-md px-2.5 py-1 rounded-xl flex items-center gap-1 shadow-sm border border-white/20">
+                        <span className="text-[#F59E0B] text-sm">★</span>
+                        <span className="text-xs font-bold text-gray-900">4.5</span>
+                        <span className="text-[10px] text-gray-500 font-semibold">(120)</span>
                       </div>
-                      <div className="bg-gray-50 text-gray-700 font-bold px-3 py-2 rounded-xl text-center border border-gray-100 shadow-inner">
-                        <span className="text-[10px] block opacity-70 uppercase tracking-wide">Room</span>
-                        502
+                      <div className="absolute top-3 right-3 bg-gray-900/80 backdrop-blur-md text-white font-bold px-3 py-1.5 rounded-xl text-center border border-white/20 shadow-sm">
+                        <span className="text-[9px] block opacity-70 uppercase tracking-widest mb-0.5">Room</span>
+                        <span className="text-sm">502</span>
+                      </div>
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
+                      <div className="absolute bottom-4 left-4 right-4">
+                        <span className="text-[10px] font-bold text-orange-400 uppercase tracking-widest mb-1 block">Current Stay</span>
+                        <h3 className="text-2xl font-bold text-white drop-shadow-lg tracking-tight">Hotel 4 Season</h3>
+                        <p className="text-xs text-gray-300 mt-1.5 flex items-center gap-1 font-medium">
+                          <MapPin className="w-3.5 h-3.5 text-orange-400" /> Pelling, Sikkim • <span className="underline decoration-gray-400 cursor-pointer hover:text-white transition-colors">View Map</span>
+                        </p>
                       </div>
                     </div>
                     
-                    <div className="mt-5 pt-4 border-t border-gray-50 flex gap-2">
-                      <button 
-                        onClick={() => setShowServiceMenu(true)}
-                        className="flex-1 bg-orange-50 hover:bg-orange-100 py-3 rounded-xl text-xs font-bold text-orange-700 flex items-center justify-center gap-2 transition-transform active:scale-95 shadow-sm"
-                      >
-                        <Utensils className="w-4 h-4" /> Room Service
-                      </button>
-                      <button 
-                        onClick={() => toast.success("Housekeeping requested.")}
-                        className="flex-1 bg-purple-50 hover:bg-purple-100 py-3 rounded-xl text-xs font-bold text-purple-700 flex items-center justify-center gap-2 transition-transform active:scale-95 shadow-sm"
-                      >
-                        <Bed className="w-4 h-4" /> Housekeeping
-                      </button>
+                    <div className="p-4 bg-white">
+                      <div className="flex items-center gap-2 mb-5 overflow-x-auto scrollbar-none pb-1">
+                        <span className="flex-none bg-green-50 border border-green-100/50 px-2.5 py-1.5 rounded-lg text-[10px] font-bold text-green-700 flex items-center gap-1"><span className="text-green-500">✓</span> Free Breakfast</span>
+                        <span className="flex-none bg-blue-50 border border-blue-100/50 px-2.5 py-1.5 rounded-lg text-[10px] font-bold text-blue-700 flex items-center gap-1"><span className="text-blue-500">✓</span> Free WiFi</span>
+                        <span className="flex-none bg-purple-50 border border-purple-100/50 px-2.5 py-1.5 rounded-lg text-[10px] font-bold text-purple-700 flex items-center gap-1"><span className="text-purple-500">✓</span> Valley View</span>
+                      </div>
+                      <div className="flex gap-2">
+                        <button 
+                          onClick={() => setShowServiceMenu(true)}
+                          className="flex-1 bg-orange-50 hover:bg-orange-100 py-3.5 rounded-xl text-xs font-bold text-orange-700 flex items-center justify-center gap-2 transition-transform active:scale-95 shadow-sm border border-orange-100/50"
+                        >
+                          <Utensils className="w-4 h-4" /> Room Service
+                        </button>
+                        <button 
+                          onClick={() => toast.success("Housekeeping requested.")}
+                          className="flex-1 bg-purple-50 hover:bg-purple-100 py-3.5 rounded-xl text-xs font-bold text-purple-700 flex items-center justify-center gap-2 transition-transform active:scale-95 shadow-sm border border-purple-100/50"
+                        >
+                          <Bed className="w-4 h-4" /> Housekeeping
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </motion.div>
