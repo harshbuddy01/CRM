@@ -8,7 +8,7 @@ import { toast } from 'sonner';
 import {
   Building2, Map, Car, Bed, Utensils, Palette, CalendarDays,
   Plus, Edit2, Trash2, Loader2, Search, X, Upload, ChevronRight,
-  Check, ImageIcon, Eye
+  Check, ImageIcon, Eye, KeyRound, RefreshCw
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -18,6 +18,7 @@ import { useAuthStore } from '@/lib/auth-store';
 const CATEGORIES = [
   { id: 'destinations', label: 'Destinations', icon: Map, color: 'bg-indigo-50 border-indigo-200 text-indigo-700', activeColor: 'bg-indigo-600 border-indigo-600 text-white', desc: 'Goa, Manali, Bali' },
   { id: 'hotels', label: 'Hotels', icon: Building2, color: 'bg-rose-50 border-rose-200 text-rose-700', activeColor: 'bg-rose-600 border-rose-600 text-white', desc: 'Hotels per destination' },
+  { id: 'drivers', label: 'Drivers', icon: Car, color: 'bg-amber-50 border-amber-200 text-amber-700', activeColor: 'bg-amber-600 border-amber-600 text-white', desc: 'Driver list & Portal logins' },
   { id: 'suppliers', label: 'Suppliers', icon: Building2, color: 'bg-blue-50 border-blue-200 text-blue-700', activeColor: 'bg-blue-600 border-blue-600 text-white', desc: 'Vendors, DMCs, transport providers' },
   { id: 'activities', label: 'Activities', icon: Palette, color: 'bg-green-50 border-green-200 text-green-700', activeColor: 'bg-green-600 border-green-600 text-white', desc: 'Sightseeing, trekking, experiences' },
   { id: 'transfers', label: 'Transfers', icon: Car, color: 'bg-orange-50 border-orange-200 text-orange-700', activeColor: 'bg-orange-600 border-orange-600 text-white', desc: 'Vehicles, cabs, transport types' },
@@ -89,7 +90,7 @@ function MasterPanel({ category }: { category: typeof CATEGORIES[0] }) {
   const qc = useQueryClient();
   const { user } = useAuthStore();
   const getRequiredPermission = (catId: string) => {
-    if (catId === 'suppliers') return 'master.manage_vendors';
+    if (catId === 'suppliers' || catId === 'drivers') return 'master.manage_vendors';
     if (['hotels', 'room-types', 'meal-plans'].includes(catId)) return 'master.manage_hotels';
     return 'master.manage_destinations';
   };
@@ -100,19 +101,37 @@ function MasterPanel({ category }: { category: typeof CATEGORIES[0] }) {
   const [editItem, setEditItem] = useState<any>(null);
   const [viewItem, setViewItem] = useState<any>(null);
 
-  const basePath = ['destinations', 'hotels'].includes(category.id) ? '/masters' : '/masters-v2';
+  const basePath = category.id === 'drivers' ? '' : (['destinations', 'hotels'].includes(category.id) ? '/masters' : '/masters-v2');
 
   const { data, isLoading } = useQuery({
     queryKey: [basePath, category.id, search],
-    queryFn: () => api.get(`${basePath}/${category.id}`, { params: search ? { search } : {} }).then(r => r.data?.data || r.data),
+    queryFn: () => {
+      const url = basePath ? `${basePath}/${category.id}` : `/${category.id}`;
+      return api.get(url, { params: search ? { search } : {} }).then(r => r.data?.data || r.data);
+    }
   });
 
   const invalidate = () => qc.invalidateQueries({ queryKey: [basePath, category.id] });
 
   const deleteMutation = useMutation({
-    mutationFn: (id: string) => api.delete(`${basePath}/${category.id}/${id}`),
+    mutationFn: (id: string) => {
+      const url = basePath ? `${basePath}/${category.id}/${id}` : `/${category.id}/${id}`;
+      return api.delete(url);
+    },
     onSuccess: () => { toast.success('Deleted'); invalidate(); },
     onError: (err: any) => toast.error(err.response?.data?.message || 'Failed to delete'),
+  });
+
+  const generateCredsMutation = useMutation({
+    mutationFn: (itemId: string) => {
+      const endpoint = category.id === 'hotels' ? `/masters/hotels/${itemId}/credentials` : `/drivers/${itemId}/credentials`;
+      return api.post(endpoint);
+    },
+    onSuccess: (res) => {
+      toast.success(`Portal credentials generated! PIN: ${res.data.data.loginPassword || res.data.data.pin}`);
+      invalidate();
+    },
+    onError: (err: any) => toast.error(err.response?.data?.message || 'Failed to generate credentials'),
   });
 
   const startEdit = (item: any) => { setEditItem(item); setShowForm(true); };
@@ -154,7 +173,16 @@ function MasterPanel({ category }: { category: typeof CATEGORIES[0] }) {
           {!search && canManage && <Button variant="outline" size="sm" className="mt-3" onClick={() => { setEditItem(null); setShowForm(true); }}><Plus className="w-4 h-4 mr-1" /> Add First</Button>}
         </div>
       ) : (
-        <MasterTable category={category} items={items} onView={setViewItem} onEdit={startEdit} onDelete={(id) => { if (confirm('Delete this record?')) deleteMutation.mutate(id); }} canManage={canManage} />
+        <MasterTable 
+          category={category} 
+          items={items} 
+          onView={setViewItem} 
+          onEdit={startEdit} 
+          onDelete={(id) => { if (confirm('Delete this record?')) deleteMutation.mutate(id); }} 
+          canManage={canManage}
+          onGenerateCredentials={(id) => generateCredsMutation.mutate(id)}
+          generatingId={generateCredsMutation.variables}
+        />
       )}
       {data && <p className="text-xs text-muted-foreground text-right">{data.total || items.length} total records</p>}
 
@@ -275,6 +303,14 @@ function MasterForm({ category, editItem, onClose, onSaved }: { category: typeof
           <StatusField value={form.isActive} onChange={v => set('isActive', v)} />
         </>)}
 
+        {category.id === 'drivers' && (<>
+          <Field label="Driver Name *"><Input placeholder="e.g. Samar A." value={form.name || ''} onChange={e => set('name', e.target.value)} required /></Field>
+          <Field label="Phone *"><Input placeholder="e.g. 9876543210" value={form.phone || ''} onChange={e => set('phone', e.target.value)} required /></Field>
+          <Field label="Vehicle Name *"><Input placeholder="e.g. Innova Crysta" value={form.vehicleName || ''} onChange={e => set('vehicleName', e.target.value)} required /></Field>
+          <Field label="Vehicle Number *"><Input placeholder="e.g. SK-01-D-1234" value={form.vehicleNo || ''} onChange={e => set('vehicleNo', e.target.value)} required /></Field>
+          <StatusField value={form.isActive} onChange={v => set('isActive', v)} />
+        </>)}
+
         {category.id === 'suppliers' && (<>
           <Field label="Company Name *"><Input placeholder="e.g. Raj Travels Pvt Ltd" value={form.companyName || ''} onChange={e => set('companyName', e.target.value)} required /></Field>
           <Field label="Category / Provider Type"><Input placeholder="e.g. Bolero, Cab, DMC, Budget" value={form.category || ''} onChange={e => set('category', e.target.value)} /></Field>
@@ -361,7 +397,25 @@ function MasterForm({ category, editItem, onClose, onSaved }: { category: typeof
   );
 }
 
-function MasterTable({ category, items, onView, onEdit, onDelete, canManage }: { category: typeof CATEGORIES[0]; items: any[]; onView: (item: any) => void; onEdit: (item: any) => void; onDelete: (id: string) => void; canManage: boolean; }) {
+function MasterTable({ 
+  category, 
+  items, 
+  onView, 
+  onEdit, 
+  onDelete, 
+  canManage, 
+  onGenerateCredentials, 
+  generatingId 
+}: { 
+  category: typeof CATEGORIES[0]; 
+  items: any[]; 
+  onView: (item: any) => void; 
+  onEdit: (item: any) => void; 
+  onDelete: (id: string) => void; 
+  canManage: boolean; 
+  onGenerateCredentials: (id: string) => void; 
+  generatingId?: string;
+}) {
   return (
     <div className="overflow-x-auto rounded-lg border">
       <table className="w-full text-sm">
@@ -370,12 +424,14 @@ function MasterTable({ category, items, onView, onEdit, onDelete, canManage }: {
             <th className="text-left py-3 px-3 font-medium">{category.id === 'day-itinerary-templates' ? 'Title' : (category.id === 'suppliers' ? 'Company Name' : (category.id === 'transfers' ? 'Vehicle Type' : (category.id === 'gallery-images' ? 'Caption' : 'Name')))}</th>
             {category.id === 'destinations' && <th className="text-left py-3 px-3 font-medium">Country</th>}
             {category.id === 'hotels' && <><th className="text-left py-3 px-3 font-medium">Destination</th><th className="text-left py-3 px-3 font-medium">Category</th><th className="text-left py-3 px-3 font-medium">Base Price</th></>}
+            {category.id === 'drivers' && <><th className="text-left py-3 px-3 font-medium">Phone</th><th className="text-left py-3 px-3 font-medium">Vehicle Name</th><th className="text-left py-3 px-3 font-medium">Vehicle No</th></>}
             {category.id === 'suppliers' && <><th className="text-left py-3 px-3 font-medium">Category</th><th className="text-left py-3 px-3 font-medium">City</th><th className="text-left py-3 px-3 font-medium">Phone</th></>}
             {category.id === 'activities' && <><th className="text-left py-3 px-3 font-medium">Destination</th><th className="text-left py-3 px-3 font-medium">Price/Person</th></>}
             {category.id === 'transfers' && <><th className="text-left py-3 px-3 font-medium">Destination</th><th className="text-left py-3 px-3 font-medium">Price</th><th className="text-left py-3 px-3 font-medium">Photo</th></>}
             {category.id === 'meal-plans' && <th className="text-left py-3 px-3 font-medium">Price (₹)</th>}
             {category.id === 'package-themes' && <th className="text-left py-3 px-3 font-medium">Icon</th>}
             {(category.id === 'day-itinerary-templates' || category.id === 'gallery-images') && <><th className="text-left py-3 px-3 font-medium">{category.id === 'gallery-images' ? 'Category' : 'Destination'}</th><th className="text-left py-3 px-3 font-medium">{category.id === 'gallery-images' ? 'Preview' : 'Description'}</th></>}
+            {['hotels', 'drivers'].includes(category.id) && <th className="text-left py-3 px-3 font-medium">Portal Login</th>}
             <th className="text-left py-3 px-3 font-medium">Status</th>
             <th className="text-right py-3 px-3 font-medium">Actions</th>
           </tr>
@@ -390,6 +446,7 @@ function MasterTable({ category, items, onView, onEdit, onDelete, canManage }: {
               </td>
               {category.id === 'destinations' && <td className="py-3 px-3 text-muted-foreground text-xs">{String(item.country || '—')}</td>}
               {category.id === 'hotels' && (<><td className="py-3 px-3 text-muted-foreground text-xs">{String(item.destination?.name || '—')}</td><td className="py-3 px-3 text-muted-foreground text-xs">{String(item.category || '—')}</td><td className="py-3 px-3 text-muted-foreground text-xs font-medium">₹{Number(item.basePrice || 0).toLocaleString('en-IN')}</td></>)}
+              {category.id === 'drivers' && (<><td className="py-3 px-3 text-muted-foreground text-xs">{String(item.phone || '—')}</td><td className="py-3 px-3 text-muted-foreground text-xs">{String(item.vehicleName || '—')}</td><td className="py-3 px-3 text-muted-foreground text-xs">{String(item.vehicleNo || '—')}</td></>)}
               {category.id === 'suppliers' && (<><td className="py-3 px-3 text-muted-foreground capitalize text-xs">{String(item.category || '—')}</td><td className="py-3 px-3 text-muted-foreground text-xs">{String(item.city || '—')}</td><td className="py-3 px-3 text-muted-foreground text-xs">{String(item.phone || '—')}</td></>)}
               {category.id === 'activities' && (<><td className="py-3 px-3 text-muted-foreground text-xs">{String(item.destination?.name || '—')}</td><td className="py-3 px-3 text-muted-foreground text-xs font-medium">₹{Number(item.pricePerPerson || 0).toLocaleString('en-IN')}</td></>)}
               {category.id === 'transfers' && (<><td className="py-3 px-3 text-muted-foreground text-xs">{String(item.destination?.name || '—')}</td><td className="py-3 px-3 text-muted-foreground text-xs font-medium">₹{Number(item.price || 0).toLocaleString('en-IN')}</td><td className="py-3 px-3">{item.photoUrl ? <img src={item.photoUrl} alt={String(item.name || '')} className="w-14 h-9 object-cover rounded" /> : <span className="text-muted-foreground text-xs">—</span>}</td></>)}
@@ -407,18 +464,50 @@ function MasterTable({ category, items, onView, onEdit, onDelete, canManage }: {
                   </td>
                 </>
               )}
+              {['hotels', 'drivers'].includes(category.id) && (
+                <td className="py-3 px-3">
+                  {item.loginId ? (
+                    <div className="text-xs">
+                      <p className="font-bold text-gray-900">ID: {item.loginId}</p>
+                      <p className="text-muted-foreground mt-0.5">PIN: {item.loginPassword || '—'}</p>
+                      {canManage && (
+                        <button 
+                          onClick={() => onGenerateCredentials(item.id)} 
+                          disabled={generatingId === item.id}
+                          title="Reset Credentials"
+                          className="text-amber-600 hover:text-amber-700 hover:underline mt-1 font-medium flex items-center gap-0.5 text-[10px] cursor-pointer"
+                        >
+                          <RefreshCw className={cn("w-2.5 h-2.5", generatingId === item.id && "animate-spin")} /> Reset PIN
+                        </button>
+                      )}
+                    </div>
+                  ) : (
+                    canManage && (
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={() => onGenerateCredentials(item.id)}
+                        disabled={generatingId === item.id}
+                        className="h-7 text-[10px] px-2 font-semibold border-amber-300 bg-amber-50 hover:bg-amber-100 text-amber-800 flex items-center gap-1 cursor-pointer"
+                      >
+                        {generatingId === item.id ? <Loader2 className="w-3 h-3 animate-spin text-amber-600" /> : <KeyRound className="w-3 h-3 text-amber-600" />} Setup Login
+                      </Button>
+                    )
+                  )}
+                </td>
+              )}
               <td className="py-3 px-3">
                 <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${item.isActive !== false ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
                   {item.isActive !== false ? 'Active' : 'Inactive'}
                 </span>
               </td>
-                <td className="py-3 px-3 text-right">
-                  <div className="flex justify-end gap-1">
-                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onView(item)}><Eye className="w-3.5 h-3.5 text-blue-500" /></Button>
-                    {canManage && <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onEdit(item)}><Edit2 className="w-3.5 h-3.5 text-primary" /></Button>}
-                    {canManage && <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onDelete(item.id)}><Trash2 className="w-3.5 h-3.5 text-red-500" /></Button>}
-                  </div>
-                </td>
+              <td className="py-3 px-3 text-right">
+                <div className="flex justify-end gap-1">
+                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onView(item)}><Eye className="w-3.5 h-3.5 text-blue-500" /></Button>
+                  {canManage && <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onEdit(item)}><Edit2 className="w-3.5 h-3.5 text-primary" /></Button>}
+                  {canManage && <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onDelete(item.id)}><Trash2 className="w-3.5 h-3.5 text-red-500" /></Button>}
+                </div>
+              </td>
             </tr>
           ))}
         </tbody>
