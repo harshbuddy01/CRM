@@ -7,7 +7,8 @@ import { api } from '@/lib/api';
 import { format } from 'date-fns';
 import {
   ArrowLeft, Car, Building2, KeyRound, Copy, Check,
-  ChevronDown, Loader2, UserPlus, Link2, AlertTriangle, CheckCircle2
+  ChevronDown, Loader2, UserPlus, Link2, AlertTriangle, CheckCircle2,
+  MessageSquare, Mail
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
