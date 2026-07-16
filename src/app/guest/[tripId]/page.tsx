@@ -1,0 +1,533 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import { useParams } from 'next/navigation';
+import { 
+  MapPin, Navigation, Utensils, 
+  Calendar, ChevronRight, User, PhoneCall,
+  Bed, Car, ShieldAlert, MessageSquare, Plus, CheckCircle2, Map,
+  CreditCard, Download, Train, Plane, FileText, IndianRupee
+} from 'lucide-react';
+import { motion, useAnimation, useMotionValue, useTransform, AnimatePresence } from 'framer-motion';
+import { toast } from 'sonner';
+
+export default function GuestWebApp() {
+  const { tripId } = useParams();
+  
+  // Sheet drag state
+  const sheetHeight = typeof window !== 'undefined' ? window.innerHeight : 800;
+  const y = useMotionValue(0);
+  const controls = useAnimation();
+  const [sheetState, setSheetState] = useState<'collapsed' | 'expanded'>('collapsed');
+  
+  // Heights for the sheet states
+  const collapsedY = sheetHeight * 0.45;
+  const expandedY = 40;
+  const mapY = sheetHeight * 0.85;
+  
+  const [activeView, setActiveView] = useState<'home' | 'itinerary' | 'support' | 'finance'>('home');
+  const [showServiceMenu, setShowServiceMenu] = useState(false);
+  const [showSOSModal, setShowSOSModal] = useState(false);
+  const [isTracking, setIsTracking] = useState(false);
+  const [transitMode, setTransitMode] = useState<'train' | 'flight'>('flight'); // Dynamic Transit toggle
+
+  useEffect(() => {
+    controls.start({ y: collapsedY, transition: { type: 'spring', damping: 25, stiffness: 200 } });
+  }, [controls, collapsedY]);
+
+  const handleDragEnd = (event: any, info: any) => {
+    const currentY = y.get();
+    const velocityY = info.velocity.y;
+    
+    if (velocityY > 500 || currentY > collapsedY + 100) {
+      setSheetState('collapsed');
+      setIsTracking(true);
+      controls.start({ y: mapY, transition: { type: 'spring', damping: 25, stiffness: 200 } });
+    } else if (velocityY < -500 || (velocityY <= 0 && currentY < collapsedY * 0.7)) {
+      setSheetState('expanded');
+      setIsTracking(false);
+      controls.start({ y: expandedY, transition: { type: 'spring', damping: 25, stiffness: 200 } });
+    } else {
+      setSheetState('collapsed');
+      setIsTracking(false);
+      controls.start({ y: collapsedY, transition: { type: 'spring', damping: 25, stiffness: 200 } });
+    }
+  };
+
+  const trackDriver = () => {
+    setIsTracking(true);
+    controls.start({ y: mapY, transition: { type: 'spring', damping: 20, stiffness: 150 } });
+  };
+
+  const searchBarOpacity = useTransform(y, [expandedY, collapsedY], [1, 0.9]);
+  const searchBarY = useTransform(y, [expandedY, collapsedY], [0, -10]);
+  const bgBlur = useTransform(y, [expandedY, collapsedY, mapY], [8, 0, 0]);
+
+  return (
+    <div className="relative min-h-screen bg-black overflow-hidden font-sans antialiased text-gray-900 md:flex md:items-center md:justify-center">
+      
+      <div className="relative w-full h-[100vh] md:max-w-[420px] md:h-[880px] md:rounded-[44px] md:border-8 md:border-black overflow-hidden bg-white shadow-2xl">
+        
+        {/* BACKGROUND MAP/IMAGE LAYER */}
+        <motion.div 
+          className="absolute inset-0 z-0 bg-gray-200"
+          style={{ filter: `blur(${bgBlur}px)` }}
+        >
+          <AnimatePresence mode="wait">
+            {!isTracking ? (
+              <motion.img 
+                key="scenery"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                src="/pelling_sikkim_scenery.jpg" 
+                alt="Pelling" 
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <motion.div 
+                key="map"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="w-full h-full bg-[#E5E9EA] relative overflow-hidden"
+              >
+                <div className="absolute inset-0 opacity-20 bg-[linear-gradient(#9CA3AF_1px,transparent_1px),linear-gradient(90deg,#9CA3AF_1px,transparent_1px)] bg-[size:40px_40px]" />
+                <svg className="absolute inset-0 w-full h-full" viewBox="0 0 400 800">
+                  <path d="M 100 800 Q 150 500 250 400 T 350 100" fill="none" stroke="#FFFFFF" strokeWidth="16" strokeLinecap="round" />
+                  <path d="M 100 800 Q 150 500 250 400 T 350 100" fill="none" stroke="#FCD34D" strokeWidth="8" strokeLinecap="round" />
+                  <g transform="translate(350, 100)">
+                    <circle r="20" fill="#EF4444" fillOpacity="0.2" className="animate-ping" />
+                    <circle r="8" fill="#EF4444" />
+                    <path d="M-6,-20 L6,-20 L0,-10 Z" fill="#EF4444" />
+                  </g>
+                  <motion.g
+                    initial={{ x: 100, y: 700 }}
+                    animate={{ x: 250, y: 400 }}
+                    transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
+                  >
+                    <circle r="16" fill="#3B82F6" fillOpacity="0.2" />
+                    <circle r="8" fill="#3B82F6" />
+                    <Navigation className="w-5 h-5 text-white -translate-x-2.5 -translate-y-2.5 rotate-45 fill-white" />
+                  </motion.g>
+                </svg>
+                <div className="absolute top-[200px] left-1/2 -translate-x-1/2 bg-gray-900/80 backdrop-blur-md text-white px-4 py-2 rounded-full shadow-lg flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
+                  <span className="text-xs font-bold tracking-wide">Ramesh is 12 mins away (4.2 km)</span>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+          <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-black/30 pointer-events-none" />
+        </motion.div>
+
+        {/* NATIVE HEADER */}
+        <header className="absolute top-0 left-0 right-0 z-10 px-5 pt-12 pb-4 flex justify-between items-start pointer-events-none">
+          <div className="bg-white/95 backdrop-blur-md px-3 py-2 rounded-2xl shadow-lg pointer-events-auto border border-white/20">
+            <img 
+                src="/logo.jpg" 
+                alt="Imagica Holidays" 
+                className="h-8 object-contain"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).style.display = 'none';
+                  (e.target as HTMLImageElement).nextElementSibling?.classList.remove('hidden');
+                }}
+            />
+            <span className="hidden font-serif font-bold text-lg tracking-wider text-gray-900 mt-1">
+              <span className="text-[#3B82F6]">I</span>
+              <span className="text-[#8B5CF6]">M</span>
+              <span className="text-[#F97316]">A</span>
+              <span className="text-[#EF4444]">G</span>
+              <span className="text-[#F97316]">I</span>
+              <span className="text-[#8B5CF6]">C</span>
+              <span className="text-[#3B82F6]">A</span>
+            </span>
+          </div>
+          
+          <div className="flex gap-2">
+            <button 
+              onClick={() => {
+                 setIsTracking(false);
+                 controls.start({ y: collapsedY, transition: { type: 'spring', damping: 25, stiffness: 200 } });
+              }}
+              className="w-11 h-11 bg-white/95 backdrop-blur-md rounded-full shadow-lg flex items-center justify-center text-gray-700 pointer-events-auto active:scale-90 transition-transform"
+            >
+              <Map className="w-5 h-5" />
+            </button>
+            <button 
+              onClick={() => setShowSOSModal(true)}
+              className="w-11 h-11 bg-red-50 backdrop-blur-md rounded-full shadow-lg flex items-center justify-center text-red-500 pointer-events-auto active:scale-90 transition-transform border border-red-100"
+            >
+              <ShieldAlert className="w-5 h-5" />
+            </button>
+          </div>
+        </header>
+
+        {/* CONTEXTUAL LIVE PILL */}
+        <motion.div 
+          style={{ opacity: searchBarOpacity, y: searchBarY }}
+          className="absolute top-[110px] left-5 right-5 z-10"
+        >
+          <div className="bg-white/95 backdrop-blur-xl p-3.5 rounded-2xl shadow-xl border border-white/40 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="relative flex items-center justify-center w-8 h-8 rounded-full bg-blue-100">
+                <span className="absolute w-full h-full rounded-full bg-blue-400 animate-ping opacity-40" />
+                {transitMode === 'flight' ? (
+                  <Plane className="w-4 h-4 text-blue-600" />
+                ) : (
+                  <Train className="w-4 h-4 text-blue-600" />
+                )}
+              </div>
+              <div>
+                <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wide">Next Arrival</h3>
+                <p className="text-sm font-semibold text-blue-600 mt-0.5">Pickup at Bagdogra Airport</p>
+              </div>
+            </div>
+            <a href="tel:+919876543210" className="w-10 h-10 bg-green-500 hover:bg-green-600 text-white rounded-full flex items-center justify-center shadow-md active:scale-90 transition-all">
+              <PhoneCall className="w-4 h-4" />
+            </a>
+          </div>
+        </motion.div>
+
+        {/* DRAGGABLE BOTTOM SHEET */}
+        <motion.div
+          drag="y"
+          dragConstraints={{ top: expandedY, bottom: mapY }}
+          dragElastic={0.1}
+          onDragEnd={handleDragEnd}
+          animate={controls}
+          style={{ y }}
+          className="absolute left-0 right-0 bottom-[-100vh] h-[200vh] bg-[#F5F7FA] rounded-t-[36px] shadow-[0_-8px_30px_rgba(0,0,0,0.12)] z-20 overflow-hidden flex flex-col touch-none"
+        >
+          {/* WATERMARK BACKGROUND (Inside Sheet) */}
+          <div className="absolute inset-0 z-0 flex items-start pt-32 justify-center pointer-events-none overflow-hidden mix-blend-multiply">
+            <img 
+              src="/logo.jpg" 
+              alt="Watermark" 
+              className="w-80 opacity-[0.04] grayscale rotate-12 scale-150"
+              onError={(e) => (e.target as HTMLImageElement).style.display = 'none'}
+            />
+          </div>
+
+          {/* Sheet Handle */}
+          <div className="w-full flex justify-center pt-3 pb-4 cursor-grab active:cursor-grabbing relative z-10">
+            <div className="w-12 h-1.5 bg-gray-300 rounded-full" />
+          </div>
+
+          {/* Nav Tabs Inside Sheet */}
+          <div className="px-3 pb-3 flex gap-1 border-b border-gray-200 overflow-x-auto scrollbar-none relative z-10">
+            {['home', 'itinerary', 'finance', 'support'].map((tab) => (
+              <button
+                key={tab}
+                onClick={() => {
+                  setActiveView(tab as any);
+                  if (y.get() > collapsedY) {
+                    controls.start({ y: collapsedY, transition: { type: 'spring' } });
+                  }
+                }}
+                className={`flex-none px-4 py-2.5 rounded-xl text-xs font-bold capitalize transition-colors relative ${
+                  activeView === tab ? 'text-white' : 'text-gray-500 hover:bg-gray-100'
+                }`}
+              >
+                {activeView === tab && (
+                  <motion.div
+                    layoutId="activeTabPill"
+                    className="absolute inset-0 bg-blue-600 rounded-xl -z-10 shadow-md shadow-blue-600/20"
+                    transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                  />
+                )}
+                <span className="relative z-10">{tab}</span>
+              </button>
+            ))}
+          </div>
+
+          {/* Scrollable Content */}
+          <div 
+            className="flex-1 overflow-y-auto px-5 pt-4 pb-[50vh] scrollbar-none"
+            onPointerDownCapture={(e) => {
+              if (e.currentTarget.scrollTop > 0) e.stopPropagation();
+            }}
+          >
+            <AnimatePresence mode="wait">
+              
+              {/* HOME VIEW */}
+              {activeView === 'home' && (
+                <motion.div
+                  key="home"
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: 10 }}
+                  transition={{ duration: 0.2 }}
+                  className="space-y-4"
+                >
+                  {/* Driver Card with Map Tracking Button */}
+                  <div className="bg-white rounded-3xl p-4 shadow-sm border border-gray-100">
+                    <div className="flex items-center gap-4">
+                      <div className="relative">
+                        <img src="https://api.dicebear.com/7.x/notionists/svg?seed=Ramesh" alt="Driver" className="w-14 h-14 rounded-full bg-blue-50 border-2 border-blue-100 shadow-inner" />
+                        <div className="absolute -bottom-1 -right-1 bg-green-500 w-4 h-4 rounded-full border-2 border-white" />
+                      </div>
+                      <div className="flex-1">
+                        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Your Driver</span>
+                        <h3 className="text-base font-bold text-gray-900 mt-0.5">Ramesh Kumar</h3>
+                        <p className="text-xs text-gray-500 mt-1 flex items-center gap-1">
+                          <Car className="w-3.5 h-3.5 text-blue-500" /> Innova • GA-01-XX-1234
+                        </p>
+                      </div>
+                    </div>
+                    <div className="mt-4 pt-4 border-t border-gray-50 flex gap-2">
+                      <button 
+                        onClick={trackDriver}
+                        className="flex-1 bg-blue-50 hover:bg-blue-100 py-3 rounded-xl text-xs font-bold text-blue-700 flex items-center justify-center gap-2 transition-transform active:scale-95"
+                      >
+                        <Map className="w-4 h-4" /> Live Map Tracking
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Hotel Card */}
+                  <div className="bg-white rounded-3xl p-4 shadow-sm border border-gray-100">
+                    <div className="flex items-start justify-between">
+                      <div className="flex gap-3">
+                        <div className="w-12 h-12 rounded-xl bg-orange-50 border border-orange-100 flex items-center justify-center text-orange-600 font-serif font-bold shadow-sm">
+                          H4S
+                        </div>
+                        <div>
+                          <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Current Stay</span>
+                          <h3 className="text-base font-bold text-gray-900 mt-0.5">Hotel 4 Season</h3>
+                          <p className="text-xs text-gray-500 mt-0.5 flex items-center gap-1">
+                            <MapPin className="w-3.5 h-3.5" /> Pelling, Sikkim
+                          </p>
+                        </div>
+                      </div>
+                      <div className="bg-gray-50 text-gray-700 font-bold px-3 py-2 rounded-xl text-center border border-gray-100 shadow-inner">
+                        <span className="text-[10px] block opacity-70 uppercase tracking-wide">Room</span>
+                        502
+                      </div>
+                    </div>
+                    
+                    <div className="mt-5 pt-4 border-t border-gray-50 flex gap-2">
+                      <button 
+                        onClick={() => setShowServiceMenu(true)}
+                        className="flex-1 bg-orange-50 hover:bg-orange-100 py-3 rounded-xl text-xs font-bold text-orange-700 flex items-center justify-center gap-2 transition-transform active:scale-95 shadow-sm"
+                      >
+                        <Utensils className="w-4 h-4" /> Room Service
+                      </button>
+                      <button 
+                        onClick={() => toast.success("Housekeeping requested.")}
+                        className="flex-1 bg-purple-50 hover:bg-purple-100 py-3 rounded-xl text-xs font-bold text-purple-700 flex items-center justify-center gap-2 transition-transform active:scale-95 shadow-sm"
+                      >
+                        <Bed className="w-4 h-4" /> Housekeeping
+                      </button>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+
+              {/* ITINERARY VIEW (With Vouchers) */}
+              {activeView === 'itinerary' && (
+                <motion.div
+                  key="itinerary"
+                  initial={{ opacity: 0, scale: 0.98 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.98 }}
+                  transition={{ duration: 0.2 }}
+                  className="space-y-6"
+                >
+                  <div className="flex justify-between items-center">
+                    <h2 className="text-2xl font-bold text-gray-900 tracking-tight">Trip Timeline</h2>
+                    <button onClick={() => toast.success("Downloading all vouchers...")} className="bg-blue-50 text-blue-600 px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1">
+                      <Download className="w-3.5 h-3.5" /> Vouchers
+                    </button>
+                  </div>
+                  
+                  <div className="relative border-l-2 border-gray-200 ml-4 pl-6 space-y-6">
+                    <div className="relative">
+                      <div className="absolute -left-[33px] top-0.5 w-4 h-4 rounded-full bg-blue-500 border-4 border-[#F5F7FA]" />
+                      <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
+                        <span className="text-[10px] font-bold text-blue-600 uppercase tracking-wider">Today, 09:00 AM</span>
+                        <h3 className="font-bold text-gray-900 text-base mt-1">Driver Pickup</h3>
+                        <p className="text-xs text-gray-500 mt-2 flex items-center gap-1">
+                          {transitMode === 'flight' ? <Plane className="w-3 h-3" /> : <Train className="w-3 h-3" />}
+                          {transitMode === 'flight' ? 'Bagdogra Airport' : 'NJP Railway Station'}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+
+              {/* FINANCE / INVOICE VIEW */}
+              {activeView === 'finance' && (
+                <motion.div
+                  key="finance"
+                  initial={{ opacity: 0, x: 10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -10 }}
+                  transition={{ duration: 0.2 }}
+                  className="space-y-4"
+                >
+                  <h2 className="text-2xl font-bold text-gray-900 tracking-tight">Financials</h2>
+                  
+                  <div className="bg-white rounded-3xl p-5 shadow-sm border border-gray-100">
+                    <div className="flex justify-between items-center mb-6">
+                      <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 bg-red-50 text-red-500 rounded-full flex items-center justify-center">
+                          <IndianRupee className="w-6 h-6" />
+                        </div>
+                        <div>
+                          <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Pending Balance</span>
+                          <h3 className="text-2xl font-bold text-gray-900 mt-0.5">₹ 5,000</h3>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <button onClick={() => toast.info("Redirecting to Payment Gateway...")} className="w-full py-3.5 bg-gray-900 text-white font-bold rounded-2xl flex items-center justify-center gap-2 active:scale-95 transition-transform">
+                      <CreditCard className="w-5 h-5" /> Pay Pending Balance
+                    </button>
+                  </div>
+
+                  <h3 className="text-sm font-bold text-gray-900 mt-6 mb-2">Invoices</h3>
+                  <div className="bg-white rounded-2xl border border-gray-100 divide-y divide-gray-100">
+                    <div className="p-4 flex justify-between items-center">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center">
+                          <FileText className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <h4 className="text-sm font-bold text-gray-900">Advance Payment Invoice</h4>
+                          <p className="text-xs text-gray-500">Paid on 01 Jun 2026</p>
+                        </div>
+                      </div>
+                      <button onClick={() => toast.success("Downloading Invoice...")} className="w-8 h-8 rounded-full bg-gray-50 text-gray-600 flex items-center justify-center hover:bg-gray-100 transition-colors">
+                        <Download className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+
+              {/* SUPPORT VIEW */}
+              {activeView === 'support' && (
+                <motion.div
+                  key="support"
+                  initial={{ opacity: 0, x: 10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -10 }}
+                  transition={{ duration: 0.2 }}
+                  className="space-y-4"
+                >
+                  <h2 className="text-2xl font-bold text-gray-900 tracking-tight">Concierge</h2>
+                  <div className="bg-white rounded-3xl p-5 shadow-sm border border-gray-100 text-center">
+                    <div className="w-16 h-16 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <MessageSquare className="w-8 h-8 text-green-500" />
+                    </div>
+                    <h3 className="font-bold text-lg text-gray-900">WhatsApp Bridge</h3>
+                    <p className="text-xs text-gray-500 mt-2 mb-6 px-4">
+                      Chat directly with your driver or the hotel front desk via WhatsApp. Everything is synced.
+                    </p>
+                    <button className="w-full py-3.5 bg-[#25D366] text-white font-bold rounded-2xl flex items-center justify-center gap-2 active:scale-95 transition-transform shadow-lg shadow-green-500/30">
+                      <MessageSquare className="w-5 h-5" /> Open WhatsApp
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+
+            </AnimatePresence>
+          </div>
+        </motion.div>
+
+        {/* SOS Modal */}
+        <AnimatePresence>
+          {showSOSModal && (
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-gray-900/40 backdrop-blur-sm z-40 flex items-end justify-center"
+            >
+              <motion.div 
+                initial={{ y: 300 }}
+                animate={{ y: 0 }}
+                exit={{ y: 300 }}
+                transition={{ type: "spring", damping: 25, stiffness: 200 }}
+                className="w-full bg-white rounded-t-[32px] p-6 pb-10 space-y-4 max-w-[420px]"
+              >
+                <div className="w-12 h-1.5 bg-gray-200 rounded-full mx-auto mb-4" />
+                <h3 className="text-xl font-bold text-gray-900 mb-2">Emergency Hub</h3>
+                
+                <div className="space-y-3">
+                  <a href="tel:+919999999999" className="w-full py-4 bg-red-50 hover:bg-red-100 text-red-600 font-bold rounded-2xl flex items-center justify-center gap-2 transition-all border border-red-100">
+                    <Phone className="w-5 h-5" /> Imagica Escalation Line
+                  </a>
+                  <a href="tel:+919876543210" className="w-full py-4 bg-gray-50 hover:bg-gray-100 text-gray-700 font-bold rounded-2xl flex items-center justify-center gap-2 transition-all border border-gray-200">
+                    <Car className="w-5 h-5" /> Call Driver (Ramesh)
+                  </a>
+                </div>
+
+                <button 
+                  onClick={() => setShowSOSModal(false)}
+                  className="w-full py-4 bg-gray-100 text-gray-700 font-bold rounded-2xl mt-4 active:scale-95 transition-transform"
+                >
+                  Cancel
+                </button>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Room Service / Hotel Action Modal */}
+        <AnimatePresence>
+          {showServiceMenu && (
+             <motion.div 
+             initial={{ opacity: 0 }}
+             animate={{ opacity: 1 }}
+             exit={{ opacity: 0 }}
+             className="absolute inset-0 bg-gray-900/40 backdrop-blur-sm z-40 flex items-end justify-center"
+           >
+             <motion.div 
+               initial={{ y: 300 }}
+               animate={{ y: 0 }}
+               exit={{ y: 300 }}
+               transition={{ type: "spring", damping: 25, stiffness: 200 }}
+               className="w-full bg-white rounded-t-[32px] p-6 pb-10 space-y-4 max-w-[420px]"
+             >
+               <div className="w-12 h-1.5 bg-gray-200 rounded-full mx-auto mb-4" />
+               <h3 className="text-xl font-bold text-gray-900 mb-2">Request Room Service</h3>
+               
+               <div className="grid grid-cols-2 gap-3">
+                 {[
+                   { name: 'Water Bottles', icon: Utensils, color: 'text-blue-500', bg: 'bg-blue-50' },
+                   { name: 'Extra Towels', icon: Bed, color: 'text-purple-500', bg: 'bg-purple-50' },
+                   { name: 'Tea / Coffee', icon: Utensils, color: 'text-orange-500', bg: 'bg-orange-50' },
+                   { name: 'Other Item', icon: Plus, color: 'text-gray-500', bg: 'bg-gray-100' },
+                 ].map((item) => (
+                   <button 
+                     key={item.name}
+                     onClick={() => {
+                        setShowServiceMenu(false);
+                        toast.success(`${item.name} requested! Hotel front desk notified.`);
+                     }}
+                     className={`${item.bg} p-4 rounded-2xl flex flex-col items-center justify-center gap-2 active:scale-95 transition-transform border border-transparent hover:border-gray-200`}
+                   >
+                     <item.icon className={`w-6 h-6 ${item.color}`} />
+                     <span className="text-xs font-bold text-gray-800">{item.name}</span>
+                   </button>
+                 ))}
+               </div>
+
+               <button 
+                 onClick={() => setShowServiceMenu(false)}
+                 className="w-full py-4 bg-gray-100 text-gray-700 font-bold rounded-2xl mt-4 active:scale-95 transition-transform"
+               >
+                 Cancel
+               </button>
+             </motion.div>
+           </motion.div>
+          )}
+        </AnimatePresence>
+
+      </div>
+    </div>
+  );
+}
