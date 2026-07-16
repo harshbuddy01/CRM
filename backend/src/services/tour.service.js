@@ -56,9 +56,7 @@ const getTourDetails = async (id) => {
         orderBy: { paymentDate: 'desc' }
       },
       cancellation: true,
-      bookingServices: {
-        include: { hotel: true }
-      },
+      bookingServices: true,
       tourDrivers: {
         include: { driver: true }
       },
