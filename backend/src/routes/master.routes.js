@@ -21,5 +21,7 @@ router.get('/hotels', masterController.getHotels);
 router.post('/hotels', can('master.manage_hotels'), masterController.createHotel);
 router.put('/hotels/:id', can('master.manage_hotels'), masterController.updateHotel);
 router.delete('/hotels/:id', can('master.manage_hotels'), masterController.deleteHotel);
+router.post('/hotels/:id/credentials', can('master.manage_hotels'), masterController.generateHotelCredentials);
+router.post('/hotels/:id/send-credentials', can('master.manage_hotels'), masterController.sendHotelCredentialsEmail);
 
 module.exports = router;

@@ -8,13 +8,14 @@ import { toast } from 'sonner';
 import {
   Building2, Map, Car, Bed, Utensils, Palette, CalendarDays,
   Plus, Edit2, Trash2, Loader2, Search, X, Upload, ChevronRight,
-  Check, ImageIcon, Eye, KeyRound, RefreshCw
+  Check, ImageIcon, Eye, KeyRound, RefreshCw, MessageSquare, Mail
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuthStore } from '@/lib/auth-store';
 import { cn } from '@/lib/utils';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 
 const CATEGORIES = [
   { id: 'destinations', label: 'Destinations', icon: Map, color: 'bg-indigo-50 border-indigo-200 text-indigo-700', activeColor: 'bg-indigo-600 border-indigo-600 text-white', desc: 'Goa, Manali, Bali' },
@@ -101,6 +102,59 @@ function MasterPanel({ category }: { category: typeof CATEGORIES[0] }) {
   const [showForm, setShowForm] = useState(false);
   const [editItem, setEditItem] = useState<any>(null);
   const [viewItem, setViewItem] = useState<any>(null);
+
+  // Share Credentials States
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [shareItem, setShareItem] = useState<any>(null);
+  const [shareType, setShareType] = useState<'whatsapp' | 'email'>('whatsapp');
+  const [waRecipient, setWaRecipient] = useState('');
+  const [waMessage, setWaMessage] = useState('');
+  const [emailRecipient, setEmailRecipient] = useState('');
+  const [emailSubject, setEmailSubject] = useState('');
+  const [emailBody, setEmailBody] = useState('');
+
+  const sendEmailMut = useMutation({
+    mutationFn: (data: { to: string, subject: string, body: string }) => {
+      const endpoint = category.id === 'hotels' 
+        ? `/masters/hotels/${shareItem?.id}/send-credentials` 
+        : `/drivers/${shareItem?.id}/send-credentials`;
+      return api.post(endpoint, data);
+    },
+    onSuccess: () => {
+      toast.success('Credentials email sent successfully!');
+      setIsShareModalOpen(false);
+    },
+    onError: (e: any) => toast.error(e.response?.data?.message || 'Failed to send email via backend'),
+  });
+
+  const openShareModal = (item: any, type: 'whatsapp' | 'email') => {
+    setShareItem(item);
+    setShareType(type);
+    
+    const isHotel = category.id === 'hotels';
+    const partnerName = item.name || '';
+    const loginId = item.loginId || '';
+    const pin = item.loginPassword || '';
+    
+    const portalUrl = isHotel 
+      ? `https://partner.imagicaholidays.com/hotel/${item.id}` 
+      : `https://driver.imagicaholidays.com/driver/${item.id}`;
+
+    setWaRecipient(isHotel ? '' : (item.phone || ''));
+    setEmailRecipient(''); // Default to empty so they can type it
+    
+    setWaMessage(
+      `Hello ${partnerName},\n\nHere are your access credentials for the Imagica Holidays ${isHotel ? 'Hotel' : 'Driver'} Partner Portal:\n\n🔗 Link: ${portalUrl}\n👤 Login ID: ${loginId}\n🔑 Password/PIN: ${pin}\n\nThank you for partnering with Imagica Holidays!`
+    );
+    
+    setEmailSubject(`Your Imagica Holidays Partner Portal Credentials - ${partnerName}`);
+    
+    setEmailBody(
+      `Hello ${partnerName},\n\nHere are your access credentials for the Imagica Holidays ${isHotel ? 'Hotel' : 'Driver'} Partner Portal:\n\nLink: ${portalUrl}\nLogin ID: ${loginId}\nPassword/PIN: ${pin}\n\nThank you for partnering with Imagica Holidays!\n\nBest regards,\nImagica Holidays`
+    );
+    
+    setIsShareModalOpen(true);
+  };
 
   const basePath = category.id === 'drivers' ? '' : (['destinations', 'hotels'].includes(category.id) ? '/masters' : '/masters-v2');
 
@@ -219,6 +273,92 @@ function MasterPanel({ category }: { category: typeof CATEGORIES[0] }) {
            </div>
         </div>
       )}
+      {/* ── Share Credentials Modal ── */}
+      <Dialog open={isShareModalOpen} onOpenChange={setIsShareModalOpen}>
+        <DialogContent className="max-w-md w-full rounded-2xl bg-white p-6 shadow-2xl">
+          <DialogHeader className="pb-2 border-b">
+            <DialogTitle className="text-lg font-bold flex items-center gap-2">
+              {shareType === 'whatsapp' ? <MessageSquare className="text-emerald-500 w-5 h-5" /> : <Mail className="text-blue-500 w-5 h-5" />}
+              {shareType === 'whatsapp' ? 'Share via WhatsApp' : 'Share via Email'}
+            </DialogTitle>
+            <DialogDescription className="text-xs text-gray-500">
+              Review and edit the template credentials message before sharing.
+            </DialogDescription>
+          </DialogHeader>
+
+          {shareType === 'whatsapp' && (
+            <div className="space-y-4 py-4">
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Recipient Phone Number</label>
+                <Input 
+                  value={waRecipient} 
+                  onChange={(e) => setWaRecipient(e.target.value)} 
+                  placeholder="Enter phone with country code (e.g. 919876543210)"
+                  className="font-medium text-xs h-9"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Message Body</label>
+                <textarea 
+                  value={waMessage} 
+                  onChange={(e) => setWaMessage(e.target.value)} 
+                  className="w-full text-xs font-sans p-3 border border-gray-200 rounded-xl min-h-[160px] focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+                />
+              </div>
+              <Button 
+                onClick={() => {
+                  const phone = waRecipient.replace(/\D/g, '');
+                  window.open(`https://wa.me/${phone.startsWith('91') ? phone : '91' + phone}?text=${encodeURIComponent(waMessage)}`, '_blank');
+                  setIsShareModalOpen(false);
+                }} 
+                className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold h-9 text-xs"
+              >
+                Open in WhatsApp
+              </Button>
+            </div>
+          )}
+
+          {shareType === 'email' && (
+            <div className="space-y-4 py-4">
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Recipient Email</label>
+                <Input 
+                  value={emailRecipient} 
+                  onChange={(e) => setEmailRecipient(e.target.value)} 
+                  placeholder="enter.email@domain.com"
+                  type="email"
+                  className="font-medium text-xs h-9"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Subject</label>
+                <Input 
+                  value={emailSubject} 
+                  onChange={(e) => setEmailSubject(e.target.value)} 
+                  placeholder="Email Subject"
+                  className="font-medium text-xs h-9"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Message Body</label>
+                <textarea 
+                  value={emailBody} 
+                  onChange={(e) => setEmailBody(e.target.value)} 
+                  className="w-full text-xs font-sans p-3 border border-gray-200 rounded-xl min-h-[160px] focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                />
+              </div>
+              <Button 
+                onClick={() => sendEmailMut.mutate({ to: emailRecipient, subject: emailSubject, body: emailBody })} 
+                disabled={sendEmailMut.isPending}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold h-9 text-xs"
+              >
+                {sendEmailMut.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                Send via System Emailer
+              </Button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
@@ -469,18 +609,34 @@ function MasterTable({
                 <td className="py-3 px-3">
                   {item.loginId ? (
                     <div className="text-xs">
-                      <p className="font-bold text-gray-900">ID: {item.loginId}</p>
-                      <p className="text-muted-foreground mt-0.5">PIN: {item.loginPassword || '—'}</p>
-                      {canManage && (
+                      <p className="font-bold text-gray-900 font-mono">ID: {item.loginId}</p>
+                      <p className="text-muted-foreground mt-0.5 font-mono">PIN: {item.loginPassword || '—'}</p>
+                      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-1">
+                        {canManage && (
+                          <button 
+                            onClick={() => onGenerateCredentials(item.id)} 
+                            disabled={generatingId === item.id}
+                            title="Reset Credentials"
+                            className="text-amber-600 hover:text-amber-700 hover:underline font-semibold flex items-center gap-0.5 text-[9px] cursor-pointer"
+                          >
+                            <RefreshCw className={cn("w-2 h-2", generatingId === item.id && "animate-spin")} /> Reset PIN
+                          </button>
+                        )}
                         <button 
-                          onClick={() => onGenerateCredentials(item.id)} 
-                          disabled={generatingId === item.id}
-                          title="Reset Credentials"
-                          className="text-amber-600 hover:text-amber-700 hover:underline mt-1 font-medium flex items-center gap-0.5 text-[10px] cursor-pointer"
+                          onClick={() => openShareModal(item, 'whatsapp')}
+                          title="Share via WhatsApp"
+                          className="text-emerald-600 hover:text-emerald-700 hover:underline font-semibold flex items-center gap-0.5 text-[9px] cursor-pointer"
                         >
-                          <RefreshCw className={cn("w-2.5 h-2.5", generatingId === item.id && "animate-spin")} /> Reset PIN
+                          <MessageSquare className="w-2 h-2" /> WA
                         </button>
-                      )}
+                        <button 
+                          onClick={() => openShareModal(item, 'email')}
+                          title="Share via Email"
+                          className="text-blue-600 hover:text-blue-700 hover:underline font-semibold flex items-center gap-0.5 text-[9px] cursor-pointer"
+                        >
+                          <Mail className="w-2 h-2" /> Email
+                        </button>
+                      </div>
                     </div>
                   ) : (
                     canManage && (

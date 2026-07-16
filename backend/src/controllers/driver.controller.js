@@ -82,4 +82,53 @@ const remove = async (req, res, next) => {
   }
 };
 
-module.exports = { list, create, update, remove };
+const generateDriverCredentials = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const driver = await prisma.driver.findUnique({ where: { id } });
+    if (!driver || driver.deletedAt) throw new NotFoundError('Driver');
+
+    const namePart = driver.name.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 8);
+    const loginId = `drv-${namePart}`;
+    const pin = Math.floor(100000 + Math.random() * 900000).toString();
+
+    const updated = await prisma.driver.update({
+      where: { id },
+      data: { loginId, loginPassword: pin },
+    });
+
+    res.json({
+      success: true,
+      message: 'Driver portal credentials generated successfully',
+      data: {
+        loginId: updated.loginId,
+        pin,
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+const sendDriverCredentialsEmail = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { to, subject, body } = req.body;
+
+    if (!to || !subject || !body) {
+      throw new BusinessError('Recipient email, subject, and body are required');
+    }
+
+    const { sendMail } = require('../config/mailer');
+    await sendMail({
+      to,
+      subject,
+      text: body,
+      html: body.replace(/\n/g, '<br>')
+    });
+
+    res.json({ success: true, message: 'Email sent successfully via system mailer' });
+  } catch (error) {
+    next(error);
+  }
+};
+
+module.exports = { list, create, update, remove, generateDriverCredentials, sendDriverCredentialsEmail };

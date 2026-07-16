@@ -15,5 +15,7 @@ router.get('/', driverController.list);
 router.post('/', driverController.create);
 router.patch('/:id', driverController.update);
 router.delete('/:id', driverController.remove);
+router.post('/:id/credentials', driverController.generateDriverCredentials);
+router.post('/:id/send-credentials', driverController.sendDriverCredentialsEmail);
 
 module.exports = router;

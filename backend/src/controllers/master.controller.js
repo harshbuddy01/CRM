@@ -3,6 +3,8 @@
 // ============================================================
 
 const masterService = require('../services/master.service');
+const prisma = require('../config/prisma');
+const { NotFoundError, BusinessError } = require('../utils/AppError');
 
 // --- DESTINATIONS ---
 
@@ -91,6 +93,57 @@ const deleteHotel = async (req, res, next) => {
   }
 };
 
+const generateHotelCredentials = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const hotel = await prisma.hotel.findUnique({ where: { id } });
+    if (!hotel) throw new NotFoundError('Hotel');
+
+    const namePart = hotel.name.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 8);
+    const loginId = `htl-${namePart}`;
+    const pin = Math.floor(100000 + Math.random() * 900000).toString();
+
+    const updated = await prisma.hotel.update({
+      where: { id },
+      data: { loginId, loginPassword: pin },
+    });
+
+    res.json({
+      success: true,
+      message: 'Hotel portal credentials generated successfully',
+      data: {
+        loginId: updated.loginId,
+        pin,
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const sendHotelCredentialsEmail = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { to, subject, body } = req.body;
+
+    if (!to || !subject || !body) {
+      throw new BusinessError('Recipient email, subject, and body are required');
+    }
+
+    const { sendMail } = require('../config/mailer');
+    await sendMail({
+      to,
+      subject,
+      text: body,
+      html: body.replace(/\n/g, '<br>')
+    });
+
+    res.json({ success: true, message: 'Email sent successfully via system mailer' });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   getDestinations,
   createDestination,
@@ -100,4 +153,6 @@ module.exports = {
   createHotel,
   updateHotel,
   deleteHotel,
+  generateHotelCredentials,
+  sendHotelCredentialsEmail,
 };
