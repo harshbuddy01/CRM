@@ -301,12 +301,21 @@ export default function TourDispatchPage() {
         </div>
 
         {dispatch.guestCredentialsGenerated && (
-          <div className="mt-5 grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="mt-5 grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="bg-white border border-emerald-200 rounded-xl p-4 space-y-1">
               <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Username / Login ID</p>
               <div className="flex items-center justify-between">
                 <code className="text-sm font-bold text-gray-900">{dispatch.guestUsername}</code>
                 <button onClick={() => handleCopy(dispatch.guestUsername)} className="text-gray-400 hover:text-gray-700 transition-colors">
+                  {copied ? <Check className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
+            <div className="bg-white border border-emerald-200 rounded-xl p-4 space-y-1">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Password / PIN</p>
+              <div className="flex items-center justify-between">
+                <code className="text-sm font-bold text-gray-900">{dispatch.guestPin || '—'}</code>
+                <button onClick={() => handleCopy(dispatch.guestPin || '')} className="text-gray-400 hover:text-gray-700 transition-colors" disabled={!dispatch.guestPin}>
                   {copied ? <Check className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4" />}
                 </button>
               </div>
@@ -324,9 +333,27 @@ export default function TourDispatchPage() {
         )}
 
         {dispatch.guestCredentialsGenerated && (
-          <div className="mt-3 flex items-center gap-2 bg-blue-50 border border-blue-100 rounded-xl px-4 py-2.5">
-            <AlertTriangle className="w-4 h-4 text-blue-500 shrink-0" />
-            <p className="text-xs text-blue-700">The 6-digit PIN was shown once at generation. Share it with the customer via WhatsApp immediately.</p>
+          <div className="mt-4 flex flex-wrap gap-2.5">
+            <button
+              onClick={() => {
+                const message = `Hello ${dispatch.guestName || 'Guest'},\n\nHere are your access credentials for the Imagica Holidays Guest Portal:\n\n🔗 Link: ${guestLink}\n👤 Username: ${dispatch.guestUsername}\n🔑 Password/PIN: ${dispatch.guestPin || '123456'}\n\nHave a safe and wonderful trip! ✈️`;
+                const phone = dispatch.guestPhone ? dispatch.guestPhone.replace(/\D/g, '') : '';
+                window.open(`https://wa.me/${phone.startsWith('91') ? phone : '91' + phone}?text=${encodeURIComponent(message)}`, '_blank');
+              }}
+              className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs py-2 px-4 rounded-xl flex items-center gap-1.5 shadow-sm active:scale-95 transition-all"
+            >
+              <MessageSquare className="w-4 h-4" /> Send to WhatsApp
+            </button>
+            <button
+              onClick={() => {
+                const subject = `Your Imagica Holidays Guest Portal Credentials - Tour ${dispatch.tourCode}`;
+                const body = `Hello ${dispatch.guestName || 'Guest'},\n\nHere are your access credentials for the Imagica Holidays Guest Portal:\n\nLink: ${guestLink}\nUsername: ${dispatch.guestUsername}\nPassword/PIN: ${dispatch.guestPin || '123456'}\n\nHave a safe and wonderful trip!\n\nBest regards,\nImagica Holidays`;
+                window.open(`mailto:${dispatch.guestEmail || ''}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`, '_blank');
+              }}
+              className="bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs py-2 px-4 rounded-xl flex items-center gap-1.5 shadow-sm active:scale-95 transition-all"
+            >
+              <Mail className="w-4 h-4" /> Send to Email
+            </button>
           </div>
         )}
       </div>

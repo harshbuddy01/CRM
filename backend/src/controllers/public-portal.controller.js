@@ -69,7 +69,14 @@ const guestLogin = async (req, res, next) => {
       return res.status(401).json({ success: false, message: 'Invalid credentials' });
     }
 
-    const valid = await bcrypt.compare(pin, tour.guestPassword);
+    let valid = false;
+    if (tour.guestPassword) {
+      if (tour.guestPassword.startsWith('$2a$') || tour.guestPassword.startsWith('$2b$')) {
+        valid = await bcrypt.compare(pin, tour.guestPassword);
+      } else {
+        valid = pin === tour.guestPassword;
+      }
+    }
     if (!valid) {
       return res.status(401).json({ success: false, message: 'Invalid credentials' });
     }

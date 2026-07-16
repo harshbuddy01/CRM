@@ -12,7 +12,7 @@ const loadTour = async (id) => {
   const tour = await prisma.tour.findUnique({
     where: { id },
     include: {
-      query: { select: { id: true, name: true } },
+      query: { select: { id: true, name: true, phone: true, email: true } },
       tourDrivers: { include: { driver: true }, orderBy: { dayNumber: 'asc' } },
       bookingServices: {
         where: { serviceType: 'hotel' },
@@ -69,7 +69,10 @@ const getDispatch = async (req, res, next) => {
         tourId: tour.id,
         tourCode: tour.tourCode,
         guestName: tour.query?.name,
+        guestPhone: tour.query?.phone,
+        guestEmail: tour.query?.email,
         guestUsername: tour.guestUsername,
+        guestPin: tour.guestPassword,
         guestCredentialsGenerated: !!tour.guestUsername,
         startDate: tour.startDate,
         endDate: tour.endDate,
@@ -180,7 +183,7 @@ const generateGuestCredentials = async (req, res, next) => {
     if (tour.guestUsername) {
       return res.json({
         success: true,
-        data: { username: tour.guestUsername, note: 'Credentials already generated' }
+        data: { username: tour.guestUsername, pin: tour.guestPassword, note: 'Credentials already generated' }
       });
     }
 
@@ -190,19 +193,18 @@ const generateGuestCredentials = async (req, res, next) => {
 
     // Generate a 6-digit numeric PIN
     const pin = Math.floor(100000 + Math.random() * 900000).toString();
-    const hashedPin = await bcrypt.hash(pin, 10);
 
     await prisma.tour.update({
       where: { id },
-      data: { guestUsername: username, guestPassword: hashedPin },
+      data: { guestUsername: username, guestPassword: pin },
     });
 
-    // Return the plain PIN once — it won't be retrievable again
+    // Return the plain PIN
     res.json({
       success: true,
       data: {
         username,
-        pin, // Show plain PIN once to Ops agent to share with customer
+        pin, // Show plain PIN to Ops agent
         guestLink: `https://guest.imagicaholidays.com/${tour.tourCode}`,
       }
     });

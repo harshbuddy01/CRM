@@ -43,7 +43,9 @@ const allowedOrigins = [
   'https://imagicaholidays.com', 
   'https://www.imagicaholidays.com', 
   'https://crm.imagicaholidays.com',
-  'https://api.imagicaholidays.com'
+  'https://api.imagicaholidays.com',
+  'https://guest.imagicaholidays.com',
+  'https://driver.imagicaholidays.com'
 ];
 
 app.use(
