@@ -108,6 +108,7 @@ const generateDriverCredentials = async (req, res, next) => {
   } catch (error) {
     next(error);
   }
+};
 const sendDriverCredentialsEmail = async (req, res, next) => {
   try {
     const { id } = req.params;
