@@ -195,25 +195,27 @@ apiRouter.use('/', require('./routes/voucher.routes'));
 apiRouter.use('/', require('./routes/query-document.routes'));
 
 // ── Public endpoints (no auth required) for website consumption ──
-const publicRouter = express.Router();
 const wcCtrl = require('./controllers/website-content.controller');
 const websiteConfigCtrl = require('./controllers/website-config.controller');
-publicRouter.get('/journeys', wcCtrl.getPublicJourneys);
-publicRouter.get('/trending', wcCtrl.getPublicTrending);
-publicRouter.get('/website-config', websiteConfigCtrl.getWebsiteConfig);
-publicRouter.get('/vouchers/:id/download-pdf', require('./routes/voucher.routes').downloadPdfPublic);
+
+// Direct app-level public routes — mounted BEFORE apiRouter to guarantee NO auth
+// The main website (imagicaholidays.com) calls these exact URLs from its JS bundle
+app.get('/v1/public/journeys',                    wcCtrl.getPublicJourneys);
+app.get('/api/v1/public/journeys',                wcCtrl.getPublicJourneys);
+app.get('/v1/public/website-config',              websiteConfigCtrl.getWebsiteConfig);
+app.get('/api/v1/public/website-config',          websiteConfigCtrl.getWebsiteConfig);
+app.get('/v1/public/trending',                    wcCtrl.getPublicTrending);
+app.get('/api/v1/public/trending',                wcCtrl.getPublicTrending);
+// Legacy URL used by the live imagicaholidays.com website JS bundle
+app.get('/v1/website-configs/public',             websiteConfigCtrl.getWebsiteConfig);
+app.get('/api/v1/website-configs/public',         websiteConfigCtrl.getWebsiteConfig);
 
 // ── Portal APIs (Guest, Driver, Hotel) ──
 const portalRoutes = require('./routes/public-portal.routes');
-
-// Mount BOTH the original public routes AND the new portal routes
-app.use('/v1/public', publicRouter);
-app.use('/api/v1/public', publicRouter);
 app.use('/v1/public', portalRoutes);
 app.use('/api/v1/public', portalRoutes);
 
-// Mount the router under both prefixes
-
+// Mount the authenticated API router under both prefixes
 app.use('/v1', apiRouter);
 app.use('/api/v1', apiRouter);
 
