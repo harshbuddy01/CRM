@@ -14,6 +14,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuthStore } from '@/lib/auth-store';
+import { cn } from '@/lib/utils';
 
 const CATEGORIES = [
   { id: 'destinations', label: 'Destinations', icon: Map, color: 'bg-indigo-50 border-indigo-200 text-indigo-700', activeColor: 'bg-indigo-600 border-indigo-600 text-white', desc: 'Goa, Manali, Bali' },
