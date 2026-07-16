@@ -61,7 +61,10 @@ const guestLogin = async (req, res, next) => {
     if (!username || !pin) throw new BusinessError('Username and PIN are required');
 
     const tour = await prisma.tour.findFirst({
-      where: { guestUsername: username, deletedAt: null },
+      where: {
+        guestUsername: { equals: username, mode: 'insensitive' },
+        deletedAt: null
+      },
       include: { query: { select: { name: true, destination: true } } },
     });
 
@@ -102,8 +105,11 @@ const getGuestTrip = async (req, res, next) => {
   try {
     const { tourCode } = req.params;
 
-    const tour = await prisma.tour.findUnique({
-      where: { tourCode },
+    const tour = await prisma.tour.findFirst({
+      where: {
+        tourCode: { equals: tourCode, mode: 'insensitive' },
+        deletedAt: null
+      },
       include: {
         query: { select: { name: true, phone: true, email: true, destination: true, adults: true, children: true } },
         proposal: {
