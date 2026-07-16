@@ -1,18 +1,49 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { 
   MapPin, PhoneCall, CheckCircle2, User, Car, 
-  IndianRupee, Plane, Train, MessageSquare, AlertTriangle, Clock
+  IndianRupee, Plane, Train, MessageSquare, AlertTriangle, Clock, Loader2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
+
+const API = process.env.NEXT_PUBLIC_API_URL;
 
 export default function DriverWebApp() {
   const { driverId } = useParams();
   const [activeTab, setActiveTab] = useState<'trips' | 'earnings'>('trips');
   const [transitMode] = useState<'flight' | 'train'>('flight');
+  
+  const [driver, setDriver] = useState<any>(null);
+  const [trips, setTrips] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!driverId) return;
+    fetch(`${API}/public/driver/${driverId}`)
+      .then(r => r.json())
+      .then(res => {
+        if (res.success) {
+          setDriver(res.data.driver);
+          setTrips(res.data.trips || []);
+        }
+      })
+      .catch(() => toast.error('Failed to load driver data'))
+      .finally(() => setLoading(false));
+  }, [driverId]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+        <div className="text-center text-white">
+          <Loader2 className="w-10 h-10 animate-spin mx-auto mb-4 text-blue-400" />
+          <p className="text-sm font-semibold text-white/60">Loading Driver Portal...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-100 flex justify-center items-center font-sans antialiased text-gray-900 md:p-6">
@@ -54,7 +85,8 @@ export default function DriverWebApp() {
             </div>
             <div className="text-right">
               <h1 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Driver Portal</h1>
-              <h2 className="text-sm font-bold mt-0.5 text-blue-400">Ramesh Kumar</h2>
+              <h2 className="text-sm font-bold mt-0.5 text-blue-400">{driver?.name || 'Driver'}</h2>
+              <p className="text-[10px] text-gray-400">{driver?.vehicleNo}</p>
             </div>
           </div>
           
@@ -88,64 +120,70 @@ export default function DriverWebApp() {
                 className="space-y-4"
               >
                 <div className="flex justify-between items-center">
-                  <h3 className="font-bold text-gray-900 text-lg">Next Assignment</h3>
-                  <span className="bg-blue-100 text-blue-700 text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wider">Today</span>
+                  <h3 className="font-bold text-gray-900 text-lg">Your Assignments</h3>
+                  <span className="bg-blue-100 text-blue-700 text-[10px] font-bold px-2.5 py-1 rounded uppercase tracking-wider">
+                    {trips.length} Trip(s)
+                  </span>
                 </div>
 
-                <div className="bg-white/90 backdrop-blur-sm rounded-3xl p-5 shadow-sm border border-gray-100">
-                  <div className="flex items-center gap-4 border-b border-gray-100 pb-4 mb-4">
-                    <div className="w-12 h-12 bg-blue-50 rounded-full flex items-center justify-center text-blue-600 shrink-0">
-                      <User className="w-6 h-6" />
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <h4 className="font-bold text-gray-900 text-lg">Sumeet Customer</h4>
-                        <span className="text-[10px] font-bold text-gray-500 bg-gray-100 px-2 py-1 rounded tracking-wider border border-gray-200">ID: ETHNO-38024</span>
-                      </div>
-                      <p className="text-xs text-gray-500 mt-0.5">2 Passengers • 4 Bags</p>
-                    </div>
+                {trips.length === 0 ? (
+                  <div className="bg-white rounded-3xl p-8 text-center border border-gray-150">
+                    <Clock className="w-10 h-10 text-gray-300 mx-auto mb-2" />
+                    <p className="text-sm font-semibold text-gray-500">No upcoming duty assigned.</p>
                   </div>
-
-                  <div className="space-y-4 relative before:absolute before:inset-0 before:ml-[11px] before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-gray-200 before:to-transparent">
-                    {/* Pickup */}
-                    <div className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
-                      <div className="flex items-center justify-center w-6 h-6 rounded-full border-4 border-white bg-blue-500 text-white shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2">
-                        {transitMode === 'flight' ? <Plane className="w-3 h-3" /> : <Train className="w-3 h-3" />}
+                ) : (
+                  trips.map((trip: any, idx: number) => (
+                    <div key={idx} className="bg-white/90 backdrop-blur-sm rounded-3xl p-5 shadow-sm border border-gray-100 space-y-4">
+                      <div className="flex items-center gap-4 border-b border-gray-100 pb-4">
+                        <div className="w-12 h-12 bg-blue-50 rounded-full flex items-center justify-center text-blue-600 shrink-0">
+                          <User className="w-6 h-6" />
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <h4 className="font-bold text-gray-900 text-base">{trip.guestName}</h4>
+                            <span className="text-[9px] font-bold text-gray-500 bg-gray-100 px-2 py-0.5 rounded border border-gray-250">ID: {trip.tourCode}</span>
+                          </div>
+                          <p className="text-xs text-gray-500 mt-0.5">Day {trip.dayNumber} Assignment • {trip.date}</p>
+                        </div>
                       </div>
-                      <div className="w-[calc(100%-2.5rem)] md:w-[calc(50%-2.5rem)] p-3 rounded border border-gray-100 bg-gray-50/80 shadow-sm">
-                        <span className="font-bold text-xs text-blue-600">Pickup @ 09:00 AM</span>
-                        <p className="text-xs text-gray-700 mt-1">{transitMode === 'flight' ? 'Bagdogra Airport (IXB)' : 'NJP Railway Station'}</p>
+
+                      <div className="space-y-4 relative before:absolute before:inset-0 before:ml-[11px] before:-translate-x-px before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-gray-200 before:to-transparent">
+                        {/* Pickup */}
+                        <div className="relative flex items-center justify-between group">
+                          <div className="flex items-center justify-center w-6 h-6 rounded-full border-4 border-white bg-blue-500 text-white shadow shrink-0">
+                            <Plane className="w-3 h-3" />
+                          </div>
+                          <div className="w-[calc(100%-2.5rem)] p-3 rounded-xl border border-gray-100 bg-gray-50/80 shadow-sm">
+                            <span className="font-bold text-xs text-blue-600">Pickup Location</span>
+                            <p className="text-xs text-gray-700 mt-1">Sikkim Tour Sightseeing / Airport Pickup</p>
+                          </div>
+                        </div>
+
+                        {/* Drop */}
+                        {trip.hotel && (
+                          <div className="relative flex items-center justify-between group">
+                            <div className="flex items-center justify-center w-6 h-6 rounded-full border-4 border-white bg-orange-500 text-white shadow shrink-0">
+                              <MapPin className="w-3 h-3" />
+                            </div>
+                            <div className="w-[calc(100%-2.5rem)] p-3 rounded-xl border border-gray-100 bg-gray-50/80 shadow-sm">
+                              <span className="font-bold text-xs text-orange-600">Drop-off Destination</span>
+                              <p className="text-xs text-gray-700 mt-1">{trip.hotel}</p>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="mt-5 grid grid-cols-2 gap-3">
+                        <a href={`tel:+91${trip.guestPhone}`} className="bg-green-50 hover:bg-green-100 border border-green-200 text-green-700 font-bold text-xs py-3 rounded-xl flex items-center justify-center gap-2 active:scale-95 transition-all">
+                          <PhoneCall className="w-4 h-4" /> Call Guest
+                        </a>
+                        <button onClick={() => toast.success("Trip marked as active!")} className="bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs py-3 rounded-xl flex items-center justify-center gap-2 active:scale-95 transition-all shadow-md">
+                          <Car className="w-4 h-4" /> Start Duty
+                        </button>
                       </div>
                     </div>
-
-                    {/* Drop */}
-                    <div className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
-                      <div className="flex items-center justify-center w-6 h-6 rounded-full border-4 border-white bg-orange-500 text-white shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2">
-                        <MapPin className="w-3 h-3" />
-                      </div>
-                      <div className="w-[calc(100%-2.5rem)] md:w-[calc(50%-2.5rem)] p-3 rounded border border-gray-100 bg-gray-50/80 shadow-sm">
-                        <span className="font-bold text-xs text-orange-600">Drop-off</span>
-                        <p className="text-xs text-gray-700 mt-1">Hotel 4 Season, Pelling</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="mt-5 grid grid-cols-2 gap-3">
-                    <a href="tel:+919876543210" className="bg-green-50 hover:bg-green-100 border border-green-200 text-green-700 font-bold text-xs py-3 rounded-xl flex items-center justify-center gap-2 active:scale-95 transition-all">
-                      <PhoneCall className="w-4 h-4" /> Call Guest
-                    </a>
-                    <button onClick={() => toast.success("Trip Started!")} className="bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs py-3 rounded-xl flex items-center justify-center gap-2 active:scale-95 transition-all shadow-md">
-                      <Car className="w-4 h-4" /> Start Trip
-                    </button>
-                  </div>
-                </div>
-
-                <div className="bg-orange-50 border border-orange-100 rounded-2xl p-4 flex gap-3 items-start shadow-sm">
-                  <AlertTriangle className="w-5 h-5 text-orange-500 shrink-0" />
-                  <p className="text-xs text-orange-800 leading-relaxed font-medium">
-                    Guest has pending payment of ₹5,000. Please collect cash at drop-off.
-                  </p>
-                </div>
+                  ))
+                )}
               </motion.div>
             )}
 

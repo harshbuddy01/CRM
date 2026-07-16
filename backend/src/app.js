@@ -203,8 +203,10 @@ publicRouter.get('/trending', wcCtrl.getPublicTrending);
 publicRouter.get('/website-config', websiteConfigCtrl.getWebsiteConfig);
 publicRouter.get('/vouchers/:id/download-pdf', require('./routes/voucher.routes').downloadPdfPublic);
 
-app.use('/v1/public', publicRouter);
-app.use('/api/v1/public', publicRouter);
+// ── Portal APIs (Guest, Driver, Hotel) ──
+const portalRoutes = require('./routes/public-portal.routes');
+app.use('/v1/public', portalRoutes);
+app.use('/api/v1/public', portalRoutes);
 
 // Mount the router under both prefixes
 

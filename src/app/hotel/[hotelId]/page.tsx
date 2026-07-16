@@ -1,18 +1,51 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { 
   Building2, Users, IndianRupee, MessageSquare, 
   Calendar, Bed, Utensils, Clock, CheckCircle2,
-  FileText
+  FileText, Loader2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 
+const API = process.env.NEXT_PUBLIC_API_URL;
+
 export default function HotelPartnerWebApp() {
-  const { hotelId } = useParams();
+  const { hotelId } = useParams(); // e.g. "Hotel 4 Season"
   const [activeTab, setActiveTab] = useState<'guests' | 'requests' | 'finance'>('guests');
+  
+  const [hotelName, setHotelName] = useState('');
+  const [guests, setGuests] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!hotelId) return;
+    const decodedName = decodeURIComponent(hotelId as string);
+    
+    fetch(`${API}/public/hotel/${encodeURIComponent(decodedName)}/guests`)
+      .then(r => r.json())
+      .then(res => {
+        if (res.success) {
+          setHotelName(res.data.hotelName);
+          setGuests(res.data.guests || []);
+        }
+      })
+      .catch(() => toast.error('Failed to load hotel bookings'))
+      .finally(() => setLoading(false));
+  }, [hotelId]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-slate-900 flex items-center justify-center">
+        <div className="text-center text-white">
+          <Loader2 className="w-10 h-10 animate-spin mx-auto mb-4 text-orange-400" />
+          <p className="text-sm font-semibold text-white/60">Loading Hotel Partner Portal...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-100 flex justify-center items-center font-sans antialiased text-gray-900 md:p-6">
@@ -95,52 +128,59 @@ export default function HotelPartnerWebApp() {
                 className="space-y-4"
               >
                 <div className="flex justify-between items-center mb-2">
-                  <h3 className="font-bold text-gray-900 text-lg">Today's Arrivals</h3>
-                  <span className="text-xs font-bold text-gray-500 bg-gray-200 px-2 py-1 rounded-md">1 Booking</span>
+                  <h3 className="font-bold text-gray-900 text-lg">Upcoming Bookings</h3>
+                  <span className="text-xs font-bold text-gray-500 bg-gray-200 px-2.5 py-1 rounded-md">
+                    {guests.length} Booking(s)
+                  </span>
                 </div>
 
-                <div className="bg-white/90 backdrop-blur-sm rounded-3xl p-5 shadow-sm border border-gray-100">
-                  <div className="flex justify-between items-start mb-4">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded uppercase tracking-wider">Confirmed</span>
-                        <span className="text-[10px] font-bold text-gray-500 bg-gray-100 px-2 py-1 rounded tracking-wider border border-gray-200">ID: ETHNO-38024</span>
+                {guests.length === 0 ? (
+                  <div className="bg-white rounded-3xl p-8 text-center border border-gray-150">
+                    <Building2 className="w-10 h-10 text-gray-300 mx-auto mb-2" />
+                    <p className="text-sm font-semibold text-gray-500">No arrivals registered at the moment.</p>
+                  </div>
+                ) : (
+                  guests.map((g: any, idx: number) => (
+                    <div key={idx} className="bg-white/90 backdrop-blur-sm rounded-3xl p-5 shadow-sm border border-gray-100 space-y-4">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className={`text-[9px] font-bold px-2 py-0.5 rounded uppercase tracking-wider ${
+                              g.status === 'running' ? 'bg-emerald-100 text-emerald-700' : 'bg-blue-100 text-blue-700'
+                            }`}>
+                              {g.status === 'running' ? 'Active Now' : 'Confirmed'}
+                            </span>
+                            <span className="text-[9px] font-bold text-gray-500 bg-gray-100 px-2 py-0.5 rounded tracking-wider border border-gray-200">ID: {g.tourCode}</span>
+                          </div>
+                          <h4 className="font-bold text-gray-900 text-lg mt-2">{g.guestName}</h4>
+                          <p className="text-xs text-gray-500 flex items-center gap-1 mt-1">
+                            <Users className="w-3.5 h-3.5" /> {g.adults || 2} Adults, {g.children || 0} Children
+                          </p>
+                        </div>
                       </div>
-                      <h4 className="font-bold text-gray-900 text-lg mt-2">Sumeet Customer</h4>
-                      <p className="text-xs text-gray-500 flex items-center gap-1 mt-1">
-                        <Users className="w-3.5 h-3.5" /> 2 Adults, 0 Children
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <span className="text-xs font-bold text-gray-400">ETA</span>
-                      <p className="font-bold text-orange-600 text-sm mt-0.5">02:00 PM</p>
-                    </div>
-                  </div>
 
-                  <div className="bg-gray-50/80 p-3 rounded-xl border border-gray-100 grid grid-cols-2 gap-2 mb-4">
-                    <div>
-                      <span className="block text-[10px] text-gray-400 font-bold uppercase">Check-in</span>
-                      <span className="text-xs font-bold text-gray-700">08 Jun 2026</span>
-                    </div>
-                    <div>
-                      <span className="block text-[10px] text-gray-400 font-bold uppercase">Check-out</span>
-                      <span className="text-xs font-bold text-gray-700">10 Jun 2026</span>
-                    </div>
-                    <div className="col-span-2 pt-2 border-t border-gray-200 mt-1">
-                      <span className="block text-[10px] text-gray-400 font-bold uppercase">Room Type</span>
-                      <span className="text-xs font-bold text-gray-700">Premium Valley View (MAP Plan)</span>
-                    </div>
-                  </div>
+                      <div className="bg-gray-50/80 p-3 rounded-xl border border-gray-100 grid grid-cols-2 gap-2">
+                        <div>
+                          <span className="block text-[10px] text-gray-400 font-bold uppercase">Check-in</span>
+                          <span className="text-xs font-bold text-gray-700">{g.checkIn ? new Date(g.checkIn).toLocaleDateString() : 'Pending'}</span>
+                        </div>
+                        <div>
+                          <span className="block text-[10px] text-gray-400 font-bold uppercase">Check-out</span>
+                          <span className="text-xs font-bold text-gray-700">{g.checkOut ? new Date(g.checkOut).toLocaleDateString() : 'Pending'}</span>
+                        </div>
+                      </div>
 
-                  <div className="flex gap-2">
-                    <button onClick={() => toast.success("Guest Checked In!")} className="flex-1 bg-green-50 hover:bg-green-100 text-green-700 font-bold text-xs py-2.5 rounded-xl transition-colors border border-green-200 shadow-sm flex justify-center items-center gap-1">
-                      <CheckCircle2 className="w-4 h-4" /> Check-in
-                    </button>
-                    <a href="tel:+919876543210" className="flex-1 bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold text-xs py-2.5 rounded-xl transition-colors border border-blue-200 shadow-sm flex justify-center items-center gap-1">
-                      <MessageSquare className="w-4 h-4" /> WhatsApp
-                    </a>
-                  </div>
-                </div>
+                      <div className="flex gap-2">
+                        <button onClick={() => toast.success("Guest Checked In successfully!")} className="flex-1 bg-green-50 hover:bg-green-100 text-green-700 font-bold text-xs py-2.5 rounded-xl transition-colors border border-green-200 shadow-sm flex justify-center items-center gap-1">
+                          <CheckCircle2 className="w-4 h-4" /> Check-in
+                        </button>
+                        <a href={`tel:+91${g.guestPhone}`} className="flex-1 bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold text-xs py-2.5 rounded-xl transition-colors border border-blue-200 shadow-sm flex justify-center items-center gap-1">
+                          <MessageSquare className="w-4 h-4" /> Call Guest
+                        </a>
+                      </div>
+                    </div>
+                  ))
+                )}
               </motion.div>
             )}
 

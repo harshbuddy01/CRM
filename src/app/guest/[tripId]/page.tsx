@@ -1,26 +1,49 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { 
   MapPin, Navigation, Utensils, 
   Calendar, ChevronRight, User, PhoneCall,
   Bed, Car, ShieldAlert, MessageSquare, Plus, CheckCircle2, Map,
-  CreditCard, Download, Train, Plane, FileText, IndianRupee
+  CreditCard, Download, Train, Plane, FileText, IndianRupee, Loader2
 } from 'lucide-react';
 import { motion, useAnimation, useMotionValue, useTransform, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 
+const API = process.env.NEXT_PUBLIC_API_URL;
+
 export default function GuestWebApp() {
   const { tripId } = useParams();
+  const router = useRouter();
   
-  // Sheet drag state
+  // ── Live data state ──────────────────────────────────────
+  const [trip, setTrip] = useState<any>(null);
+  const [loadingTrip, setLoadingTrip] = useState(true);
+
+  useEffect(() => {
+    const tourCode = tripId as string;
+    if (!tourCode) return;
+
+    fetch(`${API}/public/guest/${tourCode}`)
+      .then(r => r.json())
+      .then(data => {
+        if (data.success) setTrip(data.data);
+        else {
+          // If not found, redirect to login
+          router.replace('/guest/login');
+        }
+      })
+      .catch(() => toast.error('Failed to load trip data'))
+      .finally(() => setLoadingTrip(false));
+  }, [tripId, router]);
+
+  // ── Sheet drag state ──────────────────────────────────────
   const sheetHeight = typeof window !== 'undefined' ? window.innerHeight : 800;
   const y = useMotionValue(0);
   const controls = useAnimation();
   const [sheetState, setSheetState] = useState<'collapsed' | 'expanded'>('collapsed');
   
-  // Heights for the sheet states
   const collapsedY = sheetHeight * 0.45;
   const expandedY = 40;
   const mapY = sheetHeight * 0.85;
@@ -29,11 +52,13 @@ export default function GuestWebApp() {
   const [showServiceMenu, setShowServiceMenu] = useState(false);
   const [showSOSModal, setShowSOSModal] = useState(false);
   const [isTracking, setIsTracking] = useState(false);
-  const [transitMode, setTransitMode] = useState<'train' | 'flight'>('flight'); // Dynamic Transit toggle
+  const [transitMode, setTransitMode] = useState<'train' | 'flight'>('flight');
 
   useEffect(() => {
     controls.start({ y: collapsedY, transition: { type: 'spring', damping: 25, stiffness: 200 } });
   }, [controls, collapsedY]);
+
+
 
   const handleDragEnd = (event: any, info: any) => {
     const currentY = y.get();
@@ -62,6 +87,38 @@ export default function GuestWebApp() {
   const searchBarOpacity = useTransform(y, [expandedY, collapsedY], [1, 0.9]);
   const searchBarY = useTransform(y, [expandedY, collapsedY], [0, -10]);
   const bgBlur = useTransform(y, [expandedY, collapsedY, mapY], [8, 0, 0]);
+
+  // ── Derived live data (fallback to demo if API not ready) ──
+  const driver = trip?.currentDay?.driver;
+  const hotel = trip?.currentDay?.hotel;
+  const balance = trip?.finance?.balanceDue ?? 5000;
+  const guestName = trip?.guestName ?? 'Traveller';
+  const destination = trip?.destination ?? 'Your Destination';
+
+  const handleSOS = async () => {
+    try {
+      await fetch(`${API}/public/guest/${tripId}/sos`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: 'Emergency help needed' }),
+      });
+      toast.error('🚨 SOS Sent! Imagica Holidays ops team & your driver have been alerted.', { duration: 6000 });
+    } catch {
+      toast.error('SOS failed to send. Please call directly.');
+    }
+    setShowSOSModal(false);
+  };
+
+  if (loadingTrip) {
+    return (
+      <div className="min-h-screen bg-slate-900 flex items-center justify-center">
+        <div className="text-center text-white">
+          <Loader2 className="w-10 h-10 animate-spin mx-auto mb-4 text-blue-400" />
+          <p className="text-sm font-semibold text-white/60">Loading your trip...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="relative min-h-screen bg-black overflow-hidden font-sans antialiased text-gray-900 md:flex md:items-center md:justify-center">
@@ -260,18 +317,18 @@ export default function GuestWebApp() {
                   transition={{ duration: 0.2 }}
                   className="space-y-4"
                 >
-                  {/* Driver Card with Map Tracking Button */}
+                  {/* Driver Card */}
                   <div className="bg-white rounded-3xl p-4 shadow-sm border border-gray-100">
                     <div className="flex items-center gap-4">
                       <div className="relative">
-                        <img src="https://api.dicebear.com/7.x/notionists/svg?seed=Ramesh" alt="Driver" className="w-14 h-14 rounded-full bg-blue-50 border-2 border-blue-100 shadow-inner" />
+                        <img src={`https://api.dicebear.com/7.x/notionists/svg?seed=${driver?.name || 'driver'}`} alt="Driver" className="w-14 h-14 rounded-full bg-blue-50 border-2 border-blue-100 shadow-inner" />
                         <div className="absolute -bottom-1 -right-1 bg-green-500 w-4 h-4 rounded-full border-2 border-white" />
                       </div>
                       <div className="flex-1">
                         <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Your Driver</span>
-                        <h3 className="text-base font-bold text-gray-900 mt-0.5">Ramesh Kumar</h3>
+                        <h3 className="text-base font-bold text-gray-900 mt-0.5">{driver?.name || 'Driver Not Yet Assigned'}</h3>
                         <p className="text-xs text-gray-500 mt-1 flex items-center gap-1">
-                          <Car className="w-3.5 h-3.5 text-blue-500" /> Innova • GA-01-XX-1234
+                          <Car className="w-3.5 h-3.5 text-blue-500" /> {driver ? `${driver.vehicleName} • ${driver.vehicleNo}` : 'Contact Imagica Holidays'}
                         </p>
                       </div>
                     </div>
@@ -282,6 +339,9 @@ export default function GuestWebApp() {
                       >
                         <Map className="w-4 h-4" /> Live Map Tracking
                       </button>
+                      <a href={driver?.phone ? `tel:+91${driver.phone}` : 'tel:+919876543210'} className="flex-1 bg-blue-50 hover:bg-blue-100 py-3 rounded-xl text-xs font-bold text-blue-700 flex items-center justify-center gap-2 transition-transform active:scale-95">
+                        <PhoneCall className="w-4 h-4" /> Call Driver
+                      </a>
                     </div>
                   </div>
 
@@ -301,7 +361,7 @@ export default function GuestWebApp() {
                       <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
                       <div className="absolute bottom-4 left-4 right-4">
                         <span className="text-[10px] font-bold text-orange-400 uppercase tracking-widest mb-1 block">Current Stay</span>
-                        <h3 className="text-2xl font-bold text-white drop-shadow-lg tracking-tight">Hotel 4 Season</h3>
+                        <h3 className="text-2xl font-bold text-white drop-shadow-lg tracking-tight">{hotel || 'Hotel Not Yet Assigned'}</h3>
                         <p className="text-xs text-gray-300 mt-1.5 flex items-center gap-1 font-medium">
                           <MapPin className="w-3.5 h-3.5 text-orange-400" /> Pelling, Sikkim • <span className="underline decoration-gray-400 cursor-pointer hover:text-white transition-colors">View Map</span>
                         </p>
@@ -343,25 +403,50 @@ export default function GuestWebApp() {
                   transition={{ duration: 0.2 }}
                   className="space-y-6"
                 >
-                  <div className="flex justify-between items-center">
-                    <h2 className="text-2xl font-bold text-gray-900 tracking-tight">Trip Timeline</h2>
+                  <h2 className="text-2xl font-bold text-gray-900 tracking-tight">Trip Timeline</h2>
                     <button onClick={() => toast.success("Downloading all vouchers...")} className="bg-blue-50 text-blue-600 px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1">
                       <Download className="w-3.5 h-3.5" /> Vouchers
                     </button>
                   </div>
                   
+
+                  {/* Itinerary days from live API */}
                   <div className="relative border-l-2 border-gray-200 ml-4 pl-6 space-y-6">
-                    <div className="relative">
-                      <div className="absolute -left-[33px] top-0.5 w-4 h-4 rounded-full bg-blue-500 border-4 border-[#F5F7FA]" />
-                      <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
-                        <span className="text-[10px] font-bold text-blue-600 uppercase tracking-wider">Today, 09:00 AM</span>
-                        <h3 className="font-bold text-gray-900 text-base mt-1">Driver Pickup</h3>
-                        <p className="text-xs text-gray-500 mt-2 flex items-center gap-1">
-                          {transitMode === 'flight' ? <Plane className="w-3 h-3" /> : <Train className="w-3 h-3" />}
-                          {transitMode === 'flight' ? 'Bagdogra Airport' : 'NJP Railway Station'}
-                        </p>
+                    {(trip?.itinerary || []).length > 0 ? (
+                      (trip.itinerary as any[]).map((day: any) => (
+                        <div key={day.dayNumber} className="relative">
+                          <div className="absolute -left-[33px] top-0.5 w-4 h-4 rounded-full bg-blue-500 border-4 border-[#F5F7FA]" />
+                          <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
+                            <span className="text-[10px] font-bold text-blue-600 uppercase tracking-wider">{day.date}</span>
+                            <h3 className="font-bold text-gray-900 text-base mt-1">{day.title}</h3>
+                            {day.hotel && (
+                              <p className="text-xs text-orange-600 font-semibold mt-1.5 flex items-center gap-1">
+                                🏨 {day.hotel}
+                              </p>
+                            )}
+                            {day.description && <p className="text-xs text-gray-500 mt-2">{day.description}</p>}
+                            {(day.events || []).map((ev: any, i: number) => (
+                              <p key={i} className="text-xs text-gray-600 mt-1.5 flex items-start gap-1.5">
+                                <span className="text-gray-400 mt-0.5">•</span> {ev.title}
+                              </p>
+                            ))}
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      // Fallback single day card
+                      <div className="relative">
+                        <div className="absolute -left-[33px] top-0.5 w-4 h-4 rounded-full bg-blue-500 border-4 border-[#F5F7FA]" />
+                        <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
+                          <span className="text-[10px] font-bold text-blue-600 uppercase tracking-wider">Today, 09:00 AM</span>
+                          <h3 className="font-bold text-gray-900 text-base mt-1">Driver Pickup</h3>
+                          <p className="text-xs text-gray-500 mt-2 flex items-center gap-1">
+                            {transitMode === 'flight' ? <Plane className="w-3 h-3" /> : <Train className="w-3 h-3" />}
+                            {transitMode === 'flight' ? 'Bagdogra Airport' : 'NJP Railway Station'}
+                          </p>
+                        </div>
                       </div>
-                    </div>
+                    )}
                   </div>
                 </motion.div>
               )}
@@ -386,7 +471,7 @@ export default function GuestWebApp() {
                         </div>
                         <div>
                           <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Pending Balance</span>
-                          <h3 className="text-2xl font-bold text-gray-900 mt-0.5">₹ 5,000</h3>
+                          <h3 className="text-2xl font-bold text-gray-900 mt-0.5">₹ {Number(balance).toLocaleString('en-IN')}</h3>
                         </div>
                       </div>
                     </div>
