@@ -311,7 +311,7 @@ const getDriverTrips = async (req, res, next) => {
     });
 
     // Fetch live settlements / payouts (recorded supplier payments under Billing tab)
-    const payments = await prisma.payment.findMany({
+    const payments = await prisma.vendorPayment.findMany({
       where: {
         vendorName: { contains: driver.name, mode: 'insensitive' },
         deletedAt: null,
@@ -401,7 +401,7 @@ const getHotelGuests = async (req, res, next) => {
     }));
 
     // Fetch live settlements / payments matching hotel name
-    const payments = await prisma.payment.findMany({
+    const payments = await prisma.vendorPayment.findMany({
       where: {
         vendorName: { contains: decodedName, mode: 'insensitive' },
         deletedAt: null,
