@@ -1,11 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { 
   Building2, Users, IndianRupee, MessageSquare, 
   Calendar, Bed, Utensils, Clock, CheckCircle2,
-  FileText, Loader2
+  FileText, Loader2, LogOut
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
@@ -13,35 +13,56 @@ import { toast } from 'sonner';
 const API = process.env.NEXT_PUBLIC_API_URL;
 
 export default function HotelPartnerWebApp() {
-  const { hotelId } = useParams(); // e.g. "Hotel 4 Season"
+  const { hotelId } = useParams();
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<'guests' | 'requests' | 'finance'>('guests');
   
   const [hotelName, setHotelName] = useState('');
   const [guests, setGuests] = useState<any[]>([]);
+  const [settlements, setSettlements] = useState<any[]>([]);
+  const [financials, setFinancials] = useState<any>({ totalBilling: 0, amountReceived: 0, amountPending: 0 });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!hotelId) return;
-    const decodedName = decodeURIComponent(hotelId as string);
     
-    fetch(`${API}/public/hotel/${encodeURIComponent(decodedName)}/guests`)
+    const authStr = localStorage.getItem('imagica_hotel_auth');
+    if (!authStr) {
+      router.push('/hotel/login');
+      return;
+    }
+    const auth = JSON.parse(authStr);
+    // Support matching both ID or raw name to cover fallback URLs
+    if (auth.hotelId !== hotelId && auth.hotelName !== decodeURIComponent(hotelId as string)) {
+      router.push('/hotel/login');
+      return;
+    }
+
+    fetch(`${API}/public/hotel/${hotelId}/guests`)
       .then(r => r.json())
       .then(res => {
         if (res.success) {
           setHotelName(res.data.hotelName);
           setGuests(res.data.guests || []);
+          setSettlements(res.data.settlements || []);
+          setFinancials(res.data.financials || { totalBilling: 0, amountReceived: 0, amountPending: 0 });
         }
       })
-      .catch(() => toast.error('Failed to load hotel bookings'))
+      .catch(() => toast.error('Failed to load hotel portal data'))
       .finally(() => setLoading(false));
-  }, [hotelId]);
+  }, [hotelId, router]);
+
+  const handleLogout = () => {
+    localStorage.removeItem('imagica_hotel_auth');
+    router.push('/hotel/login');
+  };
 
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-900 flex items-center justify-center">
         <div className="text-center text-white">
           <Loader2 className="w-10 h-10 animate-spin mx-auto mb-4 text-orange-400" />
-          <p className="text-sm font-semibold text-white/60">Loading Hotel Partner Portal...</p>
+          <p className="text-sm font-semibold text-white/60 font-sans">Loading Hotel Partner Portal...</p>
         </div>
       </div>
     );
@@ -85,9 +106,14 @@ export default function HotelPartnerWebApp() {
                 <span className="text-[#3B82F6]">A</span>
               </span>
             </div>
-            <div className="text-right">
-              <h1 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Partner Portal</h1>
-              <h2 className="text-sm font-bold mt-0.5 text-orange-400">Hotel 4 Season</h2>
+            <div className="text-right flex flex-col items-end">
+              <div className="flex items-center gap-1.5">
+                <h1 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Partner Portal</h1>
+                <button onClick={handleLogout} className="text-gray-400 hover:text-red-400 transition-colors" title="Log Out">
+                  <LogOut className="w-3.5 h-3.5" />
+                </button>
+              </div>
+              <h2 className="text-sm font-bold mt-0.5 text-orange-400 truncate max-w-[160px]">{hotelName}</h2>
             </div>
           </div>
           
@@ -135,7 +161,7 @@ export default function HotelPartnerWebApp() {
                 </div>
 
                 {guests.length === 0 ? (
-                  <div className="bg-white rounded-3xl p-8 text-center border border-gray-150">
+                  <div className="bg-white rounded-3xl p-8 text-center border border-gray-150 shadow-sm">
                     <Building2 className="w-10 h-10 text-gray-300 mx-auto mb-2" />
                     <p className="text-sm font-semibold text-gray-500">No arrivals registered at the moment.</p>
                   </div>
@@ -150,7 +176,7 @@ export default function HotelPartnerWebApp() {
                             }`}>
                               {g.status === 'running' ? 'Active Now' : 'Confirmed'}
                             </span>
-                            <span className="text-[9px] font-bold text-gray-500 bg-gray-100 px-2 py-0.5 rounded tracking-wider border border-gray-200">ID: {g.tourCode}</span>
+                            <span className="text-[9px] font-bold text-gray-500 bg-gray-100 px-2 py-0.5 rounded tracking-wider border border-gray-250">ID: {g.tourCode}</span>
                           </div>
                           <h4 className="font-bold text-gray-900 text-lg mt-2">{g.guestName}</h4>
                           <p className="text-xs text-gray-500 flex items-center gap-1 mt-1">
@@ -170,8 +196,15 @@ export default function HotelPartnerWebApp() {
                         </div>
                       </div>
 
+                      {g.roomNotes && (
+                        <div className="bg-orange-50/50 border border-orange-100 rounded-xl p-3 text-xs text-orange-800">
+                          <strong className="block mb-0.5 font-bold uppercase text-[9px] text-orange-600 tracking-wider">Instructions / Notes</strong>
+                          {g.roomNotes}
+                        </div>
+                      )}
+
                       <div className="flex gap-2">
-                        <button onClick={() => toast.success("Guest Checked In successfully!")} className="flex-1 bg-green-50 hover:bg-green-100 text-green-700 font-bold text-xs py-2.5 rounded-xl transition-colors border border-green-200 shadow-sm flex justify-center items-center gap-1">
+                        <button onClick={() => toast.success("Guest Checked In successfully!")} className="flex-1 bg-green-50 hover:bg-green-100 text-green-700 font-bold text-xs py-2.5 rounded-xl transition-colors border border-green-200 shadow-sm flex justify-center items-center gap-1 cursor-pointer">
                           <CheckCircle2 className="w-4 h-4" /> Check-in
                         </button>
                         <a href={`tel:+91${g.guestPhone}`} className="flex-1 bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold text-xs py-2.5 rounded-xl transition-colors border border-blue-200 shadow-sm flex justify-center items-center gap-1">
@@ -206,17 +239,12 @@ export default function HotelPartnerWebApp() {
                       </div>
                       <div>
                         <div className="flex items-center gap-2">
-                          <h4 className="font-bold text-gray-900">Tea / Coffee</h4>
-                          <span className="text-[10px] font-bold bg-red-100 text-red-700 px-1.5 py-0.5 rounded">NEW</span>
+                          <h4 className="font-bold text-gray-900">Breakfast / Dinner Plan</h4>
+                          <span className="text-[10px] font-bold bg-red-100 text-red-700 px-1.5 py-0.5 rounded">INFO</span>
                         </div>
-                        <p className="text-xs text-gray-500 mt-1">Room 502 • Sumeet (ID: ETHNO-38024)</p>
+                        <p className="text-xs text-gray-500 mt-1">Please confirm check-in list to prepare meal counts.</p>
                       </div>
                     </div>
-                    <span className="text-[10px] font-bold text-gray-400">2 min ago</span>
-                  </div>
-                  <div className="mt-4 flex gap-2">
-                    <button onClick={() => toast.success("Marked as Processing")} className="flex-1 bg-gray-900 text-white font-bold text-xs py-2 rounded-lg">Acknowledge</button>
-                    <button onClick={() => toast.success("Marked as Completed")} className="flex-1 bg-gray-100 text-gray-700 font-bold text-xs py-2 rounded-lg hover:bg-gray-200">Complete</button>
                   </div>
                 </div>
 
@@ -232,60 +260,61 @@ export default function HotelPartnerWebApp() {
                 exit={{ opacity: 0, x: -10 }}
                 className="space-y-5"
               >
-                <div className="bg-gradient-to-br from-[#1e293b] to-gray-800 rounded-3xl p-6 text-white shadow-lg">
-                  <span className="text-xs font-medium text-gray-400 uppercase tracking-widest">Settled by Imagica Holidays</span>
-                  <h3 className="text-3xl font-bold mt-1 flex items-center gap-1">
-                    <IndianRupee className="w-6 h-6 text-orange-400" /> 45,000
-                  </h3>
-                  <div className="mt-4 pt-4 border-t border-gray-700 flex justify-between items-center text-xs">
-                    <span className="text-gray-400">Total Bookings: 4</span>
-                    <button className="font-bold text-orange-400 flex items-center gap-1 hover:text-orange-300">
-                      <FileText className="w-3.5 h-3.5" /> Download Report
-                    </button>
+                {/* Finance Overview Grid */}
+                <div className="bg-gradient-to-br from-[#1e293b] to-gray-800 rounded-3xl p-6 text-white shadow-lg space-y-4">
+                  <div>
+                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Total Hotel Billing</span>
+                    <h3 className="text-2xl font-extrabold mt-0.5 flex items-center gap-0.5 text-white">
+                      <IndianRupee className="w-5.5 h-5.5 text-orange-400" /> {Number(financials.totalBilling || 0).toLocaleString('en-IN')}
+                    </h3>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4 pt-3 border-t border-gray-700/60 text-xs">
+                    <div>
+                      <span className="text-gray-400 block text-[9px] uppercase tracking-wider font-bold">Amount Received</span>
+                      <span className="font-bold text-emerald-400 flex items-center gap-0.5 mt-0.5">
+                        ₹{Number(financials.amountReceived || 0).toLocaleString('en-IN')}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-gray-400 block text-[9px] uppercase tracking-wider font-bold">Balance Outstanding</span>
+                      <span className="font-bold text-orange-400 flex items-center gap-0.5 mt-0.5">
+                        ₹{Number(financials.amountPending || 0).toLocaleString('en-IN')}
+                      </span>
+                    </div>
                   </div>
                 </div>
 
-                <h3 className="font-bold text-gray-900 text-lg mt-6">Recent Booking Settlements</h3>
+                <h3 className="font-bold text-gray-900 text-lg mt-6">Imagica Payout Settlements</h3>
                 
-                <div className="space-y-3">
-                  {/* Ledger Item 1 */}
-                  <div className="bg-white/90 backdrop-blur-sm p-4 rounded-2xl shadow-sm border border-gray-100 flex justify-between items-center">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-green-50 flex items-center justify-center text-green-600 shrink-0">
-                        <CheckCircle2 className="w-5 h-5" />
-                      </div>
-                      <div>
-                        <h4 className="font-bold text-gray-900 text-sm">Sumeet (ID: ETHNO-38024)</h4>
-                        <p className="text-[10px] text-green-600 font-bold flex items-center gap-1 mt-0.5">
-                           Fully Paid by Imagica Holidays
-                        </p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <span className="font-bold text-gray-900">₹12,000</span>
-                      <span className="block text-[10px] text-gray-400">01 Jun 2026</span>
-                    </div>
+                {settlements.length === 0 ? (
+                  <div className="bg-white rounded-3xl p-8 text-center border border-gray-150 shadow-sm">
+                    <IndianRupee className="w-10 h-10 text-gray-300 mx-auto mb-2" />
+                    <p className="text-sm font-semibold text-gray-500">No payment records found.</p>
                   </div>
-
-                  {/* Ledger Item 2 */}
-                  <div className="bg-white/90 backdrop-blur-sm p-4 rounded-2xl shadow-sm border border-gray-100 flex justify-between items-center">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center text-orange-600 shrink-0">
-                        <Clock className="w-5 h-5" />
+                ) : (
+                  <div className="space-y-3">
+                    {settlements.map((s: any) => (
+                      <div key={s.id} className="bg-white/90 backdrop-blur-sm p-4 rounded-2xl shadow-sm border border-gray-100 flex justify-between items-center">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600 shrink-0">
+                            <CheckCircle2 className="w-5 h-5" />
+                          </div>
+                          <div>
+                            <h4 className="font-bold text-gray-900 text-sm truncate max-w-[170px]">{s.notes}</h4>
+                            <p className="text-[10px] text-emerald-600 font-bold flex items-center gap-1 mt-0.5 uppercase tracking-wider">
+                              {s.mode} • {s.status}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="text-right shrink-0">
+                          <span className="font-bold text-gray-900">₹{Number(s.amount || 0).toLocaleString('en-IN')}</span>
+                          <span className="block text-[10px] text-gray-400 mt-0.5">{new Date(s.paymentDate).toLocaleDateString()}</span>
+                        </div>
                       </div>
-                      <div>
-                        <h4 className="font-bold text-gray-900 text-sm">Rahul (ID: ETHNO-29931)</h4>
-                        <p className="text-[10px] text-orange-500 font-bold flex items-center gap-1 mt-0.5">
-                          Advance Paid by Imagica Holidays (50%)
-                        </p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <span className="font-bold text-gray-900">₹6,000</span>
-                      <span className="block text-[10px] text-gray-400">28 May 2026</span>
-                    </div>
+                    ))}
                   </div>
-                </div>
+                )}
               </motion.div>
             )}
 
@@ -294,17 +323,17 @@ export default function HotelPartnerWebApp() {
 
         {/* BOTTOM NAV */}
         <nav className="absolute bottom-0 w-full bg-white/95 backdrop-blur-md border-t border-gray-100 px-6 py-4 pb-safe flex justify-between items-center z-20">
-          <button className="flex flex-col items-center gap-1 text-gray-400 hover:text-orange-500 transition-colors">
+          <button onClick={() => setActiveTab('guests')} className={`flex flex-col items-center gap-1 transition-colors ${activeTab === 'guests' ? 'text-orange-500' : 'text-gray-400 hover:text-orange-500'} cursor-pointer`}>
             <Building2 className="w-6 h-6" />
             <span className="text-[10px] font-bold">Front Desk</span>
           </button>
           
-          <button className="flex flex-col items-center gap-1 text-gray-400 hover:text-orange-500 transition-colors relative">
+          <button onClick={() => toast.info("CRM Support lines are open at support@imagicaholidays.com")} className="flex flex-col items-center gap-1 text-gray-400 hover:text-orange-500 transition-colors relative cursor-pointer">
             <MessageSquare className="w-6 h-6" />
             <span className="text-[10px] font-bold">CRM Support</span>
           </button>
 
-          <button className="flex flex-col items-center gap-1 text-gray-400 hover:text-orange-500 transition-colors">
+          <button onClick={() => setActiveTab('finance')} className={`flex flex-col items-center gap-1 transition-colors ${activeTab === 'finance' ? 'text-orange-500' : 'text-gray-400 hover:text-orange-500'} cursor-pointer`}>
             <FileText className="w-6 h-6" />
             <span className="text-[10px] font-bold">Invoices</span>
           </button>

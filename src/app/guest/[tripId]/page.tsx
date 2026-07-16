@@ -149,28 +149,39 @@ export default function GuestWebApp() {
                 exit={{ opacity: 0 }}
                 className="w-full h-full bg-[#E5E9EA] relative overflow-hidden"
               >
-                <div className="absolute inset-0 opacity-20 bg-[linear-gradient(#9CA3AF_1px,transparent_1px),linear-gradient(90deg,#9CA3AF_1px,transparent_1px)] bg-[size:40px_40px]" />
-                <svg className="absolute inset-0 w-full h-full" viewBox="0 0 400 800">
-                  <path d="M 100 800 Q 150 500 250 400 T 350 100" fill="none" stroke="#FFFFFF" strokeWidth="16" strokeLinecap="round" />
-                  <path d="M 100 800 Q 150 500 250 400 T 350 100" fill="none" stroke="#FCD34D" strokeWidth="8" strokeLinecap="round" />
-                  <g transform="translate(350, 100)">
-                    <circle r="20" fill="#EF4444" fillOpacity="0.2" className="animate-ping" />
-                    <circle r="8" fill="#EF4444" />
-                    <path d="M-6,-20 L6,-20 L0,-10 Z" fill="#EF4444" />
-                  </g>
-                  <motion.g
-                    initial={{ x: 100, y: 700 }}
-                    animate={{ x: 250, y: 400 }}
-                    transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
-                  >
-                    <circle r="16" fill="#3B82F6" fillOpacity="0.2" />
-                    <circle r="8" fill="#3B82F6" />
-                    <Navigation className="w-5 h-5 text-white -translate-x-2.5 -translate-y-2.5 rotate-45 fill-white" />
-                  </motion.g>
-                </svg>
-                <div className="absolute top-[200px] left-1/2 -translate-x-1/2 bg-gray-900/80 backdrop-blur-md text-white px-4 py-2 rounded-full shadow-lg flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
-                  <span className="text-xs font-bold tracking-wide">Ramesh is 12 mins away (4.2 km)</span>
+                {process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ? (
+                  <iframe
+                    width="100%"
+                    height="100%"
+                    style={{ border: 0 }}
+                    loading="lazy"
+                    allowFullScreen
+                    referrerPolicy="no-referrer-when-downgrade"
+                    src={`https://www.google.com/maps/embed/v1/place?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}&q=${encodeURIComponent(trip?.destination || 'Sikkim')}`}
+                  />
+                ) : (
+                  <iframe
+                    width="100%"
+                    height="100%"
+                    style={{ border: 0 }}
+                    loading="lazy"
+                    src={`https://maps.google.com/maps?q=${encodeURIComponent(trip?.destination || 'Sikkim')}&t=&z=13&ie=UTF8&iwloc=&output=embed`}
+                  />
+                )}
+                {/* Overlay driver info banner over the map */}
+                <div className="absolute top-[80px] left-4 right-4 bg-gray-900/90 backdrop-blur-md text-white p-3.5 rounded-2xl shadow-xl flex items-center justify-between border border-white/10 z-10">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-blue-500/20 rounded-xl flex items-center justify-center text-blue-400">
+                      <Car className="w-5 h-5 animate-pulse" />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-xs text-gray-200">Live Driver Tracking</h4>
+                      <p className="text-[10px] text-gray-400 mt-0.5">{trip?.currentDay?.driver?.name || 'Assigned Driver'} • {trip?.currentDay?.driver?.vehicleNo || 'Sikkim Sightseeing'}</p>
+                    </div>
+                  </div>
+                  <a href={`tel:+91${trip?.currentDay?.driver?.phone || ''}`} className="w-8 h-8 rounded-full bg-green-500 hover:bg-green-600 flex items-center justify-center text-white transition-colors">
+                    <PhoneCall className="w-4 h-4" />
+                  </a>
                 </div>
               </motion.div>
             )}
