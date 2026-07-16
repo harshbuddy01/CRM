@@ -9,7 +9,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Calendar as CalendarIcon, Phone, Mail, MapPin, IndianRupee, Users, Send, Loader2, ArrowLeft, Luggage, Building, Plane, Car, Route, Clock, CreditCard, Ban } from 'lucide-react';
+import { Calendar as CalendarIcon, Phone, Mail, MapPin, IndianRupee, Users, Send, Loader2, ArrowLeft, Luggage, Building, Plane, Car, Route, Clock, CreditCard, Ban, Zap } from 'lucide-react';
+import Link from 'next/link';
 import { format } from 'date-fns';
 import { useState } from 'react';
 import { PermissionGate } from '@/components/PermissionGate';
@@ -141,6 +142,11 @@ export default function TourDetailPage() {
         
         {tour.status !== 'cancelled' && tour.status !== 'completed' && user?.role === 'admin' && (
           <div className="flex items-center gap-3">
+            <Link href={`/tours/${tourId}/dispatch`}>
+              <Button variant="outline" className="border-violet-200 text-violet-700 hover:bg-violet-50">
+                <Zap className="w-4 h-4 mr-2" /> Dispatch & Assign
+              </Button>
+            </Link>
             <Button variant="outline" onClick={() => setIsPaymentModalOpen(true)}>
               <CreditCard className="w-4 h-4 mr-2" /> Record Payment
             </Button>

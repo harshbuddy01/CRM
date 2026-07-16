@@ -168,6 +168,8 @@ apiRouter.use('/proposals', proposalRoutes);
 apiRouter.use('/payments', paymentRoutes);
 apiRouter.use('/tours', tourRoutes);
 apiRouter.use('/email-templates', emailTemplateRoutes);
+apiRouter.use('/drivers', require('./routes/driver.routes'));
+apiRouter.use('/', require('./routes/tour-dispatch.routes'));
 apiRouter.use('/settings', require('./routes/org-setting.routes'));
 apiRouter.use('/status-settings', require('./routes/status-setting.routes'));
 apiRouter.use('/clients', require('./routes/client.routes'));

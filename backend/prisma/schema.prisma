@@ -351,11 +351,16 @@ model Tour {
   createdAt   DateTime  @default(now()) @map("created_at")
   updatedAt   DateTime  @updatedAt @map("updated_at")
 
+  guestUsername String?   @map("guest_username")
+  guestPassword String?   @map("guest_password")
+
   query           Query             @relation(fields: [queryId], references: [id])
   proposal        Proposal?         @relation(fields: [proposalId], references: [id])
   assignedOpsUser User?             @relation("TourAssignedOps", fields: [assignedOps], references: [id])
   payments        Payment[]
   cancellation    TourCancellation?
+  tourDrivers     TourDriver[]
+  bookingServices BookingService[]
 
   @@index([status])
   @@index([startDate])
@@ -934,11 +939,15 @@ model BookingService {
   createdAt            DateTime  @default(now()) @map("created_at")
   updatedAt            DateTime  @updatedAt @map("updated_at")
 
+  dayNumber            Int?      @map("day_number")
+  tourId               String?   @map("tour_id")
+
   query       Query        @relation(fields: [queryId], references: [id], onDelete: Cascade)
   proposalDay ProposalDay? @relation(fields: [proposalDayId], references: [id])
   supplier    Supplier?    @relation(fields: [supplierId], references: [id])
   creator     User         @relation("BookingServiceCreatedBy", fields: [createdBy], references: [id])
   vouchers    Voucher[]
+  tour        Tour?        @relation(fields: [tourId], references: [id], onDelete: SetNull)
 
   @@index([queryId])
   @@index([serviceType])
@@ -1179,4 +1188,38 @@ model WebsiteConfig {
   updatedAt DateTime @updatedAt @map("updated_at")
 
   @@map("website_configs")
+}
+
+// ============================================================
+// 19. DRIVER & OPERATIONS DISPATCH MODELS
+// ============================================================
+
+model Driver {
+  id          String   @id @default(uuid())
+  name        String
+  phone       String   @unique
+  vehicleName String   @map("vehicle_name") /// e.g. 'Innova', 'Xylo'
+  vehicleNo   String   @map("vehicle_no")   /// e.g. 'SK-01-D-1234'
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+
+  tourDrivers TourDriver[]
+
+  @@map("drivers")
+}
+
+model TourDriver {
+  id        String   @id @default(uuid())
+  tourId    String   @map("tour_id")
+  driverId  String   @map("driver_id")
+  dayNumber Int      @map("day_number")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  tour   Tour   @relation(fields: [tourId], references: [id], onDelete: Cascade)
+  driver Driver @relation(fields: [driverId], references: [id], onDelete: Cascade)
+
+  @@unique([tourId, dayNumber])
+  @@map("tour_drivers")
 }
