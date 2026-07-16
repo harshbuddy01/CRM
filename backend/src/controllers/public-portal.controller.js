@@ -138,6 +138,10 @@ const getGuestTrip = async (req, res, next) => {
     const currentDayNum = Math.max(1, daysDiff + 1);
     const currentDayDriver = tour.tourDrivers.find(d => d.dayNumber === currentDayNum);
     const currentDayHotel = tour.bookingServices.find(b => b.serviceType === 'hotel' && b.dayNumber === currentDayNum);
+    const currentDayTransport = tour.bookingServices.find(b => 
+      ['transport', 'cab', 'transfer'].includes(b.serviceType?.toLowerCase()) && 
+      b.dayNumber === currentDayNum
+    );
 
     res.json({
       success: true,
@@ -154,6 +158,12 @@ const getGuestTrip = async (req, res, next) => {
         currentDay: {
           dayNumber: currentDayNum,
           hotel: currentDayHotel?.serviceName || null,
+          transport: currentDayTransport
+            ? {
+                serviceName: currentDayTransport.serviceName,
+                notes: currentDayTransport.notes,
+              }
+            : null,
           driver: currentDayDriver
             ? {
                 name: currentDayDriver.driver.name,

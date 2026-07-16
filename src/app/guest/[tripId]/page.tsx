@@ -54,6 +54,18 @@ export default function GuestWebApp() {
   const [isTracking, setIsTracking] = useState(false);
   const [transitMode, setTransitMode] = useState<'train' | 'flight'>('flight');
 
+  const transportName = trip?.currentDay?.transport?.serviceName;
+  const isAirportOrRailway = transportName && (
+    /airport|bagdogra|ixb|njp|railway|station/i.test(transportName)
+  );
+  
+  const mapQuery = isAirportOrRailway 
+    ? `${transportName}, ${trip?.destination || 'Sikkim'}`
+    : (trip?.currentDay?.hotel 
+      ? `${trip.currentDay.hotel}, ${trip?.destination || 'Sikkim'}` 
+      : (trip?.destination || 'Sikkim')
+    );
+
   useEffect(() => {
     controls.start({ y: collapsedY, transition: { type: 'spring', damping: 25, stiffness: 200 } });
   }, [controls, collapsedY]);
@@ -157,7 +169,7 @@ export default function GuestWebApp() {
                     loading="lazy"
                     allowFullScreen
                     referrerPolicy="no-referrer-when-downgrade"
-                    src={`https://www.google.com/maps/embed/v1/place?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}&q=${encodeURIComponent(trip?.destination || 'Sikkim')}`}
+                    src={`https://www.google.com/maps/embed/v1/place?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}&q=${encodeURIComponent(mapQuery)}`}
                   />
                 ) : (
                   <iframe
@@ -165,7 +177,7 @@ export default function GuestWebApp() {
                     height="100%"
                     style={{ border: 0 }}
                     loading="lazy"
-                    src={`https://maps.google.com/maps?q=${encodeURIComponent(trip?.destination || 'Sikkim')}&t=&z=13&ie=UTF8&iwloc=&output=embed`}
+                    src={`https://maps.google.com/maps?q=${encodeURIComponent(mapQuery)}&t=&z=14&ie=UTF8&iwloc=&output=embed`}
                   />
                 )}
                 {/* Overlay driver info banner over the map */}
@@ -175,7 +187,9 @@ export default function GuestWebApp() {
                       <Car className="w-5 h-5 animate-pulse" />
                     </div>
                     <div>
-                      <h4 className="font-bold text-xs text-gray-200">Live Driver Tracking</h4>
+                      <h4 className="font-bold text-xs text-gray-200">
+                        {isAirportOrRailway ? 'Airport/Station Transfer' : 'Live Driver Tracking'}
+                      </h4>
                       <p className="text-[10px] text-gray-400 mt-0.5">{trip?.currentDay?.driver?.name || 'Assigned Driver'} • {trip?.currentDay?.driver?.vehicleNo || 'Sikkim Sightseeing'}</p>
                     </div>
                   </div>
@@ -374,7 +388,19 @@ export default function GuestWebApp() {
                         <span className="text-[10px] font-bold text-orange-400 uppercase tracking-widest mb-1 block">Current Stay</span>
                         <h3 className="text-2xl font-bold text-white drop-shadow-lg tracking-tight">{hotel || 'Hotel Not Yet Assigned'}</h3>
                         <p className="text-xs text-gray-300 mt-1.5 flex items-center gap-1 font-medium">
-                          <MapPin className="w-3.5 h-3.5 text-orange-400" /> Pelling, Sikkim • <span className="underline decoration-gray-400 cursor-pointer hover:text-white transition-colors">View Map</span>
+                          <MapPin className="w-3.5 h-3.5 text-orange-400" /> {trip?.destination || 'Sikkim'} • 
+                          {hotel ? (
+                            <a 
+                              href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(hotel + ', ' + (trip?.destination || 'Sikkim'))}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="underline decoration-gray-400 cursor-pointer hover:text-white transition-colors"
+                            >
+                              Get Directions
+                            </a>
+                          ) : (
+                            <span className="text-gray-400">View Map</span>
+                          )}
                         </p>
                       </div>
                     </div>
