@@ -85,25 +85,23 @@ const remove = async (req, res, next) => {
 const generateDriverCredentials = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const driver = await prisma.driver.findUnique({ where: { id } });
-    if (!driver || driver.deletedAt) throw new NotFoundError('Driver');
+    const drivers = await prisma.$queryRawUnsafe('SELECT id, name, deleted_at FROM drivers WHERE id = $1', id);
+    if (!drivers.length || drivers[0].deleted_at) throw new NotFoundError('Driver');
 
+    const driver = drivers[0];
     const namePart = driver.name.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 8);
     const loginId = `drv-${namePart}`;
     const pin = Math.floor(100000 + Math.random() * 900000).toString();
 
-    const updated = await prisma.driver.update({
-      where: { id },
-      data: { loginId, loginPassword: pin },
-    });
+    await prisma.$executeRawUnsafe(
+      'UPDATE drivers SET login_id = $1, login_password = $2 WHERE id = $3',
+      loginId, pin, id
+    );
 
     res.json({
       success: true,
       message: 'Driver portal credentials generated successfully',
-      data: {
-        loginId: updated.loginId,
-        pin,
-      }
+      data: { loginId, pin }
     });
   } catch (error) {
     next(error);

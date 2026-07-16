@@ -96,25 +96,23 @@ const deleteHotel = async (req, res, next) => {
 const generateHotelCredentials = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const hotel = await prisma.hotel.findUnique({ where: { id } });
-    if (!hotel) throw new NotFoundError('Hotel');
+    const hotels = await prisma.$queryRawUnsafe('SELECT id, name FROM hotels WHERE id = $1', id);
+    if (!hotels.length) throw new NotFoundError('Hotel');
 
+    const hotel = hotels[0];
     const namePart = hotel.name.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 8);
     const loginId = `htl-${namePart}`;
     const pin = Math.floor(100000 + Math.random() * 900000).toString();
 
-    const updated = await prisma.hotel.update({
-      where: { id },
-      data: { loginId, loginPassword: pin },
-    });
+    await prisma.$executeRawUnsafe(
+      'UPDATE hotels SET login_id = $1, login_password = $2 WHERE id = $3',
+      loginId, pin, id
+    );
 
     res.json({
       success: true,
       message: 'Hotel portal credentials generated successfully',
-      data: {
-        loginId: updated.loginId,
-        pin,
-      }
+      data: { loginId, pin }
     });
   } catch (error) {
     next(error);
