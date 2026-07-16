@@ -205,6 +205,10 @@ publicRouter.get('/vouchers/:id/download-pdf', require('./routes/voucher.routes'
 
 // ── Portal APIs (Guest, Driver, Hotel) ──
 const portalRoutes = require('./routes/public-portal.routes');
+
+// Mount BOTH the original public routes AND the new portal routes
+app.use('/v1/public', publicRouter);
+app.use('/api/v1/public', publicRouter);
 app.use('/v1/public', portalRoutes);
 app.use('/api/v1/public', portalRoutes);
 
