@@ -50,12 +50,18 @@ const getTourDetails = async (id) => {
       proposal: {
         include: { days: { include: { destination: true, hotel: true } } }
       },
-      assignedOpsUser: { select: { name: true } },
+      assignedOpsUser: { select: { id: true, name: true } },
       payments: {
         where: { deletedAt: null },
         orderBy: { paymentDate: 'desc' }
       },
       cancellation: true,
+      bookingServices: {
+        include: { hotel: true }
+      },
+      tourDrivers: {
+        include: { driver: true }
+      },
     }
   });
 

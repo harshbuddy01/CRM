@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Calendar as CalendarIcon, Phone, Mail, MapPin, IndianRupee, Users, Send, Loader2, ArrowLeft, Luggage, Building, Plane, Car, Route, Clock, CreditCard, Ban, Zap } from 'lucide-react';
 import Link from 'next/link';
 import { format } from 'date-fns';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { PermissionGate } from '@/components/PermissionGate';
 import { toast } from 'sonner';
 import { PaymentEntryModal } from '@/components/PaymentEntryModal';
@@ -34,6 +34,7 @@ export default function TourDetailPage() {
   // Editing Ops Notes
   const [isEditingOps, setIsEditingOps] = useState(false);
   const [opsNotes, setOpsNotes] = useState('');
+  const [assignedOps, setAssignedOps] = useState('');
 
   const { data: tour, isLoading, isError } = useQuery({
     queryKey: ['tour', tourId],
@@ -43,9 +44,25 @@ export default function TourDetailPage() {
     }
   });
 
+  const { data: agents } = useQuery({
+    queryKey: ['agents'],
+    queryFn: async () => {
+      const res = await api.get('/users/agents');
+      return res.data.data;
+    },
+    enabled: !!(user?.role === 'admin' || user?.role === 'system_owner')
+  });
+
+  useEffect(() => {
+    if (tour) {
+      setOpsNotes(tour.opsNotes || '');
+      setAssignedOps(tour.assignedOps || '');
+    }
+  }, [tour]);
+
   const opsMutation = useMutation({
     mutationFn: async () => {
-      await api.patch(`/tours/${tourId}/ops`, { opsNotes });
+      await api.patch(`/tours/${tourId}/ops`, { opsNotes, assignedOps });
     },
     onSuccess: () => {
       toast.success('Operations notes updated');
@@ -302,26 +319,62 @@ export default function TourDetailPage() {
             <CardContent>
               {latestProposal?.days ? (
                 <div className="space-y-6 relative before:absolute before:inset-0 before:left-3 before:-translate-x-px before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-border before:to-transparent">
-                  {(latestProposal.days as any[]).map((day: any, idx: number) => (
-                    <div key={idx} className="relative flex items-start group">
-                      <div className="flex items-center justify-center w-6 h-6 rounded-full border bg-background text-xs font-bold shrink-0 z-10 mr-4 shadow-sm group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
-                        {day.dayNumber}
+                  {(latestProposal.days as any[]).map((day: any, idx: number) => {
+                    const assignedHotel = tour.bookingServices?.find((b: any) => b.dayNumber === day.dayNumber);
+                    const assignedDriver = tour.tourDrivers?.find((td: any) => td.dayNumber === day.dayNumber)?.driver;
+
+                    return (
+                      <div key={idx} className="relative flex items-start group">
+                        <div className="flex items-center justify-center w-6 h-6 rounded-full border bg-background text-xs font-bold shrink-0 z-10 mr-4 shadow-sm group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+                          {day.dayNumber}
+                        </div>
+                        <div className="pt-1 w-full text-sm">
+                          <p className="font-semibold mb-1">{typeof day.title === 'object' ? (day.title?.name || JSON.stringify(day.title)) : (day.title || `Day ${day.dayNumber}`)}</p>
+                          
+                          {/* Hotel Assignment */}
+                          {assignedHotel ? (
+                            <p className="text-emerald-700 font-semibold flex items-center mb-1 text-xs bg-emerald-50 border border-emerald-100 px-2 py-0.5 rounded w-fit mt-1">
+                              <Building className="w-3 h-3 mr-1 text-emerald-600" /> Hotel: {assignedHotel.serviceName}
+                            </p>
+                          ) : day.hotel ? (
+                            <p className="text-muted-foreground flex items-center mb-1 text-xs mt-1">
+                              <Building className="w-3 h-3 mr-1" /> Proposed Hotel: {typeof day.hotel === 'object' ? (day.hotel?.name || JSON.stringify(day.hotel)) : day.hotel} (Unassigned)
+                            </p>
+                          ) : null}
+
+                          {/* Driver Assignment */}
+                          {assignedDriver ? (
+                            <p className="text-blue-700 font-semibold flex items-center mb-1 text-xs bg-blue-50 border border-blue-100 px-2 py-0.5 rounded w-fit mt-1">
+                              <Car className="w-3 h-3 mr-1 text-blue-600" /> Driver: {assignedDriver.name} ({assignedDriver.vehicleNo})
+                            </p>
+                          ) : (
+                            <p className="text-amber-600 flex items-center mb-1 text-xs mt-1">
+                              <Car className="w-3 h-3 mr-1 text-amber-500" /> No driver assigned yet
+                            </p>
+                          )}
+
+                          {/* Activities */}
+                          {day.activities && (
+                            <div className="text-muted-foreground mt-2 space-y-1 pl-4 border-l-2">
+                              {typeof day.activities === 'string' ? (
+                                day.activities.split(',').map((act: string, i: number) => act.trim() && (
+                                  <p key={i} className="text-xs flex items-center relative before:w-1.5 before:h-1.5 before:rounded-full before:bg-muted-foreground/30 before:mr-2">
+                                    {act.trim()}
+                                  </p>
+                                ))
+                              ) : Array.isArray(day.activities) ? (
+                                day.activities.map((act: any, i: number) => (
+                                  <p key={i} className="text-xs flex items-center relative before:w-1.5 before:h-1.5 before:rounded-full before:bg-muted-foreground/30 before:mr-2">
+                                    {typeof act === 'object' ? (act?.name || act?.title || JSON.stringify(act)) : String(act)}
+                                  </p>
+                                ))
+                              ) : null}
+                            </div>
+                          )}
+                        </div>
                       </div>
-                      <div className="pt-1 w-full text-sm">
-                        <p className="font-semibold mb-1">{typeof day.title === 'object' ? (day.title?.name || JSON.stringify(day.title)) : (day.title || `Day ${day.dayNumber}`)}</p>
-                        {day.hotel && <p className="text-muted-foreground flex items-center mb-1"><Building className="w-3 h-3 mr-1" /> {typeof day.hotel === 'object' ? (day.hotel?.name || JSON.stringify(day.hotel)) : day.hotel}</p>}
-                        {day.activities && day.activities.length > 0 && (
-                          <div className="text-muted-foreground mt-2 space-y-1 pl-4 border-l-2">
-                            {day.activities.map((act: any, i: number) => (
-                              <p key={i} className="text-xs flex items-center relative before:w-1.5 before:h-1.5 before:rounded-full before:bg-muted-foreground/30 before:mr-2">
-                                {typeof act === 'object' ? (act?.name || act?.title || JSON.stringify(act)) : String(act)}
-                              </p>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               ) : (
                 <div className="text-center py-8 text-muted-foreground">
@@ -342,18 +395,44 @@ export default function TourDetailPage() {
             <CardContent className="space-y-4 border-b pb-4">
               <div>
                 <p className="text-xs text-muted-foreground mb-1">Ops Handling Agent</p>
-                <div className="font-medium text-sm flex items-center gap-2">
-                  <div className="w-6 h-6 bg-primary/10 text-primary flex items-center justify-center rounded-full text-xs font-bold">
-                    {tour.assignedOpsUser?.name?.[0] || '?'}
+                {isEditingOps && (user?.role === 'admin' || user?.role === 'system_owner') ? (
+                  <select
+                    value={assignedOps}
+                    onChange={(e) => setAssignedOps(e.target.value)}
+                    className="w-full text-xs p-2 border rounded bg-background"
+                  >
+                    <option value="">Unassigned</option>
+                    {agents?.map((agent: any) => (
+                      <option key={agent.id} value={agent.id}>
+                        {agent.name}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <div className="font-medium text-sm flex items-center gap-2">
+                    <div className="w-6 h-6 bg-primary/10 text-primary flex items-center justify-center rounded-full text-xs font-bold">
+                      {tour.assignedOpsUser?.name?.[0] || '?'}
+                    </div>
+                    {tour.assignedOpsUser?.name || 'Unassigned'}
                   </div>
-                  {tour.assignedOpsUser?.name || 'Unassigned'}
-                </div>
+                )}
               </div>
               <div className="pt-2">
-                <p className="text-xs text-muted-foreground mb-1">Field Representative</p>
-                <p className="font-medium text-sm">
-                  {tour.assignedFieldUser?.name || 'Not dispatched / unassigned'}
-                </p>
+                <p className="text-xs text-muted-foreground mb-1">Field Representative (Drivers)</p>
+                <div className="font-medium text-sm flex flex-col gap-1.5 mt-1">
+                  {tour.tourDrivers && tour.tourDrivers.length > 0 ? (
+                    Array.from(new Set(tour.tourDrivers.map((td: any) => td.driver?.name).filter(Boolean))).map((name: any, i) => {
+                      const driver = tour.tourDrivers.find((td: any) => td.driver?.name === name)?.driver;
+                      return (
+                        <span key={i} className="inline-flex items-center gap-1.5 bg-blue-50 text-blue-800 text-xs px-2.5 py-1 rounded-md border border-blue-100 w-fit font-semibold">
+                          <Car className="w-3.5 h-3.5" /> {name} {driver?.phone ? `(${driver.phone})` : ''}
+                        </span>
+                      );
+                    })
+                  ) : (
+                    <span className="text-muted-foreground text-xs italic font-normal">Not dispatched / no drivers assigned yet</span>
+                  )}
+                </div>
               </div>
             </CardContent>
             <div className="p-4 bg-muted/30">
