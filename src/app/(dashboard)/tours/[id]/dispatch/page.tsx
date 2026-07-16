@@ -13,6 +13,7 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { cn } from '@/lib/utils';
 
 // ─── Types ───────────────────────────────────────────────────
 interface Driver { id: string; name: string; vehicleName: string; vehicleNo: string; phone: string; }
@@ -20,6 +21,87 @@ interface DayPlan {
   dayNumber: number; date: string; itineraryTitle: string;
   driver: { id: string; name: string; vehicleName: string; vehicleNo: string } | null;
   hotel: { id: string; name: string } | null;
+}
+
+// ─── Hotel Assign Modal (MakeMyTrip Style Popup) ──────────────
+function HotelAssignModal({
+  open, onClose, dayNumber, currentHotelName, hotels, onAssign, isPending
+}: {
+  open: boolean; onClose: () => void; dayNumber: number; currentHotelName: string;
+  hotels: any[]; onAssign: (hotelName: string) => void; isPending: boolean;
+}) {
+  const [hotelName, setHotelName] = useState(currentHotelName);
+  const [mode, setMode] = useState<'select' | 'manual'>('select');
+
+  // Sync state if currentHotelName changes
+  useState(() => {
+    setHotelName(currentHotelName);
+  });
+
+  return (
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent className="rounded-[28px] max-w-md">
+        <DialogHeader>
+          <DialogTitle className="text-lg font-black text-slate-800">Assign Hotel - Day {dayNumber}</DialogTitle>
+          <DialogDescription className="text-xs text-slate-400">Choose a hotel from your master inventory or enter it manually.</DialogDescription>
+        </DialogHeader>
+        <div className="space-y-4 py-4">
+          <div className="flex bg-slate-100 p-1 rounded-xl">
+            <button 
+              type="button"
+              className={cn("flex-1 text-xs font-bold py-2 rounded-lg transition-all", mode === 'select' ? "bg-white text-blue-600 shadow-sm" : "text-slate-500")}
+              onClick={() => setMode('select')}
+            >
+              Master Inventory
+            </button>
+            <button 
+              type="button"
+              className={cn("flex-1 text-xs font-bold py-2 rounded-lg transition-all", mode === 'manual' ? "bg-white text-blue-600 shadow-sm" : "text-slate-500")}
+              onClick={() => setMode('manual')}
+            >
+              Manual Entry
+            </button>
+          </div>
+
+          {mode === 'select' ? (
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block ml-1">Select Hotel</label>
+              <select
+                className="w-full h-11 px-4 border border-slate-200 rounded-2xl bg-slate-50 text-sm focus:border-blue-400 focus:ring-0 outline-none font-bold text-slate-700"
+                value={hotelName}
+                onChange={(e) => setHotelName(e.target.value)}
+              >
+                <option value="">-- Select Hotel --</option>
+                {hotels.map((h: any) => (
+                  <option key={h.id} value={h.name}>{h.name} ({h.destination?.name || 'No Destination'})</option>
+                ))}
+              </select>
+            </div>
+          ) : (
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block ml-1">Hotel Name</label>
+              <Input
+                placeholder="Enter hotel name..."
+                value={hotelName}
+                onChange={(e) => setHotelName(e.target.value)}
+                className="h-11 rounded-2xl border-slate-200"
+              />
+            </div>
+          )}
+        </div>
+        <div className="flex gap-3 pt-2">
+          <Button variant="outline" className="flex-1 rounded-2xl font-bold h-11" onClick={onClose}>Cancel</Button>
+          <Button 
+            className="flex-1 rounded-2xl font-bold h-11 bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-100" 
+            disabled={isPending || !hotelName.trim()} 
+            onClick={() => onAssign(hotelName.trim())}
+          >
+            {isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null} Confirm
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
 }
 
 // ─── Driver Select Dropdown ───────────────────────────────────
@@ -47,23 +129,23 @@ function DriverSelect({
         <ChevronDown className="w-4 h-4 shrink-0" />
       </button>
       {open && (
-        <div className="absolute z-30 top-full mt-1 left-0 right-0 bg-white border border-gray-200 rounded-xl shadow-xl overflow-hidden">
+        <div className="absolute z-30 top-full mt-1 left-0 right-0 bg-white border border-gray-200 rounded-xl shadow-xl overflow-hidden animate-in fade-in slide-in-from-top-1 duration-200">
           <div className="p-1 max-h-52 overflow-y-auto">
             {drivers.map(d => (
               <button
                 key={d.id}
                 onClick={() => { onAssign(d.id, [dayNumber]); setOpen(false); }}
-                className="w-full text-left px-3 py-2.5 rounded-lg hover:bg-blue-50 text-sm flex justify-between items-center"
+                className="w-full text-left px-3 py-2.5 rounded-lg hover:bg-blue-50 text-sm flex justify-between items-center transition-colors"
               >
-                <span className="font-medium text-gray-900">{d.name}</span>
-                <span className="text-xs text-gray-500">{d.vehicleName} • {d.vehicleNo}</span>
+                <span className="font-semibold text-gray-900">{d.name}</span>
+                <span className="text-xs text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md font-bold">{d.vehicleName} • {d.vehicleNo}</span>
               </button>
             ))}
           </div>
-          <div className="border-t p-1">
+          <div className="border-t p-1 bg-slate-50">
             <button
               onClick={() => { setOpen(false); onAddNew(); }}
-              className="w-full text-left px-3 py-2 rounded-lg hover:bg-gray-50 text-sm text-blue-600 font-semibold flex items-center gap-2"
+              className="w-full text-left px-3 py-2 rounded-lg hover:bg-white text-sm text-blue-600 font-bold flex items-center gap-2 transition-all"
             >
               <UserPlus className="w-4 h-4" /> + Add New Driver
             </button>
@@ -114,10 +196,8 @@ export default function TourDispatchPage() {
   const queryClient = useQueryClient();
 
   const [showAddDriver, setShowAddDriver] = useState(false);
-  const [hotelEditing, setHotelEditing] = useState<number | null>(null);
-  const [hotelName, setHotelName] = useState('');
+  const [hotelEditingDay, setHotelEditingDay] = useState<{ dayNumber: number; currentHotelName: string } | null>(null);
   const [copied, setCopied] = useState(false);
-  const [applyAllDriver, setApplyAllDriver] = useState<{ driverId: string } | null>(null);
 
   // ── Fetch dispatch data ──
   const { data: dispatch, isLoading } = useQuery({
@@ -129,6 +209,12 @@ export default function TourDispatchPage() {
   const { data: drivers = [], refetch: refetchDrivers } = useQuery<Driver[]>({
     queryKey: ['drivers'],
     queryFn: () => api.get('/drivers').then(r => r.data.data),
+  });
+
+  // ── Fetch hotels master ──
+  const { data: hotels = [] } = useQuery({
+    queryKey: ['dispatch-hotels-master'],
+    queryFn: () => api.get('/masters/hotels').then(r => r.data.data),
   });
 
   // ── Mutations ──
@@ -147,7 +233,7 @@ export default function TourDispatchPage() {
       api.post(`/tours/${id}/dispatch/hotel`, body),
     onSuccess: () => {
       toast.success('Hotel assigned!');
-      setHotelEditing(null);
+      setHotelEditingDay(null);
       queryClient.invalidateQueries({ queryKey: ['dispatch', id] });
     },
     onError: (e: any) => toast.error(e.response?.data?.message || 'Failed to assign hotel'),
@@ -305,42 +391,17 @@ export default function TourDispatchPage() {
                 {/* Hotel Assignment */}
                 <div>
                   <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Hotel</p>
-                  {hotelEditing === day.dayNumber ? (
-                    <div className="flex gap-2">
-                      <Input
-                        autoFocus
-                        placeholder="Hotel name..."
-                        value={hotelName}
-                        onChange={e => setHotelName(e.target.value)}
-                        onKeyDown={e => {
-                          if (e.key === 'Enter' && hotelName.trim()) {
-                            assignHotelMut.mutate({ dayNumber: day.dayNumber, hotelName: hotelName.trim() });
-                          }
-                          if (e.key === 'Escape') { setHotelEditing(null); }
-                        }}
-                        className="text-sm"
-                      />
-                      <Button
-                        size="sm"
-                        disabled={assignHotelMut.isPending || !hotelName.trim()}
-                        onClick={() => assignHotelMut.mutate({ dayNumber: day.dayNumber, hotelName: hotelName.trim() })}
-                      >
-                        {assignHotelMut.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
-                      </Button>
-                    </div>
-                  ) : (
-                    <button
-                      onClick={() => { setHotelEditing(day.dayNumber); setHotelName(day.hotel?.name || ''); }}
-                      className={`w-full flex items-center gap-2 px-3 py-2.5 rounded-xl border text-sm font-medium transition-colors text-left ${
-                        day.hotel
-                          ? 'bg-orange-50 border-orange-200 text-orange-800'
-                          : 'bg-gray-50 border-gray-200 text-gray-500 hover:bg-gray-100'
-                      }`}
-                    >
-                      <Building2 className="w-4 h-4 shrink-0" />
-                      {day.hotel?.name || 'Assign Hotel'}
-                    </button>
-                  )}
+                  <button
+                    onClick={() => setHotelEditingDay({ dayNumber: day.dayNumber, currentHotelName: day.hotel?.name || '' })}
+                    className={`w-full flex items-center gap-2 px-3 py-2.5 rounded-xl border text-sm font-medium transition-colors text-left ${
+                      day.hotel
+                        ? 'bg-orange-50 border-orange-200 text-orange-800'
+                        : 'bg-gray-50 border-gray-200 text-gray-500 hover:bg-gray-100'
+                    }`}
+                  >
+                    <Building2 className="w-4 h-4 shrink-0" />
+                    {day.hotel?.name || 'Assign Hotel'}
+                  </button>
                 </div>
               </div>
             </div>
@@ -354,6 +415,19 @@ export default function TourDispatchPage() {
         onClose={() => setShowAddDriver(false)}
         onCreated={() => refetchDrivers()}
       />
+
+      {/* ── Hotel Assign Modal (MMT Style Popup) ── */}
+      {hotelEditingDay && (
+        <HotelAssignModal
+          open={!!hotelEditingDay}
+          onClose={() => setHotelEditingDay(null)}
+          dayNumber={hotelEditingDay.dayNumber}
+          currentHotelName={hotelEditingDay.currentHotelName}
+          hotels={hotels}
+          onAssign={(hotelName) => assignHotelMut.mutate({ dayNumber: hotelEditingDay.dayNumber, hotelName })}
+          isPending={assignHotelMut.isPending}
+        />
+      )}
     </div>
   );
 }

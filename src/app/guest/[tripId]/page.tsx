@@ -403,7 +403,8 @@ export default function GuestWebApp() {
                   transition={{ duration: 0.2 }}
                   className="space-y-6"
                 >
-                  <h2 className="text-2xl font-bold text-gray-900 tracking-tight">Trip Timeline</h2>
+                  <div className="flex justify-between items-center">
+                    <h2 className="text-2xl font-bold text-gray-900 tracking-tight">Trip Timeline</h2>
                     <button onClick={() => toast.success("Downloading all vouchers...")} className="bg-blue-50 text-blue-600 px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1">
                       <Download className="w-3.5 h-3.5" /> Vouchers
                     </button>

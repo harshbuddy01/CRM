@@ -1232,6 +1232,7 @@ function EventEditModal({ event, onClose, onSave, onDelete, destId, itinerary }:
     metadata: event.metadata || {} 
   }));
   const [accomMode, setAccomMode] = useState<'manual' | 'master'>(event.metadata?.masterId ? 'master' : 'manual');
+  const [step, setStep] = useState(1);
   
   // Update state if event changes externally
   useEffect(() => {
@@ -1257,7 +1258,7 @@ function EventEditModal({ event, onClose, onSave, onDelete, destId, itinerary }:
       <motion.div 
         initial={{ opacity: 0, scale: 0.95, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
-        className={cn("bg-white rounded-[32px] shadow-2xl w-full overflow-hidden flex flex-col transition-all duration-300", form.type === 'accommodation' ? 'max-w-2xl max-h-[90vh]' : 'max-w-lg max-h-[85vh]')} 
+        className={cn("bg-white rounded-[32px] shadow-2xl w-full overflow-hidden flex flex-col transition-all duration-300", form.type === 'accommodation' ? 'max-w-2xl max-h-[95vh]' : 'max-w-lg max-h-[85vh]')} 
         onClick={e => e.stopPropagation()}
       >
         <div className="flex items-center justify-between p-6 border-b bg-slate-50/50">
@@ -1265,14 +1266,51 @@ function EventEditModal({ event, onClose, onSave, onDelete, destId, itinerary }:
             <div className={cn('p-2 rounded-2xl shadow-sm border bg-white', evType.color)}><evType.icon className="w-5 h-5" /></div>
             <h2 className="font-black text-lg text-slate-800">
               {form.type === 'accommodation' 
-                ? `Accommodation From ${form.metadata?.checkInDate || '...'}`
+                ? `Accommodation Form`
                 : `Edit ${evType.label}`}
             </h2>
           </div>
           <button onClick={onClose} className="w-10 h-10 rounded-2xl flex items-center justify-center hover:bg-slate-200/50 transition-colors"><X className="w-6 h-6 text-slate-400" /></button>
         </div>
 
-        <div className="p-8 space-y-6 overflow-y-auto custom-scrollbar">
+        {/* Step Indicator for Accommodation (MakeMyTrip Style) */}
+        {form.type === 'accommodation' && (
+          <div className="bg-slate-50/50 px-8 py-4 border-b flex items-center justify-between">
+            {[
+              { num: 1, label: 'Hotel Search' },
+              { num: 2, label: 'Rooms & Options' },
+              { num: 3, label: 'Dates & Cost' }
+            ].map((s, idx) => (
+              <div key={s.num} className="flex items-center flex-1 last:flex-initial">
+                <button
+                  type="button"
+                  onClick={() => setStep(s.num)}
+                  className="flex items-center gap-2.5 text-left focus:outline-none"
+                >
+                  <span className={cn(
+                    "w-7 h-7 rounded-full flex items-center justify-center text-xs font-black transition-all border-2",
+                    step === s.num 
+                      ? "bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-100 scale-105" 
+                      : step > s.num
+                        ? "bg-emerald-50 border-emerald-500 text-emerald-600"
+                        : "bg-white border-slate-200 text-slate-400"
+                  )}>
+                    {step > s.num ? "✓" : s.num}
+                  </span>
+                  <div className="hidden sm:block">
+                    <p className={cn("text-[10px] font-bold uppercase tracking-wider leading-none", step === s.num ? "text-blue-600" : "text-slate-400")}>Step 0{s.num}</p>
+                    <p className={cn("text-xs font-black mt-0.5", step === s.num ? "text-slate-800" : "text-slate-500")}>{s.label}</p>
+                  </div>
+                </button>
+                {idx < 2 && (
+                  <div className={cn("flex-1 h-0.5 mx-4 rounded-full", step > s.num + 1 ? "bg-emerald-500" : "bg-slate-100")} />
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+
+        <div className="p-8 space-y-6 overflow-y-auto custom-scrollbar flex-1">
           {form.type !== 'accommodation' && (
             <>
               <div><label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1.5 ml-1">Title</label><Input className="h-11 rounded-2xl border-slate-200 focus:border-blue-400 focus:ring-0 bg-slate-50/50" value={form.title} onChange={e => set('title', e.target.value)} /></div>
@@ -1286,165 +1324,190 @@ function EventEditModal({ event, onClose, onSave, onDelete, destId, itinerary }:
           )}
 
           {form.type === 'accommodation' && (
-            <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
-              <div className="grid grid-cols-2 gap-6">
-                <div>
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1.5 ml-1">Destination</label>
-                  <select 
-                    className="w-full h-11 px-4 border border-slate-200 rounded-2xl bg-slate-50/50 text-sm focus:border-blue-400 focus:ring-0 outline-none"
-                    value={form.metadata?.destinationId || ''}
-                    onChange={(e) => setMeta('destinationId', e.target.value)}
-                  >
-                    <option value="">Choose Destination</option>
-                    {(itinerary.days?.map((d: any) => d.destination).filter(Boolean).filter((v: any, i: any, a: any) => a.findIndex((t: any) => t.id === v.id) === i) || []).map((d: any) => (
-                      <option key={d.id} value={d.id}>{d.name}</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1.5 ml-1">Type</label>
-                  <select 
-                    className="w-full h-11 px-4 border border-slate-200 rounded-2xl bg-slate-50/50 text-sm focus:border-blue-400 focus:ring-0 outline-none"
-                    value={accomMode}
-                    onChange={(e) => setAccomMode(e.target.value as 'manual' | 'master')}
-                  >
-                    <option value="manual">Manual</option>
-                    <option value="master">From Master</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-3 gap-6 items-end">
-                <div className="col-span-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1.5 ml-1">Hotel Name</label>
-                  {accomMode === 'master' ? (
-                    <select 
-                      className="w-full h-11 px-4 border border-slate-200 rounded-2xl bg-slate-50/50 text-sm focus:border-blue-400 focus:ring-0"
-                      value={form.metadata?.masterId || ''}
-                      onChange={e => {
-                        const h = hotels?.find((ht: any) => ht.id === e.target.value);
-                        if (h) {
-                          set('title', h.name);
-                          setMeta('masterId', h.id);
-                          setMeta('hotelName', h.name);
-                          setMeta('category', h.category);
-                        }
-                      }}
-                    >
-                      <option value="">-- Choose Hotel --</option>
-                      {(hotels || []).map((h: any) => (
-                        <option key={h.id} value={h.id}>{h.name}</option>
-                      ))}
-                    </select>
-                  ) : (
-                    <Input 
-                      className="h-11 rounded-2xl border-slate-200 bg-slate-50/50" 
-                      value={form.metadata?.hotelName || ''} 
-                      onChange={e => {
-                        setMeta('hotelName', e.target.value);
-                        set('title', e.target.value);
-                      }} 
-                    />
-                  )}
-                </div>
-                <div>
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1.5 ml-1">Category</label>
-                  <select 
-                    className="w-full h-11 px-4 border border-slate-200 rounded-2xl bg-slate-50/50 text-sm focus:border-blue-400 focus:ring-0"
-                    value={form.metadata?.category || ''}
-                    onChange={(e) => setMeta('category', e.target.value)}
-                  >
-                    <option value="">Choose</option>
-                    <option value="Standard">Standard</option>
-                    <option value="3 Star">3 Star</option>
-                    <option value="4 Star">4 Star</option>
-                    <option value="5 Star">5 Star</option>
-                    <option value="Luxury">Luxury</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-3 gap-6">
-                <div>
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1.5 ml-1">Room Name</label>
-                  <Input className="h-11 rounded-2xl border-slate-200 bg-slate-50/50" value={form.metadata?.roomType || ''} onChange={e => setMeta('roomType', e.target.value)} placeholder="e.g. DELUXE" />
-                </div>
-                <div>
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1.5 ml-1">Meal Plan</label>
-                  <Input className="h-11 rounded-2xl border-slate-200 bg-slate-50/50" value={form.metadata?.mealPlan || ''} onChange={e => setMeta('mealPlan', e.target.value)} placeholder="e.g. map" />
-                </div>
-                <div>
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1.5 ml-1">Hotel Option</label>
-                  <select className="w-full h-11 px-4 border border-slate-200 rounded-2xl bg-slate-50/50 text-sm focus:border-blue-400 focus:ring-0" value={form.metadata?.hotelOption || 'Option 1'} onChange={e => setMeta('hotelOption', e.target.value)}>
-                    <option value="Option 1">Option 1</option>
-                    <option value="Option 2">Option 2</option>
-                    <option value="Option 3">Option 3</option>
-                  </select>
-                </div>
-              </div>
-
-              <div>
-                <label className="text-[11px] font-black text-slate-800 uppercase tracking-widest block mb-3 ml-1">Enter Number of Rooms</label>
-                <div className="grid grid-cols-6 gap-3 bg-slate-50/80 p-4 rounded-[24px] border border-slate-100 shadow-sm">
-                  {[
-                    { key: 'single', label: 'Single' },
-                    { key: 'double', label: 'Double' },
-                    { key: 'triple', label: 'Triple' },
-                    { key: 'quad', label: 'Quad' },
-                    { key: 'cwb', label: 'CWB' },
-                    { key: 'cnb', label: 'CNB' },
-                  ].map((field) => (
-                    <div key={field.key}>
-                      <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider block text-center mb-1.5">{field.label}</label>
-                      <input 
-                        type="number" 
-                        className="w-full h-10 text-center text-sm font-bold border border-slate-200 rounded-xl focus:border-blue-400 focus:ring-0 outline-none shadow-sm"
-                        value={form.metadata?.rooms?.[field.key] || 0}
-                        onChange={(e) => {
-                          const currentRooms = form.metadata?.rooms || {};
-                          setMeta('rooms', { ...currentRooms, [field.key]: parseInt(e.target.value) || 0 });
-                        }}
-                      />
+            <div className="space-y-6">
+              {/* STEP 1: HOTEL SEARCH */}
+              {step === 1 && (
+                <div className="space-y-6 animate-in fade-in duration-300">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block ml-1">Destination</label>
+                      <select 
+                        className="w-full h-11 px-4 border border-slate-200 rounded-2xl bg-slate-50/50 text-sm focus:border-blue-400 focus:ring-0 outline-none font-bold text-slate-700"
+                        value={form.metadata?.destinationId || ''}
+                        onChange={(e) => setMeta('destinationId', e.target.value)}
+                      >
+                        <option value="">Choose Destination</option>
+                        {(itinerary.days?.map((d: any) => d.destination).filter(Boolean).filter((v: any, i: any, a: any) => a.findIndex((t: any) => t.id === v.id) === i) || []).map((d: any) => (
+                          <option key={d.id} value={d.id}>{d.name}</option>
+                        ))}
+                      </select>
                     </div>
-                  ))}
-                </div>
-              </div>
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block ml-1">Inventory Mode</label>
+                      <select 
+                        className="w-full h-11 px-4 border border-slate-200 rounded-2xl bg-slate-50/50 text-sm focus:border-blue-400 focus:ring-0 outline-none font-bold text-slate-700"
+                        value={accomMode}
+                        onChange={(e) => setAccomMode(e.target.value as 'manual' | 'master')}
+                      >
+                        <option value="manual">Manual Entry</option>
+                        <option value="master">Select From Master Inventory</option>
+                      </select>
+                    </div>
+                  </div>
 
-              <div className="bg-amber-50/40 p-5 rounded-[28px] border border-amber-100/60 shadow-inner grid grid-cols-2 gap-8 relative overflow-hidden">
-                <div className="absolute top-0 right-0 p-2 opacity-5"><div className="w-12 h-12 rounded-full border-4 border-amber-400/20" /></div>
-                <div>
-                  <label className="text-[10px] font-black text-amber-700/60 uppercase tracking-widest block mb-2 ml-1">Check-in*</label>
-                  <div className="flex gap-2">
-                    <Input type="date" className="h-11 rounded-2xl border-amber-200/50 bg-white shadow-sm flex-1" value={form.metadata?.checkInDate || ''} onChange={e => setMeta('checkInDate', e.target.value)} />
-                    <select className="w-24 h-11 px-3 border border-amber-200/50 rounded-2xl bg-white shadow-sm text-xs font-bold" value={form.metadata?.checkInTime || '12:00'} onChange={e => setMeta('checkInTime', e.target.value)}>
-                      {Array.from({ length: 24 }).map((_, i) => (
-                        <option key={i} value={`${i.toString().padStart(2, '0')}:00`}>{i.toString().padStart(2, '0')}:00</option>
-                      ))}
-                    </select>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 items-end">
+                    <div className="sm:col-span-2 space-y-1.5">
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block ml-1">Hotel Name</label>
+                      {accomMode === 'master' ? (
+                        <select 
+                          className="w-full h-11 px-4 border border-slate-200 rounded-2xl bg-slate-50/50 text-sm focus:border-blue-400 focus:ring-0 font-bold text-slate-700"
+                          value={form.metadata?.masterId || ''}
+                          onChange={e => {
+                            const h = hotels?.find((ht: any) => ht.id === e.target.value);
+                            if (h) {
+                              set('title', h.name);
+                              setMeta('masterId', h.id);
+                              setMeta('hotelName', h.name);
+                              setMeta('category', h.category);
+                            }
+                          }}
+                        >
+                          <option value="">-- Choose Hotel --</option>
+                          {(hotels || []).map((h: any) => (
+                            <option key={h.id} value={h.id}>{h.name}</option>
+                          ))}
+                        </select>
+                      ) : (
+                        <Input 
+                          className="h-11 rounded-2xl border-slate-200 bg-slate-50/50 font-bold" 
+                          value={form.metadata?.hotelName || ''} 
+                          onChange={e => {
+                            setMeta('hotelName', e.target.value);
+                            set('title', e.target.value);
+                          }} 
+                        />
+                      )}
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block ml-1">Category</label>
+                      <select 
+                        className="w-full h-11 px-4 border border-slate-200 rounded-2xl bg-slate-50/50 text-sm focus:border-blue-400 focus:ring-0 font-bold text-slate-700"
+                        value={form.metadata?.category || ''}
+                        onChange={(e) => setMeta('category', e.target.value)}
+                      >
+                        <option value="">Choose Category</option>
+                        <option value="Standard">Standard</option>
+                        <option value="3 Star">3 Star</option>
+                        <option value="4 Star">4 Star</option>
+                        <option value="5 Star">5 Star</option>
+                        <option value="Luxury">Luxury</option>
+                      </select>
+                    </div>
                   </div>
                 </div>
-                <div>
-                  <label className="text-[10px] font-black text-amber-700/60 uppercase tracking-widest block mb-2 ml-1">Check-out*</label>
-                  <div className="flex gap-2">
-                    <Input type="date" className="h-11 rounded-2xl border-amber-200/50 bg-white shadow-sm flex-1" value={form.metadata?.checkOutDate || ''} onChange={e => setMeta('checkOutDate', e.target.value)} />
-                    <select className="w-24 h-11 px-3 border border-amber-200/50 rounded-2xl bg-white shadow-sm text-xs font-bold" value={form.metadata?.checkOutTime || '12:00'} onChange={e => setMeta('checkOutTime', e.target.value)}>
-                      {Array.from({ length: 24 }).map((_, i) => (
-                        <option key={i} value={`${i.toString().padStart(2, '0')}:00`}>{i.toString().padStart(2, '0')}:00</option>
+              )}
+
+              {/* STEP 2: ROOMS & OPTIONS */}
+              {step === 2 && (
+                <div className="space-y-6 animate-in fade-in duration-300">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block ml-1">Room Category</label>
+                      <Input className="h-11 rounded-2xl border-slate-200 bg-slate-50/50 font-bold" value={form.metadata?.roomType || ''} onChange={e => setMeta('roomType', e.target.value)} placeholder="e.g. DELUXE" />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block ml-1">Meal Plan</label>
+                      <Input className="h-11 rounded-2xl border-slate-200 bg-slate-50/50 font-bold" value={form.metadata?.mealPlan || ''} onChange={e => setMeta('mealPlan', e.target.value)} placeholder="e.g. MAP (Breakfast + Dinner)" />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block ml-1">Hotel Alternative Option</label>
+                      <select className="w-full h-11 px-4 border border-slate-200 rounded-2xl bg-slate-50/50 text-sm focus:border-blue-400 focus:ring-0 font-bold text-slate-700" value={form.metadata?.hotelOption || 'Option 1'} onChange={e => setMeta('hotelOption', e.target.value)}>
+                        <option value="Option 1">Option 1 (Primary)</option>
+                        <option value="Option 2">Option 2 (Alternative)</option>
+                        <option value="Option 3">Option 3 (Alternative)</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="space-y-3">
+                    <label className="text-[11px] font-black text-slate-800 uppercase tracking-widest block ml-1">Room Configuration Grid</label>
+                    <div className="grid grid-cols-3 sm:grid-cols-6 gap-3 bg-slate-50/80 p-4 rounded-[24px] border border-slate-100 shadow-sm">
+                      {[
+                        { key: 'single', label: 'Single' },
+                        { key: 'double', label: 'Double' },
+                        { key: 'triple', label: 'Triple' },
+                        { key: 'quad', label: 'Quad' },
+                        { key: 'cwb', label: 'CWB' },
+                        { key: 'cnb', label: 'CNB' },
+                      ].map((field) => (
+                        <div key={field.key} className="space-y-1 bg-white p-2 rounded-xl border border-slate-100 shadow-sm">
+                          <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider block text-center">{field.label}</label>
+                          <input 
+                            type="number" 
+                            className="w-full h-8 text-center text-sm font-black border-0 focus:ring-0 outline-none text-blue-600"
+                            value={form.metadata?.rooms?.[field.key] || 0}
+                            onChange={(e) => {
+                              const currentRooms = form.metadata?.rooms || {};
+                              setMeta('rooms', { ...currentRooms, [field.key]: parseInt(e.target.value) || 0 });
+                            }}
+                          />
+                        </div>
                       ))}
-                    </select>
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
 
-              <div>
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2 ml-1">Description</label>
-                <textarea 
-                  className="w-full min-h-[100px] px-5 py-4 border border-slate-200 rounded-[28px] bg-white text-sm focus:border-blue-400 focus:ring-0 resize-none shadow-sm transition-all" 
-                  value={form.description || ''} 
-                  placeholder="e.g. 2 rooms with breakfast and dinner"
-                  onChange={e => set('description', e.target.value)} 
-                />
-              </div>
+              {/* STEP 3: DATES, COST & DESCRIPTION */}
+              {step === 3 && (
+                <div className="space-y-6 animate-in fade-in duration-300">
+                  <div className="bg-blue-50/40 p-5 rounded-[28px] border border-blue-100/60 shadow-inner grid grid-cols-1 sm:grid-cols-2 gap-6 relative overflow-hidden">
+                    <div className="absolute top-0 right-0 p-2 opacity-5"><div className="w-12 h-12 rounded-full border-4 border-blue-400/20" /></div>
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-black text-blue-800/80 uppercase tracking-widest block ml-1">Check-in*</label>
+                      <div className="flex gap-2">
+                        <Input type="date" className="h-11 rounded-2xl border-blue-200/50 bg-white shadow-sm flex-1 font-bold text-slate-700" value={form.metadata?.checkInDate || ''} onChange={e => setMeta('checkInDate', e.target.value)} />
+                        <select className="w-24 h-11 px-3 border border-blue-200/50 rounded-2xl bg-white shadow-sm text-xs font-bold text-slate-700" value={form.metadata?.checkInTime || '12:00'} onChange={e => setMeta('checkInTime', e.target.value)}>
+                          {Array.from({ length: 24 }).map((_, i) => (
+                            <option key={i} value={`${i.toString().padStart(2, '0')}:00`}>{i.toString().padStart(2, '0')}:00</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-black text-blue-800/80 uppercase tracking-widest block ml-1">Check-out*</label>
+                      <div className="flex gap-2">
+                        <Input type="date" className="h-11 rounded-2xl border-blue-200/50 bg-white shadow-sm flex-1 font-bold text-slate-700" value={form.metadata?.checkOutDate || ''} onChange={e => setMeta('checkOutDate', e.target.value)} />
+                        <select className="w-24 h-11 px-3 border border-blue-200/50 rounded-2xl bg-white shadow-sm text-xs font-bold text-slate-700" value={form.metadata?.checkOutTime || '12:00'} onChange={e => setMeta('checkOutTime', e.target.value)}>
+                          {Array.from({ length: 24 }).map((_, i) => (
+                            <option key={i} value={`${i.toString().padStart(2, '0')}:00`}>{i.toString().padStart(2, '0')}:00</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block ml-1">Cost (₹)</label>
+                      <Input type="number" className="h-11 rounded-2xl border-slate-200 bg-slate-50/50 font-bold" value={form.cost || ''} onChange={e => set('cost', e.target.value)} />
+                    </div>
+                    <div className="space-y-1.5 font-bold text-xs text-slate-500 pt-6">
+                      * Dates will update in the timeline accordingly.
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block ml-1">Description / Internal Notes</label>
+                    <textarea 
+                      className="w-full min-h-[100px] px-5 py-4 border border-slate-200 rounded-[28px] bg-white text-sm focus:border-blue-400 focus:ring-0 resize-none shadow-sm transition-all" 
+                      value={form.description || ''} 
+                      placeholder="e.g. Deluxe garden view, include extra bed if triple config"
+                      onChange={e => set('description', e.target.value)} 
+                    />
+                  </div>
+                </div>
+              )}
             </div>
           )}
           
@@ -1486,12 +1549,32 @@ function EventEditModal({ event, onClose, onSave, onDelete, destId, itinerary }:
 
           <div className="flex gap-4">
             <Button variant="ghost" className="rounded-2xl font-bold px-8 h-12 text-slate-400 hover:text-slate-600 hover:bg-slate-200/50 active:scale-95 transition-all" onClick={onClose}>Cancel</Button>
-            <Button 
-              className="rounded-[20px] font-bold px-10 h-12 bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-200/50 active:scale-95 transition-all" 
-              onClick={() => onSave({ title: form.title, description: form.description, startTime: form.startTime, endTime: form.endTime, cost: form.cost, metadata: form.metadata, type: form.type })}
-            >
-              <Check className="w-5 h-5 mr-2" /> Save
-            </Button>
+            
+            {form.type === 'accommodation' && step > 1 && (
+              <Button 
+                variant="outline"
+                className="rounded-[20px] font-bold px-8 h-12 border-slate-200 hover:bg-slate-50 transition-all"
+                onClick={() => setStep(s => s - 1)}
+              >
+                Back
+              </Button>
+            )}
+
+            {form.type === 'accommodation' && step < 3 ? (
+              <Button 
+                className="rounded-[20px] font-bold px-10 h-12 bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-200/50 active:scale-95 transition-all" 
+                onClick={() => setStep(s => s + 1)}
+              >
+                Next
+              </Button>
+            ) : (
+              <Button 
+                className="rounded-[20px] font-bold px-10 h-12 bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-200/50 active:scale-95 transition-all" 
+                onClick={() => onSave({ title: form.title, description: form.description, startTime: form.startTime, endTime: form.endTime, cost: form.cost, metadata: form.metadata, type: form.type })}
+              >
+                <Check className="w-5 h-5 mr-2" /> Save
+              </Button>
+            )}
           </div>
         </div>
       </motion.div>
