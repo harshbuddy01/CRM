@@ -52,8 +52,9 @@ app.use(
   cors({
     origin: (origin, callback) => {
       // Allow requests with no origin (server-to-server, mobile apps, curl)
-      // and requests from whitelisted origins or Hostinger preview sites
-      if (!origin || allowedOrigins.includes(origin) || origin.endsWith('.hostingersite.com')) {
+      // and requests from whitelisted origins, Hostinger preview sites, or any imagicaholidays.com subdomain
+      const isImagicaSubdomain = origin && /^https?:\/\/(?:[a-z0-9-]+\.)*imagicaholidays\.com$/.test(origin);
+      if (!origin || allowedOrigins.includes(origin) || origin.endsWith('.hostingersite.com') || isImagicaSubdomain) {
         callback(null, true);
       } else {
         callback(new Error(`CORS: Origin ${origin} not allowed`));
