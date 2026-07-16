@@ -211,8 +211,56 @@ const guestSOS = async (req, res, next) => {
 };
 
 // ──────────────────────────────────────────────────────────────
-// 4. DRIVER PORTAL DATA — GET /public/driver/:driverId
-// ──────────────────────────────────────────────────────────────
+const hotelLogin = async (req, res, next) => {
+  try {
+    const { username, pin } = req.body;
+    if (!username || !pin) throw new BusinessError('Username and PIN are required');
+
+    const hotel = await prisma.hotel.findFirst({
+      where: { loginId: username, isActive: true }
+    });
+
+    if (!hotel || hotel.loginPassword !== pin) {
+      return res.status(401).json({ success: false, message: 'Invalid credentials' });
+    }
+
+    res.json({
+      success: true,
+      data: {
+        hotelId: hotel.id,
+        hotelName: hotel.name,
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const driverLogin = async (req, res, next) => {
+  try {
+    const { username, pin } = req.body;
+    if (!username || !pin) throw new BusinessError('Username and PIN are required');
+
+    const driver = await prisma.driver.findFirst({
+      where: { loginId: username, isActive: true, deletedAt: null }
+    });
+
+    if (!driver || driver.loginPassword !== pin) {
+      return res.status(401).json({ success: false, message: 'Invalid credentials' });
+    }
+
+    res.json({
+      success: true,
+      data: {
+        driverId: driver.id,
+        driverName: driver.name,
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 const getDriverTrips = async (req, res, next) => {
   try {
     const { driverId } = req.params;
@@ -262,29 +310,76 @@ const getDriverTrips = async (req, res, next) => {
       };
     });
 
+    // Fetch live settlements / payouts (recorded supplier payments under Billing tab)
+    const payments = await prisma.payment.findMany({
+      where: {
+        vendorName: { contains: driver.name, mode: 'insensitive' },
+        deletedAt: null,
+      },
+      orderBy: { paymentDate: 'desc' },
+    });
+
+    // Get live financials from BookingServices of type transport/cab matching driver name
+    const bookingServices = await prisma.bookingService.findMany({
+      where: {
+        OR: [
+          { supplierId: driver.id },
+          { 
+            serviceType: { in: ['transport', 'cab', 'transfer'] },
+            supplierName: { contains: driver.name, mode: 'insensitive' }
+          }
+        ]
+      }
+    });
+
+    const totalCost = bookingServices.reduce((sum, s) => sum + Number(s.totalCost), 0);
+    const totalPaid = bookingServices.reduce((sum, s) => sum + Number(s.supplierAmountPaid), 0);
+    const totalPending = bookingServices.reduce((sum, s) => sum + Number(s.supplierAmountPending), 0);
+
     res.json({
       success: true,
-      data: { driver: { name: driver.name, vehicleName: driver.vehicleName, vehicleNo: driver.vehicleNo }, trips },
+      data: { 
+        driver: { name: driver.name, vehicleName: driver.vehicleName, vehicleNo: driver.vehicleNo }, 
+        trips,
+        settlements: payments.map(p => ({
+          id: p.id,
+          paymentDate: p.paymentDate,
+          amount: p.amount,
+          mode: p.mode,
+          status: p.status,
+          notes: p.notes || 'Payout Settlement'
+        })),
+        financials: {
+          totalEarnings: totalCost,
+          payoutReceived: totalPaid,
+          payoutPending: totalPending
+        }
+      },
     });
   } catch (error) {
     next(error);
   }
 };
 
-// ──────────────────────────────────────────────────────────────
-// 5. HOTEL PORTAL DATA — GET /public/hotel/:hotelName/guests
-// Returns today + upcoming guests staying at this hotel
-// ──────────────────────────────────────────────────────────────
 const getHotelGuests = async (req, res, next) => {
   try {
     const { hotelName } = req.params;
-    const decodedName = decodeURIComponent(hotelName);
+    let decodedName = decodeURIComponent(hotelName);
+
+    // Try to find by UUID first
+    let hotel = await prisma.hotel.findFirst({
+      where: { OR: [{ id: decodedName }, { name: { contains: decodedName, mode: 'insensitive' } }] }
+    });
+
+    if (hotel) {
+      decodedName = hotel.name;
+    }
 
     const services = await prisma.bookingService.findMany({
       where: {
         serviceType: 'hotel',
         serviceName: { contains: decodedName, mode: 'insensitive' },
-        checkIn: { gte: new Date(new Date().setDate(new Date().getDate() - 1)) },
+        checkIn: { gte: new Date(new Date().setDate(new Date().getDate() - 7)) },
       },
       include: {
         query: { select: { name: true, phone: true, adults: true, children: true } },
@@ -305,10 +400,51 @@ const getHotelGuests = async (req, res, next) => {
       status: s.tour?.status,
     }));
 
-    res.json({ success: true, data: { hotelName: decodedName, guests } });
+    // Fetch live settlements / payments matching hotel name
+    const payments = await prisma.payment.findMany({
+      where: {
+        vendorName: { contains: decodedName, mode: 'insensitive' },
+        deletedAt: null,
+      },
+      orderBy: { paymentDate: 'desc' },
+    });
+
+    // Get live financials from BookingServices matching hotel name
+    const totalCost = services.reduce((sum, s) => sum + Number(s.totalCost), 0);
+    const totalPaid = services.reduce((sum, s) => sum + Number(s.supplierAmountPaid), 0);
+    const totalPending = services.reduce((sum, s) => sum + Number(s.supplierAmountPending), 0);
+
+    res.json({ 
+      success: true, 
+      data: { 
+        hotelName: decodedName, 
+        guests,
+        settlements: payments.map(p => ({
+          id: p.id,
+          paymentDate: p.paymentDate,
+          amount: p.amount,
+          mode: p.mode,
+          status: p.status,
+          notes: p.notes || 'Booking Payment'
+        })),
+        financials: {
+          totalBilling: totalCost,
+          amountReceived: totalPaid,
+          amountPending: totalPending
+        }
+      } 
+    });
   } catch (error) {
     next(error);
   }
 };
 
-module.exports = { guestLogin, getGuestTrip, guestSOS, getDriverTrips, getHotelGuests };
+module.exports = { 
+  guestLogin, 
+  getGuestTrip, 
+  guestSOS, 
+  getDriverTrips, 
+  getHotelGuests,
+  hotelLogin,
+  driverLogin
+};

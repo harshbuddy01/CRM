@@ -22,9 +22,11 @@ router.get('/guest/:tourCode', ctrl.getGuestTrip);
 router.post('/guest/:tourCode/sos', ctrl.guestSOS);
 
 // ── Driver Portal ──────────────────────────────────────────
+router.post('/driver/login', ctrl.driverLogin);
 router.get('/driver/:driverId', ctrl.getDriverTrips);
 
 // ── Hotel Portal ───────────────────────────────────────────
+router.post('/hotel/login', ctrl.hotelLogin);
 router.get('/hotel/:hotelName/guests', ctrl.getHotelGuests);
 
 module.exports = router;
