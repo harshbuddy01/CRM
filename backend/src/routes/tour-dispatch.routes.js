@@ -20,5 +20,6 @@ router.post('/tours/:id/dispatch/hotel', dispatchController.assignHotel);
 
 // Generate guest credentials (username + PIN) — idempotent
 router.post('/tours/:id/guest-credentials', dispatchController.generateGuestCredentials);
+router.post('/tours/:id/send-email', dispatchController.sendGuestCredentialsEmail);
 
 module.exports = router;

@@ -179,8 +179,8 @@ const generateGuestCredentials = async (req, res, next) => {
     const tour = await prisma.tour.findUnique({ where: { id }, include: { query: true } });
     if (!tour) throw new NotFoundError('Tour');
 
-    // Idempotent: return existing if already generated
-    if (tour.guestUsername) {
+    // Idempotent: return existing if already generated (unless force: true is passed)
+    if (tour.guestUsername && !req.body.force) {
       return res.json({
         success: true,
         data: { username: tour.guestUsername, pin: tour.guestPassword, note: 'Credentials already generated' }
@@ -213,4 +213,27 @@ const generateGuestCredentials = async (req, res, next) => {
   }
 };
 
-module.exports = { getDispatch, assignDriver, assignHotel, generateGuestCredentials };
+const sendGuestCredentialsEmail = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { to, subject, body } = req.body;
+
+    if (!to || !subject || !body) {
+      throw new BusinessError('Recipient email, subject, and body are required');
+    }
+
+    const { sendMail } = require('../config/mailer');
+    await sendMail({
+      to,
+      subject,
+      text: body,
+      html: body.replace(/\n/g, '<br>')
+    });
+
+    res.json({ success: true, message: 'Email sent successfully via system mailer' });
+  } catch (error) {
+    next(error);
+  }
+};
+
+module.exports = { getDispatch, assignDriver, assignHotel, generateGuestCredentials, sendGuestCredentialsEmail };

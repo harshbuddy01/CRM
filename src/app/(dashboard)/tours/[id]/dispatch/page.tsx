@@ -8,7 +8,7 @@ import { format } from 'date-fns';
 import {
   ArrowLeft, Car, Building2, KeyRound, Copy, Check,
   ChevronDown, Loader2, UserPlus, Link2, AlertTriangle, CheckCircle2,
-  MessageSquare, Mail
+  MessageSquare, Mail, RefreshCw
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -200,6 +200,15 @@ export default function TourDispatchPage() {
   const [hotelEditingDay, setHotelEditingDay] = useState<{ dayNumber: number; currentHotelName: string } | null>(null);
   const [copied, setCopied] = useState(false);
 
+  // Sharing Modal States
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [shareType, setShareType] = useState<'whatsapp' | 'email'>('whatsapp');
+  const [waMessage, setWaMessage] = useState('');
+  const [emailSubject, setEmailSubject] = useState('');
+  const [emailBody, setEmailBody] = useState('');
+  const [emailRecipient, setEmailRecipient] = useState('');
+  const [waRecipient, setWaRecipient] = useState('');
+
   // ── Fetch dispatch data ──
   const { data: dispatch, isLoading } = useQuery({
     queryKey: ['dispatch', id],
@@ -250,6 +259,50 @@ export default function TourDispatchPage() {
     },
     onError: (e: any) => toast.error(e.response?.data?.message || 'Failed to generate credentials'),
   });
+
+  const resetCredsMut = useMutation({
+    mutationFn: () => api.post(`/tours/${id}/guest-credentials`, { force: true }).then(r => r.data.data),
+    onSuccess: (data) => {
+      if (data.pin) {
+        toast.success(`Credentials regenerated! New PIN: ${data.pin}`, { duration: 10000 });
+      }
+      queryClient.invalidateQueries({ queryKey: ['dispatch', id] });
+    },
+    onError: (e: any) => toast.error(e.response?.data?.message || 'Failed to regenerate credentials'),
+  });
+
+  const sendEmailMut = useMutation({
+    mutationFn: (data: { to: string, subject: string, body: string }) => 
+      api.post(`/tours/${id}/send-email`, data),
+    onSuccess: () => {
+      toast.success('Credentials email sent successfully!');
+      setIsShareModalOpen(false);
+    },
+    onError: (e: any) => toast.error(e.response?.data?.message || 'Failed to send email via backend'),
+  });
+
+  const openShareModal = (type: 'whatsapp' | 'email') => {
+    setShareType(type);
+    
+    const plainPin = dispatch?.guestPin || '';
+    const cleanPin = (plainPin.startsWith('$2a$') || plainPin.startsWith('$2b$')) ? 'Regenerate PIN first' : plainPin;
+    const guestUrl = `https://guest.imagicaholidays.com/${dispatch?.tourCode}`;
+
+    setWaRecipient(dispatch?.guestPhone || '');
+    setEmailRecipient(dispatch?.guestEmail || '');
+    
+    setWaMessage(
+      `Hello ${dispatch?.guestName || 'Guest'},\n\nHere are your access credentials for the Imagica Holidays Guest Portal:\n\n🔗 Link: ${guestUrl}\n👤 Username: ${dispatch?.guestUsername}\n🔑 Password/PIN: ${cleanPin}\n\nHave a safe and wonderful trip! ✈️`
+    );
+    
+    setEmailSubject(`Your Imagica Holidays Guest Portal Credentials - Tour ${dispatch?.tourCode}`);
+    
+    setEmailBody(
+      `Hello ${dispatch?.guestName || 'Guest'},\n\nHere are your access credentials for the Imagica Holidays Guest Portal:\n\nLink: ${guestUrl}\nUsername: ${dispatch?.guestUsername}\nPassword/PIN: ${cleanPin}\n\nHave a safe and wonderful trip!\n\nBest regards,\nImagica Holidays`
+    );
+    
+    setIsShareModalOpen(true);
+  };
 
   const handleCopy = (text: string) => {
     navigator.clipboard.writeText(text);
@@ -315,10 +368,25 @@ export default function TourDispatchPage() {
             <div className="bg-white border border-emerald-200 rounded-xl p-4 space-y-1">
               <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Password / PIN</p>
               <div className="flex items-center justify-between">
-                <code className="text-sm font-bold text-gray-900">{dispatch.guestPin || '—'}</code>
-                <button onClick={() => handleCopy(dispatch.guestPin || '')} className="text-gray-400 hover:text-gray-700 transition-colors" disabled={!dispatch.guestPin}>
-                  {copied ? <Check className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4" />}
-                </button>
+                <code className={cn(
+                  "text-sm font-bold truncate max-w-[170px]", 
+                  (dispatch.guestPin?.startsWith('$2a$') || dispatch.guestPin?.startsWith('$2b$')) ? "text-red-500 text-xs font-mono" : "text-gray-900"
+                )}>
+                  {(dispatch.guestPin?.startsWith('$2a$') || dispatch.guestPin?.startsWith('$2b$')) ? 'Hashed PIN (Regenerate)' : (dispatch.guestPin || '—')}
+                </code>
+                <div className="flex items-center gap-2 shrink-0">
+                  <button onClick={() => handleCopy(dispatch.guestPin || '')} className="text-gray-400 hover:text-gray-700 transition-colors" disabled={!dispatch.guestPin || dispatch.guestPin.startsWith('$2a$') || dispatch.guestPin.startsWith('$2b$')}>
+                    {copied ? <Check className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4" />}
+                  </button>
+                  <button 
+                    onClick={() => resetCredsMut.mutate()} 
+                    disabled={resetCredsMut.isPending}
+                    title="Regenerate/Reset PIN"
+                    className="text-gray-400 hover:text-amber-600 transition-colors cursor-pointer"
+                  >
+                    {resetCredsMut.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+                  </button>
+                </div>
               </div>
             </div>
             <div className="bg-white border border-emerald-200 rounded-xl p-4 space-y-1">
@@ -336,22 +404,14 @@ export default function TourDispatchPage() {
         {dispatch.guestCredentialsGenerated && (
           <div className="mt-4 flex flex-wrap gap-2.5">
             <button
-              onClick={() => {
-                const message = `Hello ${dispatch.guestName || 'Guest'},\n\nHere are your access credentials for the Imagica Holidays Guest Portal:\n\n🔗 Link: ${guestLink}\n👤 Username: ${dispatch.guestUsername}\n🔑 Password/PIN: ${dispatch.guestPin || '123456'}\n\nHave a safe and wonderful trip! ✈️`;
-                const phone = dispatch.guestPhone ? dispatch.guestPhone.replace(/\D/g, '') : '';
-                window.open(`https://wa.me/${phone.startsWith('91') ? phone : '91' + phone}?text=${encodeURIComponent(message)}`, '_blank');
-              }}
-              className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs py-2 px-4 rounded-xl flex items-center gap-1.5 shadow-sm active:scale-95 transition-all"
+              onClick={() => openShareModal('whatsapp')}
+              className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs py-2 px-4 rounded-xl flex items-center gap-1.5 shadow-sm active:scale-95 transition-all cursor-pointer"
             >
               <MessageSquare className="w-4 h-4" /> Send to WhatsApp
             </button>
             <button
-              onClick={() => {
-                const subject = `Your Imagica Holidays Guest Portal Credentials - Tour ${dispatch.tourCode}`;
-                const body = `Hello ${dispatch.guestName || 'Guest'},\n\nHere are your access credentials for the Imagica Holidays Guest Portal:\n\nLink: ${guestLink}\nUsername: ${dispatch.guestUsername}\nPassword/PIN: ${dispatch.guestPin || '123456'}\n\nHave a safe and wonderful trip!\n\nBest regards,\nImagica Holidays`;
-                window.open(`mailto:${dispatch.guestEmail || ''}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`, '_blank');
-              }}
-              className="bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs py-2 px-4 rounded-xl flex items-center gap-1.5 shadow-sm active:scale-95 transition-all"
+              onClick={() => openShareModal('email')}
+              className="bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs py-2 px-4 rounded-xl flex items-center gap-1.5 shadow-sm active:scale-95 transition-all cursor-pointer"
             >
               <Mail className="w-4 h-4" /> Send to Email
             </button>
@@ -456,6 +516,93 @@ export default function TourDispatchPage() {
           isPending={assignHotelMut.isPending}
         />
       )}
+
+      {/* ── Share Credentials Modal ── */}
+      <Dialog open={isShareModalOpen} onOpenChange={setIsShareModalOpen}>
+        <DialogContent className="max-w-md w-full rounded-2xl bg-white p-6 shadow-2xl">
+          <DialogHeader className="pb-2 border-b">
+            <DialogTitle className="text-lg font-bold flex items-center gap-2">
+              {shareType === 'whatsapp' ? <MessageSquare className="text-emerald-500 w-5 h-5" /> : <Mail className="text-blue-500 w-5 h-5" />}
+              {shareType === 'whatsapp' ? 'Share via WhatsApp' : 'Share via Email'}
+            </DialogTitle>
+            <DialogDescription className="text-xs text-gray-500">
+              Review and edit the template message before sending it to the client.
+            </DialogDescription>
+          </DialogHeader>
+
+          {shareType === 'whatsapp' && (
+            <div className="space-y-4 py-4">
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Recipient Phone Number</label>
+                <Input 
+                  value={waRecipient} 
+                  onChange={(e) => setWaRecipient(e.target.value)} 
+                  placeholder="Enter phone with country code (e.g. 919876543210)"
+                  className="font-medium text-xs h-9"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Message Body</label>
+                <textarea 
+                  value={waMessage} 
+                  onChange={(e) => setWaMessage(e.target.value)} 
+                  className="w-full text-xs font-sans p-3 border border-gray-200 rounded-xl min-h-[160px] focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+                />
+              </div>
+              <Button 
+                onClick={() => {
+                  const phone = waRecipient.replace(/\D/g, '');
+                  window.open(`https://wa.me/${phone.startsWith('91') ? phone : '91' + phone}?text=${encodeURIComponent(waMessage)}`, '_blank');
+                  setIsShareModalOpen(false);
+                }} 
+                className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold h-9 text-xs"
+              >
+                Open in WhatsApp
+              </Button>
+            </div>
+          )}
+
+          {shareType === 'email' && (
+            <div className="space-y-4 py-4">
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Recipient Email</label>
+                <Input 
+                  value={emailRecipient} 
+                  onChange={(e) => setEmailRecipient(e.target.value)} 
+                  placeholder="enter.email@domain.com"
+                  type="email"
+                  className="font-medium text-xs h-9"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Subject</label>
+                <Input 
+                  value={emailSubject} 
+                  onChange={(e) => setEmailSubject(e.target.value)} 
+                  placeholder="Email Subject"
+                  className="font-medium text-xs h-9"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Message Body</label>
+                <textarea 
+                  value={emailBody} 
+                  onChange={(e) => setEmailBody(e.target.value)} 
+                  className="w-full text-xs font-sans p-3 border border-gray-200 rounded-xl min-h-[160px] focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                />
+              </div>
+              <Button 
+                onClick={() => sendEmailMut.mutate({ to: emailRecipient, subject: emailSubject, body: emailBody })} 
+                disabled={sendEmailMut.isPending}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold h-9 text-xs"
+              >
+                {sendEmailMut.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                Send via System Emailer
+              </Button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
