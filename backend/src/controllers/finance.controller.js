@@ -673,7 +673,46 @@ const listVendorPayments = async (req, res, next) => {
 const createVendorPayment = async (req, res, next) => {
   try {
     req.body.recordedBy = req.user.id;
-    res.status(201).json({ success: true, data: await financeService.createVendorPayment(req.body) });
+    const { whatsappPhone, ...paymentData } = req.body;
+
+    const payment = await financeService.createVendorPayment(paymentData);
+
+    let queryCode = '';
+    if (payment.queryId) {
+      const q = await prisma.query.findUnique({ where: { id: payment.queryId } });
+      if (q) queryCode = q.queryCode;
+    }
+
+    let waLink = null;
+    if (whatsappPhone) {
+      // Normalize phone
+      let normalizedPhone = whatsappPhone.replace(/\D/g, '');
+      if (normalizedPhone.length === 10) {
+        normalizedPhone = `91${normalizedPhone}`;
+      }
+
+      const dateStr = new Date(payment.paymentDate).toLocaleDateString('en-IN');
+      const msg = `Hi ${payment.vendorName},\n\nWe have recorded a payment of ₹${Number(payment.amount).toLocaleString('en-IN')} via ${payment.mode.toUpperCase()}${payment.referenceId ? ` (Ref: ${payment.referenceId})` : ''} on ${dateStr}${queryCode ? ` for Query ${queryCode}` : ''}.\n\nThank you!\nImagica Holidays`;
+
+      const config = require('../config');
+      if (config.whatsapp?.mode === 'manual') {
+        waLink = `https://wa.me/${normalizedPhone}?text=${encodeURIComponent(msg)}`;
+      } else {
+        const queueService = require('../services/queue.service');
+        const components = [
+          { type: 'body', parameters: [
+            { type: 'text', text: payment.vendorName },
+            { type: 'text', text: `₹${Number(payment.amount).toLocaleString('en-IN')}` },
+            { type: 'text', text: payment.mode.toUpperCase() },
+            { type: 'text', text: payment.referenceId || 'N/A' },
+            { type: 'text', text: dateStr }
+          ]}
+        ];
+        await queueService.enqueueWhatsappJob(payment.queryId, normalizedPhone, 'vendor_payment_recorded', components);
+      }
+    }
+
+    res.status(201).json({ success: true, data: payment, waLink });
   } catch (e) { next(e); }
 };
 const deleteVendorPayment = async (req, res, next) => {

@@ -63,6 +63,7 @@ export default function VendorPaymentsPage() {
             <thead className="bg-muted/50 text-xs uppercase text-slate-400 font-bold italic">
               <tr>
                 <th className="px-4 py-3 text-left">Date</th>
+                <th className="px-4 py-3 text-left">Query</th>
                 <th className="px-4 py-3 text-left">Vendor</th>
                 <th className="px-4 py-3 text-left">Mode</th>
                 <th className="px-4 py-3 text-left">Reference</th>
@@ -74,6 +75,7 @@ export default function VendorPaymentsPage() {
               {data.items.map((v: any) => (
                 <tr key={v.id} className="hover:bg-muted/20 transition-colors group">
                   <td className="px-4 py-3 text-slate-500">{new Date(v.paymentDate).toLocaleDateString('en-IN')}</td>
+                  <td className="px-4 py-3 font-semibold text-slate-600">{v.query?.queryCode || '-'}</td>
                   <td className="px-4 py-3 font-black text-slate-900">{v.vendorName}</td>
                   <td className="px-4 py-3">
                     <span className="text-[10px] font-black uppercase bg-slate-100 text-slate-600 px-2 py-0.5 rounded border border-slate-200 shadow-xs">
@@ -104,6 +106,7 @@ export default function VendorPaymentsPage() {
                 <div className="space-y-1">
                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">
                     {new Date(v.paymentDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
+                    {v.query?.queryCode && ` • ${v.query.queryCode}`}
                   </p>
                   <h3 className="font-bold text-sm text-slate-900 leading-tight">{v.vendorName}</h3>
                 </div>
@@ -143,12 +146,34 @@ export default function VendorPaymentsPage() {
 }
 
 function VPForm({ onClose, onSaved }: { onClose: () => void; onSaved: () => void }) {
-  const [form, setForm] = useState({ vendorName: '', amount: '', mode: 'upi', referenceId: '', paymentDate: new Date().toISOString().split('T')[0], notes: '' });
+  const [form, setForm] = useState({ 
+    vendorName: '', 
+    amount: '', 
+    mode: 'upi', 
+    referenceId: '', 
+    paymentDate: new Date().toISOString().split('T')[0], 
+    notes: '',
+    queryId: '',
+    whatsappPhone: ''
+  });
   const [saving, setSaving] = useState(false);
+
+  const { data: queries } = useQuery({
+    queryKey: ['queries-list-minimal'],
+    queryFn: () => api.get('/queries', { params: { limit: 100 } }).then(r => r.data?.data?.items || [])
+  });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault(); setSaving(true);
-    try { await api.post('/finance/vendor-payments', form); toast.success('Payment recorded!'); onSaved(); onClose(); }
+    try { 
+      const res = await api.post('/finance/vendor-payments', form); 
+      toast.success('Payment recorded!'); 
+      if (res.data.waLink) {
+        window.open(res.data.waLink, '_blank');
+      }
+      onSaved(); 
+      onClose(); 
+    }
     catch (err: any) { toast.error(err.response?.data?.message || 'Failed'); }
     finally { setSaving(false); }
   };
@@ -164,13 +189,26 @@ function VPForm({ onClose, onSaved }: { onClose: () => void; onSaved: () => void
             <option value="upi">UPI</option><option value="neft">NEFT</option><option value="cash">Cash</option><option value="cheque">Cheque</option>
           </select>
         </div>
+        <div className="space-y-1.5"><Label className="text-xs uppercase tracking-wide text-muted-foreground">Link to Query</Label>
+          <select 
+            className="w-full h-10 px-3 border rounded-md text-sm bg-background" 
+            value={form.queryId} 
+            onChange={e => setForm({...form, queryId: e.target.value})}
+          >
+            <option value="">-- No Query --</option>
+            {queries?.map((q: any) => (
+              <option key={q.id} value={q.id}>{q.queryCode} - {q.name}</option>
+            ))}
+          </select>
+        </div>
+        <div className="space-y-1.5"><Label className="text-xs uppercase tracking-wide text-muted-foreground">WhatsApp Number (to alert vendor)</Label><Input type="tel" placeholder="e.g. 9876543210" value={form.whatsappPhone} onChange={e => setForm({...form, whatsappPhone: e.target.value})} /></div>
         <div className="space-y-1.5"><Label className="text-xs uppercase tracking-wide text-muted-foreground">Reference / UTR</Label><Input value={form.referenceId} onChange={e => setForm({...form, referenceId: e.target.value})} /></div>
         <div className="space-y-1.5"><Label className="text-xs uppercase tracking-wide text-muted-foreground">Date</Label><Input type="date" value={form.paymentDate} onChange={e => setForm({...form, paymentDate: e.target.value})} /></div>
         <div className="space-y-1.5"><Label className="text-xs uppercase tracking-wide text-muted-foreground">Notes</Label><Input value={form.notes} onChange={e => setForm({...form, notes: e.target.value})} /></div>
       </div>
       <div className="flex justify-end gap-2">
         <Button type="button" variant="ghost" size="sm" onClick={onClose}>Cancel</Button>
-        <Button type="submit" size="sm" disabled={saving}>{saving ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Check className="w-4 h-4 mr-1" />} Save</Button>
+        <Button type="submit" size="sm" disabled={saving}>{saving ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Check className="w-4 h-4 mr-1" />} Save & WhatsApp</Button>
       </div>
     </form>
   );

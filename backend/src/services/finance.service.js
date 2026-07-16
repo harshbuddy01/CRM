@@ -267,7 +267,10 @@ const listVendorPayments = async ({ from, to, supplierId, page = 1, limit = 50 }
     prisma.vendorPayment.findMany({
       where, orderBy: { paymentDate: 'desc' },
       skip: (page - 1) * limit, take: limit,
-      include: { user: { select: { id: true, name: true } } },
+      include: { 
+        user: { select: { id: true, name: true } },
+        query: { select: { id: true, queryCode: true } }
+      },
     }),
     prisma.vendorPayment.count({ where }),
   ]);
