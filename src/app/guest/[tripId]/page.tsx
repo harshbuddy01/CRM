@@ -25,16 +25,30 @@ export default function GuestWebApp() {
     const tourCode = tripId as string;
     if (!tourCode) return;
 
+    // Check if user came through the login flow
+    const storedTourCode = sessionStorage.getItem('guest_tourCode');
+    if (!storedTourCode) {
+      // No session at all — user navigated directly without logging in
+      router.replace('/guest/login');
+      return;
+    }
+
     fetch(`${API}/public/guest/${tourCode}`)
-      .then(r => r.json())
+      .then(r => {
+        if (!r.ok) throw new Error(`API error: ${r.status}`);
+        return r.json();
+      })
       .then(data => {
         if (data.success) setTrip(data.data);
         else {
-          // If not found, redirect to login
-          router.replace('/guest/login');
+          // API returned success:false but user IS authenticated — show error, don't redirect
+          toast.error('Trip data could not be loaded. Please contact support.');
         }
       })
-      .catch(() => toast.error('Failed to load trip data'))
+      .catch((err) => {
+        console.error('Guest portal fetch error:', err);
+        toast.error('Failed to load trip data. Please try again.');
+      })
       .finally(() => setLoadingTrip(false));
   }, [tripId, router]);
 
