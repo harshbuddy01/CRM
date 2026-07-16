@@ -28,8 +28,18 @@ export function middleware(request: NextRequest) {
 
   // 2. AUTHENTICATION & SECURITY
   const isSharePage = rewrittenPath.startsWith('/share');
-  const publicAuthPaths = ['/login', '/forgot-password', '/reset-password', '/share', '/rate-us', '/guest', '/driver', '/crm', '/hotel'];
-  const isPublicPath = publicAuthPaths.some(p => rewrittenPath.startsWith(p));
+
+  // Portal paths — these are standalone apps with their own auth (localStorage/sessionStorage).
+  // They must NEVER be affected by CRM cookie-based auth checks.
+  const portalPaths = ['/guest', '/driver', '/hotel', '/crm'];
+  const isPortalPath = portalPaths.some(p => rewrittenPath.startsWith(p));
+
+  // CRM-only public paths — pages that don't require CRM login
+  const crmPublicPaths = ['/login', '/forgot-password', '/reset-password', '/share', '/rate-us'];
+  const isCrmPublicPath = crmPublicPaths.some(p => rewrittenPath.startsWith(p));
+
+  // Combined: a path is "public" if it's a portal path OR a CRM public path
+  const isPublicPath = isPortalPath || isCrmPublicPath;
 
   if (isSharePage) {
     const response = NextResponse.next();
@@ -37,12 +47,16 @@ export function middleware(request: NextRequest) {
     return response;
   }
 
-  if (isAuth && isPublicPath && rewrittenPath !== '/') {
+  // If CRM-authenticated user visits a CRM public page (like /login), redirect to dashboard.
+  // But NEVER redirect portal paths — they have their own auth.
+  if (isAuth && isCrmPublicPath && rewrittenPath !== '/') {
     if (!isSharePage) {
       return NextResponse.redirect(new URL('/', request.url));
     }
   }
 
+  // If NOT authenticated and NOT on a public path, redirect to CRM login.
+  // Portal paths are always allowed through.
   if (!isAuth && !isPublicPath) {
     return NextResponse.redirect(new URL('/login', request.url));
   }
