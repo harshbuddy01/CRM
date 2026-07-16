@@ -227,7 +227,10 @@ const hotelLogin = async (req, res, next) => {
     if (!username || !pin) throw new BusinessError('Username and PIN are required');
 
     const hotel = await prisma.hotel.findFirst({
-      where: { loginId: username, isActive: true }
+      where: {
+        loginId: { equals: username, mode: 'insensitive' },
+        isActive: true
+      }
     });
 
     if (!hotel || hotel.loginPassword !== pin) {
@@ -252,7 +255,11 @@ const driverLogin = async (req, res, next) => {
     if (!username || !pin) throw new BusinessError('Username and PIN are required');
 
     const driver = await prisma.driver.findFirst({
-      where: { loginId: username, isActive: true, deletedAt: null }
+      where: {
+        loginId: { equals: username, mode: 'insensitive' },
+        isActive: true,
+        deletedAt: null
+      }
     });
 
     if (!driver || driver.loginPassword !== pin) {
