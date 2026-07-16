@@ -31,7 +31,18 @@ export default function DriverWebApp() {
       return;
     }
     const auth = JSON.parse(authStr);
-    if (auth.driverId !== driverId) {
+    const currentParam = String(driverId).toLowerCase();
+    const authId = String(auth.driverId).toLowerCase();
+    const authName = String(auth.driverName || '').toLowerCase();
+    const decodedParam = decodeURIComponent(String(driverId)).toLowerCase();
+
+    const isAuthorized = 
+      authId === currentParam || 
+      authName === decodedParam || 
+      authName.includes(decodedParam) || 
+      decodedParam.includes(authName);
+
+    if (!isAuthorized) {
       router.push('/driver/login');
       return;
     }

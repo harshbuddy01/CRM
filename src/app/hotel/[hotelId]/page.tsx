@@ -32,8 +32,18 @@ export default function HotelPartnerWebApp() {
       return;
     }
     const auth = JSON.parse(authStr);
-    // Support matching both ID or raw name to cover fallback URLs
-    if (auth.hotelId !== hotelId && auth.hotelName !== decodeURIComponent(hotelId as string)) {
+    const currentParam = String(hotelId).toLowerCase();
+    const authId = String(auth.hotelId).toLowerCase();
+    const authName = String(auth.hotelName).toLowerCase();
+    const decodedParam = decodeURIComponent(String(hotelId)).toLowerCase();
+
+    const isAuthorized = 
+      authId === currentParam || 
+      authName === decodedParam || 
+      authName.includes(decodedParam) || 
+      decodedParam.includes(authName);
+
+    if (!isAuthorized) {
       router.push('/hotel/login');
       return;
     }
