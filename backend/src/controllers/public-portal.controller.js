@@ -125,7 +125,7 @@ const getGuestTrip = async (req, res, next) => {
             },
           },
         },
-        bookingServices: { where: { deletedAt: null }, orderBy: { dayNumber: 'asc' } },
+        bookingServices: { orderBy: { dayNumber: 'asc' } },
         tourDrivers: { include: { driver: true }, orderBy: { dayNumber: 'asc' } },
         payments: { where: { deletedAt: null, status: 'verified' } },
       },
@@ -370,7 +370,7 @@ const getDriverTrips = async (req, res, next) => {
           paymentDate: p.paymentDate,
           amount: p.amount,
           mode: p.mode,
-          status: p.status,
+          status: 'paid',
           notes: p.notes || 'Payout Settlement'
         })),
         financials: {
@@ -448,7 +448,7 @@ const getHotelGuests = async (req, res, next) => {
           paymentDate: p.paymentDate,
           amount: p.amount,
           mode: p.mode,
-          status: p.status,
+          status: 'paid',
           notes: p.notes || 'Booking Payment'
         })),
         financials: {
