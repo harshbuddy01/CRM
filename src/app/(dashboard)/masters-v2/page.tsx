@@ -137,7 +137,7 @@ function MasterPanel({ category }: { category: typeof CATEGORIES[0] }) {
     const pin = item.loginPassword || '';
     
     const portalUrl = isHotel 
-      ? `https://partner.imagicaholidays.com/hotel/${item.id}` 
+      ? `https://hotel.imagicaholidays.com/hotel/${item.id}` 
       : `https://driver.imagicaholidays.com/driver/${item.id}`;
 
     setWaRecipient(isHotel ? '' : (item.phone || ''));
