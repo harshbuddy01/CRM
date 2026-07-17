@@ -9,7 +9,10 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 
-const API = process.env.NEXT_PUBLIC_API_URL;
+const API = process.env.NEXT_PUBLIC_API_URL
+  || (typeof window !== 'undefined' && window.location.hostname !== 'localhost'
+    ? 'https://api.imagicaholidays.com/api/v1'
+    : 'http://localhost:3001/api/v1');
 
 export default function DriverWebApp() {
   const { driverId } = useParams();

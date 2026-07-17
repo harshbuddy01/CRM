@@ -65,8 +65,10 @@ api.interceptors.response.use(
                   localStorage.removeItem('auth-storage');
                   document.cookie = 'accessToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; secure; samesite=strict';
                   
-                  // Only redirect to login if we are NOT on a public share page
-                  if (!window.location.pathname.startsWith('/share')) {
+                  // Only redirect to login if we are NOT on a public/portal page
+                  const portalPrefixes = ['/share', '/hotel', '/driver', '/guest'];
+                  const isPortalPage = portalPrefixes.some(p => window.location.pathname.startsWith(p));
+                  if (!isPortalPage) {
                     window.location.href = '/login';
                   }
                 }
@@ -91,8 +93,10 @@ api.interceptors.response.use(
           localStorage.removeItem('auth-storage');
           document.cookie = 'accessToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; secure; samesite=strict';
           
-          // Only redirect to login if we are NOT on a public share page
-          if (!window.location.pathname.startsWith('/share')) {
+          // Only redirect to login if we are NOT on a public/portal page
+          const portalPrefixes2 = ['/share', '/hotel', '/driver', '/guest'];
+          const isPortalPage2 = portalPrefixes2.some(p => window.location.pathname.startsWith(p));
+          if (!isPortalPage2) {
             window.location.href = '/login';
           }
         }

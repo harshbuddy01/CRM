@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { 
   MapPin, Navigation, Utensils, 
-  Calendar, ChevronRight, User, PhoneCall,
+  Calendar, ChevronRight, User, PhoneCall, Phone,
   Bed, Car, ShieldAlert, MessageSquare, Plus, CheckCircle2, Map,
   CreditCard, Download, Train, Plane, FileText, IndianRupee, Loader2
 } from 'lucide-react';

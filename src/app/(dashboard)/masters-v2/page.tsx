@@ -237,6 +237,7 @@ function MasterPanel({ category }: { category: typeof CATEGORIES[0] }) {
           canManage={canManage}
           onGenerateCredentials={(id) => generateCredsMutation.mutate(id)}
           generatingId={generateCredsMutation.variables}
+          onShareCredentials={openShareModal}
         />
       )}
       {data && <p className="text-xs text-muted-foreground text-right">{data.total || items.length} total records</p>}
@@ -546,7 +547,8 @@ function MasterTable({
   onDelete, 
   canManage, 
   onGenerateCredentials, 
-  generatingId 
+  generatingId,
+  onShareCredentials
 }: { 
   category: typeof CATEGORIES[0]; 
   items: any[]; 
@@ -556,6 +558,7 @@ function MasterTable({
   canManage: boolean; 
   onGenerateCredentials: (id: string) => void; 
   generatingId?: string;
+  onShareCredentials: (item: any, type: 'whatsapp' | 'email') => void;
 }) {
   return (
     <div className="overflow-x-auto rounded-lg border">
@@ -623,14 +626,14 @@ function MasterTable({
                           </button>
                         )}
                         <button 
-                          onClick={() => openShareModal(item, 'whatsapp')}
+                          onClick={() => onShareCredentials(item, 'whatsapp')}
                           title="Share via WhatsApp"
                           className="text-emerald-600 hover:text-emerald-700 hover:underline font-semibold flex items-center gap-0.5 text-[9px] cursor-pointer"
                         >
                           <MessageSquare className="w-2 h-2" /> WA
                         </button>
                         <button 
-                          onClick={() => openShareModal(item, 'email')}
+                          onClick={() => onShareCredentials(item, 'email')}
                           title="Share via Email"
                           className="text-blue-600 hover:text-blue-700 hover:underline font-semibold flex items-center gap-0.5 text-[9px] cursor-pointer"
                         >
