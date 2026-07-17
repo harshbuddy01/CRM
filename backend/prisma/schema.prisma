@@ -274,6 +274,7 @@ model Hotel {
 
   destination  Destination   @relation(fields: [destinationId], references: [id])
   proposalDays ProposalDay[]
+  requests     HotelRequest[]
 
   @@index([destinationId])
   @@map("hotels")
@@ -1223,9 +1224,40 @@ model TourDriver {
   dayNumber Int      @map("day_number")
   createdAt DateTime @default(now()) @map("created_at")
 
+  // Geolocation & Ride Status Fields
+  rideStatus          String    @default("IDLE") @map("ride_status") // 'IDLE', 'EN_ROUTE', 'ARRIVED', 'IN_TRANSIT', 'COMPLETED'
+  lat                 Float?    @map("lat")
+  lng                 Float?    @map("lng")
+  pickupLocation      String?   @map("pickup_location")
+  pickupLat           Float?    @map("pickup_lat")
+  pickupLng           Float?    @map("pickup_lng")
+  destinationLocation String?   @map("destination_location")
+  destinationLat      Float?    @map("destination_lat")
+  destinationLng      Float?    @map("destination_lng")
+  lastLocUpdate       DateTime? @map("last_loc_update")
+  etaMinutes          Int?      @map("eta_minutes")
+
   tour   Tour   @relation(fields: [tourId], references: [id], onDelete: Cascade)
   driver Driver @relation(fields: [driverId], references: [id], onDelete: Cascade)
 
   @@unique([tourId, dayNumber])
   @@map("tour_drivers")
 }
+
+model HotelRequest {
+  id               String   @id @default(uuid())
+  tourCode         String   @map("tour_code")
+  hotelId          String   @map("hotel_id")
+  roomNo           String?  @map("room_no")
+  requestType      String   @map("request_type") // 'room_service', 'housekeeping', 'laundry', 'maintenance', 'other'
+  notes            String?  @map("notes")
+  status           String   @default("PENDING") @map("status") // 'PENDING', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED'
+  guestName        String   @map("guest_name")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  hotel Hotel @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+
+  @@map("hotel_requests")
+}
+

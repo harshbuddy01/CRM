@@ -20,13 +20,21 @@ router.use(portalLimiter);
 router.post('/guest/login', ctrl.guestLogin);
 router.get('/guest/:tourCode', ctrl.getGuestTrip);
 router.post('/guest/:tourCode/sos', ctrl.guestSOS);
+router.get('/guest/:tourCode/driver-location', ctrl.getDriverLocationForGuest);
+router.post('/guest/:tourCode/hotel-request', ctrl.createHotelRequest);
+router.get('/guest/:tourCode/hotel-requests', ctrl.getGuestHotelRequests);
 
 // ── Driver Portal ──────────────────────────────────────────
 router.post('/driver/login', ctrl.driverLogin);
 router.get('/driver/:driverId', ctrl.getDriverTrips);
+router.post('/driver/:driverId/ride/start', ctrl.startDriverRide);
+router.post('/driver/:driverId/ride/location', ctrl.updateDriverLocation);
+router.post('/driver/:driverId/ride/complete', ctrl.completeDriverRide);
 
 // ── Hotel Portal ───────────────────────────────────────────
 router.post('/hotel/login', ctrl.hotelLogin);
 router.get('/hotel/:hotelName/guests', ctrl.getHotelGuests);
+router.get('/hotel/:hotelId/requests', ctrl.getHotelRequests);
+router.patch('/hotel/:hotelId/requests/:requestId', ctrl.updateHotelRequestStatus);
 
 module.exports = router;

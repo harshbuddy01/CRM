@@ -331,6 +331,12 @@ const getDriverTrips = async (req, res, next) => {
         destination: a.tour.query?.destination,
         hotel: hotel?.serviceName || null,
         tourStatus: a.tour.status,
+        rideStatus: a.rideStatus,
+        lat: a.lat,
+        lng: a.lng,
+        pickupLocation: a.pickupLocation,
+        destinationLocation: a.destinationLocation,
+        etaMinutes: a.etaMinutes,
       };
     });
 
@@ -403,26 +409,58 @@ const getHotelGuests = async (req, res, next) => {
       where: {
         serviceType: 'hotel',
         serviceName: { contains: decodedName, mode: 'insensitive' },
-        checkIn: { gte: new Date(new Date().setDate(new Date().getDate() - 7)) },
+        OR: [
+          { checkIn: { gte: new Date(new Date().setDate(new Date().getDate() - 7)) } },
+          { checkIn: null }
+        ]
       },
       include: {
         query: { select: { name: true, phone: true, adults: true, children: true } },
-        tour: { select: { tourCode: true, status: true } },
+        tour: { select: { tourCode: true, status: true, startDate: true, endDate: true } },
       },
-      orderBy: { checkIn: 'asc' },
+      orderBy: [
+        { checkIn: 'asc' },
+        { dayNumber: 'asc' }
+      ]
     });
 
-    const guests = services.map((s) => ({
-      tourCode: s.tour?.tourCode,
-      guestName: s.query?.name,
-      guestPhone: s.query?.phone,
-      adults: s.query?.adults,
-      children: s.query?.children,
-      checkIn: s.checkIn,
-      checkOut: s.checkOut,
-      roomNotes: s.notes,
-      status: s.tour?.status,
-    }));
+    const guestsList = services.map((s) => {
+      let checkIn = s.checkIn;
+      let checkOut = s.checkOut;
+
+      if (!checkIn && s.tour?.startDate && s.dayNumber) {
+        const start = new Date(s.tour.startDate);
+        const ci = new Date(start);
+        ci.setDate(ci.getDate() + (s.dayNumber - 1));
+        checkIn = ci;
+
+        const co = new Date(start);
+        co.setDate(co.getDate() + s.dayNumber);
+        checkOut = co;
+      }
+
+      return {
+        tourCode: s.tour?.tourCode,
+        guestName: s.query?.name,
+        guestPhone: s.query?.phone,
+        adults: s.query?.adults,
+        children: s.query?.children,
+        checkIn: checkIn,
+        checkOut: checkOut,
+        roomNotes: s.notes,
+        status: s.tour?.status,
+      };
+    });
+
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+    const guests = guestsList.filter(g => {
+      if (!g.checkIn) return false;
+      return new Date(g.checkIn) >= sevenDaysAgo;
+    });
+
+    guests.sort((a, b) => new Date(a.checkIn).getTime() - new Date(b.checkIn).getTime());
 
     // Fetch live settlements / payments matching hotel name
     const payments = await prisma.vendorPayment.findMany({
@@ -463,6 +501,269 @@ const getHotelGuests = async (req, res, next) => {
   }
 };
 
+// ─── Uber-Style Driver Ride Endpoints ───
+const startDriverRide = async (req, res, next) => {
+  try {
+    const { driverId } = req.params;
+    const { tourId, dayNumber, pickupLocation, destinationLocation, lat, lng } = req.body;
+
+    const tourDriver = await prisma.tourDriver.findFirst({
+      where: { tourId: String(tourId), driverId: String(driverId), dayNumber: Number(dayNumber) },
+      include: {
+        tour: {
+          include: { query: { select: { name: true, phone: true } } }
+        },
+        driver: true
+      }
+    });
+
+    if (!tourDriver) {
+      throw new NotFoundError('Assigned Tour Driver record not found');
+    }
+
+    const updated = await prisma.tourDriver.update({
+      where: { id: tourDriver.id },
+      data: {
+        rideStatus: 'STARTED',
+        pickupLocation: pickupLocation || 'Airport / Station',
+        destinationLocation: destinationLocation || 'Hotel',
+        lat: lat ? parseFloat(lat) : null,
+        lng: lng ? parseFloat(lng) : null,
+        lastLocUpdate: new Date()
+      }
+    });
+
+    // Queue WhatsApp notification to the guest with live tracking link
+    const guestName = tourDriver.tour.query?.name || 'Traveler';
+    const guestPhone = tourDriver.tour.query?.phone;
+    const trackingUrl = `https://guest.imagicaholidays.com/${tourDriver.tour.tourCode}`;
+    const driverName = tourDriver.driver.name;
+    const vehicle = `${tourDriver.driver.vehicleName} (${tourDriver.driver.vehicleNo})`;
+
+    if (guestPhone) {
+      try {
+        const queueService = require('../services/queue.service');
+        await queueService.enqueueWhatsappJob(
+          tourDriver.tour.id,
+          guestPhone,
+          'driver_started_ride',
+          [
+            {
+              type: 'body',
+              parameters: [
+                { type: 'text', text: guestName },
+                { type: 'text', text: driverName },
+                { type: 'text', text: vehicle },
+                { type: 'text', text: trackingUrl }
+              ]
+            }
+          ]
+        );
+      } catch (e) {
+        console.error('[WhatsApp Notification Queue Error]', e);
+      }
+    }
+
+    res.json({ success: true, message: 'Ride started successfully', data: updated });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const updateDriverLocation = async (req, res, next) => {
+  try {
+    const { driverId } = req.params;
+    const { tourId, dayNumber, lat, lng, etaMinutes } = req.body;
+
+    const tourDriver = await prisma.tourDriver.findFirst({
+      where: { tourId: String(tourId), driverId: String(driverId), dayNumber: Number(dayNumber) }
+    });
+
+    if (!tourDriver) {
+      throw new NotFoundError('Assigned Tour Driver record not found');
+    }
+
+    const updated = await prisma.tourDriver.update({
+      where: { id: tourDriver.id },
+      data: {
+        lat: parseFloat(lat),
+        lng: parseFloat(lng),
+        etaMinutes: etaMinutes ? parseInt(etaMinutes, 10) : null,
+        lastLocUpdate: new Date()
+      }
+    });
+
+    res.json({ success: true, data: updated });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const completeDriverRide = async (req, res, next) => {
+  try {
+    const { driverId } = req.params;
+    const { tourId, dayNumber } = req.body;
+
+    const tourDriver = await prisma.tourDriver.findFirst({
+      where: { tourId: String(tourId), driverId: String(driverId), dayNumber: Number(dayNumber) }
+    });
+
+    if (!tourDriver) {
+      throw new NotFoundError('Assigned Tour Driver record not found');
+    }
+
+    const updated = await prisma.tourDriver.update({
+      where: { id: tourDriver.id },
+      data: {
+        rideStatus: 'COMPLETED',
+        lastLocUpdate: new Date()
+      }
+    });
+
+    res.json({ success: true, message: 'Ride completed successfully', data: updated });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const getDriverLocationForGuest = async (req, res, next) => {
+  try {
+    const { tourCode } = req.params;
+
+    const tour = await prisma.tour.findFirst({
+      where: { tourCode: { equals: tourCode, mode: 'insensitive' }, deletedAt: null },
+      include: {
+        tourDrivers: {
+          include: { driver: true },
+          orderBy: { dayNumber: 'asc' }
+        }
+      }
+    });
+
+    if (!tour) throw new NotFoundError('Trip not found');
+
+    // Determine current day number
+    const today = new Date().toISOString().split('T')[0];
+    const safeStartDate = tour.startDate ? new Date(tour.startDate) : new Date();
+    const startStr = (isNaN(safeStartDate.getTime()) ? new Date() : safeStartDate).toISOString().split('T')[0];
+    const daysDiff = Math.floor((new Date(today) - new Date(startStr)) / 86400000);
+    const currentDayNum = Math.max(1, daysDiff + 1);
+
+    const currentTourDriver = tour.tourDrivers.find(d => d.dayNumber === currentDayNum);
+
+    if (!currentTourDriver) {
+      return res.json({ success: true, active: false, message: 'No driver assigned for today' });
+    }
+
+    res.json({
+      success: true,
+      active: currentTourDriver.rideStatus === 'STARTED',
+      data: {
+        rideStatus: currentTourDriver.rideStatus,
+        lat: currentTourDriver.lat,
+        lng: currentTourDriver.lng,
+        pickupLocation: currentTourDriver.pickupLocation,
+        destinationLocation: currentTourDriver.destinationLocation,
+        etaMinutes: currentTourDriver.etaMinutes,
+        lastLocUpdate: currentTourDriver.lastLocUpdate,
+        driver: {
+          name: currentTourDriver.driver.name,
+          phone: currentTourDriver.driver.phone,
+          vehicleName: currentTourDriver.driver.vehicleName,
+          vehicleNo: currentTourDriver.driver.vehicleNo
+        }
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// ─── Hotel Service Request Endpoints ───
+const createHotelRequest = async (req, res, next) => {
+  try {
+    const { tourCode } = req.params;
+    const { hotelId, roomNo, requestType, notes, guestName } = req.body;
+
+    if (!hotelId || !requestType || !guestName) {
+      throw new BusinessError('Hotel ID, Request Type, and Guest Name are required');
+    }
+
+    const request = await prisma.hotelRequest.create({
+      data: {
+        tourCode,
+        hotelId,
+        roomNo,
+        requestType,
+        notes,
+        guestName
+      }
+    });
+
+    res.json({ success: true, message: 'Service request submitted successfully', data: request });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const getGuestHotelRequests = async (req, res, next) => {
+  try {
+    const { tourCode } = req.params;
+    const requests = await prisma.hotelRequest.findMany({
+      where: { tourCode },
+      orderBy: { createdAt: 'desc' }
+    });
+    res.json({ success: true, data: requests });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const getHotelRequests = async (req, res, next) => {
+  try {
+    const { hotelId } = req.params;
+
+    let hotel = await prisma.hotel.findFirst({
+      where: { OR: [{ id: hotelId }, { name: { contains: hotelId, mode: 'insensitive' } }] }
+    });
+
+    if (!hotel) throw new NotFoundError('Hotel not found');
+
+    const requests = await prisma.hotelRequest.findMany({
+      where: { hotelId: hotel.id },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    res.json({ success: true, data: requests });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const updateHotelRequestStatus = async (req, res, next) => {
+  try {
+    const { hotelId, requestId } = req.params;
+    const { status } = req.body;
+
+    if (!status) throw new BusinessError('Status is required');
+
+    const request = await prisma.hotelRequest.findUnique({
+      where: { id: requestId }
+    });
+
+    if (!request) throw new NotFoundError('Service request not found');
+
+    const updated = await prisma.hotelRequest.update({
+      where: { id: requestId },
+      data: { status }
+    });
+
+    res.json({ success: true, message: 'Request status updated successfully', data: updated });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = { 
   guestLogin, 
   getGuestTrip, 
@@ -470,5 +771,14 @@ module.exports = {
   getDriverTrips, 
   getHotelGuests,
   hotelLogin,
-  driverLogin
+  driverLogin,
+  startDriverRide,
+  updateDriverLocation,
+  completeDriverRide,
+  getDriverLocationForGuest,
+  createHotelRequest,
+  getGuestHotelRequests,
+  getHotelRequests,
+  updateHotelRequestStatus
 };
+
