@@ -41,6 +41,10 @@ const dynamicOrigins = process.env.CORS_ALLOWED_ORIGINS ? process.env.CORS_ALLOW
 const allowedOrigins = [
   config.frontendUrl, 
   'https://lightpink-termite-550903.hostingersite.com', 
+  'https://streamkart.shop',
+  'https://crm.streamkart.shop',
+  'https://crm.imagicaholidays.com',
+  'https://imagicaholidays.com',
   ...dynamicOrigins
 ];
 
