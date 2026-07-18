@@ -121,10 +121,10 @@ const getBillingStatementTemplate = (data) => {
   const { query, customer, payments, date, orgSettings, tourCode } = data;
   
   const settings = orgSettings || {};
-  const companyName = settings.companyName || 'Imagica Holidays Pvt. Ltd.';
-  const companyEmail = settings.companyEmail || 'info@imagicaholidays.com';
-  const companyPhone = settings.companyPhone || '+91 98765 43210';
-  const companyWebsite = settings.companyWebsite || 'www.imagicaholidays.com';
+  const companyName = settings.companyName || process.env.APP_NAME || 'TravelCRM';
+  const companyEmail = settings.companyEmail || process.env.APP_EMAIL || 'noreply@travelcrm.app';
+  const companyPhone = settings.companyPhone || '+91 99999 99999';
+  const companyWebsite = settings.companyWebsite || process.env.APP_DOMAIN || 'travelcrm.app';
   const companyAddress = settings.companyAddress || '2nd Floor, Adventure House, Hill Cart Road, Siliguri, West Bengal - 734001, India';
   const companyLogoUrl = settings.companyLogoUrl || '';
   const companyGst = settings.companyGst || '';
@@ -864,7 +864,7 @@ const getBillingStatementTemplate = (data) => {
           <div class="invoice-header-title">
             <h1 class="invoice-title-text">BILLING STATEMENT</h1>
             <div class="double-divider"></div>
-            <div class="invoice-subtitle-text">Imagica Holidays — Internal Ledger Report</div>
+            <div class="invoice-subtitle-text">${process.env.APP_NAME || 'TravelCRM'} — Internal Ledger Report</div>
           </div>
           
           <!-- Status Stamp Badge -->
@@ -1136,9 +1136,9 @@ const getBillingStatementTemplate = (data) => {
                 <span>🏔️✈✨</span>
               </div>
               <p class="quote-text">
-                "Thank you for travelling with Imagica Holidays."
+                "Thank you for travelling with ${process.env.APP_NAME || 'TravelCRM'}."
               </p>
-              <div class="quote-author">Team Imagica</div>
+              <div class="quote-author">Team ${process.env.APP_NAME || 'TravelCRM'}</div>
             </div>
           </div>
         </div>

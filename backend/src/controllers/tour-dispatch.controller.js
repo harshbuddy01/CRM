@@ -205,7 +205,7 @@ const generateGuestCredentials = async (req, res, next) => {
       data: {
         username,
         pin, // Show plain PIN to Ops agent
-        guestLink: `https://guest.imagicaholidays.com/${tour.tourCode}`,
+        guestLink: `https://guest.${process.env.APP_DOMAIN || 'travelcrm.app'}/${tour.tourCode}`,
       }
     });
   } catch (error) {

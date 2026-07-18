@@ -186,11 +186,10 @@ const generateItineraryHtml = (itinerary, settings = {}) => {
   }
 
   // --- Dynamic settings values ---
-  const companyLogo = settings.companyLogoUrl || '';
-  const companyName = settings.companyName || 'Imagica Holidays';
-  const companyPhone = settings.companyPhone || '+91 89107 59374';
-  const companyEmail = settings.companyEmail || 'info.imagicaholidays@gmail.com';
-  const companyWeb = settings.companyWebsite || 'imagicaholidays.com';
+  const companyName = settings.companyName || process.env.APP_NAME || 'TravelCRM';
+  const companyPhone = settings.companyPhone || '+91 99999 99999';
+  const companyEmail = settings.companyEmail || process.env.APP_EMAIL || 'noreply@travelcrm.app';
+  const companyWeb = settings.companyWebsite || process.env.APP_DOMAIN || 'travelcrm.app';
   const companySlogan = settings.companySlogan || 'CURATED JOURNEYS. LASTING MEMORIES.';
 
   // Custom PDF customization settings
@@ -948,7 +947,7 @@ const generateItineraryHtml = (itinerary, settings = {}) => {
               <div style="margin-top: 5mm; display: flex; justify-content: space-between; align-items: center; border-top: 1px dashed #efe4d2; padding-top: 4mm;">
                 <div>
                   <span style="font-family: 'Satisfy', cursive; font-size: 18px; color: var(--pdf-primary); font-weight: 500; display: block;">Warmest Regards,</span>
-                  <span style="font-family: 'Montserrat', sans-serif; font-size: 7.5px; font-weight: 700; color: var(--pdf-accent); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 1px; display: block;">Team Imagica Holidays</span>
+                  <span style="font-family: 'Montserrat', sans-serif; font-size: 7.5px; font-weight: 700; color: var(--pdf-accent); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 1px; display: block;">Team ${process.env.APP_NAME || 'TravelCRM'}</span>
                 </div>
                 <div style="font-family: 'Satisfy', cursive; font-size: 26px; color: var(--pdf-accent); opacity: 0.8;">
                   Bon Voyage!
@@ -1290,7 +1289,7 @@ const generateItineraryHtml = (itinerary, settings = {}) => {
               <span style="font-family: 'Satisfy', cursive; font-size: 16px; color: var(--pdf-accent);">
                 "We wish you a wonderful journey filled with unforgettable memories!"
               </span>
-              <div style="font-family: 'Montserrat', sans-serif; font-size: 6px; font-weight: 600; color: #888; text-transform: uppercase; letter-spacing: 1.5px; margin-top: 4px;">Imagica Holidays Fleet Service</div>
+              <div style="font-family: 'Montserrat', sans-serif; font-size: 6px; font-weight: 600; color: #888; text-transform: uppercase; letter-spacing: 1.5px; margin-top: 4px;">${process.env.APP_NAME || 'TravelCRM'} Fleet Service</div>
             </div>
           </div>
 
@@ -1421,7 +1420,7 @@ const generateItineraryHtml = (itinerary, settings = {}) => {
                     <p>&bull; Standard check-in time at hotels is 14:00 hrs and check-out is 11:00 hrs.</p>
                     <p>&bull; Any increase in government taxes, fuel costs or airline fares will be charged extra.</p>
                     <p>&bull; Personal expenses like laundry, phone calls, drinks and entry tickets are not included.</p>
-                    <p>&bull; Imagica Holidays reserves the right to rearrange day-wise schedules due to weather/traffic.</p>
+                    <p>&bull; ${process.env.APP_NAME || 'TravelCRM'} reserves the right to rearrange day-wise schedules due to weather/traffic.</p>
                   `)}
                 </div>
               </div>
@@ -1536,7 +1535,7 @@ const generateItineraryHtml = (itinerary, settings = {}) => {
                 <div style="width: 100%; height: 100%; background-image: url('${gridImages[4]}'); background-size: cover; background-position: center;"></div>
                 <!-- Center badge -->
                 <div style="position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%); background: var(--pdf-primary); border: 1.5px solid var(--pdf-accent); border-radius: 20px; padding: 3px 10px; white-space: nowrap;">
-                  <span style="font-family: 'Montserrat', sans-serif; font-size: 6.5px; font-weight: 700; color: var(--pdf-accent); text-transform: uppercase; letter-spacing: 0.5px;">Imagica Holidays</span>
+                  <span style="font-family: 'Montserrat', sans-serif; font-size: 6.5px; font-weight: 700; color: var(--pdf-accent); text-transform: uppercase; letter-spacing: 0.5px;">${process.env.APP_NAME || 'TravelCRM'}</span>
                 </div>
               </div>
               <div style="flex: 1; border-radius: 6px; overflow: hidden; border: none; position: relative;">

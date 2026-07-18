@@ -27,7 +27,7 @@ app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       ...helmet.contentSecurityPolicy.getDefaultDirectives(),
-      'frame-ancestors': ["'self'", 'https://crm.imagicaholidays.com', 'https://www.imagicaholidays.com'],
+      'frame-ancestors': ["'self'", process.env.FRONTEND_URL ? process.env.FRONTEND_URL : '*'],
       'img-src': ["'self'", 'data:', 'https://res.cloudinary.com', 'https://images.unsplash.com', 'https:'],
     },
   },
@@ -37,24 +37,21 @@ app.use(helmet({
 }));
 
 // CORS — allow only whitelisted frontend origins
+const dynamicOrigins = process.env.CORS_ALLOWED_ORIGINS ? process.env.CORS_ALLOWED_ORIGINS.split(',').map(o => o.trim()) : [];
 const allowedOrigins = [
   config.frontendUrl, 
   'https://lightpink-termite-550903.hostingersite.com', 
-  'https://imagicaholidays.com', 
-  'https://www.imagicaholidays.com', 
-  'https://crm.imagicaholidays.com',
-  'https://api.imagicaholidays.com',
-  'https://guest.imagicaholidays.com',
-  'https://driver.imagicaholidays.com'
+  ...dynamicOrigins
 ];
 
 app.use(
   cors({
     origin: (origin, callback) => {
       // Allow requests with no origin (server-to-server, mobile apps, curl)
-      // and requests from whitelisted origins, Hostinger preview sites, or any imagicaholidays.com subdomain
-      const isImagicaSubdomain = origin && /^https?:\/\/(?:[a-z0-9-]+\.)*imagicaholidays\.com$/.test(origin);
-      if (!origin || allowedOrigins.includes(origin) || origin.endsWith('.hostingersite.com') || isImagicaSubdomain) {
+      // and requests from whitelisted origins, Hostinger preview sites, or any dynamic APP_DOMAIN subdomain
+      const appDomain = process.env.APP_DOMAIN || 'travelcrm.app';
+      const isAppSubdomain = origin && new RegExp(`^https?:\\/\\/(?:[a-z0-9-]+\\.)*${appDomain.replace(/\./g, '\\.')}$`).test(origin);
+      if (!origin || allowedOrigins.includes(origin) || origin.endsWith('.hostingersite.com') || isAppSubdomain) {
         callback(null, true);
       } else {
         callback(new Error(`CORS: Origin ${origin} not allowed`));
@@ -177,11 +174,13 @@ apiRouter.use('/settings', require('./routes/org-setting.routes'));
 apiRouter.use('/status-settings', require('./routes/status-setting.routes'));
 apiRouter.use('/clients', require('./routes/client.routes'));
 apiRouter.use('/agents', require('./routes/agent.routes'));
+apiRouter.use('/agents', require('./routes/b2b-commission.routes'));
 apiRouter.use('/masters-v2', require('./routes/master-v2.routes'));
 apiRouter.use('/cms', require('./routes/cms.routes'));
 apiRouter.use('/finance', require('./routes/finance.routes'));
 apiRouter.use('/branches', require('./routes/branch.routes'));
 apiRouter.use('/integrations', require('./routes/sheet-sync.routes'));
+apiRouter.use('/chatbot', require('./routes/chatbot.routes'));
 // Itinerary Builder System
 apiRouter.use('/itineraries', require('./routes/itinerary.routes'));
 // System Admin (Backups, Logs)
@@ -217,6 +216,11 @@ app.get('/api/v1/website-configs/public',         websiteConfigCtrl.getWebsiteCo
 const portalRoutes = require('./routes/public-portal.routes');
 app.use('/v1/public', portalRoutes);
 app.use('/api/v1/public', portalRoutes);
+
+// ── Demo Sandbox ──
+const demoRoutes = require('./routes/demo.routes');
+app.use('/v1/demo', demoRoutes);
+app.use('/api/v1/demo', demoRoutes);
 
 // Mount the authenticated API router under both prefixes
 app.use('/v1', apiRouter);

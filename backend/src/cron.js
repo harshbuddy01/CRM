@@ -154,6 +154,13 @@ const startCronJobs = () => {
   });
 
   console.log('⏰ Midnight Cron scheduler active (sessions + 7-day activity log purge).');
+
+  // Run every 10 minutes to clean up expired demo sessions
+  cron.schedule('*/10 * * * *', async () => {
+    const { cleanupExpiredDemoSessions } = require('./jobs/demo-cleanup');
+    await cleanupExpiredDemoSessions();
+  });
+  console.log('⏰ Demo Cleanup scheduler active (every 10 minutes).');
 };
 
 module.exports = { startCronJobs };

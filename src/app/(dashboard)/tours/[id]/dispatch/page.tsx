@@ -286,19 +286,20 @@ export default function TourDispatchPage() {
     
     const plainPin = dispatch?.guestPin || '';
     const cleanPin = (plainPin.startsWith('$2a$') || plainPin.startsWith('$2b$')) ? 'Regenerate PIN first' : plainPin;
-    const guestUrl = `https://guest.imagicaholidays.com/${dispatch?.tourCode}`;
+    const guestUrl = `https://guest.${process.env.NEXT_PUBLIC_APP_DOMAIN || 'travelcrm.app'}/${dispatch?.tourCode}`;
 
     setWaRecipient(dispatch?.guestPhone || '');
     setEmailRecipient(dispatch?.guestEmail || '');
     
+    const appName = process.env.NEXT_PUBLIC_APP_NAME || 'TravelCRM';
     setWaMessage(
-      `Hello ${dispatch?.guestName || 'Guest'},\n\nHere are your access credentials for the Imagica Holidays Guest Portal:\n\n🔗 Link: ${guestUrl}\n👤 Username: ${dispatch?.guestUsername}\n🔑 Password/PIN: ${cleanPin}\n\nHave a safe and wonderful trip! ✈️`
+      `Hello ${dispatch?.guestName || 'Guest'},\n\nHere are your access credentials for the ${appName} Guest Portal:\n\n🔗 Link: ${guestUrl}\n👤 Username: ${dispatch?.guestUsername}\n🔑 Password/PIN: ${cleanPin}\n\nHave a safe and wonderful trip! ✈️`
     );
     
-    setEmailSubject(`Your Imagica Holidays Guest Portal Credentials - Tour ${dispatch?.tourCode}`);
+    setEmailSubject(`Your ${appName} Guest Portal Credentials - Tour ${dispatch?.tourCode}`);
     
     setEmailBody(
-      `Hello ${dispatch?.guestName || 'Guest'},\n\nHere are your access credentials for the Imagica Holidays Guest Portal:\n\nLink: ${guestUrl}\nUsername: ${dispatch?.guestUsername}\nPassword/PIN: ${cleanPin}\n\nHave a safe and wonderful trip!\n\nBest regards,\nImagica Holidays`
+      `Hello ${dispatch?.guestName || 'Guest'},\n\nHere are your access credentials for the ${appName} Guest Portal:\n\nLink: ${guestUrl}\nUsername: ${dispatch?.guestUsername}\nPassword/PIN: ${cleanPin}\n\nHave a safe and wonderful trip!\n\nBest regards,\n${appName}`
     );
     
     setIsShareModalOpen(true);
@@ -314,7 +315,7 @@ export default function TourDispatchPage() {
   if (isLoading) return <div className="flex h-[60vh] items-center justify-center"><Loader2 className="w-8 h-8 animate-spin opacity-40" /></div>;
   if (!dispatch) return <p className="text-center text-red-500 mt-20">Tour not found.</p>;
 
-  const guestLink = `https://guest.imagicaholidays.com/${dispatch.tourCode}`;
+  const guestLink = `https://guest.${process.env.NEXT_PUBLIC_APP_DOMAIN || 'travelcrm.app'}/${dispatch.tourCode}`;
 
   return (
     <div className="space-y-8 pb-16 max-w-5xl mx-auto">

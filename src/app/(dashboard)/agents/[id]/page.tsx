@@ -18,7 +18,13 @@ import {
   History,
   ExternalLink,
   MapPin,
-  Trophy
+  Trophy,
+  Palette,
+  Image as ImageIcon,
+  DollarSign,
+  Landmark,
+  Percent,
+  Wallet
 } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -108,7 +114,56 @@ export default function AgentDetailPage() {
               </div>
               <div className="flex items-center justify-between text-sm">
                 <span className="text-muted-foreground flex items-center"><CreditCard className="w-4 h-4 mr-2" /> PAN/ID</span>
-                <span className="font-mono font-bold uppercase">—</span>
+                <span className="font-mono font-bold uppercase">{agent.panNumber || '—'}</span>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Banking Details</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground flex items-center"><Landmark className="w-4 h-4 mr-2" /> Bank</span>
+                <span className="font-medium">{agent.bankName || '—'}</span>
+              </div>
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground flex items-center"><CreditCard className="w-4 h-4 mr-2" /> A/C Number</span>
+                <span className="font-mono">{agent.bankAccount || '—'}</span>
+              </div>
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground flex items-center"><MapPin className="w-4 h-4 mr-2" /> IFSC Code</span>
+                <span className="font-mono">{agent.bankIfsc || '—'}</span>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Co-branding & Markup</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground flex items-center"><Palette className="w-4 h-4 mr-2" /> Brand Color</span>
+                <div className="flex items-center gap-2">
+                  {agent.brandColor && <div className="w-4 h-4 rounded-full border" style={{ backgroundColor: agent.brandColor }}></div>}
+                  <span className="font-mono uppercase">{agent.brandColor || 'Default'}</span>
+                </div>
+              </div>
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground flex items-center"><ImageIcon className="w-4 h-4 mr-2" /> Custom Logo</span>
+                <span className="font-medium">{agent.logoUrl ? 'Uploaded' : 'None'}</span>
+              </div>
+              <div className="pt-4 border-t border-dashed">
+                <div className="flex items-center justify-between text-sm mb-2">
+                  <span className="text-muted-foreground flex items-center"><Percent className="w-4 h-4 mr-2" /> Markup Type</span>
+                  <span className="font-medium capitalize">{agent.markupType || 'None'}</span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground flex items-center"><DollarSign className="w-4 h-4 mr-2" /> Default Markup</span>
+                  <span className="font-bold">{agent.markupValue ? (agent.markupType === 'percentage' ? `${agent.markupValue}%` : `₹${agent.markupValue}`) : '0'}</span>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -174,6 +229,53 @@ export default function AgentDetailPage() {
                       </div>
                     </div>
                   )).slice(0, 10)}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Commission Ledger</CardTitle>
+              <CardDescription>Recent commissions and adjustments.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-3 gap-4 mb-6">
+                <div className="p-4 bg-muted/30 rounded-lg border text-center">
+                  <p className="text-xs text-muted-foreground mb-1">Available Limit</p>
+                  <p className="text-xl font-bold text-emerald-600">₹{(agent.creditLimit || 0) - (agent.creditUsed || 0)}</p>
+                </div>
+                <div className="p-4 bg-muted/30 rounded-lg border text-center">
+                  <p className="text-xs text-muted-foreground mb-1">Credit Limit</p>
+                  <p className="text-xl font-bold">₹{agent.creditLimit || 0}</p>
+                </div>
+                <div className="p-4 bg-muted/30 rounded-lg border text-center">
+                  <p className="text-xs text-muted-foreground mb-1">Credit Used</p>
+                  <p className="text-xl font-bold text-rose-600">₹{agent.creditUsed || 0}</p>
+                </div>
+              </div>
+
+              {(!agent.commissions || agent.commissions.length === 0) ? (
+                <div className="py-12 text-center text-muted-foreground">
+                  <Wallet className="w-12 h-12 mx-auto text-muted-foreground/30 mb-3" />
+                  <p>No commissions recorded yet.</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {agent.commissions.map((comm: any) => (
+                    <div key={comm.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/30 transition-all">
+                      <div className="flex flex-col">
+                         <span className="text-sm font-medium">{comm.description || 'Commission Entry'}</span>
+                         <span className="text-xs text-muted-foreground">{format(new Date(comm.createdAt), 'MMM d, yyyy')}</span>
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <span className={`font-bold ${comm.amount >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                          {comm.amount >= 0 ? '+' : ''}₹{Math.abs(comm.amount)}
+                        </span>
+                        <Badge variant={comm.status === 'paid' ? 'secondary' : 'outline'}>{comm.status}</Badge>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               )}
             </CardContent>

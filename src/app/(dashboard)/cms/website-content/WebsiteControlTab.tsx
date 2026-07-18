@@ -819,7 +819,7 @@ function VillasEditor({ form, setForm, onSave, saving }: VillasEditorProps) {
         </div>
         <div className="space-y-1.5">
           <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">Section Tagline / Subtitle</Label>
-          <Input value={form.subtitle} onChange={e => setForm((f: any) => ({ ...f, subtitle: e.target.value }))} placeholder="Your Exclusive Tranquil Haven at IMAGICA HOLIDAYS" />
+          <Input value={form.subtitle} onChange={e => setForm((f: any) => ({ ...f, subtitle: e.target.value }))} placeholder={`Your Exclusive Tranquil Haven at ${process.env.NEXT_PUBLIC_APP_NAME || 'TravelCRM'}`} />
         </div>
       </div>
 
@@ -1046,7 +1046,7 @@ export default function WebsiteControlTab() {
       : (villas.items && villas.items.length > 0 ? villas.items : DEFAULT_VILLAS);
     setVillasForm({
       title: villas.title || 'Exclusive Stays',
-      subtitle: villas.subtitle || 'Your Exclusive Tranquil Haven at IMAGICA HOLIDAYS',
+      subtitle: villas.subtitle || `Your Exclusive Tranquil Haven at ${process.env.NEXT_PUBLIC_APP_NAME || 'TravelCRM'}`,
       items: villasItems,
     });
 

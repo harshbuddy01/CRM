@@ -136,21 +136,23 @@ function MasterPanel({ category }: { category: typeof CATEGORIES[0] }) {
     const loginId = item.loginId || '';
     const pin = item.loginPassword || '';
     
+    const domain = process.env.NEXT_PUBLIC_APP_DOMAIN || 'travelcrm.app';
+    const appName = process.env.NEXT_PUBLIC_APP_NAME || 'TravelCRM';
     const portalUrl = isHotel 
-      ? `https://hotel.imagicaholidays.com/hotel/${item.id}` 
-      : `https://driver.imagicaholidays.com/driver/${item.id}`;
+      ? `https://hotel.${domain}/hotel/${item.id}` 
+      : `https://driver.${domain}/driver/${item.id}`;
 
     setWaRecipient(isHotel ? '' : (item.phone || ''));
     setEmailRecipient(''); // Default to empty so they can type it
     
     setWaMessage(
-      `Hello ${partnerName},\n\nHere are your access credentials for the Imagica Holidays ${isHotel ? 'Hotel' : 'Driver'} Partner Portal:\n\n🔗 Link: ${portalUrl}\n👤 Login ID: ${loginId}\n🔑 Password/PIN: ${pin}\n\nThank you for partnering with Imagica Holidays!`
+      `Hello ${partnerName},\n\nHere are your access credentials for the ${appName} ${isHotel ? 'Hotel' : 'Driver'} Partner Portal:\n\n🔗 Link: ${portalUrl}\n👤 Login ID: ${loginId}\n🔑 Password/PIN: ${pin}\n\nThank you for partnering with ${appName}!`
     );
     
-    setEmailSubject(`Your Imagica Holidays Partner Portal Credentials - ${partnerName}`);
+    setEmailSubject(`Your ${appName} Partner Portal Credentials - ${partnerName}`);
     
     setEmailBody(
-      `Hello ${partnerName},\n\nHere are your access credentials for the Imagica Holidays ${isHotel ? 'Hotel' : 'Driver'} Partner Portal:\n\nLink: ${portalUrl}\nLogin ID: ${loginId}\nPassword/PIN: ${pin}\n\nThank you for partnering with Imagica Holidays!\n\nBest regards,\nImagica Holidays`
+      `Hello ${partnerName},\n\nHere are your access credentials for the ${appName} ${isHotel ? 'Hotel' : 'Driver'} Partner Portal:\n\nLink: ${portalUrl}\nLogin ID: ${loginId}\nPassword/PIN: ${pin}\n\nThank you for partnering with ${appName}!\n\nBest regards,\n${appName}`
     );
     
     setIsShareModalOpen(true);

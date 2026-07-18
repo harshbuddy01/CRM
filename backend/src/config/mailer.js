@@ -23,7 +23,7 @@ transporter.verify()
 
 const sendMail = async (options) => {
   // Ensure from address uses env vars if not explicitly provided
-  const fromAddress = options.from || `"${process.env.EMAIL_FROM_NAME || 'Imagica Holidays'}" <${process.env.EMAIL_FROM || 'noreply@imagicaholidays.com'}>`;
+  const fromAddress = options.from || `"${process.env.EMAIL_FROM_NAME || process.env.APP_NAME || 'TravelCRM'}" <${process.env.EMAIL_FROM || process.env.APP_EMAIL || 'noreply@travelcrm.app'}>`;
   
   const mailOptions = {
     ...options,

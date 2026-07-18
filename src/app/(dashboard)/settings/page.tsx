@@ -392,7 +392,7 @@ export default function SettingsPage() {
                 <div className="space-y-2">
                   <Label>Account Name</Label>
                   <Input 
-                    placeholder="E.g. Imagica Holidays Pvt. Ltd." 
+                    placeholder={`E.g. ${process.env.NEXT_PUBLIC_APP_NAME || 'TravelCRM'} Pvt. Ltd.`}
                     value={formData.bankAccountName || ''}
                     onChange={(e) => setFormData({ ...formData, bankAccountName: e.target.value })}
                   />

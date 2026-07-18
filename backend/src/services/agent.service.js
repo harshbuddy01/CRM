@@ -45,6 +45,10 @@ const getAgentById = async (id) => {
       queries: {
         orderBy: { createdAt: 'desc' },
         take: 10
+      },
+      commissions: {
+        orderBy: { createdAt: 'desc' },
+        take: 20
       }
     }
   });
@@ -75,7 +79,20 @@ const filterAgentData = (data) => {
     address,
     dob,
     anniversary,
-    isActive
+    isActive,
+    contactPerson,
+    logoUrl,
+    brandColor,
+    markupType,
+    markupValue,
+    panNumber,
+    bankName,
+    bankAccount,
+    bankIfsc,
+    creditLimit,
+    creditUsed,
+    tier,
+    notes
   } = data;
 
   return {
@@ -89,7 +106,20 @@ const filterAgentData = (data) => {
     address,
     dob,
     anniversary,
-    isActive: isActive ?? true
+    isActive: isActive ?? true,
+    contactPerson,
+    logoUrl,
+    brandColor,
+    markupType,
+    markupValue,
+    panNumber,
+    bankName,
+    bankAccount,
+    bankIfsc,
+    creditLimit,
+    creditUsed,
+    tier,
+    notes
   };
 };
 

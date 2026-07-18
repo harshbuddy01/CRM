@@ -121,10 +121,10 @@ const getArtisanalTemplate = (data) => {
   const { query, customer, payments, date, orgSettings, tourCode, proposal, invoiceHeaderBannerUrl: customHeaderUrl, invoiceMiddleBannerUrl: customMiddleUrl, invoiceQrCodeUrl: customQrUrl, invoiceLogoUrl: customLogoUrl } = data;
   
   const settings = orgSettings || {};
-  const companyName = settings.companyName || 'Imagica Holidays Pvt. Ltd.';
-  const companyEmail = settings.companyEmail || 'info@imagicaholidays.com';
-  const companyPhone = settings.companyPhone || '+91 98765 43210';
-  const companyWebsite = settings.companyWebsite || 'www.imagicaholidays.com';
+  const companyName = settings.companyName || process.env.APP_NAME || 'TravelCRM';
+  const companyEmail = settings.companyEmail || process.env.APP_EMAIL || 'noreply@travelcrm.app';
+  const companyPhone = settings.companyPhone || '+91 99999 99999';
+  const companyWebsite = settings.companyWebsite || process.env.APP_DOMAIN || 'travelcrm.app';
   const companyAddress = settings.companyAddress || '2nd Floor, Adventure House, Hill Cart Road, Siliguri, West Bengal - 734001, India';
   const companyLogoUrl = customLogoUrl || settings.companyLogoUrl || '';
   const companyGst = settings.companyGst || '';
@@ -137,7 +137,8 @@ const getArtisanalTemplate = (data) => {
   // Custom Settings Banner and QR assets
   const invoiceHeaderBannerUrl = customHeaderUrl || query?.invoiceHeaderBannerUrl || settings.invoiceHeaderBannerUrl || 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=1400&auto=format&fit=crop';
   const invoiceMiddleBannerUrl = customMiddleUrl || query?.invoiceMiddleBannerUrl || settings.invoiceMiddleBannerUrl || 'https://images.unsplash.com/photo-1544735716-392fe2489ffa?q=80&w=1400&auto=format&fit=crop';
-  const invoiceQrCodeUrl = customQrUrl || settings.invoiceQrCodeUrl || 'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https%3A%2F%2Fimagicaholidays.com%2Frate-us';
+  const appDomainForQr = process.env.APP_DOMAIN || 'travelcrm.app';
+  const invoiceQrCodeUrl = customQrUrl || settings.invoiceQrCodeUrl || `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https%3A%2F%2F${appDomainForQr}%2Frate-us`;
   
   const companyAbbr = getAbbr(companyName);
   const year = new Date().getFullYear();
@@ -1268,7 +1269,7 @@ const getArtisanalTemplate = (data) => {
               <div class="feedback-text" style="display: flex; flex-direction: column; justify-content: center; gap: 4px;">
                 <div class="feedback-stars" style="color: #c5a059; font-size: 11px; font-weight: bold; letter-spacing: 1px;">★★★★★</div>
                 <div style="font-size: 7.5px; color: #4a5568; font-weight: 500;">Scan to leave a Google Review</div>
-                <div style="font-size: 7.5px; color: #0f3d2f; font-weight: 700; margin-top: 3px; font-family: 'Inter', sans-serif;">imagicaholidays.com/rate-us</div>
+                <div style="font-size: 7.5px; color: #0f3d2f; font-weight: 700; margin-top: 3px; font-family: 'Inter', sans-serif;">${process.env.APP_DOMAIN || 'travelcrm.app'}/rate-us</div>
               </div>
               <img src="${invoiceQrCodeUrl}" class="feedback-qr-img" style="width: 55px; height: 55px; border: 1.5px solid #c5a059; border-radius: 4px; padding: 1px; object-fit: contain;" alt="QR Code" />
             </div>

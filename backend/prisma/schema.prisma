@@ -137,6 +137,8 @@ model User {
   twoFactorCode      String?   @map("two_factor_code")
   twoFactorExpires   DateTime? @map("two_factor_expires")
   twoFactorSessionId String?   @map("two_factor_session_id")
+  isDemo             Boolean   @default(false) @map("is_demo")
+  demoExpiresAt      DateTime? @map("demo_expires_at")
 
   @@index([roleId])
   @@index([isActive])
@@ -203,6 +205,7 @@ model Query {
   vouchers        Voucher[]
   documents       QueryDocument[]
   vendorPayments  VendorPayment[]
+  b2bCommissions  B2BCommission[]
 
   @@index([phone]) // Duplicate check
   @@index([assignedTo]) // My leads filter
@@ -533,9 +536,42 @@ model B2BAgent {
   createdAt   DateTime  @default(now()) @map("created_at")
   updatedAt   DateTime  @updatedAt @map("updated_at")
 
-  queries Query[]
+  contactPerson String?   @map("contact_person")
+  logoUrl       String?   @map("logo_url")
+  brandColor    String?   @map("brand_color")
+  markupType    String?   @map("markup_type")
+  markupValue   Float?    @map("markup_value")
+  panNumber     String?   @map("pan_number")
+  bankName      String?   @map("bank_name")
+  bankAccount   String?   @map("bank_account")
+  bankIfsc      String?   @map("bank_ifsc")
+  creditLimit   Float?    @default(0) @map("credit_limit")
+  creditUsed    Float?    @default(0) @map("credit_used")
+  tier          String?   @default("standard")
+  notes         String?
+
+  queries     Query[]
+  commissions B2BCommission[]
 
   @@map("b2b_agents")
+}
+
+model B2BCommission {
+  id            String    @id @default(uuid())
+  agentId       String    @map("agent_id")
+  queryId       String?   @map("query_id")
+  description   String?
+  amount        Float     @default(0)
+  type          String    @default("earned")
+  status        String    @default("pending")
+  paidAt        DateTime? @map("paid_at")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  agent         B2BAgent  @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  query         Query?    @relation(fields: [queryId], references: [id], onDelete: SetNull)
+
+  @@map("b2b_commissions")
 }
 
 model EmailTemplate {

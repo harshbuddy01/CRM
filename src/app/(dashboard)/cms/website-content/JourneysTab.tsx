@@ -509,7 +509,7 @@ function JourneyForm({ initial, onClose, onSaved }: { initial: any; onClose: () 
         <p className="text-xs font-bold text-slate-800 uppercase tracking-wide">🔍 SEO Optimization</p>
         <div className="space-y-1.5">
           <Label className="text-xs text-muted-foreground">SEO Title (Title Tag)</Label>
-          <Input value={form.seoTitle} onChange={e => set('seoTitle', e.target.value)} placeholder="e.g. Premium Gangtok Tour Packages | Imagica Holidays" />
+          <Input value={form.seoTitle} onChange={e => set('seoTitle', e.target.value)} placeholder={`e.g. Premium Gangtok Tour Packages | ${process.env.NEXT_PUBLIC_APP_NAME || 'TravelCRM'}`} />
         </div>
         <div className="space-y-1.5">
           <Label className="text-xs text-muted-foreground">SEO Meta Description</Label>

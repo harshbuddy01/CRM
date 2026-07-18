@@ -33,7 +33,7 @@ const getArtisanalEmailFrame = (options) => {
     <head>
       <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
       <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-      <title>${subject || 'A Message from Imagica Holidays'}</title>
+      <title>${subject || `A Message from ${process.env.APP_NAME || 'TravelCRM'}`}</title>
       <style type="text/css">
         /* Premium Typography Imports */
         @import url('https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400..800;1,400..800&family=Pinyon+Script&display=swap');
@@ -81,7 +81,7 @@ const getArtisanalEmailFrame = (options) => {
                           ${inviteType === 'proposal' ? 'Your Journey Awaits' : 'Greetings from the Peaks'}
                         </span>
                         <span style="font-family: 'EB Garamond', serif; font-size: 10px; text-transform: uppercase; letter-spacing: 0.4em; color: #9b8a70; margin-top: 10px; display: block;">
-                          IMAGICA HOLIDAYS • ARTISANAL TRAVEL
+                          ${(process.env.APP_NAME || 'TravelCRM').toUpperCase()} • ARTISANAL TRAVEL
                         </span>
                       </td>
                     </tr>
@@ -107,10 +107,10 @@ const getArtisanalEmailFrame = (options) => {
                           Caring for your adventure,
                         </span>
                         <span style="font-family: 'EB Garamond', serif; font-size: 13px; text-transform: uppercase; letter-spacing: 0.25em; color: #a5813b; font-weight: bold; margin-top: 5px; display: block;">
-                          Team Imagica Holidays
+                          Team ${process.env.APP_NAME || 'TravelCRM'}
                         </span>
                         <div style="margin-top: 15px; font-family: 'EB Garamond', serif; font-size: 14px; color: #7c6d58; line-height: 1.5;">
-                          ${agentSignature || '<strong>Imagica Holidays</strong><br>Siliguri, West Bengal • Curating the Finest Trails'}
+                          ${agentSignature || `<strong>${process.env.APP_NAME || 'TravelCRM'}</strong><br>Siliguri, West Bengal • Curating the Finest Trails`}
                         </div>
                       </td>
                     </tr>

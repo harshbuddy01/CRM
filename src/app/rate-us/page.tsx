@@ -7,7 +7,7 @@ import { Star } from "lucide-react";
 export default function Page() {
   const reviewUrl =
     process.env.NEXT_PUBLIC_GOOGLE_REVIEW_URL ||
-    "https://www.google.com/search?client=ms-android-realme-terr1-rso2&sca_esv=1ebdc27bd3b18e70&hl=en-IN&cs=0&sxsrf=ANbL-n78MtFX5ryeAz4NQpXRBUO30w4lsA:1780880424336&si=AL3DRZEsmMGCryMMFSHJ3StBhOdZ2-6yYkXd_doETEE1OR-qOZRNIDvmsWyVF2_Z6dqMqiSoyjkPnUm9UdaOefUOjDCu6BkSQt0nf54RKw-4zTsd-40Lo0Kn7vzubjsYaGjIgvUi6DYcmv6XPrCEMyIqjXMABv4H3Q%3D%3D&q=IMAGICA+HOLIDAYS+Reviews&sa=X&ved=2ahUKEwjC1NHIuPaUAxVjX2wGHVepLqkQ0bkNegQIIRAH&biw=1470&bih=803&dpr=2#lrd=0x39f89b820fef46dd:0x6e16a6d555f5fb16,3,,,,";
+    `https://www.google.com/search?client=ms-android-realme-terr1-rso2&sca_esv=1ebdc27bd3b18e70&hl=en-IN&cs=0&sxsrf=ANbL-n78MtFX5ryeAz4NQpXRBUO30w4lsA:1780880424336&si=AL3DRZEsmMGCryMMFSHJ3StBhOdZ2-6yYkXd_doETEE1OR-qOZRNIDvmsWyVF2_Z6dqMqiSoyjkPnUm9UdaOefUOjDCu6BkSQt0nf54RKw-4zTsd-40Lo0Kn7vzubjsYaGjIgvUi6DYcmv6XPrCEMyIqjXMABv4H3Q%3D%3D&q=${encodeURIComponent(process.env.NEXT_PUBLIC_APP_NAME || "TravelCRM")}+Reviews&sa=X&ved=2ahUKEwjC1NHIuPaUAxVjX2wGHVepLqkQ0bkNegQIIRAH&biw=1470&bih=803&dpr=2#lrd=0x39f89b820fef46dd:0x6e16a6d555f5fb16,3,,,,`;
 
   const handleRedirect = () => {
     window.location.href = reviewUrl;
@@ -57,7 +57,7 @@ export default function Page() {
 
         {/* Company Title */}
         <h1 className="text-xl font-bold tracking-wider font-serif text-[#ffffff] uppercase mb-1">
-          Imagica Holidays
+          {process.env.NEXT_PUBLIC_APP_NAME || "TravelCRM"}
         </h1>
         <p className="text-[10px] text-[#c5a059] uppercase tracking-[0.2em] font-medium mb-6">
           Curated Journeys. Lasting Memories.
@@ -98,7 +98,7 @@ export default function Page() {
 
       {/* Subtle Bottom Footer */}
       <div className="absolute bottom-6 text-[10px] text-gray-500 uppercase tracking-widest">
-        &copy; {new Date().getFullYear()} Imagica Holidays
+        &copy; {new Date().getFullYear()} {process.env.NEXT_PUBLIC_APP_NAME || "TravelCRM"}
       </div>
     </div>
   );

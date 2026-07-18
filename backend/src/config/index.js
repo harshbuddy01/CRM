@@ -41,8 +41,8 @@ const config = {
     user: process.env.SMTP_USER,
     pass: process.env.SMTP_PASS,
     from: process.env.EMAIL_FROM || 'noreply@yourdomain.com',
-    adminFrom: process.env.ADMIN_EMAIL_FROM || 'administrative@imagicaholidays.com',
-    adminFromName: process.env.ADMIN_EMAIL_FROM_NAME || 'Imagica Holidays (Admin)',
+    adminFrom: process.env.ADMIN_EMAIL_FROM || process.env.APP_EMAIL || 'noreply@travelcrm.app',
+    adminFromName: process.env.ADMIN_EMAIL_FROM_NAME || `${process.env.APP_NAME || 'TravelCRM'} (Admin)`,
   },
 
   // --- Redis ---
