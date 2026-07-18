@@ -605,36 +605,40 @@ export default function DriverWebApp() {
           <>
             {/* HEADER (IMAGICA BRANDING) */}
             <header className="bg-slate-900/90 backdrop-blur-md text-white px-5 pt-12 pb-6 border-b border-white/5 relative z-10">
-              <div className="flex justify-between items-start mb-6">
-                <div className="bg-white/5 backdrop-blur-lg px-3 py-2 rounded-2xl shadow-lg border border-white/10 flex flex-col items-center">
+              {/* Centered Large Branding Logo */}
+              <div className="w-full flex justify-center mb-5">
+                <div className="bg-white/95 backdrop-blur-md px-5 py-2.5 rounded-2xl shadow-xl border border-white/20 flex items-center justify-center">
                   <img 
-                      src="/logo.jpg" 
+                      src="/logo.png" 
                       alt="Imagica Holidays" 
-                      className="h-8 object-contain"
+                      className="h-12 object-contain"
                       onError={(e) => {
-                        (e.target as HTMLImageElement).style.display = 'none';
-                        (e.target as HTMLImageElement).nextElementSibling?.classList.remove('hidden');
+                        (e.target as HTMLImageElement).src = '/logo.jpg';
                       }}
                   />
-                  <span className="hidden font-serif font-bold text-lg tracking-wider mt-1">
-                    <span className="text-[#3B82F6]">I</span>
-                    <span className="text-[#8B5CF6]">M</span>
-                    <span className="text-[#F97316]">A</span>
-                    <span className="text-[#EF4444]">G</span>
-                    <span className="text-[#F97316]">I</span>
-                    <span className="text-[#8B5CF6]">C</span>
-                    <span className="text-[#3B82F6]">A</span>
-                  </span>
                 </div>
-                <div className="text-right flex flex-col items-end">
-                  <div className="flex items-center gap-1.5">
+              </div>
+
+              <div className="flex justify-between items-center mb-5">
+                <div>
+                  <div className="flex items-center gap-2">
                     <h1 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Driver Portal</h1>
-                    <button onClick={handleLogout} className="text-gray-400 hover:text-red-400 transition-colors" title="Log Out">
+                    <button 
+                      onClick={toggleTheme}
+                      className="w-6 h-6 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-white text-[10px] transition-all cursor-pointer font-sans font-extrabold"
+                      title="Toggle Light/Dark Theme"
+                    >
+                      {theme === 'dark' ? '☀️' : '🌙'}
+                    </button>
+                    <button onClick={handleLogout} className="text-gray-400 hover:text-red-400 transition-colors cursor-pointer" title="Log Out">
                       <LogOut className="w-3.5 h-3.5" />
                     </button>
                   </div>
-                  <h2 className="text-sm font-bold mt-0.5 text-blue-400 max-w-[160px] truncate">{driver?.name}</h2>
-                  <p className="text-[10px] text-gray-400 mt-0.5 font-bold uppercase tracking-wider">{driver?.vehicleNo} • {driver?.vehicleName}</p>
+                  <h2 className="text-sm font-bold mt-0.5 text-blue-400 max-w-[200px] truncate">{driver?.name}</h2>
+                </div>
+                <div className="text-right">
+                  <p className="text-[10px] text-gray-200 font-bold uppercase tracking-wider">{driver?.vehicleName || 'Vehicle'}</p>
+                  <p className="text-[9px] text-gray-400 font-medium uppercase tracking-widest mt-0.5">{driver?.vehicleNo || 'MH-KP-8909'}</p>
                 </div>
               </div>
               

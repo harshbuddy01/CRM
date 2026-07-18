@@ -715,50 +715,46 @@ export default function GuestWebApp() {
         </motion.div>
 
         {/* NATIVE HEADER */}
-        <header className="absolute top-0 left-0 right-0 z-10 px-5 pt-12 pb-4 flex justify-between items-start pointer-events-none">
-          <div className="bg-white/95 backdrop-blur-md px-3 py-2 rounded-2xl shadow-lg pointer-events-auto border border-white/20">
-            <img 
-                src="/logo.jpg" 
-                alt="Imagica Holidays" 
-                className="h-8 object-contain"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).style.display = 'none';
-                  (e.target as HTMLImageElement).nextElementSibling?.classList.remove('hidden');
-                }}
-            />
-            <span className="hidden font-serif font-bold text-lg tracking-wider text-gray-900 mt-1">
-              <span className="text-[#3B82F6]">I</span>
-              <span className="text-[#8B5CF6]">M</span>
-              <span className="text-[#F97316]">A</span>
-              <span className="text-[#EF4444]">G</span>
-              <span className="text-[#F97316]">I</span>
-              <span className="text-[#8B5CF6]">C</span>
-              <span className="text-[#3B82F6]">A</span>
-            </span>
-          </div>
-          
-          <div className="flex gap-2 font-sans font-extrabold">
+        <header className="absolute top-0 left-0 right-0 z-10 px-4 pt-12 pb-4 flex justify-between items-center pointer-events-none">
+          {/* Left Actions */}
+          <div className="flex gap-2">
             <button 
               onClick={toggleTheme}
-              className="w-11 h-11 bg-white/95 backdrop-blur-md rounded-full shadow-lg flex items-center justify-center text-xs text-gray-700 pointer-events-auto active:scale-90 transition-all border border-white/20"
+              className="w-10 h-10 bg-white/95 backdrop-blur-md rounded-full shadow-lg flex items-center justify-center text-xs text-gray-700 pointer-events-auto active:scale-90 transition-all border border-white/20 cursor-pointer"
               title="Toggle Light/Dark Theme"
             >
               {theme === 'dark' ? '☀️' : '🌙'}
             </button>
+          </div>
+
+          {/* Centered Large Branding Logo */}
+          <div className="bg-white/95 backdrop-blur-md px-4 py-2 rounded-2xl shadow-lg pointer-events-auto border border-white/20 flex items-center justify-center">
+            <img 
+                src="/logo.png" 
+                alt="Imagica Holidays" 
+                className="h-9 object-contain"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = '/logo.jpg';
+                }}
+            />
+          </div>
+
+          {/* Right Actions */}
+          <div className="flex gap-1.5">
             <button 
               onClick={() => {
                  setIsTracking(false);
                  controls.start({ y: collapsedY, transition: { type: 'spring', damping: 25, stiffness: 200 } });
               }}
-              className="w-11 h-11 bg-white/95 backdrop-blur-md rounded-full shadow-lg flex items-center justify-center text-gray-700 pointer-events-auto active:scale-90 transition-transform"
+              className="w-10 h-10 bg-white/95 backdrop-blur-md rounded-full shadow-lg flex items-center justify-center text-gray-700 pointer-events-auto active:scale-90 transition-transform cursor-pointer"
             >
-              <Map className="w-5 h-5" />
+              <Map className="w-4.5 h-4.5" />
             </button>
             <button 
               onClick={() => setShowSOSModal(true)}
-              className="w-11 h-11 bg-red-50 backdrop-blur-md rounded-full shadow-lg flex items-center justify-center text-red-500 pointer-events-auto active:scale-90 transition-transform border border-red-100"
+              className="w-10 h-10 bg-red-50 backdrop-blur-md rounded-full shadow-lg flex items-center justify-center text-red-500 pointer-events-auto active:scale-90 transition-transform border border-red-100 cursor-pointer"
             >
-              <ShieldAlert className="w-5 h-5 animate-pulse" />
+              <ShieldAlert className="w-4.5 h-4.5 animate-pulse" />
             </button>
           </div>
         </header>

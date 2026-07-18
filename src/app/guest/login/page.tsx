@@ -85,9 +85,16 @@ export default function GuestLoginPage() {
         className="relative w-full max-w-sm"
       >
         {/* Logo / Brand */}
-        <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-xl">
-            <ShieldCheck className="w-8 h-8 text-blue-400" />
+        <div className="text-center mb-8 flex flex-col items-center">
+          <div className="inline-flex px-5 py-3 bg-white/95 border border-white/20 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-xl">
+            <img 
+              src="/logo.png" 
+              alt="Imagica Holidays" 
+              className="h-10 object-contain"
+              onError={(e) => {
+                (e.target as HTMLImageElement).src = '/logo.jpg';
+              }}
+            />
           </div>
           <h1 className="text-2xl font-bold text-white tracking-tight">My Trip Portal</h1>
           <p className="text-sm text-blue-200/70 mt-1">Imagica Holidays • Secure Access</p>
