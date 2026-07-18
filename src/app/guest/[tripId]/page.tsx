@@ -56,6 +56,18 @@ export default function GuestWebApp() {
   const [hubSuggestions, setHubSuggestions] = useState<any[]>([]);
   const [selectedHubCoords, setSelectedHubCoords] = useState<{lat: number, lng: number} | null>(null);
   const [isSearchingHubs, setIsSearchingHubs] = useState(false);
+  const [theme, setTheme] = useState<'dark' | 'light'>('dark');
+
+  useEffect(() => {
+    const saved = localStorage.getItem('guest_theme') as 'dark' | 'light';
+    if (saved) setTheme(saved);
+  }, []);
+
+  const toggleTheme = () => {
+    const nextTheme = theme === 'dark' ? 'light' : 'dark';
+    setTheme(nextTheme);
+    localStorage.setItem('guest_theme', nextTheme);
+  };
 
   useEffect(() => {
     if (!showTransitModal || transitName.length < 3) {
@@ -608,8 +620,57 @@ export default function GuestWebApp() {
 
   return (
     <div className="relative min-h-screen bg-black overflow-hidden font-sans antialiased text-gray-900 md:flex md:items-center md:justify-center">
+      <style dangerouslySetInnerHTML={{ __html: `
+        .light-theme {
+          background-color: #f8fafc !important;
+          color: #0f172a !important;
+        }
+        .light-theme .bg-slate-900,
+        .light-theme .bg-slate-950,
+        .light-theme .bg-slate-900\\/80,
+        .light-theme .bg-gray-900\\/80,
+        .light-theme .bg-gray-950,
+        .light-theme .bg-black {
+          background-color: #ffffff !important;
+          color: #0f172a !important;
+          border-color: #e2e8f0 !important;
+        }
+        .light-theme .bg-white\\/5,
+        .light-theme .bg-white\\/10,
+        .light-theme .bg-black\\/35 {
+          background-color: #f1f5f9 !important;
+          border-color: #e2e8f0 !important;
+          color: #0f172a !important;
+        }
+        .light-theme .text-white,
+        .light-theme .text-gray-100,
+        .light-theme .text-gray-200,
+        .light-theme .text-gray-300 {
+          color: #0f172a !important;
+        }
+        .light-theme .text-gray-400 {
+          color: #64748b !important;
+        }
+        .light-theme .border-white\\/5,
+        .light-theme .border-white\\/10 {
+          border-color: #e2e8f0 !important;
+        }
+        .light-theme input,
+        .light-theme select,
+        .light-theme textarea {
+          background-color: #ffffff !important;
+          color: #0f172a !important;
+          border-color: #cbd5e1 !important;
+        }
+        .light-theme .divide-white\\/5 > * {
+          border-color: #e2e8f0 !important;
+        }
+        .light-theme .custom-car-marker svg {
+          stroke: #1e3a8a !important;
+        }
+      `}} />
       
-      <div className="relative w-full h-[100vh] md:max-w-[420px] md:h-[880px] md:rounded-[44px] md:border-8 md:border-black overflow-hidden bg-slate-950 shadow-2xl">
+      <div className={`relative w-full h-[100vh] md:max-w-[420px] md:h-[880px] md:rounded-[44px] md:border-8 md:border-black overflow-hidden shadow-2xl transition-all duration-300 ${theme === 'light' ? 'light-theme' : 'bg-slate-950 text-white'}`}>
         
         {/* LEAFLET MAP BACKGROUND LAYER */}
         <motion.div 
@@ -676,7 +737,14 @@ export default function GuestWebApp() {
             </span>
           </div>
           
-          <div className="flex gap-2">
+          <div className="flex gap-2 font-sans font-extrabold">
+            <button 
+              onClick={toggleTheme}
+              className="w-11 h-11 bg-white/95 backdrop-blur-md rounded-full shadow-lg flex items-center justify-center text-xs text-gray-700 pointer-events-auto active:scale-90 transition-all border border-white/20"
+              title="Toggle Light/Dark Theme"
+            >
+              {theme === 'dark' ? '☀️' : '🌙'}
+            </button>
             <button 
               onClick={() => {
                  setIsTracking(false);

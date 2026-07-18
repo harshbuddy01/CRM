@@ -42,6 +42,19 @@ export default function DriverWebApp() {
   const isFollowModeRef = useRef<boolean>(true);
   isFollowModeRef.current = isFollowMode;
 
+  const [theme, setTheme] = useState<'dark' | 'light'>('dark');
+
+  useEffect(() => {
+    const saved = localStorage.getItem('driver_theme') as 'dark' | 'light';
+    if (saved) setTheme(saved);
+  }, []);
+
+  const toggleTheme = () => {
+    const nextTheme = theme === 'dark' ? 'light' : 'dark';
+    setTheme(nextTheme);
+    localStorage.setItem('driver_theme', nextTheme);
+  };
+
   // Load portal data
   const loadPortalData = () => {
     fetch(`${API}/public/driver/${driverId}`)
@@ -377,8 +390,57 @@ export default function DriverWebApp() {
 
   return (
     <div className="min-h-screen bg-gray-150 flex justify-center items-center font-sans antialiased text-gray-900 md:p-6">
-      
-      <div className="relative w-full h-[100vh] md:max-w-[420px] md:h-[880px] bg-slate-900 border-0 md:border md:border-gray-800 md:rounded-[40px] shadow-2xl overflow-hidden flex flex-col z-10">
+      <style dangerouslySetInnerHTML={{ __html: `
+        .light-theme {
+          background-color: #f8fafc !important;
+          color: #0f172a !important;
+        }
+        .light-theme .bg-slate-900,
+        .light-theme .bg-slate-950,
+        .light-theme .bg-slate-900\\/80,
+        .light-theme .bg-gray-900\\/80,
+        .light-theme .bg-gray-950,
+        .light-theme .bg-black {
+          background-color: #ffffff !important;
+          color: #0f172a !important;
+          border-color: #e2e8f0 !important;
+        }
+        .light-theme .bg-white\\/5,
+        .light-theme .bg-white\\/10,
+        .light-theme .bg-black\\/35 {
+          background-color: #f1f5f9 !important;
+          border-color: #e2e8f0 !important;
+          color: #0f172a !important;
+        }
+        .light-theme .text-white,
+        .light-theme .text-gray-100,
+        .light-theme .text-gray-200,
+        .light-theme .text-gray-300 {
+          color: #0f172a !important;
+        }
+        .light-theme .text-gray-400 {
+          color: #64748b !important;
+        }
+        .light-theme .border-white\\/5,
+        .light-theme .border-white\\/10 {
+          border-color: #e2e8f0 !important;
+        }
+        .light-theme input,
+        .light-theme select,
+        .light-theme textarea {
+          background-color: #ffffff !important;
+          color: #0f172a !important;
+          border-color: #cbd5e1 !important;
+        }
+        .light-theme .divide-white\\/5 > * {
+          border-color: #e2e8f0 !important;
+        }
+        .light-theme .custom-car-marker svg {
+          stroke: #1e3a8a !important;
+        }
+      `}} />
+
+      <div className={`relative w-full h-[100vh] md:max-w-[420px] md:h-[880px] border-0 md:border md:border-gray-800 md:rounded-[40px] shadow-2xl overflow-hidden flex flex-col z-10 transition-all duration-300 ${theme === 'light' ? 'light-theme' : 'bg-slate-900 text-white'}`}>
         
         {/* Active Ride/Duty view replaces standard tabs */}
         {activeRide ? (
@@ -418,13 +480,23 @@ export default function DriverWebApp() {
                   </p>
                 </div>
               </div>
-              <button 
-                onClick={loadPortalData}
-                className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/15 flex items-center justify-center text-white transition-all active:scale-90"
-                title="Refresh Portal Status"
-              >
-                <RefreshCw className="w-4 h-4" />
-              </button>
+              
+              <div className="flex gap-2">
+                <button 
+                  onClick={toggleTheme}
+                  className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/15 flex items-center justify-center text-white text-[11px] transition-all active:scale-90 font-sans font-extrabold"
+                  title="Toggle Light/Dark Theme"
+                >
+                  {theme === 'dark' ? '☀️' : '🌙'}
+                </button>
+                <button 
+                  onClick={loadPortalData}
+                  className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/15 flex items-center justify-center text-white transition-all active:scale-90"
+                  title="Refresh Portal Status"
+                >
+                  <RefreshCw className="w-4 h-4" />
+                </button>
+              </div>
             </div>
 
             {/* APPLE-STYLE FLOATING GLASS BOTTOM SHEET */}

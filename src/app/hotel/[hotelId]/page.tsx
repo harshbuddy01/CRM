@@ -28,6 +28,18 @@ export default function HotelPartnerWebApp() {
   const [financials, setFinancials] = useState<any>({ totalBilling: 0, amountReceived: 0, amountPending: 0 });
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [theme, setTheme] = useState<'dark' | 'light'>('dark');
+
+  useEffect(() => {
+    const saved = localStorage.getItem('hotel_theme') as 'dark' | 'light';
+    if (saved) setTheme(saved);
+  }, []);
+
+  const toggleTheme = () => {
+    const nextTheme = theme === 'dark' ? 'light' : 'dark';
+    setTheme(nextTheme);
+    localStorage.setItem('hotel_theme', nextTheme);
+  };
 
   // Load hotel dashboard data
   const loadDashboardData = async (showRefState = false) => {
@@ -165,8 +177,54 @@ export default function HotelPartnerWebApp() {
 
   return (
     <div className="min-h-screen bg-gray-150 flex justify-center items-center font-sans antialiased text-gray-900 md:p-6">
-      
-      <div className="relative w-full h-[100vh] md:max-w-[420px] md:h-[880px] bg-slate-900 border-0 md:border md:border-gray-800 md:rounded-[40px] shadow-2xl overflow-hidden flex flex-col z-10">
+      <style dangerouslySetInnerHTML={{ __html: `
+        .light-theme {
+          background-color: #f8fafc !important;
+          color: #0f172a !important;
+        }
+        .light-theme .bg-slate-900,
+        .light-theme .bg-slate-950,
+        .light-theme .bg-slate-900\\/80,
+        .light-theme .bg-gray-900\\/80,
+        .light-theme .bg-gray-950,
+        .light-theme .bg-black {
+          background-color: #ffffff !important;
+          color: #0f172a !important;
+          border-color: #e2e8f0 !important;
+        }
+        .light-theme .bg-white\\/5,
+        .light-theme .bg-white\\/10,
+        .light-theme .bg-black\\/35 {
+          background-color: #f1f5f9 !important;
+          border-color: #e2e8f0 !important;
+          color: #0f172a !important;
+        }
+        .light-theme .text-white,
+        .light-theme .text-gray-100,
+        .light-theme .text-gray-200,
+        .light-theme .text-gray-300 {
+          color: #0f172a !important;
+        }
+        .light-theme .text-gray-400 {
+          color: #64748b !important;
+        }
+        .light-theme .border-white\\/5,
+        .light-theme .border-white\\/10 {
+          border-color: #e2e8f0 !important;
+        }
+        .light-theme input,
+        .light-theme select,
+        .light-theme textarea {
+          background-color: #ffffff !important;
+          color: #0f172a !important;
+          border-color: #cbd5e1 !important;
+        }
+        .light-theme .divide-white\\/5 > * {
+          border-color: #e2e8f0 !important;
+        }
+      `}} />
+
+      <div className={`relative w-full h-[100vh] md:max-w-[420px] md:h-[880px] border-0 md:border md:border-gray-800 md:rounded-[40px] shadow-2xl overflow-hidden flex flex-col z-10 transition-all duration-300 ${theme === 'light' ? 'light-theme' : 'bg-slate-900 text-white'}`}>
         
         {/* HEADER */}
         <header className="bg-slate-900/90 backdrop-blur-md text-white px-5 pt-12 pb-6 border-b border-white/5 relative z-10">
@@ -192,9 +250,12 @@ export default function HotelPartnerWebApp() {
               </span>
             </div>
             <div className="text-right flex flex-col items-end">
-              <div className="flex items-center gap-1.5">
+              <div className="flex items-center gap-2">
+                <button onClick={toggleTheme} className="text-gray-400 hover:text-white transition-colors text-[10px] font-extrabold cursor-pointer" title="Toggle Light/Dark Theme">
+                  {theme === 'dark' ? '☀️' : '🌙'}
+                </button>
                 <h1 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Partner Portal</h1>
-                <button onClick={handleLogout} className="text-gray-400 hover:text-red-400 transition-colors" title="Log Out">
+                <button onClick={handleLogout} className="text-gray-400 hover:text-red-400 transition-colors cursor-pointer" title="Log Out">
                   <LogOut className="w-3.5 h-3.5" />
                 </button>
               </div>
