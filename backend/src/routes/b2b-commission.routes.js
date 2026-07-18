@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const b2bCommissionController = require('../controllers/b2b-commission.controller');
-const { authenticate } = require('../middlewares/auth.middleware');
+const { authenticate } = require('../middlewares/authenticate');
 
 // Apply authentication middleware
 router.use(authenticate);
