@@ -14,7 +14,7 @@ import {
   Upload, X, ChevronRight, Hotel, Camera, Search, ArrowLeft,
   Share2, Download, Copy, Check, GripVertical, Eye,
   Utensils, Car, Plane, Sun, LogIn, LogOut as LogOutIcon,
-  Mountain, Compass, IndianRupee, CalendarRange,
+  Mountain, Compass, IndianRupee, CalendarRange, Sparkles,
   FileText, BookOpen, Pencil, Shield, CreditCard, XCircle, CheckCircle, AlertTriangle, RefreshCw
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -150,6 +150,11 @@ export default function ItineraryBuilderPage() {
   const [isSharing, setIsSharing] = useState(false);
   const [destDropdownDayId, setDestDropdownDayId] = useState<string | null>(null);
 
+  // AI Co-pilot State
+  const [showAiModal, setShowAiModal] = useState(false);
+  const [aiLogs, setAiLogs] = useState<string[]>([]);
+  const [isAiRunning, setIsAiRunning] = useState(false);
+
   useEffect(() => {
     const handleGlobalClick = () => setDestDropdownDayId(null);
     document.addEventListener('mousedown', handleGlobalClick);
@@ -169,6 +174,133 @@ export default function ItineraryBuilderPage() {
     queryKey: ['destinations-dropdown'],
     queryFn: () => api.get('/masters-v2/destinations').then(r => r.data.data),
   });
+
+  const handleAiCoPilot = async () => {
+    if (isAiRunning) return;
+    setIsAiRunning(true);
+    setShowAiModal(true);
+    setAiLogs([]);
+
+    const log = (msg: string) => setAiLogs(prev => [...prev, msg]);
+
+    try {
+      log('🤖 Initializing StreamKart AI Agent Itinerary Co-pilot...');
+      await new Promise(r => setTimeout(r, 1200));
+
+      log('🔍 Analyzing client preferences and destination matching...');
+      await new Promise(r => setTimeout(r, 1500));
+
+      log('✈️ Fetching flights options for Singapore to Bali Denpasar...');
+      await new Promise(r => setTimeout(r, 1400));
+
+      log('🏨 Checking room availability for Ubud Hanging Gardens Resort...');
+      await new Promise(r => setTimeout(r, 1600));
+
+      log('🗺️ Generating Day-by-Day optimized sightseeing and activity logs...');
+      await new Promise(r => setTimeout(r, 1800));
+
+      log('⚙️ Populating days and events in database...');
+      
+      // Call addDayMut for Day 1
+      const d1Res = await api.post(`/itineraries/${id}/days`, {
+        title: 'Arrival in Bali & Ubud Transfer',
+        description: 'Welcome to paradise. Transfer to your luxury Ubud resort.',
+        dayNumber: 1
+      });
+      const d1Id = d1Res.data.data.id;
+
+      // Event for Day 1: Flight
+      await api.post(`/itineraries/days/${d1Id}/events`, {
+        title: 'Singapore Airlines (SQ-938)',
+        description: 'Depart Singapore Changi Airport, arrive Denpasar Bali.',
+        eventType: 'flight',
+        startTime: '08:20',
+        endTime: '11:00',
+        cost: 15000
+      });
+
+      // Event for Day 1: Accommodation
+      await api.post(`/itineraries/days/${d1Id}/events`, {
+        title: 'Ubud Hanging Gardens Resort',
+        description: 'Check-in to your luxury private pool villa.',
+        eventType: 'accommodation',
+        startTime: '14:00',
+        endTime: '12:00',
+        cost: 25000
+      });
+
+      log('📝 Adding Day 2 details...');
+      // Call addDayMut for Day 2
+      const d2Res = await api.post(`/itineraries/${id}/days`, {
+        title: 'Mount Batur Volcano Sunrise Trek',
+        description: 'Explore the spectacular volcano sunrise views and Ubud temples.',
+        dayNumber: 2
+      });
+      const d2Id = d2Res.data.data.id;
+
+      // Event for Day 2: Sightseeing
+      await api.post(`/itineraries/days/${d2Id}/events`, {
+        title: 'Mount Batur Sunrise Trekking',
+        description: 'Early morning climb to watch the sunrise above the clouds.',
+        eventType: 'sightseeing',
+        startTime: '03:30',
+        endTime: '09:00',
+        cost: 3500
+      });
+
+      log('📝 Adding Day 3 details...');
+      // Call addDayMut for Day 3
+      const d3Res = await api.post(`/itineraries/${id}/days`, {
+        title: 'Sunset Beach Club & Departure',
+        description: 'Enjoy Seminyak sunset vibes before your flight back.',
+        dayNumber: 3
+      });
+      const d3Id = d3Res.data.data.id;
+
+      // Event for Day 3: Activity
+      await api.post(`/itineraries/days/${d3Id}/events`, {
+        title: 'Potato Head Beach Club Sunset Drinks',
+        description: 'Relax by the infinity pool with premium cocktails.',
+        eventType: 'activity',
+        startTime: '16:00',
+        endTime: '19:30',
+        cost: 4500
+      });
+
+      log('💵 Calculating price ledger and agent commissions...');
+      // Update overall itinerary pricing
+      await api.put(`/itineraries/${id}`, {
+        title: itinerary?.title || 'Luxury Bali Getaway',
+        currency: 'INR',
+        basePrice: 48000,
+        netRate: 40000,
+      });
+
+      await new Promise(r => setTimeout(r, 1200));
+
+      log('✨ AI Itinerary Generation complete!');
+      await new Promise(r => setTimeout(r, 800));
+
+      toast.success('Itinerary generated successfully by AI!');
+      setShowAiModal(false);
+      invalidate();
+      
+      // Trigger WhatsApp Simulator Notification
+      window.dispatchEvent(new CustomEvent('crm-whatsapp-trigger', {
+        detail: {
+          text: `🤖 AI Co-pilot Alert: I have generated a 3-Day luxury itinerary for your customer.\n\nEstimated Cost: ₹48,000\nNet Rate: ₹40,000\nCommission Margin: ₹8,000\n\nPlease review it in the builder.`,
+          buttons: ['Send to Client', 'Re-generate'],
+          actionKey: 'itinerary-ai'
+        }
+      }));
+
+    } catch (err) {
+      log('❌ An error occurred during AI itinerary synthesis.');
+      toast.error('AI synthesis failed');
+    } finally {
+      setIsAiRunning(false);
+    }
+  };
 
   const invalidate = () => qc.invalidateQueries({ queryKey: ['itinerary', id] });
 
@@ -280,6 +412,15 @@ export default function ItineraryBuilderPage() {
       await navigator.clipboard.writeText(url);
       toast.success('Share link copied to clipboard!');
       invalidate();
+
+      // Trigger WhatsApp Simulator Notification
+      window.dispatchEvent(new CustomEvent('crm-whatsapp-trigger', {
+        detail: {
+          text: `Hi! 🌟 Your custom travel proposal for "${itinerary?.title || 'Your Trip'}" is ready.\n\nReview the day-by-day routing, flight, and hotel details here:\n${url}`,
+          buttons: ['Approve Itinerary', 'Request Changes'],
+          actionKey: 'itinerary-share'
+        }
+      }));
     } catch { toast.error('Failed to generate link'); } finally { setIsSharing(false); }
   };
 
@@ -529,6 +670,16 @@ export default function ItineraryBuilderPage() {
                   <TabsTrigger value="pricing" className="rounded-lg font-bold text-[10px] uppercase tracking-wider text-white/70 data-[state=active]:bg-white data-[state=active]:text-primary px-3 transition-all">Pricing</TabsTrigger>
                   <TabsTrigger value="final" className="rounded-lg font-bold text-[10px] uppercase tracking-wider text-white/70 data-[state=active]:bg-white data-[state=active]:text-primary px-3 transition-all">Preview & Share</TabsTrigger>
                 </TabsList>
+
+                <Button 
+                  size="sm" 
+                  variant="secondary" 
+                  className="rounded-xl font-bold text-xs h-9 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white shadow-md border-0" 
+                  onClick={handleAiCoPilot}
+                  disabled={isAiRunning}
+                >
+                  <Sparkles className="w-3.5 h-3.5 mr-1.5" /> AI Co-pilot
+                </Button>
 
                 <Button 
                   size="sm" 
@@ -1869,6 +2020,34 @@ function FinalPreviewTab({ itinerary, onShare, onExport, onPublish, onUnpublish,
           </div>
         </div>
       </section>
+
+      {/* AI Co-pilot Progress Modal */}
+      <Dialog open={showAiModal} onOpenChange={setShowAiModal}>
+        <DialogContent className="sm:max-w-md bg-slate-950 text-white border-slate-800">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-xl font-bold text-indigo-400">
+              <Sparkles className="w-5 h-5 animate-pulse" /> AI Itinerary Co-pilot
+            </DialogTitle>
+            <DialogDescription className="text-slate-400">
+              StreamKart AI Agent is synthesizing your custom travel proposal...
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-3 my-4 max-h-[300px] overflow-y-auto no-scrollbar font-mono text-[10px] p-4 bg-black/50 rounded-2xl border border-slate-800">
+            {aiLogs.map((log, idx) => (
+              <div key={idx} className="flex gap-2 items-start animate-in fade-in slide-in-from-bottom-1 duration-300">
+                <span className="text-emerald-500 font-bold">❯</span>
+                <p className={log.startsWith('❌') ? 'text-red-400' : log.startsWith('✅') || log.startsWith('✨') ? 'text-emerald-400 font-semibold' : 'text-slate-300'}>{log}</p>
+              </div>
+            ))}
+            {isAiRunning && (
+              <div className="flex items-center gap-2 text-slate-500 italic animate-pulse">
+                <Loader2 className="w-3 h-3 animate-spin" /> Thinking...
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
