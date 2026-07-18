@@ -50,17 +50,13 @@ export default function HotelPartnerLogin() {
       <div className="absolute top-0 left-0 w-96 h-96 bg-orange-500/10 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute bottom-0 right-0 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
 
-      <div className="sm:mx-auto sm:w-full sm:max-w-md relative z-10 text-center flex flex-col items-center">
-        <div className="inline-flex items-center justify-center px-5 py-3 rounded-2xl bg-white/95 border border-white/20 mb-4 shadow-xl">
-          <img 
-            src="/logo.png" 
-            alt="Imagica Holidays" 
-            className="h-10 object-contain"
-            onError={(e) => {
-              (e.target as HTMLImageElement).src = '/logo.jpg';
-            }}
-          />
-        </div>
+      <div className="sm:mx-auto sm:w-full sm:max-w-md relative z-10 text-center flex flex-col items-center pointer-events-none mb-4">
+        <img 
+          src="/logo.png?v=2" 
+          alt="Imagica Holidays" 
+          className="h-14 object-contain"
+          style={{ filter: 'drop-shadow(0px 0px 1px #ffffff) drop-shadow(0px 0px 1px #ffffff) drop-shadow(0px 0px 2px #ffffff)' }}
+        />
         <h2 className="text-3xl font-extrabold text-white tracking-tight">Hotel Partner Portal</h2>
         <p className="mt-2 text-sm text-slate-400">
           Secure access to bookings, arrivals, and settlements

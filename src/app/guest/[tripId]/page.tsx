@@ -733,12 +733,9 @@ export default function GuestWebApp() {
           {/* Centered Large Branding Logo */}
           <div className="flex items-center justify-center pointer-events-none">
             <img 
-                src="/logo.png" 
+                src="/logo.png?v=2" 
                 alt="Imagica Holidays" 
                 className={`h-11 object-contain transition-all duration-300 ${theme === 'dark' ? 'dark-logo-glow' : ''}`}
-                onError={(e) => {
-                  (e.target as HTMLImageElement).src = '/logo.jpg';
-                }}
             />
           </div>
 

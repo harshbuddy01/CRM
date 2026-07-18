@@ -611,12 +611,9 @@ export default function DriverWebApp() {
               {/* Centered Large Branding Logo */}
               <div className="w-full flex justify-center mb-5 pointer-events-none">
                 <img 
-                    src="/logo.png" 
+                    src="/logo.png?v=2" 
                     alt="Imagica Holidays" 
                     className={`h-14 object-contain transition-all duration-300 ${theme === 'dark' ? 'dark-logo-glow' : ''}`}
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).src = '/logo.jpg';
-                    }}
                 />
               </div>
 
