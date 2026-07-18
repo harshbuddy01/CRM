@@ -35,6 +35,8 @@ export default function DriverWebApp() {
   const markerInst = useRef<any>(null);
   const destMarkerInst = useRef<any>(null);
   const routePolylineInst = useRef<any>(null);
+  const [distanceRemaining, setDistanceRemaining] = useState<string>('');
+  const [durationRemaining, setDurationRemaining] = useState<string>('');
 
   // Load portal data
   const loadPortalData = () => {
@@ -205,11 +207,18 @@ export default function DriverWebApp() {
 
             const fetchAndDrawRoute = async () => {
               let routeLatLngs = [[latitude, longitude], destPos];
+              let trueEta = 15;
               try {
                 const res = await fetch(`https://router.project-osrm.org/route/v1/driving/${longitude},${latitude};${destPos[1]},${destPos[0]}?overview=full&geometries=geojson`)
                   .then(r => r.json());
                 if (res.routes && res.routes[0]) {
                   routeLatLngs = res.routes[0].geometry.coordinates.map((c: any) => [c[1], c[0]]);
+                  
+                  const dist = (res.routes[0].distance / 1000).toFixed(1);
+                  const dur = Math.round(res.routes[0].duration / 60);
+                  trueEta = dur;
+                  setDistanceRemaining(`${dist} km`);
+                  setDurationRemaining(`${dur} mins`);
                 }
               } catch (e) {
                 console.error("OSRM driving route lookup failed", e);
@@ -229,22 +238,22 @@ export default function DriverWebApp() {
               // Adjust bounds
               const bounds = L.latLngBounds(routeLatLngs);
               leafletMapInst.current.fitBounds(bounds, { padding: [50, 50] });
+
+              // Stream coordinates to backend with TRUE ETA!
+              fetch(`${API}/public/driver/${driverId}/ride/location`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  tourId: activeRide.tourId,
+                  dayNumber: activeRide.dayNumber,
+                  lat: latitude,
+                  lng: longitude,
+                  etaMinutes: trueEta
+                })
+              }).catch(err => console.error('Streaming position failed', err));
             };
             fetchAndDrawRoute();
           }
-
-          // Stream coordinates to backend
-          fetch(`${API}/public/driver/${driverId}/ride/location`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              tourId: activeRide.tourId,
-              dayNumber: activeRide.dayNumber,
-              lat: latitude,
-              lng: longitude,
-              etaMinutes: 15 // Mock ETA minutes
-            })
-          }).catch(err => console.error('Streaming position failed', err));
         },
         (err) => console.error('Geolocation watcher failed', err),
         { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
@@ -351,7 +360,9 @@ export default function DriverWebApp() {
                 </div>
                 <div>
                   <h4 className="font-bold text-xs text-white">Duty Day {activeRide.dayNumber} Active</h4>
-                  <p className="text-[10px] text-gray-300">Live coordinates streaming...</p>
+                  <p className="text-[10px] text-blue-400 font-bold mt-0.5">
+                    {distanceRemaining ? `Remaining: ${distanceRemaining} • ${durationRemaining}` : 'Calculating route...'}
+                  </p>
                 </div>
               </div>
               <button 
@@ -421,6 +432,24 @@ export default function DriverWebApp() {
                   </div>
                 )}
                 
+                {/* GOOGLE MAPS EXTERNAL NAVIGATION BUTTON */}
+                <a 
+                  href={`https://www.google.com/maps/dir/?api=1&origin=${driverCoords?.lat || 26.7271},${driverCoords?.lng || 88.3953}&destination=${
+                    (activeRide.rideStatus === 'EN_ROUTE' || activeRide.rideStatus === 'ARRIVED') 
+                      ? (activeRide.pickupLat || 26.6812) 
+                      : (activeRide.destinationLat || 26.7271)
+                  },${
+                    (activeRide.rideStatus === 'EN_ROUTE' || activeRide.rideStatus === 'ARRIVED') 
+                      ? (activeRide.pickupLng || 88.3286) 
+                      : (activeRide.destinationLng || 88.3953)
+                  }&travelmode=driving`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full bg-slate-800 hover:bg-slate-700 text-white font-extrabold text-xs py-3.5 rounded-2xl flex items-center justify-center gap-2 border border-white/10 transition-all cursor-pointer mb-3.5"
+                >
+                  🗺️ Navigate in Google Maps
+                </a>
+
                 {/* ACTION BUTTON */}
                 {activeRide.rideStatus === 'STARTED' || activeRide.rideStatus === 'EN_ROUTE' ? (
                   <button 

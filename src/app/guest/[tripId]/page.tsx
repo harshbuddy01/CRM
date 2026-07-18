@@ -50,6 +50,8 @@ export default function GuestWebApp() {
   const [transitName, setTransitName] = useState('Bagdogra Airport (IXB)');
   const [transitDetails, setTransitDetails] = useState('');
   const [savingTransit, setSavingTransit] = useState(false);
+  const [distanceRemaining, setDistanceRemaining] = useState<string>('');
+  const [durationRemaining, setDurationRemaining] = useState<string>('');
 
   // Load guest trip data
   const loadTripData = () => {
@@ -259,6 +261,11 @@ export default function GuestWebApp() {
             .then(r => r.json());
           if (res.routes && res.routes[0]) {
             routeLatLngs = res.routes[0].geometry.coordinates.map((c: any) => [c[1], c[0]]);
+
+            const dist = (res.routes[0].distance / 1000).toFixed(1);
+            const dur = Math.round(res.routes[0].duration / 60);
+            setDistanceRemaining(`${dist} km`);
+            setDurationRemaining(`${dur} mins`);
           }
         } catch (e) {
           console.error("OSRM driving route lookup failed", e);
@@ -550,9 +557,9 @@ export default function GuestWebApp() {
                      'Driver is Active'}
                   </h4>
                   <p className="text-[9px] text-white/90 mt-0.5 leading-snug font-medium max-w-[240px] truncate">
-                    {driverTracking.data?.rideStatus === 'EN_ROUTE' ? `Pickup: ${driverTracking.data.pickupLocation || 'Airport / Station'} • ETA: ${driverTracking.data.etaMinutes || 15} Mins` :
+                    {driverTracking.data?.rideStatus === 'EN_ROUTE' ? `Pickup: ${driverTracking.data.pickupLocation || 'Airport / Station'} • ETA: ${durationRemaining || driverTracking.data.etaMinutes || 15} (${distanceRemaining || '8 km'} left)` :
                      driverTracking.data?.rideStatus === 'ARRIVED' ? `Board vehicle at: ${driverTracking.data.pickupLocation || 'Airport / Station'}` :
-                     driverTracking.data?.rideStatus === 'IN_TRANSIT' ? `Heading to: ${driverTracking.data.destinationLocation || 'Hotel'}` :
+                     driverTracking.data?.rideStatus === 'IN_TRANSIT' ? `Heading to: ${driverTracking.data.destinationLocation || 'Hotel'} • ETA: ${durationRemaining || driverTracking.data.etaMinutes || 15} (${distanceRemaining || '8.5 km'} left)` :
                      'Live tracking coordinates streaming...'}
                   </p>
                 </div>
