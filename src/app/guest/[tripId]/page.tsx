@@ -184,8 +184,9 @@ export default function GuestWebApp() {
         attributionControl: false
       }).setView([lat, lng], 13);
 
-      L.tileLayer('https://{s}.tile.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-        maxZoom: 19
+      L.tileLayer('https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
+        maxZoom: 20,
+        attribution: 'Map data © Google'
       }).addTo(map);
 
       leafletMapInst.current = map;
