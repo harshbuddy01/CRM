@@ -902,12 +902,40 @@ const updateGuestTransitDetails = async (req, res, next) => {
     });
 
     if (day1Driver) {
+      // Find hotel booking service for day 1
+      const hotelService = await prisma.bookingService.findFirst({
+        where: { tourId: tour.id, serviceType: 'hotel', dayNumber: 1 }
+      });
+
+      let destLat = 27.3389; // Default fallback
+      let destLng = 88.6065;
+      let destLocationName = hotelService?.serviceName || 'Partner Hotel';
+
+      if (hotelService?.serviceName) {
+        try {
+          const axios = require('axios');
+          const searchQuery = `${hotelService.serviceName}, India`;
+          const geoRes = await axios.get(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(searchQuery)}&format=json&limit=1`, {
+            headers: { 'User-Agent': 'Imagica-Holidays-Agent' }
+          });
+          if (geoRes.data && geoRes.data.length > 0) {
+            destLat = parseFloat(geoRes.data[0].lat);
+            destLng = parseFloat(geoRes.data[0].lon);
+          }
+        } catch (e) {
+          console.error("Failed to geocode destination hotel", e.message);
+        }
+      }
+
       await prisma.tourDriver.update({
         where: { id: day1Driver.id },
         data: {
           pickupLocation: pickupLocation || 'Airport / Station',
           pickupLat: pickupLat ? parseFloat(pickupLat) : null,
-          pickupLng: pickupLng ? parseFloat(pickupLng) : null
+          pickupLng: pickupLng ? parseFloat(pickupLng) : null,
+          destinationLocation: destLocationName,
+          destinationLat: destLat,
+          destinationLng: destLng
         }
       });
     }

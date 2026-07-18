@@ -52,6 +52,31 @@ export default function GuestWebApp() {
   const [savingTransit, setSavingTransit] = useState(false);
   const [distanceRemaining, setDistanceRemaining] = useState<string>('');
   const [durationRemaining, setDurationRemaining] = useState<string>('');
+  const [hubSuggestions, setHubSuggestions] = useState<any[]>([]);
+  const [selectedHubCoords, setSelectedHubCoords] = useState<{lat: number, lng: number} | null>(null);
+  const [isSearchingHubs, setIsSearchingHubs] = useState(false);
+
+  useEffect(() => {
+    if (!showTransitModal || transitName.length < 3) {
+      setHubSuggestions([]);
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      try {
+        setIsSearchingHubs(true);
+        const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(transitName)}&format=json&limit=5&countrycodes=in`)
+          .then(r => r.json());
+        setHubSuggestions(res || []);
+      } catch (e) {
+        console.error("OSM Nominatim fetch failed", e);
+      } finally {
+        setIsSearchingHubs(false);
+      }
+    }, 450);
+
+    return () => clearTimeout(timer);
+  }, [transitName, showTransitModal]);
 
   // Load guest trip data
   const loadTripData = () => {
@@ -380,30 +405,35 @@ export default function GuestWebApp() {
       let lat = 26.6812; // Bagdogra Airport (IXB)
       let lng = 88.3286;
 
-      const matchedName = transitName.toLowerCase();
-      if (matchedName.includes('bagdogra')) {
-        lat = 26.6812;
-        lng = 88.3286;
-      } else if (matchedName.includes('pakyong')) {
-        lat = 27.2285;
-        lng = 88.5898;
-      } else if (matchedName.includes('njp') || matchedName.includes('jalpaiguri')) {
-        lat = 26.6976;
-        lng = 88.4426;
-      } else if (matchedName.includes('siliguri')) {
-        lat = 26.7314;
-        lng = 88.4140;
+      if (selectedHubCoords) {
+        lat = selectedHubCoords.lat;
+        lng = selectedHubCoords.lng;
       } else {
-        // Dynamic OpenStreetMap Nominatim geocoding lookup
-        try {
-          const geoRes = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(transitName)}&format=json&limit=1`)
-            .then(r => r.json());
-          if (geoRes && geoRes.length > 0) {
-            lat = parseFloat(geoRes[0].lat);
-            lng = parseFloat(geoRes[0].lon);
+        const matchedName = transitName.toLowerCase();
+        if (matchedName.includes('bagdogra')) {
+          lat = 26.6812;
+          lng = 88.3286;
+        } else if (matchedName.includes('pakyong')) {
+          lat = 27.2285;
+          lng = 88.5898;
+        } else if (matchedName.includes('njp') || matchedName.includes('jalpaiguri')) {
+          lat = 26.6976;
+          lng = 88.4426;
+        } else if (matchedName.includes('siliguri')) {
+          lat = 26.7314;
+          lng = 88.4140;
+        } else {
+          // Dynamic OpenStreetMap Nominatim geocoding lookup
+          try {
+            const geoRes = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(transitName)}&format=json&limit=1`)
+              .then(r => r.json());
+            if (geoRes && geoRes.length > 0) {
+              lat = parseFloat(geoRes[0].lat);
+              lng = parseFloat(geoRes[0].lon);
+            }
+          } catch (e) {
+            console.error("Geocoding lookup failed", e);
           }
-        } catch (e) {
-          console.error("Geocoding lookup failed", e);
         }
       }
 
@@ -994,27 +1024,42 @@ export default function GuestWebApp() {
                   </div>
 
                   <div className="grid grid-cols-2 gap-3">
-                    <div>
+                    <div className="relative">
                       <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1">Arrival Hub</label>
                       <input 
                         type="text" 
                         value={transitName}
-                        onChange={(e) => setTransitName(e.target.value)}
-                        list="hub-suggestions"
-                        placeholder="e.g. Cochin Airport"
+                        onChange={(e) => {
+                          setTransitName(e.target.value);
+                          setSelectedHubCoords(null); // Reset manual coordinates if user types again
+                        }}
+                        placeholder="e.g. Pune Junction"
                         className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-xs text-white focus:border-blue-500 focus:outline-none font-bold"
                         required
                       />
-                      <datalist id="hub-suggestions">
-                        <option value="Bagdogra Airport (IXB)" />
-                        <option value="NJP Railway Station" />
-                        <option value="Pakyong Airport (PYG)" />
-                        <option value="Siliguri Junction" />
-                        <option value="Cochin International Airport (COK)" />
-                        <option value="Trivandrum Airport (TRV)" />
-                        <option value="New Delhi Railway Station (NDLS)" />
-                        <option value="Calicut International Airport (CCJ)" />
-                      </datalist>
+                      
+                      {isSearchingHubs && (
+                        <div className="absolute right-3 top-8 text-blue-400 text-[10px] animate-pulse">Searching...</div>
+                      )}
+
+                      {hubSuggestions.length > 0 && (
+                        <div className="absolute left-0 right-0 mt-1.5 bg-slate-900 border border-white/10 rounded-xl shadow-2xl z-50 max-h-[160px] overflow-y-auto divide-y divide-white/5">
+                          {hubSuggestions.map((item, index) => (
+                            <button
+                              key={index}
+                              type="button"
+                              onClick={() => {
+                                setTransitName(item.display_name.split(',')[0]); // Use short name
+                                setSelectedHubCoords({ lat: parseFloat(item.lat), lng: parseFloat(item.lon) });
+                                setHubSuggestions([]); // Clear suggestions list
+                              }}
+                              className="w-full px-3.5 py-2.5 text-left text-[11px] text-gray-300 hover:bg-white/5 hover:text-white transition-colors block truncate"
+                            >
+                              📍 {item.display_name}
+                            </button>
+                          ))}
+                        </div>
+                      )}
                     </div>
                     <div>
                       <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1">Arrival Time</label>
