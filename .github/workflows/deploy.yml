@@ -1,4 +1,4 @@
-name: Deploy Backend to GCP VM
+name: CI/CD Deployment
 
 on:
   push:
@@ -6,18 +6,54 @@ on:
       - main
 
 jobs:
-  deploy:
+  deploy-frontend:
+    name: Deploy Frontend to Hostinger
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Deploy via SSH
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm install
+
+      - name: Build Next.js App
+        env:
+          NEXT_PUBLIC_APP_NAME: "StreamKart"
+          NEXT_PUBLIC_APP_DOMAIN: "streamkart.shop"
+          NEXT_PUBLIC_API_URL: "https://api.streamkart.shop/api/v1"
+          NEXT_PUBLIC_SUPPORT_EMAIL: "support@streamkart.shop"
+        run: npm run build
+
+      - name: Deploy to Hostinger via SFTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: "187.127.161.30"
+          username: "u255161845"
+          password: ${{ secrets.HOSTINGER_FTP_PASSWORD }}
+          port: 21
+          local-dir: ./out/ # Or wherever next export puts static files, if building standalone. If running Node server:
+          server-dir: /domains/streamkart.shop/public_html/crm/
+          dangerous-clean-slate: false
+
+  deploy-backend:
+    name: Deploy Backend to GCP VM
+    runs-on: ubuntu-latest
+    steps:
+      - name: Execute Remote SSH Commands
         uses: appleboy/ssh-action@v1.0.3
         with:
-          host: ${{ secrets.VM_IP }}
-          username: ${{ secrets.VM_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          host: "35.234.218.146"
+          username: "anandharsh437"
+          key: ${{ secrets.GCP_SSH_KEY }}
           script: |
-            sudo -u harshanand git -C /home/harshanand/app pull
-            sudo docker-compose -f /home/harshanand/app/deployment/gcp/docker-compose.yml up -d --build backend
+            cd ~/travelcrm
+            git pull origin main
+            cd deployment/gcp
+            docker compose down
+            docker compose up -d --build
