@@ -354,19 +354,35 @@ export default function GuestWebApp() {
     try {
       setSavingTransit(true);
       
-      // Resolve coordinates for standard hubs
+      // Default coordinates
       let lat = 26.6812; // Bagdogra Airport (IXB)
       let lng = 88.3286;
 
-      if (transitName.includes('Pakyong')) {
+      const matchedName = transitName.toLowerCase();
+      if (matchedName.includes('bagdogra')) {
+        lat = 26.6812;
+        lng = 88.3286;
+      } else if (matchedName.includes('pakyong')) {
         lat = 27.2285;
         lng = 88.5898;
-      } else if (transitName.includes('NJP') || transitName.includes('Jalpaiguri')) {
+      } else if (matchedName.includes('njp') || matchedName.includes('jalpaiguri')) {
         lat = 26.6976;
         lng = 88.4426;
-      } else if (transitName.includes('Siliguri')) {
+      } else if (matchedName.includes('siliguri')) {
         lat = 26.7314;
         lng = 88.4140;
+      } else {
+        // Dynamic OpenStreetMap Nominatim geocoding lookup
+        try {
+          const geoRes = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(transitName)}&format=json&limit=1`)
+            .then(r => r.json());
+          if (geoRes && geoRes.length > 0) {
+            lat = parseFloat(geoRes[0].lat);
+            lng = parseFloat(geoRes[0].lon);
+          }
+        } catch (e) {
+          console.error("Geocoding lookup failed", e);
+        }
       }
 
       const res = await fetch(`${API}/public/guest/${tourCode}/transit-details`, {
@@ -958,17 +974,25 @@ export default function GuestWebApp() {
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1">Arrival Hub</label>
-                      <select 
+                      <input 
+                        type="text" 
                         value={transitName}
                         onChange={(e) => setTransitName(e.target.value)}
-                        className="w-full bg-slate-900 border border-white/10 rounded-xl p-3 text-xs text-white focus:border-blue-500 focus:outline-none font-bold"
+                        list="hub-suggestions"
+                        placeholder="e.g. Cochin Airport"
+                        className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-xs text-white focus:border-blue-500 focus:outline-none font-bold"
                         required
-                      >
-                        <option value="Bagdogra Airport (IXB)">Bagdogra Airport (IXB)</option>
-                        <option value="NJP Railway Station">NJP Railway Station</option>
-                        <option value="Pakyong Airport (PYG)">Pakyong Airport (PYG)</option>
-                        <option value="Siliguri Junction">Siliguri Junction</option>
-                      </select>
+                      />
+                      <datalist id="hub-suggestions">
+                        <option value="Bagdogra Airport (IXB)" />
+                        <option value="NJP Railway Station" />
+                        <option value="Pakyong Airport (PYG)" />
+                        <option value="Siliguri Junction" />
+                        <option value="Cochin International Airport (COK)" />
+                        <option value="Trivandrum Airport (TRV)" />
+                        <option value="New Delhi Railway Station (NDLS)" />
+                        <option value="Calicut International Airport (CCJ)" />
+                      </datalist>
                     </div>
                     <div>
                       <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1">Arrival Time</label>
