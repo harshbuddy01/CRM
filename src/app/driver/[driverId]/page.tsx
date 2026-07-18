@@ -33,6 +33,8 @@ export default function DriverWebApp() {
   const mapRef = useRef<HTMLDivElement>(null);
   const leafletMapInst = useRef<any>(null);
   const markerInst = useRef<any>(null);
+  const destMarkerInst = useRef<any>(null);
+  const routePolylineInst = useRef<any>(null);
 
   // Load portal data
   const loadPortalData = () => {
@@ -46,8 +48,8 @@ export default function DriverWebApp() {
           setSettlements(res.data.settlements || []);
           setFinancials(res.data.financials || { totalEarnings: 0, payoutReceived: 0, payoutPending: 0 });
 
-          // Auto-resume active ride if backend says it has STARTED
-          const running = allTrips.find((t: any) => t.rideStatus === 'STARTED');
+          // Auto-resume active ride if backend says it has STARTED, EN_ROUTE, ARRIVED, or IN_TRANSIT
+          const running = allTrips.find((t: any) => ['STARTED', 'EN_ROUTE', 'ARRIVED', 'IN_TRANSIT'].includes(t.rideStatus));
           if (running) {
             setActiveRide(running);
           }
@@ -160,11 +162,61 @@ export default function DriverWebApp() {
           const { latitude, longitude } = position.coords;
           setDriverCoords({ lat: latitude, lng: longitude });
 
-          // Update Map marker
+          // Update Map marker and route polyline (dynamic routing for driver)
           const L = (window as any).L;
           if (leafletMapInst.current && markerInst.current && L) {
             markerInst.current.setLatLng([latitude, longitude]);
-            leafletMapInst.current.panTo([latitude, longitude]);
+
+            // Resolve target position dynamically based on Ride Status
+            const status = activeRide.rideStatus;
+            let destPos = [latitude + 0.015, longitude + 0.015];
+            let destIconHtml = '🏨';
+            let markerColor = 'bg-orange-500';
+
+            if (status === 'EN_ROUTE' || status === 'ARRIVED') {
+              if (activeRide.pickupLat && activeRide.pickupLng) {
+                destPos = [activeRide.pickupLat, activeRide.pickupLng];
+              }
+              destIconHtml = activeRide.transitType === 'train' ? '🚂' : '✈️';
+              markerColor = 'bg-emerald-500 animate-bounce';
+            } else {
+              if (activeRide.destinationLat && activeRide.destinationLng) {
+                destPos = [activeRide.destinationLat, activeRide.destinationLng];
+              }
+            }
+
+            const destIcon = L.divIcon({
+              className: 'custom-destination-marker',
+              html: `
+                <div class="w-8 h-8 rounded-full ${markerColor} border-2 border-white shadow-lg flex items-center justify-center text-white text-xs font-bold">
+                  ${destIconHtml}
+                </div>
+              `,
+              iconSize: [32, 32],
+              iconAnchor: [16, 16]
+            });
+
+            if (!destMarkerInst.current) {
+              destMarkerInst.current = L.marker(destPos, { icon: destIcon }).addTo(leafletMapInst.current);
+            } else {
+              destMarkerInst.current.setLatLng(destPos);
+              destMarkerInst.current.setIcon(destIcon);
+            }
+
+            if (!routePolylineInst.current) {
+              routePolylineInst.current = L.polyline([[latitude, longitude], destPos], {
+                color: '#3B82F6',
+                weight: 4,
+                dashArray: '5, 8',
+                opacity: 0.8
+              }).addTo(leafletMapInst.current);
+            } else {
+              routePolylineInst.current.setLatLngs([[latitude, longitude], destPos]);
+            }
+
+            // Adjust bounds to show both driver and destination
+            const bounds = L.latLngBounds([[latitude, longitude], destPos]);
+            leafletMapInst.current.fitBounds(bounds, { padding: [50, 50] });
           }
 
           // Stream coordinates to backend
@@ -190,73 +242,57 @@ export default function DriverWebApp() {
     };
   }, [activeRide]);
 
-  // Start active ride
-  const handleStartRide = async (trip: any) => {
+  // Update ride status dynamically (Uber flow)
+  const handleUpdateRideStatus = async (trip: any, nextStatus: string) => {
     try {
       setLoading(true);
-      // Grab current position for starting
+      
+      // Grab current position
       let lat = 26.7271;
       let lng = 88.3953;
       if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition((pos) => {
-          lat = pos.coords.latitude;
-          lng = pos.coords.longitude;
+        await new Promise((resolve) => {
+          navigator.geolocation.getCurrentPosition(
+            (pos) => {
+              lat = pos.coords.latitude;
+              lng = pos.coords.longitude;
+              resolve(null);
+            },
+            () => resolve(null),
+            { timeout: 4000 }
+          );
         });
       }
 
-      const res = await fetch(`${API}/public/driver/${driverId}/ride/start`, {
+      const res = await fetch(`${API}/public/driver/${driverId}/ride/status`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           tourId: trip.tourId,
           dayNumber: trip.dayNumber,
-          pickupLocation: 'Bagdogra Airport (IXB) / NJP Station',
-          destinationLocation: trip.hotel || 'Partner Hotel',
+          status: nextStatus,
           lat,
           lng
         })
       }).then(r => r.json());
 
       if (res.success) {
-        toast.success('Duty started! Guest has been notified via WhatsApp with live tracking link.');
-        setActiveRide({ ...trip, rideStatus: 'STARTED' });
+        if (nextStatus === 'COMPLETED') {
+          toast.success('Excellent job! Trip completed successfully.');
+          setActiveRide(null);
+          setMapLoaded(false);
+          leafletMapInst.current = null;
+          markerInst.current = null;
+        } else {
+          toast.success(`Duty status updated to ${nextStatus}`);
+          setActiveRide({ ...trip, rideStatus: nextStatus });
+        }
         loadPortalData();
       } else {
-        toast.error(res.message || 'Failed to start ride');
+        toast.error(res.message || 'Failed to update status');
       }
     } catch (e) {
-      toast.error('Connection error starting ride');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Complete active ride
-  const handleCompleteRide = async () => {
-    if (!activeRide) return;
-    try {
-      setLoading(true);
-      const res = await fetch(`${API}/public/driver/${driverId}/ride/complete`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          tourId: activeRide.tourId,
-          dayNumber: activeRide.dayNumber
-        })
-      }).then(r => r.json());
-
-      if (res.success) {
-        toast.success('Excellent job! Trip completed successfully.');
-        setActiveRide(null);
-        setMapLoaded(false);
-        leafletMapInst.current = null;
-        markerInst.current = null;
-        loadPortalData();
-      } else {
-        toast.error(res.message || 'Failed to complete ride');
-      }
-    } catch (e) {
-      toast.error('Connection error completing ride');
+      toast.error('Connection error updating status');
     } finally {
       setLoading(false);
     }
@@ -317,10 +353,18 @@ export default function DriverWebApp() {
             <div className="absolute bottom-4 left-4 right-4 bg-gray-900/80 backdrop-blur-xl border border-white/10 p-5 rounded-3xl shadow-2xl space-y-4 flex flex-col z-20">
               <div className="flex items-center justify-between">
                 <div>
-                  <span className="text-[9px] font-bold text-blue-400 bg-blue-500/20 px-2 py-0.5 rounded border border-blue-500/30 uppercase tracking-widest">
-                    Transit Status: Active
+                  <span className={`text-[9px] font-bold px-2.5 py-0.5 rounded border uppercase tracking-widest ${
+                    activeRide.rideStatus === 'ARRIVED' ? 'bg-amber-500/25 text-amber-400 border-amber-500/30' :
+                    activeRide.rideStatus === 'IN_TRANSIT' ? 'bg-indigo-500/25 text-indigo-400 border-indigo-500/30' :
+                    'bg-blue-500/25 text-blue-400 border-blue-500/30'
+                  }`}>
+                    Status: {
+                      activeRide.rideStatus === 'STARTED' || activeRide.rideStatus === 'EN_ROUTE' ? 'EN ROUTE' :
+                      activeRide.rideStatus === 'ARRIVED' ? 'ARRIVED AT PICKUP' :
+                      activeRide.rideStatus === 'IN_TRANSIT' ? 'IN TRANSIT' : activeRide.rideStatus
+                    }
                   </span>
-                  <h3 className="font-bold text-white text-base mt-1.5">{activeRide.guestName}</h3>
+                  <h3 className="font-bold text-white text-base mt-2.5">{activeRide.guestName}</h3>
                   <p className="text-[10px] text-gray-400 mt-0.5">Tour Reference: {activeRide.tourCode}</p>
                 </div>
                 <a href={`tel:+91${activeRide.guestPhone}`} className="w-11 h-11 rounded-full bg-green-500 hover:bg-green-600 flex items-center justify-center text-white transition-transform active:scale-90 shadow-md">
@@ -334,7 +378,9 @@ export default function DriverWebApp() {
                   <div className="w-2.5 h-2.5 rounded-full bg-blue-500 mt-1 shrink-0 shadow-lg shadow-blue-500/50" />
                   <div>
                     <span className="text-[9px] text-gray-400 font-bold uppercase tracking-wider block">Pickup Address</span>
-                    <span className="text-xs text-gray-200 mt-0.5 block font-medium">Bagdogra Airport (IXB) / NJP Station</span>
+                    <span className="text-xs text-gray-200 mt-0.5 block font-medium">
+                      {activeRide.pickupLocation || 'Bagdogra Airport (IXB) / NJP Station'}
+                    </span>
                   </div>
                 </div>
                 <div className="w-px h-4 bg-white/10 ml-1.25" />
@@ -347,13 +393,44 @@ export default function DriverWebApp() {
                 </div>
               </div>
 
-              {/* ACTION BUTTON */}
-              <button 
-                onClick={handleCompleteRide}
-                className="w-full bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white font-extrabold text-sm py-4 rounded-2xl flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20 active:scale-95 transition-all cursor-pointer"
-              >
-                <Check className="w-5 h-5" /> Complete Duty & Close Map
-              </button>
+              {/* Dynamic Transit Info & Action Button */}
+              <div className="pt-1">
+                {activeRide.transitNumber && (
+                  <div className="bg-white/5 border border-white/5 rounded-2xl p-3.5 mb-3 text-xs text-white/90">
+                    <span className="text-[9px] font-bold text-blue-400 uppercase tracking-widest block mb-1">Guest Arrival Schedule</span>
+                    <div className="grid grid-cols-2 gap-2 text-[10px] font-sans font-medium text-gray-300">
+                      <div>Type: <span className="text-white font-bold uppercase">{activeRide.transitType || 'flight'}</span></div>
+                      <div>ID/No: <span className="text-white font-bold uppercase">{activeRide.transitNumber}</span></div>
+                      <div>ETA: <span className="text-white font-bold">{activeRide.transitTime}</span></div>
+                      {activeRide.transitDetails && <div className="col-span-2">Details: <span className="text-white font-bold">{activeRide.transitDetails}</span></div>}
+                    </div>
+                  </div>
+                )}
+                
+                {/* ACTION BUTTON */}
+                {activeRide.rideStatus === 'STARTED' || activeRide.rideStatus === 'EN_ROUTE' ? (
+                  <button 
+                    onClick={() => handleUpdateRideStatus(activeRide, 'ARRIVED')}
+                    className="w-full bg-gradient-to-r from-yellow-500 to-amber-600 hover:from-yellow-600 hover:to-amber-700 text-slate-950 font-black text-xs py-4 rounded-2xl flex items-center justify-center gap-2 shadow-lg shadow-yellow-500/20 active:scale-95 transition-all cursor-pointer"
+                  >
+                    I Have Arrived at Pickup
+                  </button>
+                ) : activeRide.rideStatus === 'ARRIVED' ? (
+                  <button 
+                    onClick={() => handleUpdateRideStatus(activeRide, 'IN_TRANSIT')}
+                    className="w-full bg-gradient-to-r from-indigo-500 to-blue-600 hover:from-indigo-600 hover:to-blue-700 text-white font-extrabold text-xs py-4 rounded-2xl flex items-center justify-center gap-2 shadow-lg shadow-indigo-500/20 active:scale-95 transition-all cursor-pointer"
+                  >
+                    Start Trip to Hotel
+                  </button>
+                ) : (
+                  <button 
+                    onClick={() => handleUpdateRideStatus(activeRide, 'COMPLETED')}
+                    className="w-full bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white font-extrabold text-xs py-4 rounded-2xl flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20 active:scale-95 transition-all cursor-pointer"
+                  >
+                    <Check className="w-4 h-4" /> Complete Duty & Drop Guest
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         ) : (
@@ -479,10 +556,10 @@ export default function DriverWebApp() {
                               <PhoneCall className="w-4 h-4 text-green-400" /> Call Guest
                             </a>
                             <button 
-                              onClick={() => handleStartRide(trip)} 
+                              onClick={() => handleUpdateRideStatus(trip, 'EN_ROUTE')} 
                               className="bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs py-3 rounded-2xl flex items-center justify-center gap-2 active:scale-95 transition-all shadow-lg shadow-blue-600/20 cursor-pointer"
                             >
-                              <Car className="w-4 h-4" /> Start Duty
+                              <Car className="w-4 h-4" /> Head to Pickup
                             </button>
                           </div>
                         </div>

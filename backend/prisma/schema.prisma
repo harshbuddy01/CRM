@@ -358,6 +358,14 @@ model Tour {
   guestUsername String?   @map("guest_username")
   guestPassword String?   @map("guest_password")
 
+  arrivalTransitType    String?   @map("arrival_transit_type")
+  arrivalTransitNumber  String?   @map("arrival_transit_number")
+  arrivalTransitTime    String?   @map("arrival_transit_time")
+  arrivalTransitDetails String?   @map("arrival_transit_details")
+  arrivalPickupLocation String?   @map("arrival_pickup_location")
+  arrivalPickupLat      Float?    @map("arrival_pickup_lat")
+  arrivalPickupLng      Float?    @map("arrival_pickup_lng")
+
   query           Query             @relation(fields: [queryId], references: [id])
   proposal        Proposal?         @relation(fields: [proposalId], references: [id])
   assignedOpsUser User?             @relation("TourAssignedOps", fields: [assignedOps], references: [id])

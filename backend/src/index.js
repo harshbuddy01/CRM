@@ -9,6 +9,7 @@ const app = require('./app');
 const config = require('./config');
 const logger = require('./utils/logger');
 const { startCronJobs } = require('./cron');
+const socketService = require('./services/socket.service');
 
 console.log('--- STARTING TRAVEL-CRM BACKEND ---');
 console.log(`Port Configured: ${config.port}`);
@@ -18,6 +19,9 @@ const server = app.listen(config.port, '0.0.0.0', () => {
   console.log('✅ app.listen() callback triggered successfully.');
   logger.info(`🚀 TravelCRM API server running on port ${config.port}`);
   
+  // Initialize Socket.io
+  socketService.init(server);
+
   // Start scheduled tasks
   console.log('⌛ Starting Cron Jobs...');
   startCronJobs();

@@ -168,20 +168,20 @@ export default function HotelPartnerWebApp() {
                   <LogOut className="w-3.5 h-3.5" />
                 </button>
               </div>
-              <h2 className="text-sm font-bold mt-0.5 text-orange-400 truncate max-w-[160px]">{hotelName}</h2>
+              <h2 className="text-sm font-bold mt-0.5 text-amber-400 truncate max-w-[160px]">{hotelName}</h2>
             </div>
           </div>
           
           <div className="flex gap-2 bg-black/30 p-1 rounded-2xl border border-white/5">
             <button 
               onClick={() => setActiveTab('guests')}
-              className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all ${activeTab === 'guests' ? 'bg-orange-600 text-white shadow-md' : 'text-gray-400 cursor-pointer hover:text-white'}`}
+              className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all ${activeTab === 'guests' ? 'bg-amber-600 text-white shadow-md' : 'text-gray-400 cursor-pointer hover:text-white'}`}
             >
               Arrivals
             </button>
             <button 
               onClick={() => setActiveTab('requests')}
-              className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all relative ${activeTab === 'requests' ? 'bg-orange-600 text-white shadow-md' : 'text-gray-400 cursor-pointer hover:text-white'}`}
+              className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all relative ${activeTab === 'requests' ? 'bg-amber-600 text-white shadow-md' : 'text-gray-400 cursor-pointer hover:text-white'}`}
             >
               Requests
               {pendingRequestsCount > 0 && (
@@ -190,13 +190,13 @@ export default function HotelPartnerWebApp() {
             </button>
             <button 
               onClick={() => setActiveTab('finance')}
-              className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all ${activeTab === 'finance' ? 'bg-orange-600 text-white shadow-md' : 'text-gray-400 cursor-pointer hover:text-white'}`}
+              className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all ${activeTab === 'finance' ? 'bg-amber-600 text-white shadow-md' : 'text-gray-400 cursor-pointer hover:text-white'}`}
             >
               Finance
             </button>
           </div>
         </header>
-
+ 
         {/* MAIN CONTENT */}
         <main className="flex-1 overflow-y-auto p-5 scrollbar-none pb-28 relative z-10">
           <AnimatePresence mode="wait">
@@ -212,7 +212,7 @@ export default function HotelPartnerWebApp() {
               >
                 <div className="flex justify-between items-center mb-2">
                   <h3 className="font-bold text-white text-lg">Upcoming Bookings</h3>
-                  <span className="bg-orange-500/20 text-orange-400 text-[10px] font-bold px-2.5 py-1 rounded-lg border border-orange-500/30 uppercase tracking-wider">
+                  <span className="bg-amber-500/20 text-amber-400 text-[10px] font-bold px-2.5 py-1 rounded-lg border border-amber-500/30 uppercase tracking-wider">
                     {guests.length} Reservation(s)
                   </span>
                 </div>
@@ -248,15 +248,45 @@ export default function HotelPartnerWebApp() {
                         </div>
                       </div>
 
+                      {/* Premium Taj-style VIP Guest ETA & Driver info */}
+                      {g.arrivalDetails && g.arrivalDetails.transitNumber && (
+                        <div className="bg-amber-500/5 border border-amber-500/20 rounded-2xl p-3.5 space-y-2 text-xs">
+                          <div className="flex justify-between items-center pb-1.5 border-b border-amber-500/10">
+                            <span className="text-[9px] font-black text-amber-500 uppercase tracking-widest block text-left">Inbound Transit Details</span>
+                            <span className="text-[10px] font-bold text-white/90 text-right">
+                              {g.arrivalDetails.transitType === 'train' ? '🚂 Train' : '✈️ Flight'}
+                            </span>
+                          </div>
+                          <div className="grid grid-cols-2 gap-2 text-[11px] text-gray-300 text-left">
+                            <div>Number: <strong className="text-white uppercase">{g.arrivalDetails.transitNumber}</strong></div>
+                            <div>Arrival Time: <strong className="text-amber-400">{g.arrivalDetails.transitTime}</strong></div>
+                            {g.arrivalDetails.pickupLocation && (
+                              <div className="col-span-2">Pickup Hub: <span className="text-gray-300 font-medium">{g.arrivalDetails.pickupLocation}</span></div>
+                            )}
+                            {g.arrivalDetails.driverName && (
+                              <div className="col-span-2 mt-1 pt-1.5 border-t border-white/5 flex items-center justify-between">
+                                <div>
+                                  <span className="block text-[8px] text-gray-400 uppercase tracking-wider text-left">Assigned Driver</span>
+                                  <span className="font-bold text-white text-[11px] text-left block">{g.arrivalDetails.driverName} ({g.arrivalDetails.vehicleNo})</span>
+                                </div>
+                                <a href={`tel:+91${g.arrivalDetails.driverPhone}`} className="px-2.5 py-1 bg-white/5 hover:bg-white/10 rounded-lg text-white font-bold border border-white/10 text-[9px] flex items-center gap-1 shrink-0">
+                                  📞 Call
+                                </a>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
                       {g.roomNotes && (
-                        <div className="bg-orange-500/10 border border-orange-500/20 rounded-2xl p-3.5 text-xs text-orange-300">
-                          <strong className="block mb-0.5 font-bold uppercase text-[9px] text-orange-400 tracking-wider">Instructions</strong>
+                        <div className="bg-amber-500/10 border border-amber-500/20 rounded-2xl p-3.5 text-xs text-amber-300">
+                          <strong className="block mb-0.5 font-bold uppercase text-[9px] text-amber-500 tracking-wider text-left">Instructions</strong>
                           {g.roomNotes}
                         </div>
                       )}
 
                       <div className="flex gap-2">
-                        <button onClick={() => handleCheckInGuest(g)} className="flex-1 bg-orange-600 hover:bg-orange-700 text-white font-extrabold text-xs py-2.5 rounded-xl transition-all shadow-md flex justify-center items-center gap-1 cursor-pointer active:scale-95">
+                        <button onClick={() => handleCheckInGuest(g)} className="flex-1 bg-amber-600 hover:bg-amber-700 text-white font-extrabold text-xs py-2.5 rounded-xl transition-all shadow-md flex justify-center items-center gap-1 cursor-pointer active:scale-95">
                           <CheckCircle2 className="w-4 h-4" /> Guest Check-in
                         </button>
                         <a href={`tel:+91${g.guestPhone}`} className="flex-1 bg-white/5 hover:bg-white/10 text-white border border-white/10 font-bold text-xs py-2.5 rounded-xl transition-all flex justify-center items-center gap-1">

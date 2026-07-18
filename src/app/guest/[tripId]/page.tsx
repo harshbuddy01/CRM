@@ -42,6 +42,15 @@ export default function GuestWebApp() {
   const [notes, setNotes] = useState('');
   const [submittingRequest, setSubmittingRequest] = useState(false);
 
+  // Guest Transit Details Form State
+  const [showTransitModal, setShowTransitModal] = useState(false);
+  const [transitType, setTransitType] = useState<'flight' | 'train'>('flight');
+  const [transitNumber, setTransitNumber] = useState('');
+  const [transitTime, setTransitTime] = useState('');
+  const [transitName, setTransitName] = useState('Bagdogra Airport (IXB)');
+  const [transitDetails, setTransitDetails] = useState('');
+  const [savingTransit, setSavingTransit] = useState(false);
+
   // Load guest trip data
   const loadTripData = () => {
     const tourCode = tripId as string;
@@ -58,6 +67,13 @@ export default function GuestWebApp() {
           // Set default hotel from current day if available
           if (data.data.currentDay?.hotel) {
             setSelectedHotel(data.data.currentDay.hotel);
+          }
+          if (data.data.arrivalDetails) {
+            setTransitType(data.data.arrivalDetails.transitType || 'flight');
+            setTransitNumber(data.data.arrivalDetails.transitNumber || '');
+            setTransitTime(data.data.arrivalDetails.transitTime || '');
+            setTransitName(data.data.arrivalDetails.pickupLocation || 'Bagdogra Airport (IXB)');
+            setTransitDetails(data.data.arrivalDetails.transitDetails || '');
           }
         } else {
           toast.error('Trip data could not be loaded. Please contact support.');
@@ -199,39 +215,56 @@ export default function GuestWebApp() {
         driverMarkerInst.current.setLatLng(driverPos);
       }
 
-      // Draw route/dotted line to drop-off/hotel if we have general hotel location coordinates
-      // Mock hotel coordinates slightly offset for visual appeal
-      const hotelPos = [driverTracking.data.lat + 0.015, driverTracking.data.lng + 0.015];
-      
-      const hotelIcon = L.divIcon({
-        className: 'custom-hotel-marker',
+      // Resolve destination position & icon dynamically based on Ride Status (Uber flow)
+      const status = driverTracking.data?.rideStatus;
+      let destPos = [driverTracking.data.lat + 0.015, driverTracking.data.lng + 0.015];
+      let destIconHtml = '🏨';
+      let markerColor = 'bg-orange-500';
+
+      if (status === 'EN_ROUTE' || status === 'ARRIVED') {
+        if (driverTracking.data.pickupLat && driverTracking.data.pickupLng) {
+          destPos = [driverTracking.data.pickupLat, driverTracking.data.pickupLng];
+        }
+        destIconHtml = driverTracking.data.transitType === 'train' ? '🚂' : '✈️';
+        markerColor = 'bg-emerald-500 animate-bounce';
+      } else {
+        if (driverTracking.data.destinationLat && driverTracking.data.destinationLng) {
+          destPos = [driverTracking.data.destinationLat, driverTracking.data.destinationLng];
+        }
+      }
+
+      const destIcon = L.divIcon({
+        className: 'custom-destination-marker',
         html: `
-          <div class="w-7 h-7 rounded-full bg-orange-500 border-2 border-white shadow-lg flex items-center justify-center text-white">
-            🏨
+          <div class="w-8 h-8 rounded-full ${markerColor} border-2 border-white shadow-lg flex items-center justify-center text-white text-xs font-bold">
+            ${destIconHtml}
           </div>
         `,
-        iconSize: [28, 28],
-        iconAnchor: [14, 14]
+        iconSize: [32, 32],
+        iconAnchor: [16, 16]
       });
 
       if (!destMarkerInst.current) {
-        destMarkerInst.current = L.marker(hotelPos, { icon: hotelIcon }).addTo(map);
+        destMarkerInst.current = L.marker(destPos, { icon: destIcon }).addTo(map);
+      } else {
+        destMarkerInst.current.setLatLng(destPos);
+        destMarkerInst.current.setIcon(destIcon);
       }
 
-      // Polyline route
+      // Polyline route from driver to destination
       if (!routePolylineInst.current) {
-        routePolylineInst.current = L.polyline([driverPos, hotelPos], {
+        routePolylineInst.current = L.polyline([driverPos, destPos], {
           color: '#3B82F6',
           weight: 4,
           dashArray: '5, 8',
           opacity: 0.8
         }).addTo(map);
       } else {
-        routePolylineInst.current.setLatLngs([driverPos, hotelPos]);
+        routePolylineInst.current.setLatLngs([driverPos, destPos]);
       }
 
       // Fit bounds
-      const bounds = L.latLngBounds([driverPos, hotelPos]);
+      const bounds = L.latLngBounds([driverPos, destPos]);
       map.fitBounds(bounds, { padding: [50, 50] });
 
     } else {
@@ -305,6 +338,62 @@ export default function GuestWebApp() {
       toast.error('Network error. Failed to submit request.');
     } finally {
       setSubmittingRequest(false);
+    }
+  };
+
+  const handleSaveTransitDetails = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const tourCode = tripId as string;
+    if (!tourCode) return;
+
+    if (!transitNumber || !transitTime) {
+      toast.error('Please enter the Flight/Train number and Scheduled time.');
+      return;
+    }
+
+    try {
+      setSavingTransit(true);
+      
+      // Resolve coordinates for standard hubs
+      let lat = 26.6812; // Bagdogra Airport (IXB)
+      let lng = 88.3286;
+
+      if (transitName.includes('Pakyong')) {
+        lat = 27.2285;
+        lng = 88.5898;
+      } else if (transitName.includes('NJP') || transitName.includes('Jalpaiguri')) {
+        lat = 26.6976;
+        lng = 88.4426;
+      } else if (transitName.includes('Siliguri')) {
+        lat = 26.7314;
+        lng = 88.4140;
+      }
+
+      const res = await fetch(`${API}/public/guest/${tourCode}/transit-details`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          transitType,
+          transitNumber,
+          transitTime,
+          transitDetails,
+          pickupLocation: transitName,
+          pickupLat: lat,
+          pickupLng: lng
+        })
+      }).then(r => r.json());
+
+      if (res.success) {
+        toast.success('Arrival transit details saved successfully!');
+        setShowTransitModal(false);
+        loadTripData();
+      } else {
+        toast.error(res.message || 'Failed to save transit details');
+      }
+    } catch (err) {
+      toast.error('Network error saving transit details');
+    } finally {
+      setSavingTransit(false);
     }
   };
 
@@ -414,17 +503,31 @@ export default function GuestWebApp() {
           
           {/* Map Live Header Tracker Overlay */}
           {driverTracking.active && (
-            <div className="absolute top-[90px] left-4 right-4 bg-blue-600/90 backdrop-blur-md text-white p-3.5 rounded-2xl shadow-xl flex items-center justify-between border border-blue-500/20 z-10 animate-bounce-slow">
+            <div className={`absolute top-[90px] left-4 right-4 ${
+              driverTracking.data?.rideStatus === 'ARRIVED' ? 'bg-emerald-600/95 border-emerald-500/35 shadow-emerald-950/20' :
+              driverTracking.data?.rideStatus === 'IN_TRANSIT' ? 'bg-indigo-600/90 border-indigo-500/30 shadow-indigo-950/20' :
+              'bg-blue-600/90 border-blue-500/20 shadow-blue-950/20'
+            } backdrop-blur-md text-white p-3.5 rounded-2xl shadow-xl flex items-center justify-between border z-10 animate-bounce-slow`}>
               <div className="flex items-center gap-3">
-                <div className="w-9 h-9 bg-white/20 rounded-full flex items-center justify-center text-white">
+                <div className="w-9 h-9 bg-white/20 rounded-full flex items-center justify-center text-white shrink-0">
                   <Car className="w-5 h-5 animate-pulse" />
                 </div>
                 <div>
-                  <h4 className="font-bold text-xs text-white">Driver Heading to You</h4>
-                  <p className="text-[10px] text-blue-100 mt-0.5">ETA: {driverTracking.data.etaMinutes || 15} Mins • Live Mapping</p>
+                  <h4 className="font-bold text-xs text-white">
+                    {driverTracking.data?.rideStatus === 'EN_ROUTE' ? 'Driver Heading to Pickup' :
+                     driverTracking.data?.rideStatus === 'ARRIVED' ? 'Driver Has Arrived!' :
+                     driverTracking.data?.rideStatus === 'IN_TRANSIT' ? 'On the Way to Hotel' :
+                     'Driver is Active'}
+                  </h4>
+                  <p className="text-[9px] text-white/90 mt-0.5 leading-snug font-medium max-w-[240px] truncate">
+                    {driverTracking.data?.rideStatus === 'EN_ROUTE' ? `Pickup: ${driverTracking.data.pickupLocation || 'Airport / Station'} • ETA: ${driverTracking.data.etaMinutes || 15} Mins` :
+                     driverTracking.data?.rideStatus === 'ARRIVED' ? `Board vehicle at: ${driverTracking.data.pickupLocation || 'Airport / Station'}` :
+                     driverTracking.data?.rideStatus === 'IN_TRANSIT' ? `Heading to: ${driverTracking.data.destinationLocation || 'Hotel'}` :
+                     'Live tracking coordinates streaming...'}
+                  </p>
                 </div>
               </div>
-              <a href={`tel:+91${driverTracking.data.driver.phone}`} className="w-8 h-8 rounded-full bg-green-500 hover:bg-green-600 flex items-center justify-center text-white transition-transform active:scale-90">
+              <a href={`tel:+91${driverTracking.data.driver.phone}`} className="w-8 h-8 rounded-full bg-green-500 hover:bg-green-600 flex items-center justify-center text-white transition-transform active:scale-90 shrink-0">
                 <PhoneCall className="w-4 h-4" />
               </a>
             </div>
@@ -561,6 +664,78 @@ export default function GuestWebApp() {
                       <a href={driver?.phone ? `tel:+91${driver.phone}` : 'tel:+919876543210'} className="flex-1 bg-white/5 hover:bg-white/10 py-3 rounded-xl text-xs font-bold text-white border border-white/10 flex items-center justify-center gap-2 transition-transform active:scale-95">
                         <PhoneCall className="w-4 h-4 text-green-400" /> Call Driver
                       </a>
+                    </div>
+                  </div>
+
+                  {/* Premium Boarding Pass Card for Arrival Details */}
+                  <div className="bg-white/5 backdrop-blur-md rounded-[24px] shadow-sm border border-white/5 overflow-hidden font-sans">
+                    <div className="bg-gradient-to-r from-blue-900/40 to-slate-900/60 p-4 border-b border-white/5 flex justify-between items-center">
+                      <div>
+                        <span className="text-[9px] font-bold text-blue-400 uppercase tracking-widest block">Arrival Transit Details</span>
+                        <h4 className="font-bold text-white text-sm mt-0.5">
+                          {trip?.arrivalDetails?.transitNumber ? `Inbound: ${trip.arrivalDetails.transitNumber}` : 'Arrival Details Unfilled'}
+                        </h4>
+                      </div>
+                      <span className="text-white text-lg">
+                        {trip?.arrivalDetails?.transitType === 'train' ? '🚂' : '✈️'}
+                      </span>
+                    </div>
+
+                    <div className="p-5 space-y-4">
+                      {trip?.arrivalDetails?.transitNumber ? (
+                        <div className="grid grid-cols-2 gap-4 text-xs">
+                          <div>
+                            <span className="text-gray-400 block text-[9px] uppercase tracking-wider font-bold">Transit Mode</span>
+                            <span className="font-bold text-white mt-1 block uppercase">
+                              {trip.arrivalDetails.transitType || 'Flight'}
+                            </span>
+                          </div>
+                          <div>
+                            <span className="text-gray-400 block text-[9px] uppercase tracking-wider font-bold">Flight / Train No</span>
+                            <span className="font-bold text-white mt-1 block uppercase">
+                              {trip.arrivalDetails.transitNumber}
+                            </span>
+                          </div>
+                          <div>
+                            <span className="text-gray-400 block text-[9px] uppercase tracking-wider font-bold">ETA / Landing Time</span>
+                            <span className="font-bold text-blue-400 mt-1 block">
+                              🕒 {trip.arrivalDetails.transitTime}
+                            </span>
+                          </div>
+                          <div>
+                            <span className="text-gray-400 block text-[9px] uppercase tracking-wider font-bold">Terminal / Platform</span>
+                            <span className="font-bold text-white mt-1 block">
+                              {trip.arrivalDetails.transitDetails || 'Not specified'}
+                            </span>
+                          </div>
+                          <div className="col-span-2 pt-2 border-t border-white/5">
+                            <span className="text-gray-400 block text-[9px] uppercase tracking-wider font-bold">Arrival Pickup Hub</span>
+                            <span className="font-bold text-gray-200 mt-1 block">
+                              📍 {trip.arrivalDetails.pickupLocation || 'Airport / Station'}
+                            </span>
+                          </div>
+                        </div>
+                      ) : (
+                        <p className="text-xs text-gray-400 leading-relaxed">
+                          Enter your arrival flight or train details so your driver knows exactly when to land and which terminal/platform to meet you at.
+                        </p>
+                      )}
+
+                      <button
+                        onClick={() => {
+                          if (trip?.arrivalDetails) {
+                            setTransitType(trip.arrivalDetails.transitType || 'flight');
+                            setTransitNumber(trip.arrivalDetails.transitNumber || '');
+                            setTransitTime(trip.arrivalDetails.transitTime || '');
+                            setTransitName(trip.arrivalDetails.pickupLocation || 'Bagdogra Airport (IXB)');
+                            setTransitDetails(trip.arrivalDetails.transitDetails || '');
+                          }
+                          setShowTransitModal(true);
+                        }}
+                        className="w-full bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 py-3.5 rounded-xl text-xs font-bold transition-transform active:scale-95 border border-blue-600/30 flex items-center justify-center gap-1.5 cursor-pointer"
+                      >
+                        {trip?.arrivalDetails?.transitNumber ? 'Edit Transit Details' : 'Provide Transit Details'}
+                      </button>
                     </div>
                   </div>
 
@@ -727,6 +902,117 @@ export default function GuestWebApp() {
             </AnimatePresence>
           </div>
         </motion.div>
+
+        {/* Transit Details Modal */}
+        <AnimatePresence>
+          {showTransitModal && (
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm z-40 flex items-end justify-center"
+            >
+              <motion.div 
+                initial={{ y: 300 }}
+                animate={{ y: 0 }}
+                exit={{ y: 300 }}
+                transition={{ type: "spring", damping: 25, stiffness: 200 }}
+                className="w-full bg-slate-900 border-t border-white/10 rounded-t-[32px] p-6 pb-10 space-y-4 max-w-[420px] overflow-y-auto max-h-[85vh] scrollbar-none"
+              >
+                <div className="w-12 h-1.5 bg-gray-700 rounded-full mx-auto mb-4" />
+                <h3 className="text-xl font-bold text-white mb-1">Inbound Transit Details</h3>
+                <p className="text-xs text-gray-400">Provide your flight or train schedule for easy coordinate synchronization.</p>
+
+                <form onSubmit={handleSaveTransitDetails} className="space-y-4 pt-2">
+                  <div className="flex bg-black/35 p-1 rounded-xl border border-white/5">
+                    <button 
+                      type="button"
+                      className={`flex-1 text-xs font-bold py-2.5 rounded-lg transition-all ${transitType === 'flight' ? 'bg-blue-600 text-white shadow-md' : 'text-gray-400'}`}
+                      onClick={() => setTransitType('flight')}
+                    >
+                      ✈️ Flight
+                    </button>
+                    <button 
+                      type="button"
+                      className={`flex-1 text-xs font-bold py-2.5 rounded-lg transition-all ${transitType === 'train' ? 'bg-blue-600 text-white shadow-md' : 'text-gray-400'}`}
+                      onClick={() => setTransitType('train')}
+                    >
+                      🚂 Train
+                    </button>
+                  </div>
+
+                  <div>
+                    <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1">
+                      {transitType === 'flight' ? 'Flight Number' : 'Train Name & Number'}
+                    </label>
+                    <input 
+                      type="text" 
+                      value={transitNumber}
+                      onChange={(e) => setTransitNumber(e.target.value)}
+                      placeholder={transitType === 'flight' ? 'e.g. 6E-2402' : 'e.g. Rajdhani Express (12301)'}
+                      className="w-full bg-white/5 border border-white/10 rounded-xl p-3.5 text-sm text-white focus:border-blue-500 focus:outline-none font-bold"
+                      required
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1">Arrival Hub</label>
+                      <select 
+                        value={transitName}
+                        onChange={(e) => setTransitName(e.target.value)}
+                        className="w-full bg-slate-900 border border-white/10 rounded-xl p-3 text-xs text-white focus:border-blue-500 focus:outline-none font-bold"
+                        required
+                      >
+                        <option value="Bagdogra Airport (IXB)">Bagdogra Airport (IXB)</option>
+                        <option value="NJP Railway Station">NJP Railway Station</option>
+                        <option value="Pakyong Airport (PYG)">Pakyong Airport (PYG)</option>
+                        <option value="Siliguri Junction">Siliguri Junction</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1">Arrival Time</label>
+                      <input 
+                        type="text" 
+                        value={transitTime}
+                        onChange={(e) => setTransitTime(e.target.value)}
+                        placeholder="e.g. 14:30"
+                        className="w-full bg-white/5 border border-white/10 rounded-xl p-3.5 text-sm text-white focus:border-blue-500 focus:outline-none font-bold"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1">Terminal / Platform / Details</label>
+                    <input 
+                      type="text" 
+                      value={transitDetails}
+                      onChange={(e) => setTransitDetails(e.target.value)}
+                      placeholder="e.g. Terminal 1, Gate 3 / Platform 4"
+                      className="w-full bg-white/5 border border-white/10 rounded-xl p-3.5 text-sm text-white focus:border-blue-500 focus:outline-none"
+                    />
+                  </div>
+
+                  <button 
+                    type="submit" 
+                    disabled={savingTransit}
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs py-4 rounded-2xl flex items-center justify-center gap-2 shadow-lg shadow-blue-500/20 active:scale-95 transition-all disabled:opacity-50"
+                  >
+                    {savingTransit ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Save Arrival Details'}
+                  </button>
+                </form>
+
+                <button 
+                  onClick={() => setShowTransitModal(false)}
+                  className="w-full py-4 bg-white/10 text-white font-bold rounded-2xl mt-4 active:scale-95 transition-transform"
+                >
+                  Cancel
+                </button>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* SOS Modal */}
         <AnimatePresence>
