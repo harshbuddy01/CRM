@@ -182,7 +182,7 @@ export default function GuestWebApp() {
         attributionControl: false
       }).setView([lat, lng], 13);
 
-      L.tileLayer('https://{s}.tile.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+      L.tileLayer('https://{s}.tile.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
         maxZoom: 19
       }).addTo(map);
 
@@ -251,21 +251,35 @@ export default function GuestWebApp() {
         destMarkerInst.current.setIcon(destIcon);
       }
 
-      // Polyline route from driver to destination
-      if (!routePolylineInst.current) {
-        routePolylineInst.current = L.polyline([driverPos, destPos], {
-          color: '#3B82F6',
-          weight: 4,
-          dashArray: '5, 8',
-          opacity: 0.8
-        }).addTo(map);
-      } else {
-        routePolylineInst.current.setLatLngs([driverPos, destPos]);
-      }
+      // Polyline route from driver to destination using OSRM driving directions
+      const fetchAndDrawRoute = async () => {
+        let routeLatLngs = [driverPos, destPos];
+        try {
+          const res = await fetch(`https://router.project-osrm.org/route/v1/driving/${driverPos[1]},${driverPos[0]};${destPos[1]},${destPos[0]}?overview=full&geometries=geojson`)
+            .then(r => r.json());
+          if (res.routes && res.routes[0]) {
+            routeLatLngs = res.routes[0].geometry.coordinates.map((c: any) => [c[1], c[0]]);
+          }
+        } catch (e) {
+          console.error("OSRM driving route lookup failed", e);
+        }
 
-      // Fit bounds
-      const bounds = L.latLngBounds([driverPos, destPos]);
-      map.fitBounds(bounds, { padding: [50, 50] });
+        if (!routePolylineInst.current) {
+          routePolylineInst.current = L.polyline(routeLatLngs, {
+            color: '#3B82F6',
+            weight: 6,
+            opacity: 0.9,
+            lineJoin: 'round'
+          }).addTo(map);
+        } else {
+          routePolylineInst.current.setLatLngs(routeLatLngs);
+        }
+
+        // Adjust bounds
+        const bounds = L.latLngBounds(routeLatLngs);
+        map.fitBounds(bounds, { padding: [50, 50] });
+      };
+      fetchAndDrawRoute();
 
     } else {
       // Driver not active — place single marker on destination city

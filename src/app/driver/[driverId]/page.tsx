@@ -127,7 +127,7 @@ export default function DriverWebApp() {
         attributionControl: false
       }).setView([initialLat, initialLng], 14);
 
-      L.tileLayer('https://{s}.tile.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+      L.tileLayer('https://{s}.tile.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
         maxZoom: 19
       }).addTo(map);
 
@@ -203,20 +203,34 @@ export default function DriverWebApp() {
               destMarkerInst.current.setIcon(destIcon);
             }
 
-            if (!routePolylineInst.current) {
-              routePolylineInst.current = L.polyline([[latitude, longitude], destPos], {
-                color: '#3B82F6',
-                weight: 4,
-                dashArray: '5, 8',
-                opacity: 0.8
-              }).addTo(leafletMapInst.current);
-            } else {
-              routePolylineInst.current.setLatLngs([[latitude, longitude], destPos]);
-            }
+            const fetchAndDrawRoute = async () => {
+              let routeLatLngs = [[latitude, longitude], destPos];
+              try {
+                const res = await fetch(`https://router.project-osrm.org/route/v1/driving/${longitude},${latitude};${destPos[1]},${destPos[0]}?overview=full&geometries=geojson`)
+                  .then(r => r.json());
+                if (res.routes && res.routes[0]) {
+                  routeLatLngs = res.routes[0].geometry.coordinates.map((c: any) => [c[1], c[0]]);
+                }
+              } catch (e) {
+                console.error("OSRM driving route lookup failed", e);
+              }
 
-            // Adjust bounds to show both driver and destination
-            const bounds = L.latLngBounds([[latitude, longitude], destPos]);
-            leafletMapInst.current.fitBounds(bounds, { padding: [50, 50] });
+              if (!routePolylineInst.current) {
+                routePolylineInst.current = L.polyline(routeLatLngs, {
+                  color: '#3B82F6',
+                  weight: 6,
+                  opacity: 0.9,
+                  lineJoin: 'round'
+                }).addTo(leafletMapInst.current);
+              } else {
+                routePolylineInst.current.setLatLngs(routeLatLngs);
+              }
+
+              // Adjust bounds
+              const bounds = L.latLngBounds(routeLatLngs);
+              leafletMapInst.current.fitBounds(bounds, { padding: [50, 50] });
+            };
+            fetchAndDrawRoute();
           }
 
           // Stream coordinates to backend
