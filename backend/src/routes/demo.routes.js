@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const demoController = require('../controllers/demo.controller');
 const rateLimit = require('express-rate-limit');
-const { requireAuth } = require('../middlewares/requireAuth'); // Assuming it exists or not needed for logout if handled properly. Actually wait, let's use the standard one if needed, but since it's a demo cleanup we should probably be authenticated to logout.
+// Authentication for demo logout is handled by the inline decodeUser middleware below
 
 // 5 signups per IP per 10 minutes
 const signupLimiter = rateLimit({
