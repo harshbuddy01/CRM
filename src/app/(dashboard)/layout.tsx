@@ -8,6 +8,7 @@ import { Topbar } from '@/components/Topbar';
 import { MobileNav } from '@/components/MobileNav';
 import { PwaInstallBanner } from '@/components/PwaInstallBanner';
 import { ChatbotDrawer } from '@/components/ChatbotDrawer';
+import WhatsappSimulator from '@/components/WhatsappSimulator';
 import { cn } from '@/lib/utils';
 
 export default function DashboardLayout({
@@ -51,6 +52,7 @@ export default function DashboardLayout({
       <MobileNav onMenuClick={() => setSidebarOpen(true)} />
       <PwaInstallBanner />
       <ChatbotDrawer />
+      <WhatsappSimulator />
     </div>
   );
 }
