@@ -1,8 +1,11 @@
 'use client';
 
+import { useState, useEffect } from 'react';
+
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { useParams, useRouter } from 'next/navigation';
+import { toast } from 'sonner';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -32,6 +35,11 @@ export default function AgentDetailPage() {
   const { id } = useParams();
   const router = useRouter();
 
+  const [brandColor, setBrandColor] = useState('#3b82f6');
+  const [markupType, setMarkupType] = useState('percentage');
+  const [markupValue, setMarkupValue] = useState(10);
+  const [isSavingCustom, setIsSavingCustom] = useState(false);
+
   const { data: agent, isLoading, isError } = useQuery({
     queryKey: ['agent', id],
     queryFn: async () => {
@@ -39,6 +47,40 @@ export default function AgentDetailPage() {
       return res.data.data;
     },
   });
+
+  useEffect(() => {
+    if (agent) {
+      setBrandColor(agent.brandColor || '#3b82f6');
+      setMarkupType(agent.markupType || 'percentage');
+      setMarkupValue(agent.markupValue || 10);
+    }
+  }, [agent]);
+
+  const handleSaveCustom = async () => {
+    setIsSavingCustom(true);
+    try {
+      await api.put(`/agents/${id}`, {
+        brandColor,
+        markupType,
+        markupValue: Number(markupValue),
+      });
+      toast.success('Agent brand customizations saved!');
+      
+      // Trigger WhatsApp notification simulator
+      window.dispatchEvent(new CustomEvent('crm-whatsapp-trigger', {
+        detail: {
+          text: `🔔 Partner Update: Agent "${agent.companyName}" has updated their co-branding parameters.\n\nBrand Color: ${brandColor}\nMarkup: ${markupValue}%\n\nNew shared itineraries will automatically reflect these styles.`,
+          buttons: ['View Sample Itinerary'],
+          actionKey: 'agent-brand-update'
+        }
+      }));
+      
+    } catch {
+      toast.error('Failed to save customizations');
+    } finally {
+      setIsSavingCustom(false);
+    }
+  };
 
   if (isLoading) return <div className="flex justify-center items-center h-[50vh]"><Loader2 className="w-8 h-8 animate-spin opacity-50" /></div>;
 
@@ -141,28 +183,146 @@ export default function AgentDetailPage() {
 
           <Card>
             <CardHeader>
-              <CardTitle className="text-lg">Co-branding & Markup</CardTitle>
+              <CardTitle className="text-lg">Co-branding & Markup Settings</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground flex items-center"><Palette className="w-4 h-4 mr-2" /> Brand Color</span>
-                <div className="flex items-center gap-2">
-                  {agent.brandColor && <div className="w-4 h-4 rounded-full border" style={{ backgroundColor: agent.brandColor }}></div>}
-                  <span className="font-mono uppercase">{agent.brandColor || 'Default'}</span>
+              {/* Brand Color Input */}
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center">
+                  <Palette className="w-3.5 h-3.5 mr-2" /> Brand Hex Color
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="color"
+                    value={brandColor}
+                    onChange={(e) => setBrandColor(e.target.value)}
+                    className="w-10 h-10 border border-slate-200 rounded-xl overflow-hidden cursor-pointer"
+                  />
+                  <input
+                    type="text"
+                    value={brandColor}
+                    onChange={(e) => setBrandColor(e.target.value)}
+                    className="flex-grow bg-slate-50 border border-slate-200 rounded-xl px-3 text-sm font-mono font-bold uppercase focus:ring-1 focus:ring-primary focus:outline-none"
+                    placeholder="#3b82f6"
+                  />
                 </div>
               </div>
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground flex items-center"><ImageIcon className="w-4 h-4 mr-2" /> Custom Logo</span>
-                <span className="font-medium">{agent.logoUrl ? 'Uploaded' : 'None'}</span>
-              </div>
-              <div className="pt-4 border-t border-dashed">
-                <div className="flex items-center justify-between text-sm mb-2">
-                  <span className="text-muted-foreground flex items-center"><Percent className="w-4 h-4 mr-2" /> Markup Type</span>
-                  <span className="font-medium capitalize">{agent.markupType || 'None'}</span>
+
+              {/* Markup Type Input */}
+              <div className="space-y-2 pt-2">
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center">
+                  <Percent className="w-3.5 h-3.5 mr-2" /> Markup Type
+                </label>
+                <div className="flex gap-2 bg-slate-100 p-1 rounded-xl">
+                  <button
+                    type="button"
+                    onClick={() => setMarkupType('percentage')}
+                    className="flex-1 py-1.5 rounded-lg text-xs font-bold transition-all bg-white text-slate-900 shadow-sm disabled:opacity-50"
+                    style={{
+                      backgroundColor: markupType === 'percentage' ? '#ffffff' : 'transparent',
+                      color: markupType === 'percentage' ? '#0f172a' : '#64748b'
+                    }}
+                  >
+                    Percentage (%)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setMarkupType('flat')}
+                    className="flex-1 py-1.5 rounded-lg text-xs font-bold transition-all bg-white text-slate-900 shadow-sm disabled:opacity-50"
+                    style={{
+                      backgroundColor: markupType === 'flat' ? '#ffffff' : 'transparent',
+                      color: markupType === 'flat' ? '#0f172a' : '#64748b'
+                    }}
+                  >
+                    Flat Rate (₹)
+                  </button>
                 </div>
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground flex items-center"><DollarSign className="w-4 h-4 mr-2" /> Default Markup</span>
-                  <span className="font-bold">{agent.markupValue ? (agent.markupType === 'percentage' ? `${agent.markupValue}%` : `₹${agent.markupValue}`) : '0'}</span>
+              </div>
+
+              {/* Markup Value Input */}
+              <div className="space-y-2 pt-2">
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center justify-between">
+                  <span className="flex items-center"><DollarSign className="w-3.5 h-3.5 mr-2" /> Default Markup</span>
+                  <span className="font-bold text-primary">{markupType === 'percentage' ? `${markupValue}%` : `₹${Number(markupValue).toLocaleString('en-IN')}`}</span>
+                </label>
+                {markupType === 'percentage' ? (
+                  <input
+                    type="range"
+                    min="0"
+                    max="55"
+                    value={markupValue}
+                    onChange={(e) => setMarkupValue(Number(e.target.value))}
+                    className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-primary"
+                  />
+                ) : (
+                  <input
+                    type="number"
+                    value={markupValue}
+                    onChange={(e) => setMarkupValue(Number(e.target.value))}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm font-bold focus:ring-1 focus:ring-primary focus:outline-none"
+                    placeholder="Enter flat markup..."
+                  />
+                )}
+              </div>
+
+              <Button
+                onClick={handleSaveCustom}
+                disabled={isSavingCustom}
+                className="w-full mt-4 rounded-xl font-bold bg-primary hover:brightness-105"
+              >
+                {isSavingCustom ? 'Saving Customizations...' : 'Save Agent Brand Settings'}
+              </Button>
+            </CardContent>
+          </Card>
+
+          {/* Live Preview Panel */}
+          <Card className="overflow-hidden border border-slate-200 shadow-md">
+            <CardHeader className="bg-slate-50 border-b border-slate-100 flex flex-row items-center justify-between py-3 px-4">
+              <div>
+                <CardTitle className="text-xs font-bold text-slate-800">Co-branded Proposal Preview</CardTitle>
+                <CardDescription className="text-[9px]">What the end-customer sees</CardDescription>
+              </div>
+              <Badge variant="outline" className="text-[9px] bg-white text-slate-500 uppercase tracking-widest font-bold">Client View</Badge>
+            </CardHeader>
+            <CardContent className="p-4 bg-slate-100/50 flex justify-center items-center">
+              {/* Mock Itinerary Brochure Card */}
+              <div className="w-full max-w-[280px] bg-white rounded-3xl overflow-hidden shadow-md border border-slate-200/60 transition-all duration-300">
+                {/* Hero Header colored by brandColor */}
+                <div 
+                  className="p-4 text-white relative transition-colors duration-300 flex flex-col justify-end h-28" 
+                  style={{ backgroundColor: brandColor }}
+                >
+                  <div className="absolute top-3 right-3 bg-white/20 backdrop-blur-md rounded-full px-2 py-0.5 text-[8px] font-bold">
+                    7 Days
+                  </div>
+                  {/* Co-branded Agent Logo Placeholder */}
+                  <div className="w-8 h-8 rounded-full bg-white/90 backdrop-blur-sm shadow-sm flex items-center justify-center font-bold text-[9px] text-slate-700 mb-2 border border-white/50">
+                    {agent.logoUrl ? "🖼️" : agent.companyName.substring(0,2).toUpperCase()}
+                  </div>
+                  <h4 className="text-xs font-black uppercase tracking-wider line-clamp-1">Luxury Bali Escape</h4>
+                  <p className="text-[8px] text-white/80">Tailored by {agent.companyName}</p>
+                </div>
+                
+                {/* Itinerary info & markup-adjusted price */}
+                <div className="p-4 space-y-3">
+                  <div className="space-y-1">
+                    <span className="text-[8px] uppercase tracking-wider font-bold text-slate-400">Total Price</span>
+                    <p className="text-sm font-black text-slate-900 transition-all">
+                      ₹{Math.round(40000 * (1 + (markupType === 'percentage' ? markupValue / 100 : markupValue / 40000))).toLocaleString('en-IN')}
+                    </p>
+                    <span className="text-[8px] text-slate-400 block">(Includes agent markup)</span>
+                  </div>
+
+                  <div className="space-y-2 border-t pt-2">
+                    <div className="flex gap-2 items-center">
+                      <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: brandColor }}></div>
+                      <span className="text-[9px] font-bold text-slate-700">Day 1: Ubud Jungle Resort</span>
+                    </div>
+                    <div className="flex gap-2 items-center">
+                      <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: brandColor }}></div>
+                      <span className="text-[9px] font-bold text-slate-700">Day 2: Volcano Trekking</span>
+                    </div>
+                  </div>
                 </div>
               </div>
             </CardContent>
