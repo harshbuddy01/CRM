@@ -800,6 +800,14 @@ const createHotelRequest = async (req, res, next) => {
       }
     });
 
+    try {
+      const socketService = require('../services/socket.service');
+      const io = socketService.getIO();
+      io.to(`hotel:${hotelId}`).emit('hotel:request-new', request);
+    } catch (e) {
+      console.error('Socket broadcast failed for createHotelRequest:', e.message);
+    }
+
     res.json({ success: true, message: 'Service request submitted successfully', data: request });
   } catch (error) {
     next(error);
@@ -857,6 +865,14 @@ const updateHotelRequestStatus = async (req, res, next) => {
       where: { id: requestId },
       data: { status }
     });
+
+    try {
+      const socketService = require('../services/socket.service');
+      const io = socketService.getIO();
+      io.to(`tour:${request.tourCode}`).emit('hotel:request-update', updated);
+    } catch (e) {
+      console.error('Socket broadcast failed for updateHotelRequestStatus:', e.message);
+    }
 
     res.json({ success: true, message: 'Request status updated successfully', data: updated });
   } catch (error) {
@@ -938,6 +954,22 @@ const updateGuestTransitDetails = async (req, res, next) => {
           destinationLng: destLng
         }
       });
+    }
+
+    try {
+      const socketService = require('../services/socket.service');
+      const io = socketService.getIO();
+      io.to(`tour:${tour.tourCode}`).emit('guest:transit-update', {
+        pickupLocation,
+        pickupLat: pickupLat ? parseFloat(pickupLat) : null,
+        pickupLng: pickupLng ? parseFloat(pickupLng) : null,
+        transitType,
+        transitNumber,
+        transitTime,
+        transitDetails
+      });
+    } catch (e) {
+      console.error('Socket broadcast failed for updateGuestTransitDetails:', e.message);
     }
 
     res.json({ success: true, message: 'Arrival transit details updated successfully', data: updatedTour });

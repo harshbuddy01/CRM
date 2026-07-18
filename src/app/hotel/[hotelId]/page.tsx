@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
+import { io } from 'socket.io-client';
 
 const API = process.env.NEXT_PUBLIC_API_URL
   || (typeof window !== 'undefined' && window.location.hostname !== 'localhost'
@@ -55,6 +56,35 @@ export default function HotelPartnerWebApp() {
       setRefreshing(false);
     }
   };
+
+  // Socket.io Real-time Live Sync (Uber-style)
+  useEffect(() => {
+    if (!hotelId) return;
+
+    const authStr = localStorage.getItem('imagica_hotel_auth');
+    if (!authStr) return;
+
+    const socketUrl = API.replace('/api/v1', '');
+    const socket = io(socketUrl, {
+      transports: ['websocket'],
+      upgrade: false
+    });
+
+    socket.on('connect', () => {
+      console.log('Hotel connected to live socket room:', hotelId);
+      socket.emit('join-room', `hotel:${hotelId}`);
+    });
+
+    socket.on('hotel:request-new', (data: any) => {
+      console.log('Real-time new service request received:', data);
+      toast.info(`🔔 New request from ${data.guestName}: ${data.requestType}!`, { duration: 5000 });
+      loadDashboardData();
+    });
+
+    return () => {
+      socket.disconnect();
+    };
+  }, [hotelId]);
 
   useEffect(() => {
     if (!hotelId) return;

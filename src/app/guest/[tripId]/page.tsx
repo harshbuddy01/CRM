@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { motion, useAnimation, useMotionValue, useTransform, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
+import { io } from 'socket.io-client';
 
 const API = process.env.NEXT_PUBLIC_API_URL
   || (typeof window !== 'undefined' && window.location.hostname !== 'localhost'
@@ -143,6 +144,54 @@ export default function GuestWebApp() {
       .catch(err => console.error('Failed to poll driver location', err));
   };
 
+  // Socket.io Real-Time Live Sync (Uber-style)
+  useEffect(() => {
+    const tourCode = tripId as string;
+    if (!tourCode) return;
+
+    const storedTourCode = sessionStorage.getItem('guest_tourCode');
+    if (!storedTourCode) return;
+
+    const socketUrl = API.replace('/api/v1', '');
+    const socket = io(socketUrl, {
+      transports: ['websocket'],
+      upgrade: false
+    });
+
+    socket.on('connect', () => {
+      console.log('Connected to live socket room:', tourCode);
+      socket.emit('join-room', `tour:${tourCode}`);
+    });
+
+    socket.on('driver:location-receive', (data: any) => {
+      console.log('Real-time driver location sync:', data);
+      setDriverTracking(prev => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          active: true,
+          data: {
+            ...prev.data,
+            lat: parseFloat(data.lat),
+            lng: parseFloat(data.lng),
+            etaMinutes: data.etaMinutes,
+            lastLocUpdate: new Date().toISOString()
+          }
+        };
+      });
+    });
+
+    socket.on('driver:status-change', (data: any) => {
+      console.log('Real-time ride status change sync:', data);
+      loadTripData();
+      pollDriverLocation();
+    });
+
+    return () => {
+      socket.disconnect();
+    };
+  }, [tripId]);
+
   useEffect(() => {
     const tourCode = tripId as string;
     if (!tourCode) return;
@@ -158,8 +207,8 @@ export default function GuestWebApp() {
     loadHotelRequests();
     pollDriverLocation();
 
-    // Set polling intervals
-    const driverInterval = setInterval(pollDriverLocation, 10000);
+    // Set polling intervals (Optimized 4s polling as fail-safe fallback)
+    const driverInterval = setInterval(pollDriverLocation, 4000);
     const requestsInterval = setInterval(loadHotelRequests, 12000);
 
     return () => {

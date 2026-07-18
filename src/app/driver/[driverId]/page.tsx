@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
+import { io } from 'socket.io-client';
 
 const API = process.env.NEXT_PUBLIC_API_URL
   || (typeof window !== 'undefined' && window.location.hostname !== 'localhost'
@@ -38,6 +39,8 @@ export default function DriverWebApp() {
   const [distanceRemaining, setDistanceRemaining] = useState<string>('');
   const [durationRemaining, setDurationRemaining] = useState<string>('');
   const [isFollowMode, setIsFollowMode] = useState<boolean>(true);
+  const isFollowModeRef = useRef<boolean>(true);
+  isFollowModeRef.current = isFollowMode;
 
   // Load portal data
   const loadPortalData = () => {
@@ -110,6 +113,32 @@ export default function DriverWebApp() {
 
     return () => {
       // Clean up scripts & link if necessary
+    };
+  }, [activeRide]);
+
+  // Socket.io Real-time Live Sync (Uber-style)
+  useEffect(() => {
+    if (!activeRide) return;
+
+    const socketUrl = API.replace('/api/v1', '');
+    const socket = io(socketUrl, {
+      transports: ['websocket'],
+      upgrade: false
+    });
+
+    socket.on('connect', () => {
+      console.log('Driver connected to live socket room:', activeRide.tourCode);
+      socket.emit('join-room', `tour:${activeRide.tourCode}`);
+    });
+
+    socket.on('guest:transit-update', (data: any) => {
+      console.log('Real-time guest transit details update received:', data);
+      toast.info('🔔 Guest has updated their arrival transit details!', { duration: 5000 });
+      loadPortalData();
+    });
+
+    return () => {
+      socket.disconnect();
     };
   }, [activeRide]);
 
@@ -241,7 +270,7 @@ export default function DriverWebApp() {
               }
 
               // Adjust bounds or follow driver dynamically
-              if (isFollowMode) {
+              if (isFollowModeRef.current) {
                 leafletMapInst.current.setView([latitude, longitude], 17);
               } else {
                 const bounds = L.latLngBounds(routeLatLngs);
