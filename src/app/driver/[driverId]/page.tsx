@@ -438,6 +438,9 @@ export default function DriverWebApp() {
         .light-theme .custom-car-marker svg {
           stroke: #1e3a8a !important;
         }
+        .dark-logo-glow {
+          filter: drop-shadow(0px 0px 1px #ffffff) drop-shadow(0px 0px 1px #ffffff) drop-shadow(0px 0px 2px #ffffff) !important;
+        }
       `}} />
 
       <div className={`relative w-full h-[100vh] md:max-w-[420px] md:h-[880px] border-0 md:border md:border-gray-800 md:rounded-[40px] shadow-2xl overflow-hidden flex flex-col z-10 transition-all duration-300 ${theme === 'light' ? 'light-theme' : 'bg-slate-900 text-white'}`}>
@@ -606,17 +609,15 @@ export default function DriverWebApp() {
             {/* HEADER (IMAGICA BRANDING) */}
             <header className="bg-slate-900/90 backdrop-blur-md text-white px-5 pt-12 pb-6 border-b border-white/5 relative z-10">
               {/* Centered Large Branding Logo */}
-              <div className="w-full flex justify-center mb-5">
-                <div className="bg-white/95 backdrop-blur-md px-5 py-2.5 rounded-2xl shadow-xl border border-white/20 flex items-center justify-center">
-                  <img 
-                      src="/logo.png" 
-                      alt="Imagica Holidays" 
-                      className="h-12 object-contain"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).src = '/logo.jpg';
-                      }}
-                  />
-                </div>
+              <div className="w-full flex justify-center mb-5 pointer-events-none">
+                <img 
+                    src="/logo.png" 
+                    alt="Imagica Holidays" 
+                    className={`h-14 object-contain transition-all duration-300 ${theme === 'dark' ? 'dark-logo-glow' : ''}`}
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = '/logo.jpg';
+                    }}
+                />
               </div>
 
               <div className="flex justify-between items-center mb-5">
