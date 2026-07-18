@@ -37,6 +37,7 @@ export default function DriverWebApp() {
   const routePolylineInst = useRef<any>(null);
   const [distanceRemaining, setDistanceRemaining] = useState<string>('');
   const [durationRemaining, setDurationRemaining] = useState<string>('');
+  const [isFollowMode, setIsFollowMode] = useState<boolean>(true);
 
   // Load portal data
   const loadPortalData = () => {
@@ -135,6 +136,9 @@ export default function DriverWebApp() {
       }).addTo(map);
 
       leafletMapInst.current = map;
+
+      map.on('dragstart', () => setIsFollowMode(false));
+      map.on('zoomstart', () => setIsFollowMode(false));
 
       // Custom high-end car marker icon
       const carIcon = L.divIcon({
@@ -236,9 +240,13 @@ export default function DriverWebApp() {
                 routePolylineInst.current.setLatLngs(routeLatLngs);
               }
 
-              // Adjust bounds
-              const bounds = L.latLngBounds(routeLatLngs);
-              leafletMapInst.current.fitBounds(bounds, { padding: [50, 50] });
+              // Adjust bounds or follow driver dynamically
+              if (isFollowMode) {
+                leafletMapInst.current.setView([latitude, longitude], 17);
+              } else {
+                const bounds = L.latLngBounds(routeLatLngs);
+                leafletMapInst.current.fitBounds(bounds, { padding: [50, 50] });
+              }
 
               // Stream coordinates to backend with TRUE ETA!
               fetch(`${API}/public/driver/${driverId}/ride/location`, {
@@ -348,6 +356,21 @@ export default function DriverWebApp() {
           <div className="w-full h-full flex flex-col relative bg-gray-950">
             {/* FULL SCREEN MAP CONTAINER */}
             <div ref={mapRef} className="absolute inset-0 z-0 w-full h-[65%]" />
+
+            {/* FLOATING RECENTER ACTION BUTTON */}
+            {!isFollowMode && (
+              <button 
+                onClick={() => {
+                  setIsFollowMode(true);
+                  if (driverCoords) {
+                    leafletMapInst.current?.setView([driverCoords.lat, driverCoords.lng], 17);
+                  }
+                }}
+                className="absolute top-32 right-4 bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-[11.5px] px-3.5 py-2.5 rounded-full shadow-2xl z-20 flex items-center gap-1.5 active:scale-95 transition-all border border-blue-400/20"
+              >
+                🎯 Recenter
+              </button>
+            )}
             
             {/* GRADIENT OVERLAYS */}
             <div className="absolute top-0 left-0 w-full h-24 bg-gradient-to-b from-black/60 to-transparent pointer-events-none z-10" />
