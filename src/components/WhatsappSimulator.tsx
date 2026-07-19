@@ -130,7 +130,7 @@ export default function WhatsappSimulator() {
           setIsOpen(!isOpen);
           setHasNew(false);
         }}
-        className="fixed bottom-6 left-6 z-50 p-4 bg-emerald-500 hover:bg-emerald-600 text-white rounded-full shadow-2xl transition-all duration-300 hover:scale-110 active:scale-95 flex items-center justify-center gap-2 border-2 border-white/20"
+        className="fixed bottom-6 right-6 z-50 p-4 bg-emerald-500 hover:bg-emerald-600 text-white rounded-full shadow-2xl transition-all duration-300 hover:scale-110 active:scale-95 flex items-center justify-center gap-2 border-2 border-white/20"
         title="WhatsApp Simulator"
       >
         <Smartphone className="h-6 w-6" />
@@ -146,7 +146,7 @@ export default function WhatsappSimulator() {
       {/* Simulator Panel / CSS iPhone Mockup */}
       <div
         className={cn(
-          "fixed bottom-24 left-6 z-50 w-[350px] h-[650px] bg-slate-950/80 backdrop-blur-xl border border-slate-800 rounded-[48px] shadow-2xl transition-all duration-500 transform p-3",
+          "fixed bottom-24 right-6 z-50 w-[350px] h-[650px] bg-slate-950/80 backdrop-blur-xl border border-slate-800 rounded-[48px] shadow-2xl transition-all duration-500 transform p-3",
           isOpen ? "translate-y-0 opacity-100 scale-100" : "translate-y-12 opacity-0 scale-95 pointer-events-none"
         )}
       >
