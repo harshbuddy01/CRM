@@ -69,27 +69,76 @@ async function sanitizeDatabase() {
       }
     }
 
-    // 4. Sanitize User Profiles (Keep primary system admins, but replace any leaked user names with generic roles)
-    const users = await prisma.user.findMany({
-      include: { role: true }
-    });
-    console.log(`[Sanitizer] Sanitizing ${users.length} system user records...`);
-    for (let i = 0; i < users.length; i++) {
-      const u = users[i];
-      const isSystemAdmin = u.email === 'harshbuddy01@gmail.com' || u.email === 'demo@streamkart.shop';
-      if (!isSystemAdmin) {
-        await prisma.user.update({
-          where: { id: u.id },
-          data: {
-            name: `Demo ${u.role?.label || 'Staff'} ${i + 1}`,
-            email: `staff${i + 1}@demo-crm.app`,
-            mobile: `+91 97000 ${30000 + i}`,
-          },
-        });
-      }
+    // 5. Sanitize Global Org Settings & Company Profile
+    console.log('[Sanitizer] Sanitizing Global Settings & Org Profiles...');
+    const orgSettings = await prisma.orgSetting.findMany();
+    for (const setting of orgSettings) {
+      await prisma.orgSetting.update({
+        where: { id: setting.id },
+        data: {
+          companyName: 'StreamKart TravelCRM (Demo)',
+          companyEmail: 'support@streamkart.shop',
+          companyPhone: '+91 98000 11223',
+          companyAddress: 'Demo Tech Park, Suite 100, Bengaluru, Karnataka – 560001',
+          websiteUrl: 'https://streamkart.shop',
+          emailSignature: 'Best regards,\nStreamKart CRM Demo Support\nEmail: support@streamkart.shop | Web: https://streamkart.shop',
+        },
+      });
     }
 
-    // 5. Sanitize Query Notes
+    // If no OrgSetting exists, create default generic demo setting
+    if (orgSettings.length === 0) {
+      await prisma.orgSetting.create({
+        data: {
+          companyName: 'StreamKart TravelCRM (Demo)',
+          companyEmail: 'support@streamkart.shop',
+          companyPhone: '+91 98000 11223',
+          companyAddress: 'Demo Tech Park, Suite 100, Bengaluru, Karnataka – 560001',
+          websiteUrl: 'https://streamkart.shop',
+          emailSignature: 'Best regards,\nStreamKart CRM Demo Support\nEmail: support@streamkart.shop | Web: https://streamkart.shop',
+        }
+      });
+    }
+
+    // 6. Sanitize Branches
+    const branches = await prisma.branch.findMany();
+    for (let i = 0; i < branches.length; i++) {
+      await prisma.branch.update({
+        where: { id: branches[i].id },
+        data: {
+          name: `Demo Branch ${i + 1}`,
+          code: `DEMO-BR-${i + 1}`,
+          address: 'Demo Trade Avenue',
+          city: 'Demo City',
+          email: `branch${i + 1}@demo-crm.app`,
+          phone: `+91 98000 ${50000 + i}`,
+        }
+      });
+    }
+
+    // 7. Sanitize Email Templates signatures
+    const templates = await prisma.emailTemplate.findMany();
+    for (const t of templates) {
+      await prisma.emailTemplate.update({
+        where: { id: t.id },
+        data: {
+          bodyHtml: t.bodyHtml?.replace(/Imagica Holidays/gi, 'StreamKart CRM Demo')?.replace(/info\.imagicaholidays@gmail\.com/gi, 'support@streamkart.shop') || t.bodyHtml,
+        }
+      });
+    }
+
+    // 8. Sanitize all User Display Names (so personal user names don't show up in topbar/sidebar)
+    const users = await prisma.user.findMany({ include: { role: true } });
+    for (const u of users) {
+      await prisma.user.update({
+        where: { id: u.id },
+        data: {
+          name: u.isDemo ? 'Demo User' : (u.role?.name === 'admin' ? 'Demo Admin' : `Demo ${u.role?.label || 'Staff'}`),
+        }
+      });
+    }
+
+    // 9. Sanitize Query Notes
     const notes = await prisma.queryNote.findMany();
     console.log(`[Sanitizer] Sanitizing ${notes.length} query notes...`);
     for (const note of notes) {
@@ -101,7 +150,7 @@ async function sanitizeDatabase() {
       });
     }
 
-    // 6. Scrub Activity & Integration Logs containing raw payloads
+    // 10. Scrub Activity & Integration Logs containing raw payloads
     console.log('[Sanitizer] Clearing sensitive activity & integration logs...');
     await prisma.activityLog.deleteMany({});
     await prisma.integrationLog.deleteMany({});
