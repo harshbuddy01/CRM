@@ -10,6 +10,7 @@ import { PwaInstallBanner } from '@/components/PwaInstallBanner';
 import { ChatbotDrawer } from '@/components/ChatbotDrawer';
 import WhatsappSimulator from '@/components/WhatsappSimulator';
 import DemoPromoterBanner from '@/components/DemoPromoterBanner';
+import InteractiveDemoTour from '@/components/InteractiveDemoTour';
 import { cn } from '@/lib/utils';
 
 export default function DashboardLayout({
@@ -55,6 +56,7 @@ export default function DashboardLayout({
       <ChatbotDrawer />
       <WhatsappSimulator />
       <DemoPromoterBanner />
+      <InteractiveDemoTour />
     </div>
   );
 }
