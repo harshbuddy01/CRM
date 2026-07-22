@@ -90,8 +90,12 @@ export function Sidebar({ open, setOpen }: SidebarProps) {
       <Link 
         key={link.href} 
         href={link.href} 
+        data-tour-target={link.href}
         onClick={() => setOpen?.(false)}
-        className={cn("flex items-center gap-3 px-3 py-2 rounded-md transition-colors text-sm font-medium", isActive ? "bg-primary text-primary-foreground shadow-sm" : "hover:bg-muted text-muted-foreground hover:text-foreground")}
+        className={cn(
+          "flex items-center gap-3 px-3 py-2 rounded-md transition-colors text-sm font-medium relative", 
+          isActive ? "bg-primary text-primary-foreground shadow-sm" : "hover:bg-muted text-muted-foreground hover:text-foreground"
+        )}
       >
         <link.icon className="w-4 h-4" />{link.label}
       </Link>
