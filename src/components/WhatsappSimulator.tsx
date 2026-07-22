@@ -67,31 +67,50 @@ export default function WhatsappSimulator() {
 
   const handleSend = () => {
     if (!inputVal.trim()) return;
+    const userText = inputVal.trim();
     const userMsg: MockMessage = {
       id: Math.random().toString(),
       sender: 'user',
-      text: inputVal,
+      text: userText,
       timestamp: new Date(),
     };
     setMessages((prev) => [...prev, userMsg]);
     setInputVal('');
 
-    // Simple auto-reply simulation
+    // Intelligent AI response logic for demo users
     setTimeout(() => {
+      const lower = userText.toLowerCase();
+      let replyText = "Thanks for your message! This is a live demonstration of StreamKart's automated WhatsApp CRM integration.";
+      let replyButtons: string[] = ['Book Live Demo 🚀', 'View Itinerary Sample', 'Contact Founder'];
+
+      if (lower.includes('price') || lower.includes('cost') || lower.includes('rate') || lower.includes('plan')) {
+        replyText = "💰 *StreamKart TravelCRM Demo Pricing*\n\n• *Starter Plan:* ₹1,499/mo (Up to 5 Users)\n• *Enterprise Edition:* Custom Pricing (Unlimited Users + Custom Domain)\n\nWould you like our team to send you a formal quotation via WhatsApp?";
+        replyButtons = ['Get Quotation', 'Call Founder Direct'];
+      } else if (lower.includes('itinerary') || lower.includes('proposal') || lower.includes('bali') || lower.includes('goa')) {
+        replyText = "🌴 *AI Itinerary Generator Status*\n\nStreamKart automatically converts client preferences into 3-day luxury PDF proposals complete with day-wise hotels, activities, and pricing!";
+        replyButtons = ['Generate 3-Day Bali Trip', 'Share via WhatsApp'];
+      } else if (lower.includes('b2b') || lower.includes('agent') || lower.includes('commission')) {
+        replyText = "🤝 *B2B Agent Portal Active*\n\nYour B2B agents can log in, set custom markups, view live commissions, and print co-branded client proposals with their own logo!";
+        replyButtons = ['Open B2B Agent Studio', 'Talk to Sales'];
+      } else if (lower.includes('hi') || lower.includes('hello') || lower.includes('hey') || lower.includes('demo')) {
+        replyText = "👋 Hello! Welcome to *StreamKart TravelCRM*.\n\nHow can we help automate your travel agency operations today?";
+        replyButtons = ['Book Live Setup 🚀', 'Call Sales Team', 'Request Pricing'];
+      }
+
       setMessages((prev) => [
         ...prev,
         {
           id: Math.random().toString(),
           sender: 'system',
-          text: "Thanks for your message! This is a demo simulator showing how WhatsApp automation works.",
+          text: replyText,
           timestamp: new Date(),
+          buttons: replyButtons,
         },
       ]);
-    }, 1000);
+    }, 800);
   };
 
   const handleActionButton = (btnText: string, actionKey?: string) => {
-    // Simulate user clicking a WhatsApp interactive button
     const userReply: MockMessage = {
       id: Math.random().toString(),
       sender: 'user',
@@ -100,7 +119,6 @@ export default function WhatsappSimulator() {
     };
     setMessages((prev) => [...prev, userReply]);
 
-    // Dispatch another event to notify the CRM that the action happened
     if (actionKey) {
       window.dispatchEvent(
         new CustomEvent('crm-whatsapp-action', {
@@ -110,16 +128,21 @@ export default function WhatsappSimulator() {
     }
 
     setTimeout(() => {
+      let sysReply = `✅ *Action Confirmed:* "${btnText}"\n\nOur system has recorded your preference. To get instant setup, contact our founder team at +91 70042 83531.`;
+      if (btnText.includes('Founder') || btnText.includes('Call') || btnText.includes('Setup') || btnText.includes('Book')) {
+        window.open('https://wa.me/917004283531?text=Hi!%20I%20am%20testing%20the%20StreamKart%20CRM%20Demo%20and%20want%20to%20book%20a%20live%20setup.', '_blank');
+      }
+
       setMessages((prev) => [
         ...prev,
         {
           id: Math.random().toString(),
           sender: 'system',
-          text: `✅ Action received! The CRM dashboard has been updated to reflect your response.`,
+          text: sysReply,
           timestamp: new Date(),
         },
       ]);
-    }, 800);
+    }, 600);
   };
 
   return (
