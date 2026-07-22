@@ -45,25 +45,28 @@ async function sanitizeDatabase() {
     }
 
     // 3. Sanitize B2B Partners / Agents
-    const agents = await prisma.b2bAgent.findMany();
-    console.log(`[Sanitizer] Sanitizing ${agents.length} B2B partner records...`);
-    for (let i = 0; i < agents.length; i++) {
-      await prisma.b2bAgent.update({
-        where: { id: agents[i].id },
-        data: {
-          companyName: `Demo Travel Partner ${i + 1}`,
-          contactPerson: `Partner Manager ${i + 1}`,
-          email: `partner${i + 1}@demo-crm.app`,
-          mobile: `+91 98000 ${20000 + i}`,
-          address: 'Demo Trade Center',
-          city: 'Demo Metropolis',
-          gstNumber: `27DEMO${1000 + i}A1Z5`,
-          panNumber: `DEMOP${1000 + i}X`,
-          bankName: 'Demo National Bank',
-          bankAccount: `990011223344${i}`,
-          bankIfsc: 'DEMO0001234',
-        },
-      });
+    const agentModel = prisma.b2BAgent || prisma.b2bAgent;
+    if (agentModel) {
+      const agents = await agentModel.findMany();
+      console.log(`[Sanitizer] Sanitizing ${agents.length} B2B partner records...`);
+      for (let i = 0; i < agents.length; i++) {
+        await agentModel.update({
+          where: { id: agents[i].id },
+          data: {
+            companyName: `Demo Travel Partner ${i + 1}`,
+            contactPerson: `Partner Manager ${i + 1}`,
+            email: `partner${i + 1}@demo-crm.app`,
+            mobile: `+91 98000 ${20000 + i}`,
+            address: 'Demo Trade Center',
+            city: 'Demo Metropolis',
+            gstNumber: `27DEMO${1000 + i}A1Z5`,
+            panNumber: `DEMOP${1000 + i}X`,
+            bankName: 'Demo National Bank',
+            bankAccount: `990011223344${i}`,
+            bankIfsc: 'DEMO0001234',
+          },
+        });
+      }
     }
 
     // 4. Sanitize User Profiles (Keep primary system admins, but replace any leaked user names with generic roles)
