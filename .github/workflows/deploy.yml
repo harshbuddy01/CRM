@@ -22,7 +22,7 @@ jobs:
       - name: Install Dependencies
         run: npm install
 
-      - name: Build Next.js App
+      - name: Build Next.js Export
         env:
           NEXT_PUBLIC_APP_NAME: "StreamKart"
           NEXT_PUBLIC_APP_DOMAIN: "streamkart.shop"
@@ -30,15 +30,15 @@ jobs:
           NEXT_PUBLIC_SUPPORT_EMAIL: "support@streamkart.shop"
         run: npm run build
 
-      - name: Deploy to Hostinger via SFTP
+      - name: Deploy to Hostinger via FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
           server: "187.127.161.30"
           username: "u255161845"
           password: ${{ secrets.HOSTINGER_FTP_PASSWORD }}
           port: 21
-          local-dir: ./out/ # Or wherever next export puts static files, if building standalone. If running Node server:
-          server-dir: /domains/streamkart.shop/public_html/crm/
+          local-dir: ./out/
+          server-dir: /domains/streamkart.shop/public_html/
           dangerous-clean-slate: false
 
   deploy-backend:
@@ -55,5 +55,4 @@ jobs:
             cd ~/travelcrm
             git pull origin main
             cd deployment/gcp
-            docker compose down
-            docker compose up -d --build
+            docker compose restart backend || docker compose up -d

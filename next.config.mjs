@@ -1,38 +1,21 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  output: 'export',
   eslint: {
-    // TODO: Remove once all ESLint warnings/errors are resolved
     ignoreDuringBuilds: true,
   },
   typescript: {
-    // TypeScript errors are verified locally — skipping during build to reduce memory usage on Hostinger
     ignoreBuildErrors: true,
   },
   swcMinify: true,
-  experimental: {
-    optimizePackageImports: ['lucide-react', 'framer-motion', '@tabler/icons-react'],
-  },
   images: {
+    unoptimized: true,
     remotePatterns: [
       { protocol: 'https', hostname: 'res.cloudinary.com' },
       { protocol: 'https', hostname: 'images.unsplash.com' }
     ],
-    minimumCacheTTL: 31536000,
   },
-  cleanDistDir: true,
-  async headers() {
-    return [
-      {
-        source: '/:path*',
-        headers: [
-          {
-            key: 'Vary',
-            value: 'RSC, Next-Router-State-Tree, Next-Router-Prefetch',
-          },
-        ],
-      },
-    ];
-  },
+  trailingSlash: true,
 };
 
 export default nextConfig;
