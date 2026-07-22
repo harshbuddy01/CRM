@@ -1,4 +1,4 @@
-name: CI/CD Deployment
+name: Smart CI/CD Deployment
 
 on:
   push:
@@ -6,8 +6,39 @@ on:
       - main
 
 jobs:
+  # --- 1. Detect Which Part of Code Changed ---
+  changes:
+    name: Detect Changed Files
+    runs-on: ubuntu-latest
+    outputs:
+      frontend: ${{ steps.filter.outputs.frontend }}
+      backend: ${{ steps.filter.outputs.backend }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Filter Changed Paths
+        id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            frontend:
+              - 'src/**'
+              - 'public/**'
+              - 'package.json'
+              - 'package-lock.json'
+              - 'next.config.mjs'
+              - 'tailwind.config.ts'
+              - 'tsconfig.json'
+            backend:
+              - 'backend/**'
+              - 'deployment/**'
+
+  # --- 2. Build & Deploy Frontend (ONLY if Frontend Files Changed) ---
   deploy-frontend:
     name: Deploy Frontend to Hostinger
+    needs: changes
+    if: ${{ needs.changes.outputs.frontend == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
@@ -19,10 +50,20 @@ jobs:
           node-version: 20
           cache: 'npm'
 
-      - name: Install Dependencies
-        run: npm install
+      - name: Cache Next.js Build Output
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.npm
+            ${{ github.workspace }}/.next/cache
+          key: ${{ runner.os }}-nextjs-${{ hashFiles('**/package-lock.json') }}-${{ hashFiles('**.[jt]s', '**.[jt]sx') }}
+          restore-keys: |
+            ${{ runner.os }}-nextjs-${{ hashFiles('**/package-lock.json') }}-
 
-      - name: Build Next.js Export
+      - name: Install Dependencies
+        run: npm ci --prefer-offline
+
+      - name: Build Next.js App
         env:
           NEXT_PUBLIC_APP_NAME: "StreamKart"
           NEXT_PUBLIC_APP_DOMAIN: "streamkart.shop"
@@ -41,8 +82,11 @@ jobs:
           server-dir: /domains/streamkart.shop/public_html/
           dangerous-clean-slate: false
 
+  # --- 3. Deploy Backend (ONLY if Backend Files Changed) ---
   deploy-backend:
     name: Deploy Backend to GCP VM
+    needs: changes
+    if: ${{ needs.changes.outputs.backend == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - name: Execute Remote SSH Commands
