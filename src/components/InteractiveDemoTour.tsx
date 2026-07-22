@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { 
   Play, Pause, ChevronRight, ChevronLeft, X, CheckCircle2, 
-  MessageSquare, Compass, Settings, Database, ArrowRight, LayoutDashboard, Users, FileText, Zap, CreditCard, Sparkles
+  LayoutDashboard, Users, FileText, Zap, CreditCard, Compass, Settings, Database, BarChart3, Image as ImageIcon, Sparkles
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -17,172 +17,97 @@ interface TourStep {
   sidebarLabel: string;
   subtitle: string;
   description: string;
-  bullets: string[];
-  actionEvent?: { type: string; detail: any };
+  howToUse: string;
   icon: any;
 }
 
-const EXECUTIVE_STEPS: TourStep[] = [
+const CLEAN_STEPS: TourStep[] = [
   {
     id: 1,
-    title: 'Dashboard Overview',
-    badge: '1 OF 7 • OVERVIEW',
+    title: 'Overview & Business Analytics',
+    badge: '1 OF 8 • OVERVIEW',
     targetPath: '/',
     sidebarLabel: 'Overview',
-    subtitle: 'Real-time Agency Analytics',
-    description: 'Centralized dashboard tracking monthly lead volume, active pipeline revenue, closure velocity, and team performance.',
-    bullets: [
-      'Live revenue & conversion analytics',
-      'Instant shortcuts for new leads & itineraries',
-    ],
+    subtitle: 'Real-time Agency Command Center',
+    description: 'Track monthly lead volume, active pipeline revenue, conversion velocity, and quick action shortcuts.',
+    howToUse: 'Use this dashboard every morning to monitor team performance and access quick 1-click lead/proposal shortcuts.',
     icon: LayoutDashboard,
   },
   {
     id: 2,
     title: 'Kanban Lead Pipeline',
-    badge: '2 OF 7 • LEADS & PIPELINE',
+    badge: '2 OF 8 • PIPELINE',
     targetPath: '/pipeline',
     sidebarLabel: 'Pipeline',
-    subtitle: 'Automated Lead Management',
-    description: 'Inquiries from Facebook, Google & WhatsApp automatically route into your pipeline with automated sales rep assignment.',
-    bullets: [
-      'Round-robin lead auto-assignment',
-      'Drag-and-drop Kanban status stages',
-    ],
-    actionEvent: {
-      type: 'crm-whatsapp-trigger',
-      detail: {
-        text: '🔔 *NEW LEAD ASSIGNED*\n\nClient: Rahul Verma\nDestination: Maldives 4N/5D\nBudget: ₹2.2 Lakhs\nAssigned To: Senior Sales Rep',
-        buttons: ['Trigger Auto WhatsApp Greeting', 'Generate Itinerary'],
-      },
-    },
+    subtitle: 'Visual Drag-and-Drop Deal Tracking',
+    description: 'Enquiries from Facebook, Google & WhatsApp land here automatically with auto round-robin assignment.',
+    howToUse: 'Drag and drop lead cards across stages (New → Contacted → Proposal Sent → Won) as deals progress.',
     icon: Users,
   },
   {
     id: 3,
-    title: 'Itinerary & Proposal Builder',
-    badge: '3 OF 7 • PROPOSALS',
-    targetPath: '/itineraries',
-    sidebarLabel: 'Itineraries',
-    subtitle: '15-Second Multi-Day Proposals',
-    description: 'Generate day-wise travel itineraries with auto-calculated hotel, flight, and transfer pricing in seconds.',
-    bullets: [
-      'Branded PDF export with company logo',
-      'Interactive client web link with photo carousels',
-    ],
-    actionEvent: {
-      type: 'crm-whatsapp-trigger',
-      detail: {
-        card: {
-          type: 'proposal',
-          title: '🌴 Bali Tropical Getaway (5D/4N)',
-          subtitle: 'Client: Ankit & Riya Sharma',
-          tag: 'PDF READY',
-          badgeColor: 'bg-emerald-500',
-          details: [
-            { label: 'Hotel', value: 'The Seminyak Resort (5★)' },
-            { label: 'Flights', value: 'IndiGo Direct (DEL - DPS)' },
-            { label: 'Activities', value: 'Nusa Penida & Sunset Cruise' },
-            { label: 'Total Price', value: '₹98,500 (Incl. 5% GST)' },
-          ],
-        },
-        buttons: ['Send PDF to Client WhatsApp', 'Generate Invoice'],
-      },
-    },
+    title: 'Lead Management & Queries',
+    badge: '3 OF 8 • LEADS LIST',
+    targetPath: '/queries',
+    sidebarLabel: 'Leads List',
+    subtitle: 'Complete Client Interaction Log',
+    description: 'View full client history, travel preferences, budget requirements, and communication logs in one place.',
+    howToUse: 'Click on any client lead to view their notes, update status, or click "Create Proposal" to start an itinerary.',
     icon: FileText,
   },
   {
     id: 4,
-    title: 'B2B Agent Portal',
-    badge: '4 OF 7 • B2B NETWORK',
-    targetPath: '/agents',
-    sidebarLabel: 'B2B Agents',
-    subtitle: 'Sub-Agent Wholesale Network',
-    description: 'Empower B2B travel partners with dedicated logins to set custom markups, track commissions, and issue co-branded proposals.',
-    bullets: [
-      'Custom per-agent markup configurations',
-      'Co-branded PDF proposals with agent branding',
-    ],
-    actionEvent: {
-      type: 'crm-whatsapp-trigger',
-      detail: {
-        card: {
-          type: 'b2b',
-          title: 'B2B Partner: Royal Travels',
-          subtitle: 'Agent ID: AGENT-902',
-          tag: '10% MARKUP ACTIVE',
-          badgeColor: 'bg-sky-500',
-          details: [
-            { label: 'Agent Name', value: 'Vikram Singh' },
-            { label: 'Commission Tier', value: 'Gold Partner (10%)' },
-            { label: 'Co-Branded PDF', value: 'Agent Logo Auto-Attached' },
-            { label: 'Live Ledger', value: '₹45,000 Credit Limit' },
-          ],
-        },
-        buttons: ['Bali Proposal Demo', 'View Pricing'],
-      },
-    },
-    icon: Zap,
+    title: 'Itinerary & Photo Proposal Builder',
+    badge: '4 OF 8 • ITINERARIES',
+    targetPath: '/itineraries',
+    sidebarLabel: 'Itineraries',
+    subtitle: '15-Second Multi-Day Proposals',
+    description: 'Build day-by-day travel plans with hotel photos, day-wise sightseeing, flights, cabs, and pricing.',
+    howToUse: 'Select hotel photos from library, set day-wise activities, auto-calculate totals, and export branded PDF proposals.',
+    icon: Compass,
   },
   {
     id: 5,
-    title: 'Masters Database',
-    badge: '5 OF 7 • INVENTORY',
+    title: 'Hotel, Destination & Tariff Masters',
+    badge: '5 OF 8 • MASTERS',
     targetPath: '/masters-v2',
     sidebarLabel: 'Masters',
-    subtitle: 'Central Hotel & Rate Library',
-    description: 'Store contracted hotel rates, transport tariffs, and sightseeing packages in a centralized database for instant proposal assembly.',
-    bullets: [
-      'Seasonal hotel contracted rates',
-      'Pre-built sightseeing & activity database',
-    ],
+    subtitle: 'Central Inventory & Photo Library',
+    description: 'Centralized database for contracted hotel rates, room categories, transport tariffs, and high-res property photos.',
+    howToUse: 'Add contracted hotel rates and upload hotel photos to your master library for instant 1-click proposal reuse.',
     icon: Database,
   },
   {
     id: 6,
-    title: 'Invoices & Payments',
-    badge: '6 OF 7 • FINANCE',
-    targetPath: '/finance/invoices',
-    sidebarLabel: 'Finance',
-    subtitle: 'GST Billing & Instant Collection',
-    description: 'Generate GST-compliant tax invoices and send Razorpay / UPI payment collection links directly to client WhatsApp.',
-    bullets: [
-      'GST & TCS compliant tax invoices',
-      'Automated Razorpay & UPI payment links',
-    ],
-    actionEvent: {
-      type: 'crm-whatsapp-trigger',
-      detail: {
-        card: {
-          type: 'invoice',
-          title: 'Tax Invoice #INV-2026-409',
-          subtitle: 'StreamKart Travel Services',
-          tag: 'PAID VIA RAZORPAY',
-          badgeColor: 'bg-emerald-600',
-          details: [
-            { label: 'Package', value: 'Bali 5D/4N Package' },
-            { label: 'Base Amount', value: '₹93,809' },
-            { label: 'GST (5%)', value: '₹4,691' },
-            { label: 'Total Paid', value: '₹98,500' },
-          ],
-        },
-        buttons: ['Mark Payment Received', 'Pricing & Setup'],
-      },
-    },
-    icon: CreditCard,
+    title: 'Sales Reports & Analytics',
+    badge: '6 OF 8 • REPORTS',
+    targetPath: '/reports/lead-funnel',
+    sidebarLabel: 'Reports',
+    subtitle: 'Conversion Funnel & Revenue Insights',
+    description: 'Comprehensive analytics on sales rep conversion rates, lead funnel bottlenecks, and monthly collections.',
+    howToUse: 'Analyze which marketing channels (Google/Meta/WhatsApp) deliver highest ROI and track rep closure rates.',
+    icon: BarChart3,
   },
   {
     id: 7,
-    title: 'White-Label Settings',
-    badge: '7 OF 7 • CONFIGURATION',
+    title: 'Invoices, GST & Online Payments',
+    badge: '7 OF 8 • FINANCE',
+    targetPath: '/finance/invoices',
+    sidebarLabel: 'Finance',
+    subtitle: 'Tax Invoicing & Razorpay Collection',
+    description: 'Generate GST and TCS compliant tax invoices and send Razorpay / UPI online payment links directly.',
+    howToUse: 'Click "Create Invoice" to generate tax-compliant bills, track part-payments, and auto-send WhatsApp receipts.',
+    icon: CreditCard,
+  },
+  {
+    id: 8,
+    title: 'Company Settings & White-Label Setup',
+    badge: '8 OF 8 • SETTINGS',
     targetPath: '/settings',
     sidebarLabel: 'Settings',
-    subtitle: 'Custom Branding & API Keys',
-    description: 'Upload your company logo, set GST credentials, configure email signatures, and connect Meta WhatsApp API keys.',
-    bullets: [
-      'Custom branding & white-label domain setup',
-      'Meta WhatsApp Business API integration',
-    ],
+    subtitle: 'Branding & Meta WhatsApp API Keys',
+    description: 'Upload your agency logo, set GST/PAN details, configure email signatures, and connect Meta WhatsApp API keys.',
+    howToUse: 'Customize company profile info so all exported PDFs and client links display your agency brand.',
     icon: Settings,
   },
 ];
@@ -196,7 +121,7 @@ export default function InteractiveDemoTour() {
   const pathname = usePathname();
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
-  const step = EXECUTIVE_STEPS[currentStepIdx];
+  const step = CLEAN_STEPS[currentStepIdx];
 
   // Highlight active sidebar item
   useEffect(() => {
@@ -212,16 +137,16 @@ export default function InteractiveDemoTour() {
     });
   }, [isActive, currentStepIdx, step]);
 
-  // Auto-play timer
+  // Auto-play timer (8 seconds per page)
   useEffect(() => {
     if (isPlaying && isActive) {
       timerRef.current = setTimeout(() => {
-        if (currentStepIdx < EXECUTIVE_STEPS.length - 1) {
+        if (currentStepIdx < CLEAN_STEPS.length - 1) {
           handleGoToStep(currentStepIdx + 1);
         } else {
           setIsPlaying(false);
         }
-      }, 7500);
+      }, 8000);
     }
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current);
@@ -236,19 +161,14 @@ export default function InteractiveDemoTour() {
   };
 
   const navigateToStep = (idx: number) => {
-    const s = EXECUTIVE_STEPS[idx];
+    const s = CLEAN_STEPS[idx];
     if (s.targetPath && pathname !== s.targetPath) {
       router.push(s.targetPath);
-    }
-    if (s.actionEvent) {
-      window.dispatchEvent(
-        new CustomEvent(s.actionEvent.type, { detail: s.actionEvent.detail })
-      );
     }
   };
 
   const handleGoToStep = (newIdx: number) => {
-    if (newIdx < 0 || newIdx >= EXECUTIVE_STEPS.length) return;
+    if (newIdx < 0 || newIdx >= CLEAN_STEPS.length) return;
     setCurrentStepIdx(newIdx);
     navigateToStep(newIdx);
   };
@@ -266,14 +186,14 @@ export default function InteractiveDemoTour() {
 
   return (
     <>
-      {/* 🌟 Top Floating Header Banner (Sleek Executive Style) */}
+      {/* 🌟 Top Floating Header Banner (Sleek, Minimalist) */}
       {!isActive && !hasDismissedHeader && (
-        <div className="fixed top-16 left-1/2 transform -translate-x-1/2 z-40 max-w-lg w-[92%] md:w-auto bg-slate-900/95 text-white backdrop-blur-xl border border-slate-800 rounded-full shadow-2xl p-1.5 px-4 flex items-center justify-between gap-3 animate-in slide-in-from-top-4 duration-500">
+        <div className="fixed top-16 left-1/2 transform -translate-x-1/2 z-30 max-w-md w-[92%] md:w-auto bg-slate-900/95 text-white backdrop-blur-xl border border-slate-800 rounded-full shadow-2xl p-1.5 px-4 flex items-center justify-between gap-3 animate-in slide-in-from-top-4 duration-500">
           <div className="flex items-center gap-2">
             <Sparkles className="h-4 w-4 text-emerald-400" />
-            <div className="text-xs">
-              <span className="font-bold text-slate-100">Product Walkthrough: </span>
-              <span className="text-slate-400">Explore key CRM modules interactively</span>
+            <div className="text-xs font-medium">
+              <span className="font-bold text-slate-100">Interactive Walkthrough: </span>
+              <span className="text-slate-300">Guided tour of CRM modules</span>
             </div>
           </div>
 
@@ -283,7 +203,7 @@ export default function InteractiveDemoTour() {
               className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs h-7 px-3.5 rounded-full shadow-md gap-1.5"
             >
               <Play className="h-3 w-3 fill-current" />
-              Start Walkthrough
+              Start Tour
             </Button>
             <button
               onClick={() => setHasDismissedHeader(true)}
@@ -296,21 +216,21 @@ export default function InteractiveDemoTour() {
         </div>
       )}
 
-      {/* 🎬 Professional Floating Tour Panel (Positioned Top-Left / Mid-Left to NEVER overlap WhatsApp simulator) */}
+      {/* 🎬 Professional Floating Tour Tooltip Box (Positioned Top-Left next to Sidebar - ZERO WhatsApp overlap) */}
       {isActive && (
-        <div className="fixed top-20 left-4 md:left-72 z-40 w-[92%] max-w-sm bg-slate-900/95 text-slate-100 backdrop-blur-xl border border-slate-800 rounded-2xl shadow-2xl overflow-hidden p-4 animate-in slide-in-from-top-4 duration-300 select-none">
+        <div className="fixed top-20 left-4 md:left-72 z-30 w-[92%] max-w-sm bg-slate-900/95 text-slate-100 backdrop-blur-xl border border-slate-800 rounded-2xl shadow-2xl overflow-hidden p-4 animate-in slide-in-from-top-4 duration-300 select-none">
           
           {/* Progress Bar */}
           <div className="absolute top-0 left-0 right-0 h-1 bg-slate-800">
             <div
               className="h-full bg-emerald-500 transition-all duration-500"
-              style={{ width: `${((currentStepIdx + 1) / EXECUTIVE_STEPS.length) * 100}%` }}
+              style={{ width: `${((currentStepIdx + 1) / CLEAN_STEPS.length) * 100}%` }}
             />
           </div>
 
-          {/* Header Badge & Controls */}
+          {/* Header Badge & Close */}
           <div className="flex items-center justify-between mb-2 pt-1">
-            <span className="text-[10px] font-bold uppercase tracking-wider bg-emerald-500/10 text-emerald-400 px-2.5 py-0.5 rounded-full border border-emerald-500/20">
+            <span className="text-[10px] font-bold uppercase tracking-wider bg-emerald-500/15 text-emerald-400 px-2.5 py-0.5 rounded-full border border-emerald-500/20">
               {step.badge}
             </span>
             <div className="flex items-center gap-1">
@@ -324,7 +244,7 @@ export default function InteractiveDemoTour() {
               <button
                 onClick={handleEndTour}
                 className="text-slate-400 hover:text-white p-1 rounded hover:bg-slate-800"
-                title="Close"
+                title="Close (X)"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -339,7 +259,7 @@ export default function InteractiveDemoTour() {
               </div>
               <div>
                 <h3 className="font-bold text-sm text-white leading-tight">{step.title}</h3>
-                <span className="text-[10px] text-slate-400">Sidebar → {step.sidebarLabel}</span>
+                <span className="text-[10px] text-emerald-400 font-medium">Sidebar → {step.sidebarLabel}</span>
               </div>
             </div>
             <p className="text-[11px] text-slate-300 leading-relaxed pt-1">
@@ -347,34 +267,29 @@ export default function InteractiveDemoTour() {
             </p>
           </div>
 
-          {/* Feature Bullets */}
-          <div className="my-2.5 p-2 bg-slate-950/60 rounded-xl border border-slate-800/80 space-y-1">
-            {step.bullets.map((b, idx) => (
-              <div key={idx} className="flex items-center gap-2 text-[11px] text-slate-200">
-                <CheckCircle2 className="h-3 w-3 text-emerald-400 shrink-0" />
-                <span>{b}</span>
-              </div>
-            ))}
+          {/* How To Use Box */}
+          <div className="my-2.5 p-2.5 bg-slate-950/70 rounded-xl border border-slate-800/80 text-[11px] text-slate-200 leading-relaxed">
+            <span className="text-emerald-400 font-bold block mb-0.5">💡 How to use this page:</span>
+            {step.howToUse}
           </div>
 
           {/* Final Step CTA */}
-          {currentStepIdx === EXECUTIVE_STEPS.length - 1 ? (
+          {currentStepIdx === CLEAN_STEPS.length - 1 ? (
             <div className="space-y-1.5 pt-1">
               <a
-                href="https://wa.me/917004283531?text=Hi!%20I%20reviewed%20the%20StreamKart%20CRM%20Walkthrough%20and%20want%20to%20discuss%20building%20a%20custom%20CRM%20for%20my%20agency."
+                href="https://wa.me/917004283531?text=Hi!%20I%20completed%20the%20StreamKart%20CRM%20walkthrough%20and%20want%20to%20discuss%20building%20a%20custom%20CRM."
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-full inline-flex items-center justify-center gap-2 px-3 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow-md transition-all"
               >
-                <MessageSquare className="h-3.5 w-3.5" />
                 Chat on WhatsApp (+91 70042 83531)
               </a>
-              <a
-                href="mailto:support@streamkart.shop?subject=Custom%20Travel%20CRM%20Request"
-                className="w-full inline-flex items-center justify-center gap-2 px-3 py-1.5 bg-slate-950 hover:bg-slate-800 text-slate-300 font-semibold text-xs rounded-xl border border-slate-800"
+              <button
+                onClick={handleEndTour}
+                className="w-full text-center text-xs text-slate-400 hover:text-slate-200 py-1"
               >
-                📧 Email Team (support@streamkart.shop)
-              </a>
+                Close Walkthrough
+              </button>
             </div>
           ) : (
             /* Navigation Controls */
@@ -399,7 +314,7 @@ export default function InteractiveDemoTour() {
 
               {/* Dots Indicator */}
               <div className="flex items-center gap-1">
-                {EXECUTIVE_STEPS.map((_, i) => (
+                {CLEAN_STEPS.map((_, i) => (
                   <button
                     key={i}
                     onClick={() => handleGoToStep(i)}
