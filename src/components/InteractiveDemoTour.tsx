@@ -1,172 +1,372 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { ChevronRight, ChevronLeft, X, Play, Pause, ArrowRight } from 'lucide-react';
+import { ChevronRight, ChevronLeft, X, Play, Pause, MousePointerClick, Lightbulb, ArrowRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-interface TourStep {
-  id: number;
-  section: string;
-  title: string;
-  targetPath: string;
-  sidebarLabel: string;
-  what: string;
-  howTo: string;
+// ─── Types ───────────────────────────────────────────────────────────────────
+
+interface SubStep {
+  instruction: string;
+  action?: string;          // "What to do" label — shown in the action box
+  highlightText?: string;   // Find this text in the DOM and highlight it
+  highlightSelector?: string; // Or use a CSS selector
   tip?: string;
-  gradient: string;
-  accent: string;
 }
 
-const STEPS: TourStep[] = [
+interface TourSection {
+  title: string;
+  path: string;
+  sidebarPath: string;
+  sidebarLabel: string;
+  accent: string;
+  bg: string;               // Light bg tint for header
+  steps: SubStep[];
+}
+
+// ─── Tour Content (every page, every sub-section) ───────────────────────────
+
+const SECTIONS: TourSection[] = [
   {
-    id: 1,
-    section: '1 of 12 — DASHBOARD',
-    title: 'Overview & Live Analytics',
-    targetPath: '/',
+    title: 'Dashboard Overview',
+    path: '/',
+    sidebarPath: '/',
     sidebarLabel: 'Overview',
-    what: 'Your daily command center. See live lead count, active pipeline value, monthly revenue, and closure rate at a glance.',
-    howTo: 'Use the Quick Shortcuts to instantly create a new lead or jump to your pipeline. The stats refresh in real time.',
-    tip: 'Check this page every morning before starting your day.',
-    gradient: 'from-violet-600 via-purple-600 to-indigo-600',
-    accent: '#a78bfa',
+    accent: '#4f46e5',
+    bg: 'rgba(79,70,229,0.08)',
+    steps: [
+      {
+        instruction: 'These 4 cards update in real-time every time the page loads — Monthly Leads, Pipeline Total, Revenue Collected this month, and overall Closure %.',
+        tip: 'Check this dashboard every morning to see how your team is performing today.',
+      },
+      {
+        instruction: 'Use "New Lead" to manually add a client enquiry. Leads from your Facebook Ads, Google Ads, and website forms appear here automatically via API integration.',
+        action: 'Click → NEW LEAD button',
+        highlightText: 'New Lead',
+        tip: 'Every new lead is auto-assigned to a sales rep using round-robin.',
+      },
+      {
+        instruction: 'Click "Lead Pipeline" to open the Kanban board where you can visually track all active deals by status.',
+        action: 'Click → LEAD PIPELINE button',
+        highlightText: 'Lead Pipeline',
+      },
+    ],
   },
   {
-    id: 2,
-    section: '2 of 12 — PIPELINE',
     title: 'Kanban Lead Pipeline',
-    targetPath: '/pipeline',
+    path: '/pipeline',
+    sidebarPath: '/pipeline',
     sidebarLabel: 'Pipeline',
-    what: 'Leads from Facebook, Google, WhatsApp, and website enquiry forms land here automatically. Each card is a live deal.',
-    howTo: 'Drag cards across columns: New → Contacted → Proposal Sent → Negotiation → Won. Use filters to view by agent or destination.',
-    tip: 'Click any card to open full lead details, notes, and call history.',
-    gradient: 'from-blue-600 via-cyan-600 to-teal-600',
-    accent: '#38bdf8',
+    accent: '#0891b2',
+    bg: 'rgba(8,145,178,0.08)',
+    steps: [
+      {
+        instruction: 'Every client enquiry appears as a card on this Kanban board. Cards are auto-assigned to sales reps and sorted by their current deal stage.',
+        tip: 'Leads from Facebook, Google, WhatsApp, and website forms arrive here automatically.',
+      },
+      {
+        instruction: 'Drag any lead card left or right to move it between stages: New → Contacted → Proposal Sent → Negotiation → Won → Lost.',
+        action: 'Drag a card to another column',
+        tip: 'Each move triggers an automatic WhatsApp status update to the client if configured.',
+      },
+      {
+        instruction: 'Click any lead card to open the full client details — travel requirements, budget, follow-up notes, and communication history.',
+        action: 'Click any lead card to open it',
+      },
+    ],
   },
   {
-    id: 3,
-    section: '3 of 12 — LEADS LIST',
-    title: 'Leads & Client Queries',
-    targetPath: '/queries',
+    title: 'Leads & Queries List',
+    path: '/queries',
+    sidebarPath: '/queries',
     sidebarLabel: 'Leads List',
-    what: 'Full searchable table of every client enquiry. Each row shows destination, budget, assigned agent, and follow-up status.',
-    howTo: 'Click any row to open the lead detail page. From there you can: add notes, attach documents, change status, or assign a proposal.',
-    tip: 'Use the "Assign Proposal" button inside a lead to link a created itinerary directly to that client.',
-    gradient: 'from-sky-600 via-blue-600 to-indigo-700',
-    accent: '#60a5fa',
+    accent: '#0369a1',
+    bg: 'rgba(3,105,161,0.08)',
+    steps: [
+      {
+        instruction: 'This is the searchable list of every client enquiry. Each row shows the client name, destination, budget, assigned agent, and current follow-up status.',
+        tip: 'Use the search bar to find any client by name, destination, or phone number.',
+      },
+      {
+        instruction: 'Click any row to open the full lead. Inside you can: add call notes, upload documents, change the status, send emails, and assign a proposal.',
+        action: 'Click any lead row to open it',
+      },
+      {
+        instruction: 'Inside a lead, use the "Assign Proposal" button to link an itinerary you have already built to this specific client.',
+        action: 'Inside a lead → click "Assign Proposal"',
+        tip: 'Once a proposal is assigned, the client can view it via a personalised web link.',
+      },
+    ],
   },
   {
-    id: 4,
-    section: '4 of 12 — ITINERARIES (MASTER TEMPLATES)',
-    title: 'Master Itinerary Templates',
-    targetPath: '/itineraries',
+    title: 'Itinerary Builder — Master Templates',
+    path: '/itineraries',
+    sidebarPath: '/itineraries',
     sidebarLabel: 'Itineraries',
-    what: 'Pre-built, reusable day-wise itinerary templates for popular destinations (Bali, Maldives, Kashmir, Dubai, etc).',
-    howTo: 'Click "Master Templates" tab → Click any itinerary to open the drag-and-drop builder. Add hotels, photos, sightseeing, cab details, and pricing per day.',
-    tip: 'Once a master template is ready, duplicate it to create a client-specific copy instantly.',
-    gradient: 'from-emerald-600 via-teal-600 to-cyan-600',
-    accent: '#34d399',
+    accent: '#059669',
+    bg: 'rgba(5,150,105,0.08)',
+    steps: [
+      {
+        instruction: 'The Itineraries page has two tabs. "Master Templates" are your reusable blueprints — one master template per destination (Bali, Maldives, Kashmir, Dubai, etc.).',
+        action: 'Click → Master Templates tab',
+        highlightText: 'Master Templates',
+        tip: 'Build a master once. Reuse it for every client going to that destination.',
+      },
+      {
+        instruction: 'Click any master template to open the drag-and-drop day-wise builder. Add hotels, photos, sightseeing activities, cab transfers, and per-person pricing for each day.',
+        action: 'Click any master itinerary to open builder',
+      },
+      {
+        instruction: 'Inside the builder: each day has a hotel section, activity list, meal plan, and transport row. Prices auto-calculate based on rooms and pax count.',
+        action: 'Click any day row inside the builder',
+        tip: 'Upload hotel room photos directly inside the builder — they appear in the client PDF.',
+      },
+    ],
   },
   {
-    id: 5,
-    section: '5 of 12 — ITINERARIES (CLIENT COPIES)',
-    title: 'Client Working Copies',
-    targetPath: '/itineraries',
+    title: 'Itinerary Builder — Client Working Copies',
+    path: '/itineraries',
+    sidebarPath: '/itineraries',
     sidebarLabel: 'Itineraries',
-    what: 'Personalized client-specific itinerary drafts cloned from master templates. Customize pricing, dates, and hotels per client.',
-    howTo: 'Click "Client Working Copies" tab → Open any copy → Adjust hotel, cab, and activity costs → Generate branded PDF → Share proposal link.',
-    tip: 'Send the client a live web proposal link with interactive photos — no PDF attachment needed.',
-    gradient: 'from-teal-600 via-emerald-600 to-green-600',
     accent: '#10b981',
+    bg: 'rgba(16,185,129,0.08)',
+    steps: [
+      {
+        instruction: '"Client Working Copies" are personalised itineraries cloned from a master template for a specific client. They have custom dates, pricing, and hotel selections.',
+        action: 'Click → Client Working Copies tab',
+        highlightText: 'Client Working Copies',
+      },
+      {
+        instruction: 'Open any client copy → adjust pricing, swap hotels, change dates. Then click "Generate PDF" to download a branded proposal with your logo.',
+        action: 'Open client copy → click "Generate PDF"',
+        tip: 'The PDF includes your agency logo, GST details, and terms — auto-filled from Settings.',
+      },
+      {
+        instruction: 'Click "Share Link" to generate a live interactive web proposal the client can view on their phone — with photo carousels, day-wise breakdown, and pricing.',
+        action: 'Click → Share Link or Share Proposal',
+        tip: 'Clients can approve or request changes directly through the proposal link.',
+      },
+    ],
   },
   {
-    id: 6,
-    section: '6 of 12 — PROPOSALS',
-    title: 'Proposals & Quote Tracking',
-    targetPath: '/proposals',
-    sidebarLabel: 'Proposals',
-    what: 'Central tracking for all proposals sent to clients. See open, accepted, revised, and expired quotes in one view.',
-    howTo: 'Filter by agent or status. Click any proposal to view the full quote, send a revised version, or mark it as confirmed to auto-create the booking.',
-    tip: 'Once a client accepts a proposal, click "Convert to Tour" to auto-generate the tour operations sheet.',
-    gradient: 'from-orange-500 via-amber-500 to-yellow-500',
-    accent: '#f59e0b',
-  },
-  {
-    id: 7,
-    section: '7 of 12 — MASTERS DATABASE',
-    title: 'Hotels, Destinations & Tariff Masters',
-    targetPath: '/masters-v2',
+    title: 'Masters — Hotels & Tariff Database',
+    path: '/masters-v2',
+    sidebarPath: '/masters-v2',
     sidebarLabel: 'Masters',
-    what: 'Your central inventory database: contracted hotels with season-wise room rates, transport tariffs, sightseeing packages, and high-res photos.',
-    howTo: 'Add a hotel → Set room categories, meal plan, and seasonal pricing → Upload property photos. These become available instantly inside the itinerary builder.',
-    tip: 'Upload multiple hotel photos per property — they appear in the client proposal carousel automatically.',
-    gradient: 'from-rose-600 via-pink-600 to-fuchsia-600',
-    accent: '#f472b6',
+    accent: '#7c3aed',
+    bg: 'rgba(124,58,237,0.08)',
+    steps: [
+      {
+        instruction: 'Masters is your centralized inventory database. Everything you add here — hotels, rates, photos — becomes available inside the Itinerary Builder instantly.',
+        tip: 'Think of Masters as your product catalog. Build it once, use everywhere.',
+      },
+      {
+        instruction: 'Go to the Hotels section. Click "Add Hotel" to add a contracted property. Enter the hotel name, location, star rating, room categories, meal plan, and contracted rate per night.',
+        action: 'Click → Hotels → Add Hotel',
+        tip: 'Add seasonal pricing (peak vs. off-peak) per room type.',
+      },
+      {
+        instruction: 'After adding a hotel, click on it and use the "Photos" tab to upload high-resolution property photos. These photos appear automatically inside client PDF proposals.',
+        action: 'Open hotel → click Photos tab → Upload',
+        tip: 'Upload at least 5 photos per hotel — lobby, room, pool, and exterior.',
+      },
+      {
+        instruction: 'Go to the Destinations section to add destination guides, popular sightseeing points, and activity descriptions that auto-populate inside the itinerary builder.',
+        action: 'Click → Destinations tab',
+      },
+      {
+        instruction: 'Go to the Transport section to add cab, taxi, and transfer rates between airports, hotels, and sightseeing spots. These auto-calculate in the itinerary pricing.',
+        action: 'Click → Transport tab',
+      },
+    ],
   },
   {
-    id: 8,
-    section: '8 of 12 — TOURS & OPERATIONS',
-    title: 'Active Tours & Dispatch',
-    targetPath: '/tours',
+    title: 'Tours & Operations',
+    path: '/tours',
+    sidebarPath: '/tours',
     sidebarLabel: 'Tours List',
-    what: 'Live view of all confirmed tours. Shows departure dates, client names, assigned drivers, hotel check-in status, and voucher generation.',
-    howTo: 'Open any tour → Click "Generate Voucher" to create hotel, transfer, or guide vouchers → Send directly to supplier via WhatsApp.',
-    tip: 'Field Agents can view their assigned tours from the Field Agent mobile view.',
-    gradient: 'from-fuchsia-600 via-purple-600 to-violet-600',
-    accent: '#c084fc',
+    accent: '#d97706',
+    bg: 'rgba(217,119,6,0.08)',
+    steps: [
+      {
+        instruction: 'Tours List shows all confirmed bookings with departure dates, client details, hotel check-in status, and assigned field agents.',
+        tip: 'A lead becomes a "Tour" after the client confirms and pays an advance.',
+      },
+      {
+        instruction: 'Click any tour → click "Generate Voucher" to create hotel booking vouchers, transfer vouchers, and guide vouchers. Send them to suppliers directly via WhatsApp.',
+        action: 'Open a tour → click "Generate Voucher"',
+      },
+      {
+        instruction: '"Field Agent" view in the sidebar shows field staff only their assigned tours for that day — departure time, pickup point, hotel details, and client contacts.',
+        action: 'Click → Field Agent in sidebar',
+        tip: 'Field agents access this on their phone. No extra app needed.',
+      },
+    ],
   },
   {
-    id: 9,
-    section: '9 of 12 — B2B AGENTS',
-    title: 'B2B Sub-Agent Network',
-    targetPath: '/agents',
-    sidebarLabel: 'B2B Agents',
-    what: 'Give travel agent partners a dedicated login. They can view leads assigned to them, set custom markups, and issue co-branded proposals.',
-    howTo: 'Add a B2B agent → Set their markup % and credit limit → Assign leads to them. They log in on the same URL and see only their data.',
-    tip: 'Proposals sent through B2B agents automatically carry the agent\'s own company logo.',
-    gradient: 'from-indigo-600 via-blue-600 to-cyan-600',
-    accent: '#818cf8',
-  },
-  {
-    id: 10,
-    section: '10 of 12 — REPORTS',
-    title: 'Sales Reports & Analytics',
-    targetPath: '/reports/lead-funnel',
-    sidebarLabel: 'Reports',
-    what: 'Track lead-to-closure funnel, monthly collection targets, individual sales rep performance, and marketing channel ROI.',
-    howTo: 'Use the "Lead Funnel" report to see where deals are dropping off. Use "Sales Report" to compare agent targets vs. achieved revenue.',
-    tip: 'Filter by date range and branch to isolate performance of specific teams or marketing campaigns.',
-    gradient: 'from-amber-600 via-orange-600 to-red-600',
-    accent: '#fb923c',
-  },
-  {
-    id: 11,
-    section: '11 of 12 — FINANCE',
-    title: 'Invoices, GST & Razorpay',
-    targetPath: '/finance/invoices',
-    sidebarLabel: 'Finance',
-    what: 'Generate GST-compliant tax invoices with CGST/SGST/IGST and 5%/20% TCS auto-calculated. Collect payments via Razorpay/UPI links.',
-    howTo: 'Open a confirmed booking → Click "Generate Invoice" → System auto-calculates tax → Send Razorpay payment link via WhatsApp → Mark paid when received.',
-    tip: 'Track part-payments and balance due. Payment receipts auto-dispatch to client WhatsApp when payment is marked.',
-    gradient: 'from-green-600 via-emerald-600 to-teal-600',
-    accent: '#4ade80',
-  },
-  {
-    id: 12,
-    section: '12 of 12 — SETTINGS',
-    title: 'Branding & System Configuration',
-    targetPath: '/settings',
+    title: 'WhatsApp Business Integration',
+    path: '/settings',
+    sidebarPath: '/settings',
     sidebarLabel: 'Settings',
-    what: 'Upload your agency logo, set company GST/PAN details, configure email signature templates, and connect Meta WhatsApp Business API keys.',
-    howTo: 'Go to Settings → Upload Logo → Fill in company address & GST → Paste your WhatsApp API key. All exported PDFs and proposals will now carry your brand.',
-    tip: 'Uploading a high-quality logo (PNG, transparent background, min 400px wide) ensures your proposals look premium.',
-    gradient: 'from-slate-600 via-zinc-600 to-gray-600',
-    accent: '#94a3b8',
+    accent: '#16a34a',
+    bg: 'rgba(22,163,74,0.08)',
+    steps: [
+      {
+        instruction: 'The CRM connects to Meta WhatsApp Business API — allowing you to send automated messages, proposals, invoices, and follow-ups to clients via official WhatsApp.',
+        tip: 'This is the Official Meta API — messages come from your agency\'s verified WhatsApp number with a blue tick.',
+      },
+      {
+        instruction: 'To activate: go to Settings → Integrations → paste your WhatsApp Phone Number ID and API Token from your Meta Business account.',
+        action: 'Settings → WhatsApp API section → paste credentials',
+      },
+      {
+        instruction: 'Once active, the system auto-sends WhatsApp messages when: a new lead is assigned, a proposal is shared, a payment link is generated, or a tour is confirmed.',
+        tip: 'Message templates are pre-built — you can customize them from Settings → Templates.',
+      },
+    ],
+  },
+  {
+    title: 'Reports & Sales Analytics',
+    path: '/reports/lead-funnel',
+    sidebarPath: '/reports/lead-funnel',
+    sidebarLabel: 'Reports',
+    accent: '#dc2626',
+    bg: 'rgba(220,38,38,0.08)',
+    steps: [
+      {
+        instruction: 'Lead Funnel report shows how many leads entered each stage this month and how many dropped off — so you know exactly where your sales process is breaking.',
+        action: 'Click → Lead Funnel in the Reports submenu',
+        tip: 'A healthy funnel has 60%+ leads moving from New to Contacted within 24 hours.',
+      },
+      {
+        instruction: 'Sales Report shows each agent\'s monthly target vs. achieved revenue, number of deals closed, and average deal value. Use this for team reviews.',
+        action: 'Click → Sales Report tab',
+      },
+      {
+        instruction: 'Marketing Report shows which source (Facebook / Google / WhatsApp / Walk-in) is generating the most leads and the highest conversion rate.',
+        action: 'Click → Marketing Report tab',
+        tip: 'Use this to decide where to increase your ad budget every month.',
+      },
+      {
+        instruction: 'Collections Report shows total payments received, pending balances, and overdue amounts — filterable by date range and branch.',
+        action: 'Click → Collections tab',
+      },
+    ],
+  },
+  {
+    title: 'GST Invoicing & Payments',
+    path: '/finance/invoices',
+    sidebarPath: '/finance/invoices',
+    sidebarLabel: 'Finance',
+    accent: '#0891b2',
+    bg: 'rgba(8,145,178,0.08)',
+    steps: [
+      {
+        instruction: 'Create a GST-compliant tax invoice in one click. CGST, SGST, IGST, and 5% TCS on tour packages are automatically calculated based on the booking amount.',
+        action: 'Click → Create Invoice button',
+        tip: 'The invoice pulls client details, package amount, and company GST number automatically.',
+      },
+      {
+        instruction: 'After creating an invoice, click "Send Payment Link" to generate a Razorpay or UPI payment link. The client receives it directly on WhatsApp.',
+        action: 'Open invoice → click "Send Payment Link"',
+      },
+      {
+        instruction: 'Track partial payments here. Each payment received updates the "Balance Due" automatically. When fully paid, mark as "Paid" to trigger automatic receipt dispatch to client.',
+        action: 'Open invoice → click "Mark as Paid" when payment received',
+        tip: 'An automatic WhatsApp receipt is sent to the client the moment you mark payment.',
+      },
+    ],
+  },
+  {
+    title: 'B2B Sub-Agent Network',
+    path: '/agents',
+    sidebarPath: '/agents',
+    sidebarLabel: 'B2B Agents',
+    accent: '#7c3aed',
+    bg: 'rgba(124,58,237,0.08)',
+    steps: [
+      {
+        instruction: 'B2B Agents are travel agent partners who send you group bookings. Add them here and give them a dedicated login to the CRM under their own credentials.',
+        action: 'Click → Add B2B Agent',
+        tip: 'B2B agents can only see the leads and tours assigned to them — not your full data.',
+      },
+      {
+        instruction: 'Set a custom markup percentage or fixed amount per agent. When they view a proposal, prices are automatically marked up for their client — without them seeing your cost.',
+        action: 'Open agent → set Markup % field',
+      },
+      {
+        instruction: 'Each B2B agent gets a co-branded PDF proposal with their agency logo — not yours. The booking still comes through your CRM and you manage the operations.',
+        action: 'Open agent → click "Generate Co-Branded PDF"',
+        tip: 'This white-labeling feature is exclusive to StreamKart CRM — no other travel software offers it.',
+      },
+    ],
+  },
+  {
+    title: 'Settings & White-Label Setup',
+    path: '/settings',
+    sidebarPath: '/settings',
+    sidebarLabel: 'Settings',
+    accent: '#374151',
+    bg: 'rgba(55,65,81,0.08)',
+    steps: [
+      {
+        instruction: 'Upload your agency logo here. It will automatically appear on all exported PDFs, proposals, invoices, and client web links. This is your full white-label setup.',
+        action: 'Settings → Company Profile → Upload Logo',
+        tip: 'Use a PNG file with transparent background, minimum 400px wide for best quality.',
+      },
+      {
+        instruction: 'Add your GST number, PAN, company address, and bank details. These auto-fill into every invoice generated in the system.',
+        action: 'Settings → Company Profile → Tax Details',
+      },
+      {
+        instruction: 'Configure your email signature and automated email templates for lead confirmations, proposal emails, and payment reminders sent to clients.',
+        action: 'Settings → Email Templates',
+        tip: 'Rich text editor supports your logo, formatted text, and clickable CTA buttons.',
+      },
+    ],
   },
 ];
 
+// ─── Flatten for total count ──────────────────────────────────────────────────
+
+function getTotalSteps() {
+  return SECTIONS.reduce((sum, s) => sum + s.steps.length, 0);
+}
+
+function getAbsoluteIndex(sectionIdx: number, stepIdx: number) {
+  let count = 0;
+  for (let i = 0; i < sectionIdx; i++) count += SECTIONS[i].steps.length;
+  return count + stepIdx;
+}
+
+// ─── Highlight element by text content ────────────────────────────────────────
+
+function highlightByText(text: string, color: string) {
+  if (!text) return null;
+  const all = Array.from(document.querySelectorAll('button, a, [role="tab"], h1, h2, h3, span, div'));
+  const el = all.find(e => e.textContent?.trim() === text || e.textContent?.trim().includes(text));
+  if (!el) return null;
+  (el as HTMLElement).style.outline = `2px solid ${color}`;
+  (el as HTMLElement).style.outlineOffset = '3px';
+  (el as HTMLElement).style.borderRadius = '6px';
+  (el as HTMLElement).style.transition = 'outline 0.3s';
+  el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  return el;
+}
+
+function clearHighlights() {
+  document.querySelectorAll('[style*="outline"]').forEach((el) => {
+    (el as HTMLElement).style.outline = '';
+    (el as HTMLElement).style.outlineOffset = '';
+  });
+}
+
+// ─── Component ────────────────────────────────────────────────────────────────
+
 export default function InteractiveDemoTour() {
   const [isActive, setIsActive] = useState(false);
+  const [sectionIdx, setSectionIdx] = useState(0);
   const [stepIdx, setStepIdx] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [dismissed, setDismissed] = useState(false);
@@ -174,53 +374,97 @@ export default function InteractiveDemoTour() {
   const pathname = usePathname();
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
-  const step = STEPS[stepIdx];
+  const section = SECTIONS[sectionIdx];
+  const step = section.steps[stepIdx];
+  const totalSteps = getTotalSteps();
+  const absoluteIdx = getAbsoluteIndex(sectionIdx, stepIdx);
+  const isLastStep = sectionIdx === SECTIONS.length - 1 && stepIdx === section.steps.length - 1;
 
-  // Highlight sidebar link
+  // Sidebar highlight
   useEffect(() => {
     if (!isActive) return;
     document.querySelectorAll('[data-tour-target]').forEach((el) => {
       const t = el.getAttribute('data-tour-target');
-      if (t === step.targetPath) {
-        el.classList.add('!bg-emerald-500', '!text-white', 'shadow-lg', 'ring-2', 'ring-emerald-400', 'ring-offset-1');
+      if (t === section.sidebarPath) {
+        el.classList.add('!bg-blue-600', '!text-white', 'ring-2', 'ring-blue-400', 'ring-offset-1');
       } else {
-        el.classList.remove('!bg-emerald-500', '!text-white', 'shadow-lg', 'ring-2', 'ring-emerald-400', 'ring-offset-1');
+        el.classList.remove('!bg-blue-600', '!text-white', 'ring-2', 'ring-blue-400', 'ring-offset-1');
       }
     });
-  }, [isActive, stepIdx, step]);
+  }, [isActive, sectionIdx, section]);
+
+  // Element highlight for current step
+  useEffect(() => {
+    if (!isActive) return;
+    clearHighlights();
+    if (step.highlightText) {
+      setTimeout(() => highlightByText(step.highlightText!, section.accent), 400);
+    }
+    return () => clearHighlights();
+  }, [isActive, sectionIdx, stepIdx]);
 
   // Auto-play
   useEffect(() => {
     if (isPlaying && isActive) {
-      timerRef.current = setTimeout(() => {
-        if (stepIdx < STEPS.length - 1) goToStep(stepIdx + 1);
-        else setIsPlaying(false);
-      }, 9000);
+      timerRef.current = setTimeout(goNext, 7000);
     }
     return () => { if (timerRef.current) clearTimeout(timerRef.current); };
-  }, [isPlaying, isActive, stepIdx]);
+  }, [isPlaying, isActive, sectionIdx, stepIdx]);
 
-  const goToStep = (idx: number) => {
-    if (idx < 0 || idx >= STEPS.length) return;
-    setStepIdx(idx);
-    const path = STEPS[idx].targetPath;
-    if (pathname !== path) router.push(path);
-  };
+  const navigateToSection = useCallback((sIdx: number) => {
+    const s = SECTIONS[sIdx];
+    if (s.path !== pathname) router.push(s.path);
+  }, [pathname, router]);
+
+  const goNext = useCallback(() => {
+    clearHighlights();
+    if (stepIdx < section.steps.length - 1) {
+      setStepIdx(si => si + 1);
+    } else if (sectionIdx < SECTIONS.length - 1) {
+      const nextSIdx = sectionIdx + 1;
+      setSectionIdx(nextSIdx);
+      setStepIdx(0);
+      navigateToSection(nextSIdx);
+    } else {
+      setIsPlaying(false);
+    }
+  }, [section.steps.length, sectionIdx, stepIdx, navigateToSection]);
+
+  const goPrev = useCallback(() => {
+    clearHighlights();
+    if (stepIdx > 0) {
+      setStepIdx(si => si - 1);
+    } else if (sectionIdx > 0) {
+      const prevSIdx = sectionIdx - 1;
+      setSectionIdx(prevSIdx);
+      setStepIdx(SECTIONS[prevSIdx].steps.length - 1);
+      navigateToSection(prevSIdx);
+    }
+  }, [sectionIdx, stepIdx, navigateToSection]);
 
   const startTour = () => {
     setIsActive(true);
+    setSectionIdx(0);
     setStepIdx(0);
     setIsPlaying(true);
-    if (pathname !== STEPS[0].targetPath) router.push(STEPS[0].targetPath);
+    if (pathname !== SECTIONS[0].path) router.push(SECTIONS[0].path);
   };
 
   const endTour = () => {
     setIsActive(false);
     setIsPlaying(false);
+    clearHighlights();
     if (timerRef.current) clearTimeout(timerRef.current);
     document.querySelectorAll('[data-tour-target]').forEach((el) => {
-      el.classList.remove('!bg-emerald-500', '!text-white', 'shadow-lg', 'ring-2', 'ring-emerald-400', 'ring-offset-1');
+      el.classList.remove('!bg-blue-600', '!text-white', 'ring-2', 'ring-blue-400', 'ring-offset-1');
     });
+  };
+
+  const jumpToSection = (sIdx: number) => {
+    clearHighlights();
+    setSectionIdx(sIdx);
+    setStepIdx(0);
+    navigateToSection(sIdx);
   };
 
   return (
@@ -228,169 +472,169 @@ export default function InteractiveDemoTour() {
       {/* ── LAUNCH BANNER ── */}
       {!isActive && !dismissed && (
         <div
-          className="fixed top-16 left-1/2 -translate-x-1/2 z-30 flex items-center gap-3 px-4 py-2 rounded-full shadow-2xl border border-white/10 backdrop-blur-xl animate-in slide-in-from-top-4 duration-500"
-          style={{ background: 'linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%)' }}
+          className="fixed top-[62px] left-1/2 -translate-x-1/2 z-40 flex items-center gap-3 px-4 py-2.5 rounded-full shadow-xl border animate-in slide-in-from-top-3 duration-400"
+          style={{ background: '#fff', border: '1px solid #e5e7eb', boxShadow: '0 4px 24px rgba(0,0,0,0.10)' }}
         >
-          <div className="flex items-center gap-1.5">
-            <span className="relative flex h-2.5 w-2.5">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
-            </span>
-            <p className="text-xs font-semibold text-white/90">
-              <span className="text-emerald-400">Interactive Walkthrough</span>
-              <span className="text-white/50 mx-1.5">·</span>
-              <span className="text-white/70">12 modules · guided page-by-page tour</span>
-            </p>
-          </div>
+          <span className="relative flex h-2.5 w-2.5">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-60" />
+            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-blue-600" />
+          </span>
+          <p className="text-sm font-semibold text-gray-700">
+            Interactive Walkthrough
+            <span className="text-gray-400 font-normal ml-1.5">· {totalSteps} guided steps across every CRM module</span>
+          </p>
           <button
             onClick={startTour}
-            className="flex items-center gap-1.5 px-3 py-1 text-[11px] font-bold text-black rounded-full shadow-md"
-            style={{ background: 'linear-gradient(90deg,#34d399,#059669)' }}
+            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold text-white"
+            style={{ background: '#2563eb' }}
           >
-            <Play className="h-3 w-3 fill-black" />
-            Start Tour
+            <Play size={11} className="fill-white" /> Start Tour
           </button>
-          <button onClick={() => setDismissed(true)} className="text-white/30 hover:text-white/70">
-            <X className="h-4 w-4" />
+          <button onClick={() => setDismissed(true)} className="text-gray-300 hover:text-gray-500 ml-1">
+            <X size={14} />
           </button>
         </div>
       )}
 
-      {/* ── TOUR CARD ── */}
+      {/* ── ACTIVE TOUR CARD ── */}
       {isActive && (
         <div
-          className="fixed top-20 left-4 md:left-[268px] z-30 w-[340px] rounded-2xl overflow-hidden shadow-2xl border border-white/10 animate-in slide-in-from-top-4 duration-300"
-          style={{ background: 'linear-gradient(160deg, #0f172a 0%, #111827 100%)' }}
+          className="fixed top-[72px] left-4 md:left-[272px] z-40 w-[340px] bg-white rounded-2xl overflow-hidden shadow-2xl animate-in slide-in-from-top-3 duration-300"
+          style={{ border: '1px solid #e5e7eb', boxShadow: '0 8px 40px rgba(0,0,0,0.14)' }}
         >
+          {/* Coloured header */}
+          <div
+            className="px-4 py-3 flex items-start justify-between gap-2"
+            style={{ background: section.bg, borderBottom: `2px solid ${section.accent}22` }}
+          >
+            <div className="flex-1 min-w-0">
+              <p className="text-[10px] font-bold uppercase tracking-wider mb-0.5" style={{ color: section.accent }}>
+                {section.sidebarLabel} · Step {stepIdx + 1} of {section.steps.length}
+              </p>
+              <p className="text-[13px] font-bold text-gray-900 leading-snug">{section.title}</p>
+            </div>
+            <div className="flex items-center gap-1 shrink-0">
+              <button
+                onClick={() => setIsPlaying(p => !p)}
+                className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-white/60"
+                title={isPlaying ? 'Pause' : 'Play'}
+              >
+                {isPlaying ? <Pause size={13} /> : <Play size={13} />}
+              </button>
+              <button
+                onClick={endTour}
+                className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-white/60"
+                title="Close"
+              >
+                <X size={14} />
+              </button>
+            </div>
+          </div>
+
           {/* Progress bar */}
-          <div className="h-[3px] w-full bg-white/10">
+          <div className="h-[3px] bg-gray-100">
             <div
               className="h-full transition-all duration-500"
               style={{
-                width: `${((stepIdx + 1) / STEPS.length) * 100}%`,
-                background: `linear-gradient(90deg, ${step.accent}, #fff4)`,
+                width: `${((absoluteIdx + 1) / totalSteps) * 100}%`,
+                background: section.accent,
               }}
             />
           </div>
 
-          {/* Gradient accent strip at top */}
-          <div className={cn('h-1 w-full bg-gradient-to-r', step.gradient)} />
-
           <div className="p-4">
-            {/* Header */}
-            <div className="flex items-start justify-between mb-3">
-              <div>
-                <p className="text-[10px] font-bold tracking-[0.12em] uppercase mb-1" style={{ color: step.accent }}>
-                  {step.section}
-                </p>
-                <h3 className="text-[15px] font-extrabold text-white leading-tight">{step.title}</h3>
-                <p className="text-[10px] text-white/40 mt-0.5 font-medium">
-                  Sidebar → <span className="text-white/60">{step.sidebarLabel}</span>
-                </p>
-              </div>
-              <div className="flex items-center gap-1 shrink-0 ml-2">
-                <button
-                  onClick={() => setIsPlaying(p => !p)}
-                  className="p-1.5 rounded-lg text-white/40 hover:text-white hover:bg-white/10 transition-colors"
-                >
-                  {isPlaying ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5" />}
-                </button>
-                <button
-                  onClick={endTour}
-                  className="p-1.5 rounded-lg text-white/40 hover:text-white hover:bg-white/10 transition-colors"
-                >
-                  <X className="h-3.5 w-3.5" />
-                </button>
-              </div>
-            </div>
+            {/* Instruction */}
+            <p className="text-[13px] text-gray-700 leading-relaxed mb-3">
+              {step.instruction}
+            </p>
 
-            {/* What this page does */}
-            <div className="mb-2.5 p-3 rounded-xl border border-white/10 bg-white/5">
-              <p className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{ color: step.accent }}>
-                What this page does
-              </p>
-              <p className="text-[12px] text-white/80 leading-relaxed">{step.what}</p>
-            </div>
-
-            {/* How to use */}
-            <div className="mb-2.5 p-3 rounded-xl border border-white/10 bg-white/5">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-white/40 mb-1">
-                How to use it
-              </p>
-              <p className="text-[12px] text-white/70 leading-relaxed">{step.howTo}</p>
-            </div>
-
-            {/* Tip */}
-            {step.tip && (
+            {/* Action box */}
+            {step.action && (
               <div
-                className="mb-3 px-3 py-2 rounded-xl text-[11px] text-white/80 leading-relaxed border border-white/10"
-                style={{ background: `${step.accent}15` }}
+                className="flex items-start gap-2.5 px-3 py-2.5 rounded-xl mb-3 border"
+                style={{ background: `${section.accent}08`, borderColor: `${section.accent}25` }}
               >
-                <span className="font-bold" style={{ color: step.accent }}>💡 Tip: </span>
-                {step.tip}
+                <MousePointerClick size={14} className="shrink-0 mt-0.5" style={{ color: section.accent }} />
+                <p className="text-[12px] font-semibold leading-relaxed" style={{ color: section.accent }}>
+                  {step.action}
+                </p>
               </div>
             )}
 
-            {/* Final step CTA */}
-            {stepIdx === STEPS.length - 1 ? (
+            {/* Tip */}
+            {step.tip && (
+              <div className="flex items-start gap-2 px-3 py-2 rounded-lg bg-amber-50 border border-amber-100 mb-3">
+                <Lightbulb size={13} className="text-amber-500 shrink-0 mt-0.5" />
+                <p className="text-[11px] text-amber-700 leading-relaxed">{step.tip}</p>
+              </div>
+            )}
+
+            {/* Section jump dots */}
+            <div className="flex items-center gap-1 mb-3 flex-wrap">
+              {SECTIONS.map((s, i) => (
+                <button
+                  key={i}
+                  onClick={() => jumpToSection(i)}
+                  title={s.title}
+                  className="rounded-full transition-all"
+                  style={{
+                    width: i === sectionIdx ? '20px' : '7px',
+                    height: '7px',
+                    background: i === sectionIdx
+                      ? section.accent
+                      : i < sectionIdx
+                        ? '#d1d5db'
+                        : '#e5e7eb',
+                  }}
+                />
+              ))}
+            </div>
+
+            {/* Final CTA */}
+            {isLastStep ? (
               <div className="space-y-2 pt-1">
                 <a
-                  href="https://wa.me/917004283531?text=Hi!%20I%20finished%20the%20StreamKart%20CRM%20walkthrough%20and%20want%20a%20custom%20CRM%20for%20my%20agency."
+                  href="https://wa.me/917004283531?text=Hi!%20I%20completed%20the%20StreamKart%20CRM%20walkthrough.%20I%20want%20to%20discuss%20building%20a%20custom%20CRM%20for%20my%20business."
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-bold text-white shadow-lg transition-all hover:opacity-90"
-                  style={{ background: 'linear-gradient(90deg,#25d366,#128c7e)' }}
+                  className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-[13px] font-bold text-white"
+                  style={{ background: 'linear-gradient(90deg,#16a34a,#059669)' }}
                 >
-                  Chat on WhatsApp · +91 70042 83531
+                  Contact us on WhatsApp <ArrowRight size={14} />
                 </a>
                 <button
                   onClick={endTour}
-                  className="w-full text-center text-[11px] text-white/30 hover:text-white/60 py-1"
+                  className="w-full text-center text-[12px] text-gray-400 hover:text-gray-600 py-1"
                 >
                   Close Walkthrough
                 </button>
               </div>
             ) : (
-              /* Navigation */
-              <div className="flex items-center justify-between pt-2 border-t border-white/10">
-                <div className="flex items-center gap-2">
+              /* Nav controls */
+              <div className="flex items-center justify-between pt-2 border-t border-gray-100">
+                <div className="flex items-center gap-1.5">
                   <button
-                    onClick={() => goToStep(stepIdx - 1)}
-                    disabled={stepIdx === 0}
-                    className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold text-white/50 hover:text-white hover:bg-white/10 disabled:opacity-30 transition-all"
+                    onClick={goPrev}
+                    disabled={sectionIdx === 0 && stepIdx === 0}
+                    className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[12px] font-medium text-gray-500 border border-gray-200 hover:bg-gray-50 disabled:opacity-30"
                   >
-                    <ChevronLeft className="h-3.5 w-3.5" /> Prev
+                    <ChevronLeft size={13} /> Back
                   </button>
                   <button
                     onClick={endTour}
-                    className="text-[10px] text-white/25 hover:text-white/50 underline underline-offset-2"
+                    className="px-2.5 py-1.5 text-[11px] text-gray-400 hover:text-gray-600 underline underline-offset-2"
                   >
                     Skip
                   </button>
                 </div>
 
-                {/* Dots */}
-                <div className="flex items-center gap-1">
-                  {STEPS.map((_, i) => (
-                    <button
-                      key={i}
-                      onClick={() => goToStep(i)}
-                      className="rounded-full transition-all"
-                      style={{
-                        width: i === stepIdx ? '16px' : '6px',
-                        height: '6px',
-                        background: i === stepIdx ? step.accent : 'rgba(255,255,255,0.2)',
-                      }}
-                    />
-                  ))}
-                </div>
-
                 <button
-                  onClick={() => goToStep(stepIdx + 1)}
-                  className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-[11px] font-bold text-black transition-all hover:opacity-90"
-                  style={{ background: `linear-gradient(90deg,${step.accent},${step.accent}cc)` }}
+                  onClick={goNext}
+                  className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-[13px] font-bold text-white"
+                  style={{ background: section.accent }}
                 >
-                  Next <ChevronRight className="h-3.5 w-3.5" />
+                  {stepIdx < section.steps.length - 1 ? 'Next' : `Next: ${SECTIONS[sectionIdx + 1]?.sidebarLabel}`}
+                  <ChevronRight size={14} />
                 </button>
               </div>
             )}
