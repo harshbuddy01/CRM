@@ -2,16 +2,19 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { ChevronRight, ChevronLeft, X, Play, Pause, MousePointerClick, Lightbulb, ArrowRight } from 'lucide-react';
+import { 
+  ChevronRight, ChevronLeft, X, Play, Pause, MousePointerClick, 
+  Lightbulb, ArrowRight, GripHorizontal, Minimize2, Maximize2, Move
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
 interface SubStep {
   instruction: string;
-  action?: string;          // "What to do" label — shown in the action box
-  highlightText?: string;   // Find this text in the DOM and highlight it
-  highlightSelector?: string; // Or use a CSS selector
+  action?: string;          
+  highlightText?: string;   
+  highlightSelector?: string; 
   tip?: string;
 }
 
@@ -21,11 +24,11 @@ interface TourSection {
   sidebarPath: string;
   sidebarLabel: string;
   accent: string;
-  bg: string;               // Light bg tint for header
+  bg: string;               
   steps: SubStep[];
 }
 
-// ─── Tour Content (every page, every sub-section) ───────────────────────────
+// ─── Tour Content ───────────────────────────────────────────────────────────
 
 const SECTIONS: TourSection[] = [
   {
@@ -328,7 +331,7 @@ const SECTIONS: TourSection[] = [
   },
 ];
 
-// ─── Flatten for total count ──────────────────────────────────────────────────
+// ─── Helpers ────────────────────────────────────────────────────────────────
 
 function getTotalSteps() {
   return SECTIONS.reduce((sum, s) => sum + s.steps.length, 0);
@@ -339,8 +342,6 @@ function getAbsoluteIndex(sectionIdx: number, stepIdx: number) {
   for (let i = 0; i < sectionIdx; i++) count += SECTIONS[i].steps.length;
   return count + stepIdx;
 }
-
-// ─── Highlight element by text content ────────────────────────────────────────
 
 function highlightByText(text: string, color: string) {
   if (!text) return null;
@@ -370,6 +371,13 @@ export default function InteractiveDemoTour() {
   const [stepIdx, setStepIdx] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [dismissed, setDismissed] = useState(false);
+  const [isMinimized, setIsMinimized] = useState(false);
+
+  // Dragging state
+  const [pos, setPos] = useState({ x: 272, y: 72 });
+  const [isDragging, setIsDragging] = useState(false);
+  const dragRef = useRef<{ startX: number; startY: number; posX: number; posY: number }>({ startX: 0, startY: 0, posX: 272, posY: 72 });
+
   const router = useRouter();
   const pathname = usePathname();
   const timerRef = useRef<NodeJS.Timeout | null>(null);
@@ -379,6 +387,36 @@ export default function InteractiveDemoTour() {
   const totalSteps = getTotalSteps();
   const absoluteIdx = getAbsoluteIndex(sectionIdx, stepIdx);
   const isLastStep = sectionIdx === SECTIONS.length - 1 && stepIdx === section.steps.length - 1;
+
+  // Handle Dragging
+  const onMouseDown = (e: React.MouseEvent) => {
+    if ((e.target as HTMLElement).closest('button, a, input, select')) return;
+    setIsDragging(true);
+    dragRef.current = { startX: e.clientX, startY: e.clientY, posX: pos.x, posY: pos.y };
+  };
+
+  useEffect(() => {
+    const onMouseMove = (e: MouseEvent) => {
+      if (!isDragging) return;
+      const dx = e.clientX - dragRef.current.startX;
+      const dy = e.clientY - dragRef.current.startY;
+      setPos({
+        x: Math.max(10, Math.min(window.innerWidth - 360, dragRef.current.posX + dx)),
+        y: Math.max(60, Math.min(window.innerHeight - 200, dragRef.current.posY + dy)),
+      });
+    };
+
+    const onMouseUp = () => setIsDragging(false);
+
+    if (isDragging) {
+      window.addEventListener('mousemove', onMouseMove);
+      window.addEventListener('mouseup', onMouseUp);
+    }
+    return () => {
+      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('mouseup', onMouseUp);
+    };
+  }, [isDragging]);
 
   // Sidebar highlight
   useEffect(() => {
@@ -444,6 +482,7 @@ export default function InteractiveDemoTour() {
 
   const startTour = () => {
     setIsActive(true);
+    setIsMinimized(false);
     setSectionIdx(0);
     setStepIdx(0);
     setIsPlaying(true);
@@ -485,7 +524,7 @@ export default function InteractiveDemoTour() {
           </p>
           <button
             onClick={startTour}
-            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold text-white"
+            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold text-white shadow-sm hover:opacity-90 transition-all"
             style={{ background: '#2563eb' }}
           >
             <Play size={11} className="fill-white" /> Start Tour
@@ -496,39 +535,109 @@ export default function InteractiveDemoTour() {
         </div>
       )}
 
-      {/* ── ACTIVE TOUR CARD ── */}
-      {isActive && (
+      {/* ── MINIMIZED DOCKABLE BAR ── */}
+      {isActive && isMinimized && (
         <div
-          className="fixed top-[72px] left-4 md:left-[272px] z-40 w-[340px] bg-white rounded-2xl overflow-hidden shadow-2xl animate-in slide-in-from-top-3 duration-300"
-          style={{ border: '1px solid #e5e7eb', boxShadow: '0 8px 40px rgba(0,0,0,0.14)' }}
+          className="fixed bottom-5 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-4 py-2.5 rounded-full shadow-2xl border bg-white animate-in slide-in-from-bottom-3 duration-300"
+          style={{ border: `2px solid ${section.accent}`, boxShadow: '0 8px 32px rgba(0,0,0,0.18)' }}
         >
-          {/* Coloured header */}
+          <div className="flex items-center gap-2">
+            <span className="h-2.5 w-2.5 rounded-full animate-pulse" style={{ background: section.accent }} />
+            <p className="text-xs font-bold text-gray-800">
+              <span style={{ color: section.accent }}>{section.sidebarLabel}</span> · Step {stepIdx + 1} of {section.steps.length}:
+              <span className="font-normal text-gray-600 ml-1">{step.action || step.instruction.slice(0, 45) + '...'}</span>
+            </p>
+          </div>
+
+          <div className="flex items-center gap-1 ml-2">
+            <button
+              onClick={goPrev}
+              disabled={sectionIdx === 0 && stepIdx === 0}
+              className="p-1 rounded text-gray-500 hover:bg-gray-100 disabled:opacity-30"
+              title="Previous Step"
+            >
+              <ChevronLeft size={14} />
+            </button>
+            <button
+              onClick={goNext}
+              className="p-1 rounded text-gray-500 hover:bg-gray-100"
+              title="Next Step"
+            >
+              <ChevronRight size={14} />
+            </button>
+            <button
+              onClick={() => setIsMinimized(false)}
+              className="flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold text-white shadow-sm ml-1"
+              style={{ background: section.accent }}
+            >
+              <Maximize2 size={11} /> Expand Tour
+            </button>
+            <button onClick={endTour} className="p-1 rounded text-gray-400 hover:text-gray-600 ml-1">
+              <X size={14} />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ── ACTIVE EXPANDED TOUR CARD (DRAGGABLE & UNBLOCKING) ── */}
+      {isActive && !isMinimized && (
+        <div
+          className="fixed z-50 w-[340px] bg-white rounded-2xl overflow-hidden shadow-2xl animate-in slide-in-from-top-3 duration-300"
+          style={{
+            left: `${pos.x}px`,
+            top: `${pos.y}px`,
+            border: '1px solid #e5e7eb',
+            boxShadow: isDragging ? '0 16px 48px rgba(0,0,0,0.24)' : '0 8px 40px rgba(0,0,0,0.16)',
+            transition: isDragging ? 'none' : 'box-shadow 0.2s',
+          }}
+        >
+          {/* Drag Handle & Coloured Header */}
           <div
-            className="px-4 py-3 flex items-start justify-between gap-2"
+            onMouseDown={onMouseDown}
+            className="px-4 py-2.5 flex items-center justify-between gap-2 select-none cursor-move"
             style={{ background: section.bg, borderBottom: `2px solid ${section.accent}22` }}
           >
-            <div className="flex-1 min-w-0">
-              <p className="text-[10px] font-bold uppercase tracking-wider mb-0.5" style={{ color: section.accent }}>
-                {section.sidebarLabel} · Step {stepIdx + 1} of {section.steps.length}
-              </p>
-              <p className="text-[13px] font-bold text-gray-900 leading-snug">{section.title}</p>
+            <div className="flex items-center gap-2 flex-1 min-w-0">
+              <GripHorizontal size={14} className="text-gray-400 shrink-0" />
+              <div className="min-w-0">
+                <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: section.accent }}>
+                  {section.sidebarLabel} · Step {stepIdx + 1} of {section.steps.length}
+                </p>
+                <p className="text-[13px] font-bold text-gray-900 leading-snug truncate">{section.title}</p>
+              </div>
             </div>
+
             <div className="flex items-center gap-1 shrink-0">
               <button
+                onClick={() => setIsMinimized(true)}
+                className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-white/60 transition-colors"
+                title="Minimize (Dock to Bottom)"
+              >
+                <Minimize2 size={13} />
+              </button>
+              <button
                 onClick={() => setIsPlaying(p => !p)}
-                className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-white/60"
+                className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-white/60 transition-colors"
                 title={isPlaying ? 'Pause' : 'Play'}
               >
                 {isPlaying ? <Pause size={13} /> : <Play size={13} />}
               </button>
               <button
                 onClick={endTour}
-                className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-white/60"
-                title="Close"
+                className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-white/60 transition-colors"
+                title="Close Walkthrough"
               >
                 <X size={14} />
               </button>
             </div>
+          </div>
+
+          {/* Drag Hint Bar */}
+          <div className="bg-gray-50 px-3 py-1 border-b border-gray-100 flex items-center justify-between text-[10px] text-gray-400">
+            <span className="flex items-center gap-1"><Move size={10} /> Drag header to reposition</span>
+            <button onClick={() => setIsMinimized(true)} className="text-blue-600 hover:underline font-semibold">
+              Minimize to unblock UI
+            </button>
           </div>
 
           {/* Progress bar */}
@@ -597,7 +706,7 @@ export default function InteractiveDemoTour() {
                   href="https://wa.me/917004283531?text=Hi!%20I%20completed%20the%20StreamKart%20CRM%20walkthrough.%20I%20want%20to%20discuss%20building%20a%20custom%20CRM%20for%20my%20business."
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-[13px] font-bold text-white"
+                  className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-[13px] font-bold text-white shadow-sm"
                   style={{ background: 'linear-gradient(90deg,#16a34a,#059669)' }}
                 >
                   Contact us on WhatsApp <ArrowRight size={14} />
@@ -630,7 +739,7 @@ export default function InteractiveDemoTour() {
 
                 <button
                   onClick={goNext}
-                  className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-[13px] font-bold text-white"
+                  className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-[13px] font-bold text-white shadow-sm"
                   style={{ background: section.accent }}
                 >
                   {stepIdx < section.steps.length - 1 ? 'Next' : `Next: ${SECTIONS[sectionIdx + 1]?.sidebarLabel}`}
