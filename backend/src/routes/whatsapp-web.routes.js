@@ -40,10 +40,9 @@ router.post('/send', async (req, res) => {
 });
 
 // GET /whatsapp/qr-page — Serve a simple HTML page to scan QR code
-// Remove CSP headers so inline scripts work on this admin-only page
 router.get('/qr-page', (req, res) => {
   res.removeHeader('Content-Security-Policy');
-  res.setHeader('Content-Security-Policy', "default-src 'self' https:; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:;");
+  res.setHeader('Content-Security-Policy', "default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob: https:;");
   res.send(`
     <!DOCTYPE html>
     <html lang="en">
@@ -70,7 +69,7 @@ router.get('/qr-page', (req, res) => {
         .dot-connecting { background: #2563eb; animation: pulse 1s infinite; }
         .dot-connected { background: #16a34a; }
         @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
-        #qr-img { max-width: 260px; margin: 0 auto 20px; border-radius: 12px; border: 2px solid #e5e7eb; }
+        #qr-img { max-width: 260px; margin: 0 auto 20px; border-radius: 12px; border: 2px solid #e5e7eb; display: block; }
         .btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 11px 24px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; border: none; transition: background 0.15s; }
         .btn-blue { background: #1d4ed8; color: #fff; }
         .btn-blue:hover { background: #1e40af; }
@@ -115,8 +114,8 @@ router.get('/qr-page', (req, res) => {
         </div>
 
         <div class="btn-group">
-          <button id="connect-btn" class="btn btn-blue" onclick="connectWA()">Connect WhatsApp</button>
-          <button id="disconnect-btn" class="btn btn-red" style="display:none;" onclick="disconnectWA()">Disconnect</button>
+          <button id="connect-btn" class="btn btn-blue">Connect WhatsApp</button>
+          <button id="disconnect-btn" class="btn btn-red" style="display:none;">Disconnect</button>
         </div>
 
         <p class="info">
@@ -126,87 +125,97 @@ router.get('/qr-page', (req, res) => {
       </div>
 
       <script>
-        const API_BASE = window.location.origin;
-
-        async function connectWA() {
-          document.getElementById('connect-btn').disabled = true;
-          document.getElementById('connect-btn').textContent = 'Initializing...';
-          await fetch(API_BASE + '/v1/whatsapp/connect', { method: 'POST' });
-          setTimeout(pollStatus, 2000);
-        }
-
-        async function disconnectWA() {
-          await fetch(API_BASE + '/v1/whatsapp/disconnect', { method: 'POST' });
-          location.reload();
-        }
-
-        async function pollStatus() {
-          try {
-            const res = await fetch(API_BASE + '/v1/whatsapp/status');
-            const data = await res.json();
-            updateUI(data);
-
-            if (data.status !== 'connected') {
-              setTimeout(pollStatus, 3000);
-            }
-          } catch (err) {
-            console.error('Poll error:', err);
-            setTimeout(pollStatus, 5000);
-          }
-        }
-
-        function updateUI(data) {
-          const badge = document.getElementById('status-badge');
-          const dot = document.getElementById('status-dot');
-          const text = document.getElementById('status-text');
-          const qrArea = document.getElementById('qr-area');
-          const connArea = document.getElementById('connected-area');
-          const errArea = document.getElementById('error-area');
+        document.addEventListener('DOMContentLoaded', function() {
+          const API_BASE = window.location.origin;
           const connectBtn = document.getElementById('connect-btn');
           const disconnectBtn = document.getElementById('disconnect-btn');
 
-          const labels = {
-            disconnected: 'Disconnected',
-            qr_ready: 'Scan QR Code Now',
-            connecting: 'Connecting...',
-            connected: 'Connected',
-          };
-
-          badge.className = 'status-badge status-' + data.status;
-          dot.className = 'dot dot-' + data.status;
-          text.textContent = labels[data.status] || data.status;
-
-          qrArea.style.display = 'none';
-          connArea.style.display = 'none';
-          errArea.style.display = 'none';
-
-          if (data.status === 'qr_ready' && data.qrCode) {
-            qrArea.style.display = 'block';
-            document.getElementById('qr-img').src = data.qrCode;
-            connectBtn.style.display = 'none';
-            disconnectBtn.style.display = 'inline-flex';
-          } else if (data.status === 'connected') {
-            connArea.style.display = 'block';
-            connectBtn.style.display = 'none';
-            disconnectBtn.style.display = 'inline-flex';
-          } else if (data.status === 'connecting') {
+          connectBtn.addEventListener('click', async function() {
             connectBtn.disabled = true;
-            connectBtn.textContent = 'Connecting...';
-          } else {
-            connectBtn.disabled = false;
-            connectBtn.textContent = 'Connect WhatsApp';
-            connectBtn.style.display = 'inline-flex';
-            disconnectBtn.style.display = 'none';
+            connectBtn.textContent = 'Initializing...';
+            try {
+              await fetch(API_BASE + '/v1/whatsapp/connect', { method: 'POST' });
+            } catch (err) {
+              console.error('Connect fetch error:', err);
+            }
+            setTimeout(pollStatus, 2000);
+          });
+
+          disconnectBtn.addEventListener('click', async function() {
+            try {
+              await fetch(API_BASE + '/v1/whatsapp/disconnect', { method: 'POST' });
+            } catch (err) {
+              console.error('Disconnect fetch error:', err);
+            }
+            location.reload();
+          });
+
+          async function pollStatus() {
+            try {
+              const res = await fetch(API_BASE + '/v1/whatsapp/status');
+              const data = await res.json();
+              updateUI(data);
+
+              if (data.status !== 'connected') {
+                setTimeout(pollStatus, 3000);
+              }
+            } catch (err) {
+              console.error('Poll error:', err);
+              setTimeout(pollStatus, 5000);
+            }
           }
 
-          if (data.error) {
-            errArea.style.display = 'block';
-            document.getElementById('error-text').textContent = data.error;
-          }
-        }
+          function updateUI(data) {
+            const badge = document.getElementById('status-badge');
+            const dot = document.getElementById('status-dot');
+            const text = document.getElementById('status-text');
+            const qrArea = document.getElementById('qr-area');
+            const connArea = document.getElementById('connected-area');
+            const errArea = document.getElementById('error-area');
 
-        // Check status on page load
-        pollStatus();
+            const labels = {
+              disconnected: 'Disconnected',
+              qr_ready: 'Scan QR Code Now',
+              connecting: 'Connecting...',
+              connected: 'Connected',
+            };
+
+            badge.className = 'status-badge status-' + data.status;
+            dot.className = 'dot dot-' + data.status;
+            text.textContent = labels[data.status] || data.status;
+
+            qrArea.style.display = 'none';
+            connArea.style.display = 'none';
+            errArea.style.display = 'none';
+
+            if (data.status === 'qr_ready' && data.qrCode) {
+              qrArea.style.display = 'block';
+              document.getElementById('qr-img').src = data.qrCode;
+              connectBtn.style.display = 'none';
+              disconnectBtn.style.display = 'inline-flex';
+            } else if (data.status === 'connected') {
+              connArea.style.display = 'block';
+              connectBtn.style.display = 'none';
+              disconnectBtn.style.display = 'inline-flex';
+            } else if (data.status === 'connecting') {
+              connectBtn.disabled = true;
+              connectBtn.textContent = 'Connecting...';
+            } else {
+              connectBtn.disabled = false;
+              connectBtn.textContent = 'Connect WhatsApp';
+              connectBtn.style.display = 'inline-flex';
+              disconnectBtn.style.display = 'none';
+            }
+
+            if (data.error) {
+              errArea.style.display = 'block';
+              document.getElementById('error-text').textContent = data.error;
+            }
+          }
+
+          // Initial poll on page load
+          pollStatus();
+        });
       </script>
     </body>
     </html>
