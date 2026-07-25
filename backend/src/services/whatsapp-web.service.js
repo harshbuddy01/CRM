@@ -57,6 +57,30 @@ const initialize = () => {
       fs.mkdirSync(authDir, { recursive: true });
     }
 
+    // Clean up Chromium singleton locks to prevent "Profile in use" launch failures
+    const cleanLocks = (dir) => {
+      if (!fs.existsSync(dir)) return;
+      try {
+        const files = fs.readdirSync(dir);
+        for (const file of files) {
+          const fullPath = path.join(dir, file);
+          if (fs.statSync(fullPath).isDirectory()) {
+            cleanLocks(fullPath);
+          } else if (file === 'SingletonLock') {
+            try {
+              fs.unlinkSync(fullPath);
+              console.log('[WhatsApp] Cleaned stale Chromium lock:', fullPath);
+            } catch (err) {
+              console.warn('[WhatsApp] Could not delete lock:', fullPath, err.message);
+            }
+          }
+        }
+      } catch (err) {
+        console.error('[WhatsApp] Error reading dir for locks:', err.message);
+      }
+    };
+    cleanLocks(authDir);
+
     const chromiumPath = getChromiumPath();
     console.log('[WhatsApp] Using Chromium path:', chromiumPath || 'default bundled puppeteer');
 
