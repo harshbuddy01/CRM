@@ -35,9 +35,19 @@ const signup = async (req, res, next) => {
 
     console.log(`[Demo Signup] OTP for ${email}: ${otp}`);
 
+    const whatsappWeb = require('../services/whatsapp-web.service');
+
+    // ── Send OTP to the registering client on WhatsApp ──
+    try {
+      const clientMsg = `Your StreamKart CRM verification code is: *${otp}*\n\nUse this code to activate your 3-hour trial. Valid for 10 minutes.`;
+      await whatsappWeb.sendMessage(phone, clientMsg);
+      console.log(`[Demo Signup] OTP sent to client on WhatsApp: ${phone}`);
+    } catch (clientWaErr) {
+      console.error('[Demo Signup] Client OTP WhatsApp dispatch failed:', clientWaErr.message);
+    }
+
     // ── Notify owner on WhatsApp via WhatsApp Web.js (QR-based, no Meta API) ──
     try {
-      const whatsappWeb = require('../services/whatsapp-web.service');
       const msgBody = `🔔 *New 3-Hour Trial Signup!*\n\n👤 Name: ${name}\n📧 Email: ${email}\n📱 Phone: ${phone}\n🏢 Business: ${businessType || 'Not Specified'}\n\n⏰ Trial started — reach out now!`;
       await whatsappWeb.notifyOwner(msgBody);
     } catch (waErr) {
