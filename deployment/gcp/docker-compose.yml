@@ -68,6 +68,8 @@ services:
       NODE_ENV: production
       REDIS_URL: redis://redis:6379
       MEILISEARCH_HOST: http://meilisearch:7700
+    volumes:
+      - wwebjs_auth:/app/.wwebjs_auth
     networks:
       - crm-network
 
@@ -121,6 +123,7 @@ volumes:
   n8n_data:
   caddy_data:
   caddy_config:
+  wwebjs_auth:
 
 networks:
   crm-network:

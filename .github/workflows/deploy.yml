@@ -99,4 +99,5 @@ jobs:
             cd ~/travelcrm
             git pull origin main
             cd deployment/gcp
-            docker compose restart backend || docker compose up -d
+            docker compose up -d --build backend
+            docker image prune -f
