@@ -64,9 +64,17 @@ const initialize = () => {
         const files = fs.readdirSync(dir);
         for (const file of files) {
           const fullPath = path.join(dir, file);
-          if (fs.statSync(fullPath).isDirectory()) {
+          let isDirectory = false;
+          try {
+            const stat = fs.lstatSync(fullPath);
+            isDirectory = stat.isDirectory();
+          } catch (e) {
+            continue;
+          }
+
+          if (isDirectory) {
             cleanLocks(fullPath);
-          } else if (file === 'SingletonLock') {
+          } else if (file.includes('Singleton')) {
             try {
               fs.unlinkSync(fullPath);
               console.log('[WhatsApp] Cleaned stale Chromium lock:', fullPath);
