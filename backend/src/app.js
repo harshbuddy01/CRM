@@ -43,6 +43,7 @@ const allowedOrigins = [
   'https://lightpink-termite-550903.hostingersite.com', 
   'https://streamkart.shop',
   'https://crm.streamkart.shop',
+  'https://api.streamkart.shop',
   'https://crm.imagicaholidays.com',
   'https://imagicaholidays.com',
   ...dynamicOrigins
