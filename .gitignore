@@ -35,3 +35,6 @@ next-env.d.ts
 # Private Architecture Document
 private_architecture_map.md
 seo_integration_guide.md
+
+# WhatsApp Web.js session data
+backend/.wwebjs_auth/

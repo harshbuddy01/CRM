@@ -35,33 +35,11 @@ const signup = async (req, res, next) => {
 
     console.log(`[Demo Signup] OTP for ${email}: ${otp}`);
 
-    // ── Notify owner on WhatsApp via Meta Cloud API ──
+    // ── Notify owner on WhatsApp via WhatsApp Web.js (QR-based, no Meta API) ──
     try {
-      const ownerPhone = '917004283531'; // Owner's WhatsApp number (no +)
-      const waToken = process.env.WHATSAPP_API_TOKEN;
-      const waPhoneId = process.env.WHATSAPP_PHONE_NUMBER_ID;
-
-      if (waToken && waPhoneId) {
-        const msgBody = `🔔 *New 3-Hour Trial Signup!*\n\n👤 Name: ${name}\n📧 Email: ${email}\n📱 Phone: ${phone}\n🏢 Business: ${businessType || 'Not Specified'}\n\n⏰ Trial started — reach out now!`;
-
-        await fetch(`https://graph.facebook.com/v18.0/${waPhoneId}/messages`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${waToken}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            messaging_product: 'whatsapp',
-            to: ownerPhone,
-            type: 'text',
-            text: { body: msgBody },
-          }),
-        });
-        console.log(`[Demo Signup] Owner WhatsApp notification sent for ${email}`);
-      } else {
-        // Fallback log when WhatsApp API not configured
-        console.log(`[Demo Signup] NEW TRIAL: ${name} | ${email} | ${phone} | ${businessType || 'N/A'}`);
-      }
+      const whatsappWeb = require('../services/whatsapp-web.service');
+      const msgBody = `🔔 *New 3-Hour Trial Signup!*\n\n👤 Name: ${name}\n📧 Email: ${email}\n📱 Phone: ${phone}\n🏢 Business: ${businessType || 'Not Specified'}\n\n⏰ Trial started — reach out now!`;
+      await whatsappWeb.notifyOwner(msgBody);
     } catch (waErr) {
       console.error('[Demo Signup] Owner WhatsApp notification failed (non-fatal):', waErr.message);
     }

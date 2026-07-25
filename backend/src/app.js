@@ -226,6 +226,11 @@ const demoRoutes = require('./routes/demo.routes');
 app.use('/v1/demo', demoRoutes);
 app.use('/api/v1/demo', demoRoutes);
 
+// ── WhatsApp Web.js (QR-based messaging, no Meta API needed) ──
+const whatsappWebRoutes = require('./routes/whatsapp-web.routes');
+app.use('/v1/whatsapp', whatsappWebRoutes);
+app.use('/api/v1/whatsapp', whatsappWebRoutes);
+
 // Mount the authenticated API router under both prefixes
 app.use('/v1', apiRouter);
 app.use('/api/v1', apiRouter);
