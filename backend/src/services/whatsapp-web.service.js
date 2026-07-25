@@ -60,6 +60,17 @@ const initialize = () => {
     const chromiumPath = getChromiumPath();
     console.log('[WhatsApp] Using Chromium path:', chromiumPath || 'default bundled puppeteer');
 
+    let puppeteerModule;
+    try {
+      puppeteerModule = require('puppeteer-core');
+    } catch (e1) {
+      try {
+        puppeteerModule = require('puppeteer');
+      } catch (e2) {
+        console.warn('[WhatsApp] Neither puppeteer-core nor puppeteer found in node_modules');
+      }
+    }
+
     const puppeteerOpts = {
       headless: true,
       args: [
