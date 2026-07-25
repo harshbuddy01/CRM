@@ -17,7 +17,7 @@ let connectionStatus = 'disconnected'; // disconnected | qr_ready | connecting |
 let lastError = null;
 
 // Owner's WhatsApp number (messages will be sent TO this number for alerts)
-const OWNER_PHONE = '917004283531';
+const OWNER_PHONE = process.env.OWNER_PHONE || '918235337180';
 
 /**
  * Helper to find available Chromium binary path
