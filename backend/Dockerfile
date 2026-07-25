@@ -17,4 +17,4 @@ COPY prisma ./prisma/
 RUN npx prisma generate
 COPY . .
 EXPOSE 8080
-CMD ["sh", "-c", "node src/index.js & node src/worker.js & wait"]
+CMD ["npm", "start"]
