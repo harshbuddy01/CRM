@@ -16,11 +16,16 @@ router.get('/status', (req, res) => {
 
 // POST /whatsapp/connect — Initialize WhatsApp client and start QR generation
 router.post('/connect', (req, res) => {
-  whatsappService.initialize();
-  res.json({ 
-    success: true, 
-    message: 'WhatsApp client initializing. Check /status for QR code.' 
-  });
+  try {
+    const result = whatsappService.initialize();
+    res.json({ 
+      success: true, 
+      message: 'WhatsApp client initializing. Check /status for QR code.',
+      ...result
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
 });
 
 // POST /whatsapp/disconnect — Disconnect WhatsApp session

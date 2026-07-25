@@ -8,7 +8,7 @@
 
 const { Client, LocalAuth } = require('whatsapp-web.js');
 const qrcode = require('qrcode');
-const logger = require('../utils/logger');
+const fs = require('fs');
 const path = require('path');
 
 let client = null;
@@ -20,24 +20,48 @@ let lastError = null;
 const OWNER_PHONE = '917004283531';
 
 /**
+ * Helper to find available Chromium binary path
+ */
+const getChromiumPath = () => {
+  if (process.env.PUPPETEER_EXECUTABLE_PATH && fs.existsSync(process.env.PUPPETEER_EXECUTABLE_PATH)) {
+    return process.env.PUPPETEER_EXECUTABLE_PATH;
+  }
+  const possiblePaths = [
+    '/usr/bin/chromium',
+    '/usr/bin/chromium-browser',
+    '/usr/bin/google-chrome-stable',
+    '/usr/bin/google-chrome',
+  ];
+  for (const p of possiblePaths) {
+    if (fs.existsSync(p)) return p;
+  }
+  return undefined;
+};
+
+/**
  * Initialize WhatsApp Web client
  */
 const initialize = () => {
   if (client) {
     console.log('[WhatsApp] Client already initialized. Status:', connectionStatus);
-    return;
+    return { success: true, status: connectionStatus };
   }
 
   console.log('[WhatsApp] Initializing WhatsApp Web.js client...');
   connectionStatus = 'connecting';
+  lastError = null;
 
-  client = new Client({
-    authStrategy: new LocalAuth({
-      dataPath: path.join(__dirname, '../../.wwebjs_auth'),
-    }),
-    puppeteer: {
+  try {
+    const authDir = path.join(__dirname, '../../.wwebjs_auth');
+    if (!fs.existsSync(authDir)) {
+      fs.mkdirSync(authDir, { recursive: true });
+    }
+
+    const chromiumPath = getChromiumPath();
+    console.log('[WhatsApp] Using Chromium path:', chromiumPath || 'default bundled puppeteer');
+
+    const puppeteerOpts = {
       headless: true,
-      executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined,
       args: [
         '--no-sandbox',
         '--disable-setuid-sandbox',
@@ -48,53 +72,73 @@ const initialize = () => {
         '--single-process',
         '--disable-gpu',
       ],
-    },
-  });
+    };
 
-  client.on('qr', async (qr) => {
-    console.log('[WhatsApp] QR Code received. Scan it from your phone.');
-    connectionStatus = 'qr_ready';
-    try {
-      currentQR = await qrcode.toDataURL(qr);
-    } catch (err) {
-      console.error('[WhatsApp] QR generation error:', err);
-      currentQR = null;
+    if (chromiumPath) {
+      puppeteerOpts.executablePath = chromiumPath;
     }
-  });
 
-  client.on('ready', () => {
-    console.log('[WhatsApp] ✅ Client is connected and ready!');
-    connectionStatus = 'connected';
-    currentQR = null;
-    lastError = null;
-  });
+    client = new Client({
+      authStrategy: new LocalAuth({
+        dataPath: authDir,
+      }),
+      puppeteer: puppeteerOpts,
+    });
 
-  client.on('authenticated', () => {
-    console.log('[WhatsApp] ✅ Authenticated successfully (session restored).');
-    connectionStatus = 'connecting';
-    currentQR = null;
-  });
+    client.on('qr', async (qr) => {
+      console.log('[WhatsApp] ✅ QR Code received successfully!');
+      connectionStatus = 'qr_ready';
+      try {
+        currentQR = await qrcode.toDataURL(qr);
+      } catch (err) {
+        console.error('[WhatsApp] QR generation error:', err);
+        currentQR = null;
+      }
+    });
 
-  client.on('auth_failure', (msg) => {
-    console.error('[WhatsApp] ❌ Authentication failure:', msg);
-    connectionStatus = 'disconnected';
-    lastError = 'Authentication failed: ' + msg;
-    currentQR = null;
-  });
+    client.on('ready', () => {
+      console.log('[WhatsApp] ✅ Client is connected and ready!');
+      connectionStatus = 'connected';
+      currentQR = null;
+      lastError = null;
+    });
 
-  client.on('disconnected', (reason) => {
-    console.log('[WhatsApp] Disconnected:', reason);
-    connectionStatus = 'disconnected';
-    currentQR = null;
-    client = null;
-  });
+    client.on('authenticated', () => {
+      console.log('[WhatsApp] ✅ Authenticated successfully (session restored).');
+      connectionStatus = 'connecting';
+      currentQR = null;
+    });
 
-  client.initialize().catch((err) => {
-    console.error('[WhatsApp] Initialization error:', err);
+    client.on('auth_failure', (msg) => {
+      console.error('[WhatsApp] ❌ Authentication failure:', msg);
+      connectionStatus = 'disconnected';
+      lastError = 'Authentication failed: ' + msg;
+      currentQR = null;
+      client = null;
+    });
+
+    client.on('disconnected', (reason) => {
+      console.log('[WhatsApp] Disconnected:', reason);
+      connectionStatus = 'disconnected';
+      currentQR = null;
+      client = null;
+    });
+
+    client.initialize().catch((err) => {
+      console.error('[WhatsApp] Initialization promise error:', err.message);
+      connectionStatus = 'disconnected';
+      lastError = err.message;
+      client = null;
+    });
+
+    return { success: true, status: 'connecting' };
+  } catch (err) {
+    console.error('[WhatsApp] Synchronous initialization error:', err);
     connectionStatus = 'disconnected';
     lastError = err.message;
     client = null;
-  });
+    return { success: false, error: err.message };
+  }
 };
 
 /**
@@ -110,18 +154,14 @@ const getStatus = () => {
 
 /**
  * Send a WhatsApp message
- * @param {string} phone - Phone number with country code, no + sign (e.g. '917004283531')
- * @param {string} message - Message text
  */
 const sendMessage = async (phone, message) => {
   if (!client || connectionStatus !== 'connected') {
-    console.log(`[WhatsApp] Not connected. Message to ${phone} queued as log only.`);
-    console.log(`[WhatsApp] MSG: ${message}`);
+    console.log(`[WhatsApp] Not connected. Message to ${phone} logged.`);
     return { success: false, reason: 'WhatsApp not connected. Scan QR code first.' };
   }
 
   try {
-    // whatsapp-web.js expects chatId in format: countrycode+number@c.us
     const chatId = phone.replace(/[^0-9]/g, '') + '@c.us';
     await client.sendMessage(chatId, message);
     console.log(`[WhatsApp] ✅ Message sent to ${phone}`);
@@ -133,7 +173,7 @@ const sendMessage = async (phone, message) => {
 };
 
 /**
- * Send owner notification (convenience method)
+ * Send owner notification
  */
 const notifyOwner = async (message) => {
   return sendMessage(OWNER_PHONE, message);
