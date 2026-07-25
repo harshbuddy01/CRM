@@ -24,7 +24,8 @@ router.post('/connect', (req, res) => {
       ...result
     });
   } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
+    console.error('[WhatsApp Route Error]', err);
+    res.json({ success: false, error: err.message });
   }
 });
 
