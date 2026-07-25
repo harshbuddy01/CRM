@@ -86,6 +86,14 @@ const server = app.listen(config.port, '0.0.0.0', () => {
   } catch (e) {
     console.error('⚠️ Could not load auto-seed script:', e.message);
   }
+
+  // Auto-initialize WhatsApp Web client to restore active linked sessions on restart
+  try {
+    require('./services/whatsapp-web.service').initialize();
+    console.log('✅ WhatsApp Web service auto-initialized.');
+  } catch (e) {
+    console.error('❌ Could not auto-initialize WhatsApp Web service:', e);
+  }
 });
 
 // Graceful shutdown
