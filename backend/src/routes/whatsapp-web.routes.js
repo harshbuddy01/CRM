@@ -40,7 +40,10 @@ router.post('/send', async (req, res) => {
 });
 
 // GET /whatsapp/qr-page — Serve a simple HTML page to scan QR code
+// Remove CSP headers so inline scripts work on this admin-only page
 router.get('/qr-page', (req, res) => {
+  res.removeHeader('Content-Security-Policy');
+  res.setHeader('Content-Security-Policy', "default-src 'self' https:; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:;");
   res.send(`
     <!DOCTYPE html>
     <html lang="en">
