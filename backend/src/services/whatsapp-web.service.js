@@ -105,6 +105,7 @@ const initialize = () => {
 
     const puppeteerOpts = {
       headless: true,
+      ignoreHTTPSErrors: true,
       args: [
         '--no-sandbox',
         '--disable-setuid-sandbox',
