@@ -178,6 +178,7 @@ apiRouter.use('/', require('./routes/tour-dispatch.routes'));
 apiRouter.use('/settings', require('./routes/org-setting.routes'));
 apiRouter.use('/status-settings', require('./routes/status-setting.routes'));
 apiRouter.use('/clients', require('./routes/client.routes'));
+apiRouter.use('/email-campaigns', require('./routes/email-campaign.routes'));
 apiRouter.use('/agents', require('./routes/agent.routes'));
 apiRouter.use('/agents', require('./routes/b2b-commission.routes'));
 apiRouter.use('/masters-v2', require('./routes/master-v2.routes'));

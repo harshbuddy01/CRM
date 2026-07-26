@@ -48,8 +48,8 @@ const pdfWorker = new Worker('pdf-generation', async job => {
 // --- Email Worker ---
 let emailWorker = null;
 
-const brevoConfigured = process.env.BREVO_SMTP_USER && process.env.BREVO_SMTP_PASS;
-if (brevoConfigured) {
+const emailConfigured = (process.env.SMTP_USER && process.env.SMTP_PASS) || (process.env.BREVO_SMTP_USER && process.env.BREVO_SMTP_PASS);
+if (emailConfigured) {
   emailWorker = new Worker('email-sending', async job => {
     const { queryId, to, subject, htmlContent, cc, from } = job.data;
     console.log(`[Email] Sending to ${to}${from ? ` (From: ${from})` : ''}`);
@@ -93,7 +93,7 @@ if (brevoConfigured) {
   }
 }, { connection });
 } else {
-  console.warn('⚠️ Brevo SMTP credentials missing — Email Worker NOT started.');
+  console.warn('⚠️ SMTP credentials missing — Email Worker NOT started.');
 }
 
 // --- WhatsApp Worker ---

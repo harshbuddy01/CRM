@@ -28,7 +28,8 @@ import {
   CalendarRange,
   Image as ImageIcon,
   Compass,
-  Activity
+  Activity,
+  Mail
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { X } from 'lucide-react';
@@ -76,6 +77,7 @@ export function Sidebar({ open, setOpen }: SidebarProps) {
     { href: '/cms/website-content', label: 'Website Content', icon: Compass, show: user?.role === 'admin' || user?.permissions['master.manage_destinations'], isSetting: true },
     { href: '/cms/pages', label: 'Website CMS', icon: Globe, show: user?.role === 'admin' || user?.permissions['master.manage_destinations'], isSetting: true },
     { href: '/finance/expenses', label: 'Finance', icon: DollarSign, show: user?.role === 'admin' || user?.permissions['payment.view_all'], isSetting: true },
+    { href: '/marketing/email-campaign', label: 'Email Campaign', icon: Mail, show: user?.role === 'admin', isSetting: true },
     { href: '/branches', label: 'Branches', icon: Building2, show: user?.permissions['users.manage'], isSetting: true },
     { href: '/integrations/sheets', label: 'Integrations (Coming Soon)', icon: Sheet, show: user?.permissions['users.manage'], isSetting: true },
     { href: '/users', label: 'Team', icon: Users, show: user?.permissions['users.manage'], isSetting: true },
