@@ -201,15 +201,27 @@ const getStatus = () => {
  * Send a WhatsApp message
  */
 const sendMessage = async (phone, message) => {
-  if (!client || connectionStatus !== 'connected') {
+  if (connectionStatus !== 'connected' || !client) {
     console.log(`[WhatsApp] Not connected. Message to ${phone} logged.`);
     return { success: false, reason: 'WhatsApp not connected. Scan QR code first.' };
   }
 
   try {
-    const chatId = phone.replace(/[^0-9]/g, '') + '@c.us';
+    let cleanPhone = phone.replace(/[^0-9]/g, '');
+    
+    // Strip leading zero if present (e.g. 09876543210 -> 9876543210)
+    if (cleanPhone.startsWith('0')) {
+      cleanPhone = cleanPhone.substring(1);
+    }
+    
+    // Auto-prepend 91 (India) if it's a 10-digit number
+    if (cleanPhone.length === 10) {
+      cleanPhone = '91' + cleanPhone;
+    }
+    
+    const chatId = cleanPhone + '@c.us';
     await client.sendMessage(chatId, message);
-    console.log(`[WhatsApp] ✅ Message sent to ${phone}`);
+    console.log(`[WhatsApp] ✅ Message sent to ${cleanPhone}`);
     return { success: true };
   } catch (err) {
     console.error(`[WhatsApp] ❌ Failed to send to ${phone}:`, err.message);
