@@ -92,12 +92,12 @@ jobs:
       - name: Execute Remote SSH Commands
         uses: appleboy/ssh-action@v1.0.3
         with:
-          host: "35.234.218.146"
-          username: "anandharsh437"
+          host: "8.231.65.6"
+          username: "harshanand"
           key: ${{ secrets.GCP_SSH_KEY }}
           script: |
-            cd ~/travelcrm
+            cd /home/harshanand/app
             git pull origin main
-            cd deployment/gcp
-            docker compose up -d --build backend
+            docker compose -f deployment/gcp/docker-compose.yml up -d --build backend
             docker image prune -f
+            docker exec crm-backend npx prisma db push --accept-data-loss
