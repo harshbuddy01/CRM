@@ -81,7 +81,7 @@ const verifyOtp = async (req, res, next) => {
       throw new UnauthorizedError('OTP expired');
     }
 
-    if (sessionData.otp !== otp.toString() && otp.toString() !== '123456') {
+    if (sessionData.otp !== otp.toString()) {
       throw new UnauthorizedError('Invalid OTP');
     }
 

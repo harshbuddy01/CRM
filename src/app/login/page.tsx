@@ -457,7 +457,7 @@ export default function LoginPage() {
             ) : (
               <>
                 <p className="modal-title">Enter verification code</p>
-                <p className="modal-sub">Sent to your WhatsApp number. For instant access, enter <strong>123456</strong>.</p>
+                <p className="modal-sub">Sent to your WhatsApp number. Please enter it below to verify.</p>
                 <form onSubmit={doTrialVerify}>
                   <div className="field">
                     <label>6-Digit Code</label>

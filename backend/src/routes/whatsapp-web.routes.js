@@ -206,6 +206,7 @@ router.get('/qr-page', (req, res) => {
             } else if (data.status === 'connecting') {
               connectBtn.disabled = true;
               connectBtn.textContent = 'Connecting...';
+              disconnectBtn.style.display = 'inline-flex';
             } else {
               connectBtn.disabled = false;
               connectBtn.textContent = 'Connect WhatsApp';
