@@ -177,7 +177,7 @@ export default function GuestWebApp() {
 
     socket.on('driver:location-receive', (data: any) => {
       console.log('Real-time driver location sync:', data);
-      setDriverTracking(prev => {
+      setDriverTracking((prev: any) => {
         if (!prev) return prev;
         return {
           ...prev,

@@ -23,6 +23,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { RichTextEditor } from '@/components/ui/rich-text-editor';
 import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
 
 // Predefined Quick templates to inject beautiful HTML into editor
 const TEMPLATES = [
@@ -89,7 +90,7 @@ export default function EmailCampaignPage() {
   // Email validation helper
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   const parsedEmails = emailsText.split(/[\s,;\n\r]+/).map(e => e.trim()).filter(Boolean);
-  const validEmails = [...new Set(parsedEmails.filter(e => emailRegex.test(e)))];
+  const validEmails = Array.from(new Set(parsedEmails.filter(e => emailRegex.test(e))));
   const invalidEmailsCount = parsedEmails.length - validEmails.length;
 
   useEffect(() => {
