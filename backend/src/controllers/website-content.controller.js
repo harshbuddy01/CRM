@@ -101,6 +101,11 @@ const getPublicJourneys = async (req, res, next) => {
       seoTitle: j.seoTitle,
       seoDescription: j.seoDescription,
       seoKeywords: j.seoKeywords,
+      highlights: j.highlights,
+      inclusions: j.inclusions,
+      hotels: j.hotels,
+      suitableFor: j.suitableFor,
+      whyChooseUs: j.whyChooseUs,
       itinerary: (Array.isArray(j.days) ? j.days : []).map(d => ({
         day: `Day ${d.dayNumber}`,
         title: d.title,

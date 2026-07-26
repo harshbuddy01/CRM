@@ -163,6 +163,19 @@ function DayForm({ day, onSave, onCancel, saving }: any) {
   );
 }
 
+const getInitialLines = (arr: any) => {
+  if (!arr) return '';
+  if (typeof arr === 'string') {
+    try {
+      const parsed = JSON.parse(arr);
+      if (Array.isArray(parsed)) return parsed.join('\n');
+    } catch (e) {}
+    return '';
+  }
+  if (Array.isArray(arr)) return arr.join('\n');
+  return '';
+};
+
 function JourneyForm({ initial, onClose, onSaved }: { initial: any; onClose: () => void; onSaved: () => void }) {
   const [form, setForm] = useState({
     slug: initial?.slug || '',
@@ -188,8 +201,23 @@ function JourneyForm({ initial, onClose, onSaved }: { initial: any; onClose: () 
     seoTitle: initial?.seoTitle || '',
     seoDescription: initial?.seoDescription || '',
     seoKeywords: initial?.seoKeywords || '',
+    suitableFor: initial?.suitableFor || '',
+    hotels: JSON.stringify(initial?.hotels || [], null, 2),
+    highlightsText: getInitialLines(initial?.highlights),
+    inclusionsText: getInitialLines(initial?.inclusions),
+    whyChooseUsText: getInitialLines(initial?.whyChooseUs || [
+      "Trusted Travel Partner",
+      "Best Price Guarantee",
+      "Handpicked Hotels",
+      "24x7 Travel Assistance",
+      "Comfortable Transfers",
+      "Family-Friendly Packages",
+      "Safe & Secure Booking",
+      "Personalized Travel Planning"
+    ]),
   });
   const [saving, setSaving] = useState(false);
+  const [localDays, setLocalDays] = useState<any[]>(initial?.days || []);
   const [showDayForm, setShowDayForm] = useState(false);
   const [editingDay, setEditingDay] = useState<any>(null);
   const [daySaving, setDaySaving] = useState(false);
@@ -202,9 +230,10 @@ function JourneyForm({ initial, onClose, onSaved }: { initial: any; onClose: () 
     e.preventDefault();
     setSaving(true);
     try {
-      // Parse badges and images from JSON strings before sending
+      // Parse badges, images, and hotels from JSON strings before sending
       let parsedBadges = form.badges;
       let parsedImages = form.images;
+      let parsedHotels = form.hotels;
       try {
         parsedBadges = typeof form.badges === 'string' ? JSON.parse(form.badges) : form.badges;
       } catch (jsonErr: any) {
@@ -219,11 +248,58 @@ function JourneyForm({ initial, onClose, onSaved }: { initial: any; onClose: () 
         setSaving(false);
         return;
       }
+      try {
+        parsedHotels = form.hotels && typeof form.hotels === 'string' ? JSON.parse(form.hotels) : (form.hotels || []);
+      } catch (jsonErr: any) {
+        toast.error(`Invalid JSON in hotels: ${jsonErr.message}`);
+        setSaving(false);
+        return;
+      }
+
+      // Convert newline-separated text into arrays
+      const parseLines = (text: string) => {
+        return text.split('\n').map(line => line.trim()).filter(Boolean);
+      };
+
       const payload = {
-        ...form,
+        slug: form.slug,
+        title: form.title,
+        regions: form.regions,
+        durationNights: form.durationNights,
+        durationDays: form.durationDays,
+        pricePerGuest: form.pricePerGuest,
+        originalPrice: form.originalPrice,
+        departurePort: form.departurePort,
+        returnPort: form.returnPort,
+        departureDate: form.departureDate,
+        returnDate: form.returnDate,
+        ports: form.ports,
+        countries: form.countries,
+        vehicle: form.vehicle,
         badges: parsedBadges,
         images: parsedImages,
+        mapImage: form.mapImage,
+        overview: form.overview,
+        isActive: form.isActive,
+        sequence: form.sequence,
+        seoTitle: form.seoTitle,
+        seoDescription: form.seoDescription,
+        seoKeywords: form.seoKeywords,
+        suitableFor: form.suitableFor,
+        hotels: parsedHotels,
+        highlights: parseLines(form.highlightsText),
+        inclusions: parseLines(form.inclusionsText),
+        whyChooseUs: parseLines(form.whyChooseUsText),
+        days: initial ? undefined : localDays.map(d => ({
+          dayNumber: d.dayNumber,
+          title: d.title,
+          date: d.date,
+          time: d.time,
+          description: d.description,
+          image: d.image
+        }))
       };
+
       if (initial) await api.put(`/website-content/journeys/${initial.id}`, payload);
       else await api.post('/website-content/journeys', payload);
       toast.success(initial ? 'Journey updated!' : 'Journey created!');
@@ -235,40 +311,63 @@ function JourneyForm({ initial, onClose, onSaved }: { initial: any; onClose: () 
   };
 
   const addDay = async (dayData: any) => {
-    if (!initial?.id) { toast.error('Save journey first before adding days'); return; }
-    setDaySaving(true);
-    try {
-      await api.post(`/website-content/journeys/${initial.id}/days`, dayData);
-      toast.success('Day added!');
-      qc.invalidateQueries({ queryKey: ['wc-journeys'] });
-      onSaved();
+    if (initial?.id) {
+      setDaySaving(true);
+      try {
+        const res = await api.post(`/website-content/journeys/${initial.id}/days`, dayData);
+        toast.success('Day added!');
+        setLocalDays(prev => [...prev, res.data.data].sort((a, b) => a.dayNumber - b.dayNumber));
+        qc.invalidateQueries({ queryKey: ['wc-journeys'] });
+        onSaved();
+        setShowDayForm(false);
+      } catch (err: any) { toast.error(err.response?.data?.message || 'Failed'); }
+      finally { setDaySaving(false); }
+    } else {
+      const newDay = {
+        ...dayData,
+        id: `temp-${Date.now()}`,
+      };
+      setLocalDays(prev => [...prev, newDay].sort((a, b) => a.dayNumber - b.dayNumber));
+      toast.success('Day added (local)!');
       setShowDayForm(false);
-    } catch (err: any) { toast.error(err.response?.data?.message || 'Failed'); }
-    finally { setDaySaving(false); }
+    }
   };
 
   const updateDay = async (dayData: any) => {
-    setDaySaving(true);
-    try {
-      await api.put(`/website-content/journey-days/${editingDay.id}`, dayData);
-      toast.success('Day updated!');
-      qc.invalidateQueries({ queryKey: ['wc-journeys'] });
-      onSaved();
+    if (initial?.id) {
+      setDaySaving(true);
+      try {
+        const res = await api.put(`/website-content/journey-days/${editingDay.id}`, dayData);
+        toast.success('Day updated!');
+        setLocalDays(prev => prev.map(d => d.id === editingDay.id ? res.data.data : d).sort((a, b) => a.dayNumber - b.dayNumber));
+        qc.invalidateQueries({ queryKey: ['wc-journeys'] });
+        onSaved();
+        setEditingDay(null);
+      } catch (err: any) { toast.error(err.response?.data?.message || 'Failed'); }
+      finally { setDaySaving(false); }
+    } else {
+      setLocalDays(prev => prev.map(d => d.id === editingDay.id ? { ...d, ...dayData } : d).sort((a, b) => a.dayNumber - b.dayNumber));
+      toast.success('Day updated (local)!');
       setEditingDay(null);
-    } catch (err: any) { toast.error(err.response?.data?.message || 'Failed'); }
-    finally { setDaySaving(false); }
+    }
   };
 
   const removeDay = async (dayId: string) => {
     if (!confirm('Remove this day?')) return;
-    setDayDeleting(true);
-    try {
-      await api.delete(`/website-content/journey-days/${dayId}`);
-      toast.success('Day removed');
-      qc.invalidateQueries({ queryKey: ['wc-journeys'] });
-      onSaved();
-    } catch (err: any) { toast.error(err.response?.data?.message || 'Failed to remove day'); }
-    finally { setDayDeleting(false); }
+    if (initial?.id) {
+      setDayDeleting(true);
+      try {
+        await api.delete(`/website-content/journey-days/${dayId}`);
+        toast.success('Day removed');
+        setLocalDays(prev => prev.filter(d => d.id !== dayId));
+        qc.invalidateQueries({ queryKey: ['wc-journeys'] });
+        onSaved();
+      } catch (err: any) { toast.error(err.response?.data?.message || 'Failed to remove day'); }
+      finally { setDayDeleting(false); }
+    } else {
+      setLocalDays(prev => prev.filter(d => d.id !== dayId));
+      toast.success('Day removed (local)');
+    }
   };
 
   return (
@@ -504,6 +603,57 @@ function JourneyForm({ initial, onClose, onSaved }: { initial: any; onClose: () 
         <textarea className="w-full px-3 py-2 border rounded-md text-sm bg-background resize-y min-h-[80px]" value={form.overview} onChange={e => set('overview', e.target.value)} />
       </div>
 
+      {/* Custom Details & Package Sections */}
+      <div className="bg-[#fcfaf7] border border-amber-200/50 rounded-xl p-5 space-y-5">
+        <p className="text-xs font-bold text-[#a5813b] uppercase tracking-wide">✨ Dynamic Journey Details (Andaman Integration)</p>
+        
+        <div className="grid md:grid-cols-2 gap-4">
+          <div className="space-y-1.5">
+            <Label className="text-xs text-muted-foreground">Package Suitable For</Label>
+            <Input value={form.suitableFor} onChange={e => set('suitableFor', e.target.value)} placeholder="e.g. 6 Adults, Deluxe Rooms" />
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs text-muted-foreground">Hotel Accommodation (JSON structure)</Label>
+            <textarea 
+              className="w-full px-3 py-2 border rounded-md text-xs font-mono bg-background resize-y min-h-[80px]" 
+              value={form.hotels} 
+              onChange={e => set('hotels', e.target.value)} 
+              placeholder='[{"city": "Port Blair", "hotel": "Haywizz Hotel", "nights": 3}]'
+            />
+          </div>
+        </div>
+
+        <div className="grid md:grid-cols-3 gap-4">
+          <div className="space-y-1.5">
+            <Label className="text-xs text-muted-foreground">Tour Highlights (One per line)</Label>
+            <textarea 
+              className="w-full px-3 py-2 border rounded-md text-xs bg-background resize-y min-h-[100px]" 
+              value={form.highlightsText} 
+              onChange={e => set('highlightsText', e.target.value)} 
+              placeholder="Cellular Jail&#10;Corbyn's Cove Beach&#10;Radhanagar Beach"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs text-muted-foreground">Package Inclusions (One per line)</Label>
+            <textarea 
+              className="w-full px-3 py-2 border rounded-md text-xs bg-background resize-y min-h-[100px]" 
+              value={form.inclusionsText} 
+              onChange={e => set('inclusionsText', e.target.value)} 
+              placeholder="Deluxe Hotel Accommodation&#10;Daily Breakfast&#10;Airport Pick-up & Drop"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs text-muted-foreground">Why Choose Us (One per line)</Label>
+            <textarea 
+              className="w-full px-3 py-2 border rounded-md text-xs bg-background resize-y min-h-[100px]" 
+              value={form.whyChooseUsText} 
+              onChange={e => set('whyChooseUsText', e.target.value)} 
+              placeholder="Trusted Travel Partner&#10;Best Price Guarantee"
+            />
+          </div>
+        </div>
+      </div>
+
       {/* SEO Section */}
       <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 space-y-4">
         <p className="text-xs font-bold text-slate-800 uppercase tracking-wide">🔍 SEO Optimization</p>
@@ -536,38 +686,36 @@ function JourneyForm({ initial, onClose, onSaved }: { initial: any; onClose: () 
       </div>
 
       {/* Itinerary Days */}
-      {initial && (
-        <div className="border-t pt-5">
-          <div className="flex items-center justify-between mb-3">
-            <p className="text-sm font-bold">Itinerary Days ({initial.days?.length || 0})</p>
-            <Button type="button" variant="outline" size="sm" onClick={() => { setShowDayForm(true); setEditingDay(null); }}>
-              <Plus className="w-3 h-3 mr-1" /> Add Day
-            </Button>
-          </div>
-          {initial.days?.map((d: any) => (
-            editingDay?.id === d.id ? (
-              <DayForm key={d.id} day={d} saving={daySaving} onSave={updateDay} onCancel={() => setEditingDay(null)} />
-            ) : (
-              <div key={d.id} className="flex items-center justify-between border rounded-lg p-3 mb-2 bg-slate-50">
-                <div className="flex items-center gap-3">
-                  <span className="text-xs font-bold bg-primary text-primary-foreground w-7 h-7 rounded-full flex items-center justify-center">D{d.dayNumber}</span>
-                  <div>
-                    <p className="text-sm font-medium">{d.title}</p>
-                    <p className="text-xs text-muted-foreground">{d.date} · {d.time}</p>
-                  </div>
-                </div>
-                <div className="flex gap-1">
-                  <Button type="button" variant="ghost" size="sm" onClick={() => setEditingDay(d)}><Edit2 className="w-3 h-3" /></Button>
-                  <Button type="button" variant="ghost" size="sm" className="text-red-500" disabled={dayDeleting} onClick={() => removeDay(d.id)}><Trash2 className="w-3 h-3" /></Button>
+      <div className="border-t pt-5">
+        <div className="flex items-center justify-between mb-3">
+          <p className="text-sm font-bold">Itinerary Days ({localDays.length})</p>
+          <Button type="button" variant="outline" size="sm" onClick={() => { setShowDayForm(true); setEditingDay(null); }}>
+            <Plus className="w-3 h-3 mr-1" /> Add Day
+          </Button>
+        </div>
+        {localDays.map((d: any) => (
+          editingDay?.id === d.id ? (
+            <DayForm key={d.id} day={d} saving={daySaving} onSave={updateDay} onCancel={() => setEditingDay(null)} />
+          ) : (
+            <div key={d.id} className="flex items-center justify-between border rounded-lg p-3 mb-2 bg-slate-50">
+              <div className="flex items-center gap-3">
+                <span className="text-xs font-bold bg-primary text-primary-foreground w-7 h-7 rounded-full flex items-center justify-center">D{d.dayNumber}</span>
+                <div>
+                  <p className="text-sm font-medium">{d.title}</p>
+                  <p className="text-xs text-muted-foreground">{d.date} · {d.time}</p>
                 </div>
               </div>
-            )
-          ))}
-          {showDayForm && !editingDay && (
-            <DayForm saving={daySaving} onSave={addDay} onCancel={() => setShowDayForm(false)} />
-          )}
-        </div>
-      )}
+              <div className="flex gap-1">
+                <Button type="button" variant="ghost" size="sm" onClick={() => setEditingDay(d)}><Edit2 className="w-3 h-3" /></Button>
+                <Button type="button" variant="ghost" size="sm" className="text-red-500" disabled={dayDeleting} onClick={() => removeDay(d.id)}><Trash2 className="w-3 h-3" /></Button>
+              </div>
+            </div>
+          )
+        ))}
+        {showDayForm && !editingDay && (
+          <DayForm saving={daySaving} onSave={addDay} onCancel={() => setShowDayForm(false)} />
+        )}
+      </div>
 
       <div className="flex justify-end gap-2 pt-2">
         <Button type="button" variant="ghost" size="sm" onClick={onClose}>Cancel</Button>

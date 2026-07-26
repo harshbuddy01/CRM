@@ -56,6 +56,10 @@ const createJourney = async (data) => {
   // Parse JSON string fields with error handling
   journeyData.badges = safeJsonParse(journeyData.badges, 'badges', []);
   journeyData.images = safeJsonParse(journeyData.images, 'images', []);
+  journeyData.highlights = safeJsonParse(journeyData.highlights, 'highlights', []);
+  journeyData.inclusions = safeJsonParse(journeyData.inclusions, 'inclusions', []);
+  journeyData.hotels = safeJsonParse(journeyData.hotels, 'hotels', []);
+  journeyData.whyChooseUs = safeJsonParse(journeyData.whyChooseUs, 'whyChooseUs', []);
 
   // Handle boolean
   if (journeyData.isActive === 'true') journeyData.isActive = true;
@@ -96,6 +100,10 @@ const updateJourney = async (id, data) => {
   // Parse JSON string fields with error handling
   if (journeyData.badges !== undefined) journeyData.badges = safeJsonParse(journeyData.badges, 'badges', []);
   if (journeyData.images !== undefined) journeyData.images = safeJsonParse(journeyData.images, 'images', []);
+  if (journeyData.highlights !== undefined) journeyData.highlights = safeJsonParse(journeyData.highlights, 'highlights', []);
+  if (journeyData.inclusions !== undefined) journeyData.inclusions = safeJsonParse(journeyData.inclusions, 'inclusions', []);
+  if (journeyData.hotels !== undefined) journeyData.hotels = safeJsonParse(journeyData.hotels, 'hotels', []);
+  if (journeyData.whyChooseUs !== undefined) journeyData.whyChooseUs = safeJsonParse(journeyData.whyChooseUs, 'whyChooseUs', []);
 
   // Handle boolean
   if (journeyData.isActive === 'true') journeyData.isActive = true;

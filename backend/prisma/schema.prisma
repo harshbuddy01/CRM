@@ -1184,6 +1184,11 @@ model WebsiteJourney {
   seoTitle        String?  @map("seo_title")
   seoDescription  String?  @map("seo_description") @db.Text
   seoKeywords     String?  @map("seo_keywords") @db.Text
+  highlights      Json?    /// JSON array of highlights e.g. ["Cellular Jail"]
+  inclusions      Json?    /// JSON array of inclusions e.g. ["Deluxe Hotel Accommodation"]
+  hotels          Json?    /// JSON array of hotels e.g. [{"city": "Port Blair", "hotel": "Haywizz Hotel", "nights": 3}]
+  suitableFor     String?  @map("suitable_for") /// e.g. "6 Adults, Deluxe Rooms"
+  whyChooseUs     Json?    @map("why_choose_us") /// JSON array of reasons
   createdAt       DateTime @default(now()) @map("created_at")
   updatedAt       DateTime @updatedAt @map("updated_at")
 
