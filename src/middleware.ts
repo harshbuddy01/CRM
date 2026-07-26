@@ -31,7 +31,7 @@ export function middleware(request: NextRequest) {
 
   // Portal paths — these are standalone apps with their own auth (localStorage/sessionStorage).
   // They must NEVER be affected by CRM cookie-based auth checks.
-  const portalPaths = ['/guest', '/driver', '/hotel', '/crm'];
+  const portalPaths = ['/guest', '/driver', '/hotel', '/crm', '/admin'];
   const isPortalPath = portalPaths.some(p => rewrittenPath.startsWith(p));
 
   // CRM-only public paths — pages that don't require CRM login
