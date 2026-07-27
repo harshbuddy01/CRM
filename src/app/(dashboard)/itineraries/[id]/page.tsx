@@ -273,10 +273,9 @@ export default function ItineraryBuilderPage() {
     try {
       const res = await api.post(`/itineraries/${id}/generate-share-link`);
       const slug = res.data.data.shareSlug;
-      // ALWAYS use the production domain for share links unless on a dev build
-      const baseUrl = window.location.hostname === 'localhost' 
-        ? window.location.origin 
-        : `https://crm.${process.env.NEXT_PUBLIC_APP_DOMAIN || 'travelcrm.app'}`;
+      // Use the current browser origin for share links — works correctly
+      // regardless of which domain the CRM is deployed on
+      const baseUrl = window.location.origin;
       const url = `${baseUrl}/share/${slug}`;
       await navigator.clipboard.writeText(url);
       toast.success('Share link copied to clipboard!');
