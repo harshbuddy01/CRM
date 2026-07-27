@@ -88,11 +88,17 @@ const server = app.listen(config.port, '0.0.0.0', () => {
   }
 
   // Auto-initialize WhatsApp Web client to restore active linked sessions on restart
-  try {
-    require('./services/whatsapp-web.service').initialize();
-    console.log('✅ WhatsApp Web service auto-initialized.');
-  } catch (e) {
-    console.error('❌ Could not auto-initialize WhatsApp Web service:', e);
+  // Only enable when ENABLE_WHATSAPP=true is set (e.g., demo environments)
+  // This prevents a ~400MB Chromium process from running on production servers
+  if (process.env.ENABLE_WHATSAPP === 'true') {
+    try {
+      require('./services/whatsapp-web.service').initialize();
+      console.log('✅ WhatsApp Web service auto-initialized.');
+    } catch (e) {
+      console.error('❌ Could not auto-initialize WhatsApp Web service:', e);
+    }
+  } else {
+    console.log('ℹ️ WhatsApp Web service disabled (set ENABLE_WHATSAPP=true to enable).');
   }
 });
 
