@@ -26,10 +26,8 @@ const downloadPdfPublic = async (req, res, next) => {
   } catch (err) { next(err); }
 };
 
-router.use(authenticate);
-
 // List vouchers for a query
-router.get('/queries/:id/vouchers', async (req, res, next) => {
+router.get('/queries/:id/vouchers', authenticate, async (req, res, next) => {
   try {
     const vouchers = await voucherService.listByQuery(req.params.id);
     res.json({ success: true, data: vouchers });

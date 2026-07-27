@@ -11,10 +11,8 @@ const { authenticate } = require('../middlewares/authenticate');
 
 const ALLOWED_TYPES = ['image/jpeg','image/png','image/gif','image/webp','application/pdf','application/msword','application/vnd.openxmlformats-officedocument.wordprocessingml.document','text/plain'];
 
-router.use(authenticate);
-
 // List documents for a query
-router.get('/queries/:id/documents', async (req, res, next) => {
+router.get('/queries/:id/documents', authenticate, async (req, res, next) => {
   try {
     const docs = await queryDocService.listByQuery(req.params.id);
     res.json({ success: true, data: docs });
@@ -22,7 +20,7 @@ router.get('/queries/:id/documents', async (req, res, next) => {
 });
 
 // Upload a document
-router.post('/queries/:id/documents', upload.single('file'), async (req, res, next) => {
+router.post('/queries/:id/documents', authenticate, upload.single('file'), async (req, res, next) => {
   try {
     if (!req.file) return res.status(400).json({ success: false, message: 'No file provided' });
     if (!ALLOWED_TYPES.includes(req.file.mimetype)) {
@@ -34,7 +32,7 @@ router.post('/queries/:id/documents', upload.single('file'), async (req, res, ne
 });
 
 // Delete a document
-router.delete('/documents/:id', async (req, res, next) => {
+router.delete('/documents/:id', authenticate, async (req, res, next) => {
   try {
     await queryDocService.deleteDocument(req.params.id);
     res.json({ success: true, message: 'Document deleted' });

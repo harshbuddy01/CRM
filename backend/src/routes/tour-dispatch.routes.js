@@ -7,19 +7,17 @@ const router = express.Router();
 const dispatchController = require('../controllers/tour-dispatch.controller');
 const { authenticate } = require('../middlewares/authenticate');
 
-router.use(authenticate);
-
 // Get full dispatch plan (all days with hotel + driver assignments)
-router.get('/tours/:id/dispatch', dispatchController.getDispatch);
+router.get('/tours/:id/dispatch', authenticate, dispatchController.getDispatch);
 
 // Assign/update driver for one or more days
-router.post('/tours/:id/dispatch/driver', dispatchController.assignDriver);
+router.post('/tours/:id/dispatch/driver', authenticate, dispatchController.assignDriver);
 
 // Assign/update hotel for one or more days (updates BookingService)
-router.post('/tours/:id/dispatch/hotel', dispatchController.assignHotel);
+router.post('/tours/:id/dispatch/hotel', authenticate, dispatchController.assignHotel);
 
 // Generate guest credentials (username + PIN) — idempotent
-router.post('/tours/:id/guest-credentials', dispatchController.generateGuestCredentials);
-router.post('/tours/:id/send-email', dispatchController.sendGuestCredentialsEmail);
+router.post('/tours/:id/guest-credentials', authenticate, dispatchController.generateGuestCredentials);
+router.post('/tours/:id/send-email', authenticate, dispatchController.sendGuestCredentialsEmail);
 
 module.exports = router;

@@ -7,10 +7,8 @@ const router = express.Router();
 const bookingServiceService = require('../services/booking-service.service');
 const { authenticate } = require('../middlewares/authenticate');
 
-router.use(authenticate);
-
 // Generate booking services from the confirmed proposal
-router.post('/queries/:id/booking-services/generate', async (req, res, next) => {
+router.post('/queries/:id/booking-services/generate', authenticate, async (req, res, next) => {
   try {
     const result = await bookingServiceService.generateFromProposal(req.params.id, req.user.id);
     res.json({ success: true, data: result });
@@ -18,7 +16,7 @@ router.post('/queries/:id/booking-services/generate', async (req, res, next) => 
 });
 
 // List all booking services for a query
-router.get('/queries/:id/booking-services', async (req, res, next) => {
+router.get('/queries/:id/booking-services', authenticate, async (req, res, next) => {
   try {
     const services = await bookingServiceService.listByQuery(req.params.id);
     res.json({ success: true, data: services });
@@ -26,7 +24,7 @@ router.get('/queries/:id/booking-services', async (req, res, next) => {
 });
 
 // Update a booking service
-router.patch('/booking-services/:id', async (req, res, next) => {
+router.patch('/booking-services/:id', authenticate, async (req, res, next) => {
   try {
     const service = await bookingServiceService.updateService(req.params.id, req.body);
     res.json({ success: true, data: service });
@@ -34,7 +32,7 @@ router.patch('/booking-services/:id', async (req, res, next) => {
 });
 
 // Record a supplier payment
-router.post('/booking-services/:id/payments', async (req, res, next) => {
+router.post('/booking-services/:id/payments', authenticate, async (req, res, next) => {
   try {
     const service = await bookingServiceService.recordPayment(req.params.id, req.body.amount);
     res.json({ success: true, data: service });
@@ -42,7 +40,7 @@ router.post('/booking-services/:id/payments', async (req, res, next) => {
 });
 
 // Send booking confirmation email to supplier
-router.post('/booking-services/:id/send-mail', async (req, res, next) => {
+router.post('/booking-services/:id/send-mail', authenticate, async (req, res, next) => {
   try {
     const service = await bookingServiceService.markMailSent(req.params.id);
     // Also log in email_logs with communicationType = 'supplier'
