@@ -218,6 +218,14 @@ app.get('/api/v1/public/trending',                wcCtrl.getPublicTrending);
 app.get('/v1/website-configs/public',             websiteConfigCtrl.getWebsiteConfig);
 app.get('/api/v1/website-configs/public',         websiteConfigCtrl.getWebsiteConfig);
 
+// Public Itinerary Share Endpoints (returns full HTML page for shared link)
+const itineraryCtrl = require('./controllers/itinerary.controller');
+app.get('/share/:slug',                           itineraryCtrl.exportHtmlByShareSlug);
+app.get('/v1/share/:slug',                        itineraryCtrl.exportHtmlByShareSlug);
+app.get('/api/v1/share/:slug',                    itineraryCtrl.exportHtmlByShareSlug);
+app.get('/v1/itineraries/share/:slug',            itineraryCtrl.getByShareSlug);
+app.get('/api/v1/itineraries/share/:slug',        itineraryCtrl.getByShareSlug);
+
 // ── Portal APIs (Guest, Driver, Hotel) ──
 const portalRoutes = require('./routes/public-portal.routes');
 app.use('/v1/public', portalRoutes);
