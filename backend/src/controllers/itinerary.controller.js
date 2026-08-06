@@ -191,7 +191,7 @@ const generateItineraryHtml = (itinerary, settings = {}) => {
   const companyEmail = settings.companyEmail || process.env.APP_EMAIL || 'noreply@travelcrm.app';
   const companyWeb = settings.companyWebsite || process.env.APP_DOMAIN || 'travelcrm.app';
   const companySlogan = settings.companySlogan || 'CURATED JOURNEYS. LASTING MEMORIES.';
-  const companyLogo = settings.companyLogo || '';
+  const companyLogo = settings.companyLogoUrl || settings.companyLogo || '';
 
   // Custom PDF customization settings
   const pdfCoverPhoto = settings.pdfCoverPhoto || '';
