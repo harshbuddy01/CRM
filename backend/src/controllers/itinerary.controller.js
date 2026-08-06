@@ -1766,12 +1766,15 @@ const exportPdf = async (req, res, next) => {
     const pdfBuffer = await pdfService.generatePdfFromHtml(html);
     const buffer = Buffer.from(pdfBuffer);
 
-    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Type', 'application/octet-stream'); // Forces browser to download instead of preview
     res.setHeader('Content-Length', buffer.length);
     res.setHeader(
       'Content-Disposition',
       `attachment; filename="Itinerary-${itinerary.title.replace(/[^a-zA-Z0-9]/g, '_')}.pdf"`
     );
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
     res.end(buffer);
   } catch (err) {
     console.error('Itinerary PDF Error:', err);

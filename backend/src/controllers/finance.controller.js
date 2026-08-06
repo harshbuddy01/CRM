@@ -329,9 +329,12 @@ const downloadBillingStatementPdf = async (req, res, next) => {
     const buffer = Buffer.from(pdfBuffer);
 
     res.set({
-      'Content-Type': 'application/pdf',
+      'Content-Type': 'application/octet-stream',
       'Content-Length': buffer.length,
       'Content-Disposition': `attachment; filename="Billing-Statement-${billingData.query.queryCode || queryId.slice(0,8)}.pdf"`,
+      'Cache-Control': 'no-cache, no-store, must-revalidate',
+      'Pragma': 'no-cache',
+      'Expires': '0'
     });
     res.send(buffer);
   } catch (err) {
