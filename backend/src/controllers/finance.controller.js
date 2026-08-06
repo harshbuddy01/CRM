@@ -115,11 +115,16 @@ const getBillingDataForQuery = async (queryId) => {
     where: { queryId, deletedAt: null },
     orderBy: { version: 'desc' },
     select: { 
+      id: true,
       sellingPrice: true, 
       totalCost: true, 
       markupPct: true,
       itinerary: {
         select: {
+          id: true,
+          shareSlug: true,
+          slug: true,
+          title: true,
           costingBreakdown: true,
           sellingPrice: true,
           totalCost: true,
@@ -404,6 +409,12 @@ const sendBillingStatementEmail = async (req, res, next) => {
                 </tr>
               </table>
             </div>
+
+            ${billingData.proposal?.itinerary ? `
+              <div style="text-align: center; margin: 24px 0;">
+                <a href="${(process.env.FRONTEND_URL || 'https://crm.imagicaholidays.com')}/share/${billingData.proposal.itinerary.shareSlug || billingData.proposal.itinerary.slug || billingData.proposal.itinerary.id}" style="background-color: #1e3a5f; color: #ffffff; padding: 13px 26px; border-radius: 10px; font-size: 14px; font-weight: 600; text-decoration: none; display: inline-block; box-shadow: 0 4px 12px rgba(30,58,95,0.25);">📱 View Full Itinerary Online</a>
+              </div>
+            ` : ''}
 
             <p style="color: #64748b; font-size: 13px; line-height: 1.6; margin: 0;">
               Please find your official <strong>Billing Statement PDF</strong> attached with complete transaction details.

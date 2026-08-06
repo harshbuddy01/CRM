@@ -204,11 +204,11 @@ const getBillingStatementTemplate = (data) => {
         }
         
         .logo-box {
-          width: 220px;
+          width: 260px;
         }
         
         .logo-img {
-          max-height: 54px;
+          max-height: 72px;
           max-width: 100%;
           object-fit: contain;
         }
