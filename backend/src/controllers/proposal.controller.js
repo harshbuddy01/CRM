@@ -557,9 +557,9 @@ const downloadPdf = async (req, res, next) => {
     
     const buffer = await getOrGeneratePdf(proposal);
 
-    res.setHeader('Content-Type', 'application/octet-stream'); // Forces browser to download instead of preview
+    res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Length', buffer.length);
-    res.setHeader('Content-Disposition', `attachment; filename="Proposal-v${proposal.version}-${proposal.query.queryCode}.pdf"`);
+    res.setHeader('Content-Disposition', `attachment; filename="Proposal-v${proposal.version}-${proposal.query?.queryCode || 'export'}.pdf"`);
     res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
     res.setHeader('Pragma', 'no-cache');
     res.setHeader('Expires', '0');

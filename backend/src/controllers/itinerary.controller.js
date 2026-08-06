@@ -1766,7 +1766,7 @@ const exportPdf = async (req, res, next) => {
     const pdfBuffer = await pdfService.generatePdfFromHtml(html);
     const buffer = Buffer.from(pdfBuffer);
 
-    res.setHeader('Content-Type', 'application/octet-stream'); // Forces browser to download instead of preview
+    res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Length', buffer.length);
     res.setHeader(
       'Content-Disposition',

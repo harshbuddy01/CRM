@@ -211,7 +211,7 @@ const getArtisanalEmailFrame = (options) => {
                       ${pdfDownloadUrl ? `
                       <tr>
                         <td align="center" style="padding-bottom: 20px;">
-                          <a href="${pdfDownloadUrl}" target="_blank" class="body-font" style="display: block; width: 100%; box-sizing: border-box; background-color: #0d1520; color: #ffffff; text-align: center; padding: 16px 20px; border-radius: 8px; text-decoration: none; font-size: 13px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase;">
+                          <a href="${pdfDownloadUrl}" download target="_blank" class="body-font" style="display: block; width: 100%; box-sizing: border-box; background-color: #0d1520; color: #ffffff; text-align: center; padding: 16px 20px; border-radius: 8px; text-decoration: none; font-size: 13px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase;">
                             📄 DOWNLOAD YOUR PROPOSAL PDF &nbsp;&nbsp; →
                           </a>
                         </td>
