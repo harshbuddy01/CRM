@@ -118,10 +118,13 @@ const numberToWords = (num) => {
 };
 
 const getBillingStatementTemplate = (data = {}) => {
-  const { query, customer, payments, date, orgSettings, tourCode } = data;
+  const { query, customer, payments, date, orgSettings, tourCode } = data || {};
   const q = query || {};
-  const cust = customer || { totalAmount: 0, totalReceived: 0, totalPending: 0 };
-  const pymts = payments || [];
+  const cust = customer || {};
+  const custTotalAmount = Number(cust.totalAmount || 0);
+  const custTotalReceived = Number(cust.totalReceived || 0);
+  const custTotalPending = Number(cust.totalPending || 0);
+  const pymts = Array.isArray(payments) ? payments : [];
   
   const settings = orgSettings || {};
   const companyName = settings.companyName || process.env.APP_NAME || 'Imagica Holidays';
@@ -146,7 +149,7 @@ const getBillingStatementTemplate = (data = {}) => {
   const referenceId = `#${(q.queryCode || (q.id || '').slice(0, 8)).replace(/-/g, '').toUpperCase()}`;
   const tripId = tourCode || `${companyAbbr}-${queryNum}`;
   const placeOfSupply = getPlaceOfSupply(q.destination);
-  const invoiceDate = date;
+  const invoiceDate = date || formatDate(new Date());
   
   let guestsText = `${q.adults || 0} Adults`;
   if (q.children > 0) {
@@ -158,7 +161,7 @@ const getBillingStatementTemplate = (data = {}) => {
     ? `${formatDate(q.travelDateFrom)} - ${formatDate(q.travelDateTo)}`
     : '—';
     
-  const isPaidInFull = (cust.totalPending || 0) <= 0;
+  const isPaidInFull = custTotalPending <= 0;
   
   const gstRow = '';
   const panRow = '';
@@ -914,19 +917,19 @@ const getBillingStatementTemplate = (data = {}) => {
             <div class="card-body">
               <div class="details-row">
                 <span class="details-label">Guest Name</span>
-                <span class="details-value">: ${query.name}</span>
+                <span class="details-value">: ${q.name || "Valued Guest"}</span>
               </div>
               <div class="details-row">
                 <span class="details-label">Contact No.</span>
-                <span class="details-value">: ${query.phone}</span>
+                <span class="details-value">: ${q.phone || "—"}</span>
               </div>
               <div class="details-row">
                 <span class="details-label">Email</span>
-                <span class="details-value">: ${query.email || '—'}</span>
+                <span class="details-value">: ${q.email || "—"}</span>
               </div>
               <div class="details-row">
                 <span class="details-label">Destination</span>
-                <span class="details-value">: ${query.destination || '—'}</span>
+                <span class="details-value">: ${q.destination || "—"}</span>
               </div>
               <div class="details-row">
                 <span class="details-label">Travel Dates</span>
@@ -983,17 +986,17 @@ const getBillingStatementTemplate = (data = {}) => {
             
             <div class="summary-metric">
               <div class="metric-label">Total Amount</div>
-              <div class="metric-value">${formatCurrency(customer.totalAmount)}</div>
+              <div class="metric-value">${formatCurrency(custTotalAmount)}</div>
             </div>
             
             <div class="summary-metric">
               <div class="metric-label">Amount Received</div>
-              <div class="metric-value">${formatCurrency(customer.totalReceived)}</div>
+              <div class="metric-value">${formatCurrency(custTotalReceived)}</div>
             </div>
             
             <div class="summary-metric" style="margin-bottom: 0;">
               <div class="metric-label">Balance Due</div>
-              <div class="metric-value" style="color: ${isPaidInFull ? '#ffffff' : '#f56565'};">${formatCurrency(customer.totalPending)}</div>
+              <div class="metric-value" style="color: ${isPaidInFull ? '#ffffff' : '#f56565'};">${formatCurrency(custTotalPending)}</div>
             </div>
             
             <div class="summary-status-badge ${isPaidInFull ? '' : 'due'}">
@@ -1020,11 +1023,11 @@ const getBillingStatementTemplate = (data = {}) => {
                   <td style="font-weight: 600;">Total Itinerary Cost</td>
                   <td class="text-center" style="color: #a0aec0;">—</td>
                   <td class="text-center" style="color: #a0aec0;">—</td>
-                  <td class="text-right amount-highlight">${formatCurrency(customer.totalAmount)}</td>
+                  <td class="text-right amount-highlight">${formatCurrency(custTotalAmount)}</td>
                 </tr>
                 
                 <!-- Payment Received Rows -->
-                ${payments.map(p => `
+                ${pymts.map(p => `
                   <tr>
                     <td style="color: #4a5568; font-weight: 500;">Payment Received (${p.mode.toUpperCase()})</td>
                     <td class="text-center" style="color: #4a5568;">${formatDate(p.paymentDate)}</td>
@@ -1038,21 +1041,21 @@ const getBillingStatementTemplate = (data = {}) => {
                   <td>SUB TOTAL</td>
                   <td class="text-center">—</td>
                   <td class="text-center">—</td>
-                  <td class="text-right">${formatCurrency(customer.totalAmount)}</td>
+                  <td class="text-right">${formatCurrency(custTotalAmount)}</td>
                 </tr>
                 
                 <!-- Final Rows -->
                 <tr class="ledger-final-row">
                   <td colspan="3" style="text-transform: uppercase;">Total Amount</td>
-                  <td class="text-right">${formatCurrency(customer.totalAmount)}</td>
+                  <td class="text-right">${formatCurrency(custTotalAmount)}</td>
                 </tr>
                 <tr class="ledger-final-row">
                   <td colspan="3" style="text-transform: uppercase; color: #38a169;">Amount Received</td>
-                  <td class="text-right amount-green">- ${formatCurrency(customer.totalReceived)}</td>
+                  <td class="text-right amount-green">- ${formatCurrency(custTotalReceived)}</td>
                 </tr>
                 <tr class="ledger-final-row">
                   <td colspan="3" style="text-transform: uppercase; color: ${isPaidInFull ? '#2d3748' : '#e53e3e'};">Balance Due</td>
-                  <td class="text-right ${isPaidInFull ? '' : 'amount-red'}">${formatCurrency(customer.totalPending)}</td>
+                  <td class="text-right ${isPaidInFull ? '' : 'amount-red'}">${formatCurrency(custTotalPending)}</td>
                 </tr>
               </tbody>
             </table>
@@ -1076,7 +1079,7 @@ const getBillingStatementTemplate = (data = {}) => {
               </tr>
             </thead>
             <tbody>
-              ${payments.map(p => `
+              ${pymts.map(p => `
                 <tr>
                   <td>${formatDate(p.paymentDate)}</td>
                   <td style="text-transform: uppercase;">${p.mode}</td>
@@ -1085,7 +1088,7 @@ const getBillingStatementTemplate = (data = {}) => {
                   <td>${p.user?.name || 'Harsh Buddy'}</td>
                 </tr>
               `).join('')}
-              ${payments.length === 0 ? `
+              ${pymts.length === 0 ? `
                 <tr>
                   <td colspan="5" style="text-align: center; color: #a0aec0; padding: 8px;">No transaction details recorded for verified payments.</td>
                 </tr>
