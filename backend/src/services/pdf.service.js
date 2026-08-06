@@ -127,8 +127,8 @@ const generatePdfFromHtml = async (htmlContent) => {
       await page.setViewport({ width: 1280, height: 1024, deviceScaleFactor: 1 });
 
       await page.setContent(htmlContent, {
-        waitUntil: 'networkidle2', // Wait until images and assets are fully loaded
-        timeout: 45000,            // 45 seconds per attempt
+        waitUntil: 'domcontentloaded',
+        timeout: 15000,
       });
 
       // Wait a short fixed time for fonts/images to partially render.
