@@ -131,20 +131,20 @@ const generateItineraryHtml = (itinerary, settings = {}) => {
       return html;
     }
     return `
-      <div style="display: flex; flex-direction: column; gap: 4px;">
+      <div style="display: flex; flex-direction: column; gap: 5px;">
         ${items.map(item => {
           const match = item.match(/^(\d+)[\.\)\-]\s+(.*)$/);
           if (match) {
             return `
-              <div style="display: flex; align-items: flex-start; font-family: 'EB Garamond', serif; font-size: 7.2px; line-height: 1.25; color: #333;">
-                <span style="font-weight: 700; color: var(--pdf-primary); margin-right: 4px; flex-shrink: 0; min-width: 12px; text-align: right;">${match[1]}.</span>
+              <div style="display: flex; align-items: flex-start; font-family: 'EB Garamond', serif; font-size: 9.5px; line-height: 1.35; color: #333; page-break-inside: avoid;">
+                <span style="font-weight: 700; color: var(--pdf-primary); margin-right: 5px; flex-shrink: 0; min-width: 14px; text-align: right;">${match[1]}.</span>
                 <span style="flex: 1;">${escapeHtml(match[2])}</span>
               </div>
             `;
           }
           return `
-            <div style="display: flex; align-items: flex-start; font-family: 'EB Garamond', serif; font-size: 7.2px; line-height: 1.25; color: #333;">
-              <span style="font-weight: 700; color: var(--pdf-primary); margin-right: 4px; flex-shrink: 0;">•</span>
+            <div style="display: flex; align-items: flex-start; font-family: 'EB Garamond', serif; font-size: 9.5px; line-height: 1.35; color: #333; page-break-inside: avoid;">
+              <span style="font-weight: 700; color: var(--pdf-primary); margin-right: 5px; flex-shrink: 0;">•</span>
               <span style="flex: 1;">${escapeHtml(item)}</span>
             </div>
           `;
@@ -1382,16 +1382,16 @@ const generateItineraryHtml = (itinerary, settings = {}) => {
           </div>
 
           <!-- Content -->
-          <div class="page-content" style="margin-top: 6mm;">
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; text-align: left; height: 145mm; max-height: 145mm; overflow: hidden;">
+          <div class="page-content" style="margin-top: 4mm;">
+            <div style="display: flex; flex-direction: column; gap: 12px; text-align: left; height: 145mm; max-height: 145mm; box-sizing: border-box; overflow: hidden;">
               
-              <!-- Left Side: Terms and Conditions -->
-              <div style="display: flex; flex-direction: column; background: white; border: 1.5px solid #efe4d2; border-radius: 8px; padding: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.02); height: 145mm; max-height: 145mm; box-sizing: border-box; overflow: hidden;">
-                <div style="display: flex; align-items: center; gap: 6px; border-bottom: 1.5px solid var(--pdf-primary); padding-bottom: 6px; margin-bottom: 10px;">
+              <!-- Top: Terms & Conditions (Full Width Card with 2 Columns Inside) -->
+              <div style="background: white; border: 1.5px solid #efe4d2; border-radius: 8px; padding: 12px 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.02); height: 74mm; max-height: 74mm; box-sizing: border-box; overflow: hidden;">
+                <div style="display: flex; align-items: center; gap: 6px; border-bottom: 1.5px solid var(--pdf-primary); padding-bottom: 4px; margin-bottom: 8px;">
                   ${svgDocument}
-                  <h4 style="font-family: 'Playfair Display', serif; font-size: 14px; font-weight: 700; color: var(--pdf-primary); text-transform: uppercase; margin: 0; letter-spacing: 0.5px;">Terms & Conditions</h4>
+                  <h4 style="font-family: 'Playfair Display', serif; font-size: 13px; font-weight: 700; color: var(--pdf-primary); text-transform: uppercase; margin: 0; letter-spacing: 0.5px;">Terms & Conditions</h4>
                 </div>
-                <div class="policy-text terms-text" style="font-family: 'EB Garamond', serif; color: #444; max-height: 110mm; overflow: hidden; padding-right: 5px; flex: 1;">
+                <div class="policy-text terms-text" style="font-family: 'EB Garamond', serif; color: #444; max-height: 60mm; overflow: hidden; column-count: 2; column-gap: 18px;">
                   ${formatPointwiseTerms(itinerary.packageTerms || itinerary.termsHtml || `
                     <p>&bull; All rates are subject to availability at the time of actual booking confirmation.</p>
                     <p>&bull; Standard check-in time at hotels is 14:00 hrs and check-out is 11:00 hrs.</p>
@@ -1402,36 +1402,34 @@ const generateItineraryHtml = (itinerary, settings = {}) => {
                 </div>
               </div>
 
-              <!-- Right Side: Booking & Cancellation Policies -->
-              <div style="display: flex; flex-direction: column; gap: 15px; height: 145mm; max-height: 145mm; box-sizing: border-box;">
+              <!-- Bottom Row: Payment & Cancellation Policies Side by Side -->
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; height: 65mm; max-height: 65mm; box-sizing: border-box;">
                 <!-- Payment Policy -->
-                <div style="display: flex; flex-direction: column; background: white; border: 1.5px solid #efe4d2; border-radius: 8px; padding: 12px 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.02); height: 65mm; max-height: 65mm; box-sizing: border-box; overflow: hidden;">
+                <div style="display: flex; flex-direction: column; background: white; border: 1.5px solid #efe4d2; border-radius: 8px; padding: 12px 14px; box-shadow: 0 4px 12px rgba(0,0,0,0.02); height: 65mm; max-height: 65mm; box-sizing: border-box; overflow: hidden;">
                   <div style="display: flex; align-items: center; gap: 6px; border-bottom: 1.5px solid var(--pdf-primary); padding-bottom: 4px; margin-bottom: 8px;">
                     ${svgCreditCard}
                     <h4 style="font-family: 'Playfair Display', serif; font-size: 12px; font-weight: 700; color: var(--pdf-primary); text-transform: uppercase; margin: 0; letter-spacing: 0.5px;">Payment Policy</h4>
                   </div>
-                  <div class="policy-text" style="font-family: 'EB Garamond', serif; color: #444; max-height: 45mm; overflow: hidden; padding-right: 5px; flex: 1;">
+                  <div class="policy-text" style="font-family: 'EB Garamond', serif; color: #444; max-height: 48mm; overflow: hidden; padding-right: 4px; flex: 1;">
                     ${formatPointwiseTerms(itinerary.paymentPolicyHtml || `
-                      <p>&bull; 25% of the total package cost is required to initiate bookings.</p>
-                      <p>&bull; 50% of the total package cost is due 30 days prior to departure.</p>
-                      <p>&bull; Remaining 25% is due 15 days prior to arrival at the destination.</p>
-                      <p>&bull; For peak season travel, 100% advance payment may be required at confirmation.</p>
+                      <p>&bull; 25% of total package cost is required to initiate bookings.</p>
+                      <p>&bull; 50% of total package cost is due 30 days prior to departure.</p>
+                      <p>&bull; Remaining balance due 15 days prior to arrival.</p>
                     `)}
                   </div>
                 </div>
 
                 <!-- Cancellation Policy -->
-                <div style="display: flex; flex-direction: column; background: white; border: 1.5px solid #efe4d2; border-radius: 8px; padding: 12px 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.02); height: 65mm; max-height: 65mm; box-sizing: border-box; overflow: hidden;">
+                <div style="display: flex; flex-direction: column; background: white; border: 1.5px solid #efe4d2; border-radius: 8px; padding: 12px 14px; box-shadow: 0 4px 12px rgba(0,0,0,0.02); height: 65mm; max-height: 65mm; box-sizing: border-box; overflow: hidden;">
                   <div style="display: flex; align-items: center; gap: 6px; border-bottom: 1.5px solid var(--pdf-primary); padding-bottom: 4px; margin-bottom: 8px;">
                     ${svgShield}
                     <h4 style="font-family: 'Playfair Display', serif; font-size: 12px; font-weight: 700; color: var(--pdf-primary); text-transform: uppercase; margin: 0; letter-spacing: 0.5px;">Cancellation Policy</h4>
                   </div>
-                  <div class="policy-text" style="font-family: 'EB Garamond', serif; color: #444; max-height: 45mm; overflow: hidden; padding-right: 5px; flex: 1;">
+                  <div class="policy-text" style="font-family: 'EB Garamond', serif; color: #444; max-height: 48mm; overflow: hidden; padding-right: 4px; flex: 1;">
                     ${formatPointwiseTerms(itinerary.cancellationPolicyHtml || `
-                      <p>&bull; Cancellation 30 days or more before departure: 10% of total cost is non-refundable.</p>
-                      <p>&bull; Cancellation 15 to 29 days before departure: 50% of total package cost is charged.</p>
-                      <p>&bull; Cancellation less than 15 days before departure: 100% of package cost is charged.</p>
-                      <p>&bull; Peak season bookings (Oct-Jan, Apr-Jun) are completely non-refundable once confirmed.</p>
+                      <p>&bull; 30+ Days before travel: 90% refund of package cost.</p>
+                      <p>&bull; 15-30 Days before travel: 50% refund of package cost.</p>
+                      <p>&bull; Less than 15 Days: Non-refundable.</p>
                     `)}
                   </div>
                 </div>
