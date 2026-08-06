@@ -3,6 +3,28 @@
 // Inspired by Virtuoso & Black Tomato Luxury Travel Design
 // ============================================================
 
+/**
+ * Optimizes image URLs by injecting compression parameters (Cloudinary / Unsplash)
+ */
+const getOptimizedImageUrl = (url, width = 300) => {
+  if (!url) return '';
+  
+  // 1. Optimize Cloudinary URLs
+  if (url.includes('res.cloudinary.com')) {
+    if (url.includes('/upload/')) {
+      return url.replace('/upload/', `/upload/w_${width},c_scale,q_auto,f_auto/`);
+    }
+  }
+  
+  // 2. Optimize Unsplash URLs
+  if (url.includes('images.unsplash.com')) {
+    const cleanUrl = url.split('?')[0];
+    return `${cleanUrl}?auto=format&fit=crop&w=${width}&q=60`;
+  }
+  
+  return url;
+};
+
 const getArtisanalEmailFrame = (options) => {
   const { 
     subject, 
@@ -26,6 +48,10 @@ const getArtisanalEmailFrame = (options) => {
     const separator = logoUrl.startsWith('/') ? '' : '/';
     logoUrl = `${backendUrl}${separator}${logoUrl}`;
   }
+
+  // Get optimized URLs for instant client loading
+  const optimizedLogoUrl = getOptimizedImageUrl(logoUrl, 320);
+  const optimizedHeroUrl = getOptimizedImageUrl('https://images.unsplash.com/photo-1464822759023-fed622ff2c3b', 600);
 
   return `<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
@@ -97,8 +123,8 @@ const getArtisanalEmailFrame = (options) => {
                   
                   <!-- Center Logo Container -->
                   <td width="40%" align="center" class="mobile-center-logo">
-                    ${logoUrl ? `
-                      <img src="${logoUrl}" alt="${companyName}" width="150" style="width: 150px; max-height: 50px; display: block; margin: 0 auto; object-fit: contain;" />
+                    ${optimizedLogoUrl ? `
+                      <img src="${optimizedLogoUrl}" alt="${companyName}" width="150" style="width: 150px; max-height: 50px; display: block; margin: 0 auto; object-fit: contain;" />
                     ` : `
                       <div style="border: 1px solid #b89249; padding: 10px 20px; display: inline-block; background-color: #0b1a12;">
                         <div class="serif-font" style="font-size: 20px; font-weight: 700; color: #ffffff; letter-spacing: 3px; text-transform: uppercase; line-height: 1.1;">
@@ -128,7 +154,7 @@ const getArtisanalEmailFrame = (options) => {
               <div class="outer-arch" style="border: 1px solid #ebdcc5; border-radius: 280px 280px 0 0; padding: 12px; display: inline-block; max-width: 95%;">
                 
                 <!-- Arched Image with Gold Border directly on the img tag (prevents collapses & stretching) -->
-                <img class="hero-image" src="https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?q=80&w=1000&auto=format&fit=crop" width="450" height="260" style="display: block; width: 450px; max-width: 100%; height: 260px; border: 3px solid #b89249; border-radius: 260px 260px 0 0; object-fit: cover;" alt="Majestic Alps" />
+                <img class="hero-image" src="${optimizedHeroUrl}" width="450" height="260" style="display: block; width: 450px; max-width: 100%; height: 260px; border: 3px solid #b89249; border-radius: 260px 260px 0 0; object-fit: cover;" alt="Majestic Alps" />
                 
               </div>
               
@@ -304,8 +330,8 @@ const getArtisanalEmailFrame = (options) => {
                   <!-- Footer Left Column -->
                   <td width="55%" valign="top" class="footer-col" style="padding-right: 25px;">
                     <div style="margin-bottom: 15px;">
-                      ${logoUrl ? `
-                        <img src="${logoUrl}" alt="${companyName}" width="140" style="width: 140px; max-height: 48px; display: block; object-fit: contain; filter: brightness(0) invert(1);" />
+                      ${optimizedLogoUrl ? `
+                        <img src="${optimizedLogoUrl}" alt="${companyName}" width="140" style="width: 140px; max-height: 48px; display: block; object-fit: contain; filter: brightness(0) invert(1);" />
                       ` : `
                         <div class="serif-font" style="color: #ffffff; font-size: 20px; font-weight: 700; letter-spacing: 3px; line-height: 1;">
                           IMAGICA<br/><span style="font-size: 9px; letter-spacing: 5px; font-weight: 400; color: #b89249;">HOLIDAYS</span>
@@ -387,4 +413,7 @@ const getArtisanalEmailFrame = (options) => {
     </tr>
   </table>
 </body>
-</html>
+</html>`;
+};
+
+module.exports = { getArtisanalEmailFrame };
