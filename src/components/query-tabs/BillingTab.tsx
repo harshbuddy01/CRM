@@ -283,6 +283,9 @@ export function BillingTab({ queryId }: { queryId: string }) {
     },
     onError: (err: any) => {
       toast.error('Failed to remove payment', { description: err.response?.data?.message || err.message });
+    }
+  });
+
   const [isSendBillingEmailOpen, setIsSendBillingEmailOpen] = useState(false);
   const [billingEmailRecipient, setBillingEmailRecipient] = useState('');
 
