@@ -14,6 +14,7 @@ const prisma = require('../config/prisma');
 const pdfService = require('../services/pdf.service');
 const { getArtisanalTemplate } = require('../templates/invoice.template');
 const { getBillingStatementTemplate } = require('../templates/billingStatement.template');
+const { getArtisanalEmailFrame } = require('../templates/artisanalEmail.template');
 const orgSettingService = require('../services/org-setting.service');
 const cloudinary = require('../config/cloudinary');
 
@@ -360,13 +361,68 @@ const sendBillingStatementEmail = async (req, res, next) => {
     const pdfBuffer = await pdfService.generatePdfFromHtml(html);
     const filename = `Billing-Statement-${billingData.query.queryCode || queryId.slice(0,8)}.pdf`;
 
-    // Get org settings for logo, company name and phone
+    // Get org settings for logo, company name, phone, etc.
     const orgSettings = billingData.orgSettings || {};
     const companyName = orgSettings.companyName || 'Imagica Holidays';
-    const companyLogoUrl = orgSettings.companyLogoUrl || '';
-    const companyPhone = orgSettings.phone || orgSettings.companyPhone || '+91 99999 99999';
+    const companyLogoUrl = orgSettings.companyLogoUrl || orgSettings.companyLogo || '';
+    const companyPhone = orgSettings.companyPhone || orgSettings.phone || '+91 99999 99999';
+    const companyEmail = orgSettings.companyEmail || orgSettings.email || 'info@imagicaholidays.com';
+    const companyWebsite = orgSettings.companyWebsite || orgSettings.website || 'imagicaholidays.com';
     const fromEmail = process.env.EMAIL_FROM || 'info@imagicaholidays.com';
     const fromName = process.env.EMAIL_FROM_NAME || companyName;
+
+    // Build Artisanal Email Inner Content
+    const innerContentHtml = `
+      <p style="margin: 0 0 12px 0;">Dear <strong>${billingData.query.name || 'Valued Guest'}</strong>,</p>
+      <p style="margin: 0 0 20px 0; color: #5a5042; font-size: 17px;">
+        Thank you for choosing <strong>${companyName}</strong>. Below is the financial statement and ledger summary for your journey:
+      </p>
+
+      <!-- Amounts Card -->
+      <div style="background: #faf8f5; border: 1px solid #e8e2d7; border-radius: 12px; padding: 22px; margin: 24px 0;">
+        <table style="width: 100%; border-collapse: collapse; font-family: 'EB Garamond', serif; font-size: 17px;">
+          <tr>
+            <td style="padding: 8px 0; color: #7c6d58;">Total Package Amount</td>
+            <td style="padding: 8px 0; font-weight: 700; text-align: right; color: #2c2419;">₹${Number(billingData.customer.totalAmount).toLocaleString('en-IN')}</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px 0; color: #2e6930; font-weight: 600;">Total Amount Received ✓</td>
+            <td style="padding: 8px 0; font-weight: 700; text-align: right; color: #2e6930;">₹${Number(billingData.customer.totalReceived).toLocaleString('en-IN')}</td>
+          </tr>
+          <tr style="border-top: 1.5px dashed #d8d0c2;">
+            <td style="padding: 12px 0 0 0; color: #9c2a2a; font-weight: 700;">Pending Balance Due</td>
+            <td style="padding: 12px 0 0 0; font-weight: 800; text-align: right; color: #9c2a2a; font-size: 20px;">₹${Number(billingData.customer.totalPending).toLocaleString('en-IN')}</td>
+          </tr>
+        </table>
+      </div>
+
+      ${billingData.proposal?.itinerary ? `
+        <div style="text-align: center; margin: 30px 0 20px 0;">
+          <a href="${(process.env.FRONTEND_URL || 'https://crm.imagicaholidays.com')}/share/${billingData.proposal.itinerary.shareSlug || billingData.proposal.itinerary.slug || billingData.proposal.itinerary.id}" 
+             style="background-color: #a5813b; color: #ffffff; padding: 14px 30px; border-radius: 8px; font-size: 15px; font-weight: 700; text-decoration: none; display: inline-block; letter-spacing: 0.5px; box-shadow: 0 6px 18px rgba(165,129,59,0.25);">
+            📱 View Full Itinerary Online
+          </a>
+        </div>
+      ` : ''}
+
+      <p style="color: #7c6d58; font-size: 15px; margin-top: 20px;">
+        Please find your official <strong>Billing Statement PDF</strong> attached to this email with complete transaction details.
+      </p>
+    `;
+
+    // Wrap inside master Artisanal V4 Email Frame
+    const artisanalHtml = getArtisanalEmailFrame({
+      subject: `Billing Statement & Payment Receipt — ${billingData.query.title || 'Your Trip'} (${billingData.query.queryCode || 'IH'})`,
+      bodyContent: innerContentHtml,
+      inviteType: 'billing',
+      headerTitle: 'Billing & Payment Receipt',
+      companyLogoUrl,
+      companyName,
+      companySlogan: orgSettings.companySlogan || 'CURATED JOURNEYS. LASTING MEMORIES.',
+      companyPhone,
+      companyEmail,
+      companyWebsite
+    });
 
     const { sendMail } = require('../config/mailer');
     await sendMail({
@@ -374,59 +430,7 @@ const sendBillingStatementEmail = async (req, res, next) => {
       to: recipientEmail,
       replyTo: fromEmail,
       subject: `Billing Statement & Payment Receipt — ${billingData.query.title || 'Your Trip'} (${billingData.query.queryCode || 'IH'})`,
-      html: `
-        <div style="font-family: 'Inter', Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff; padding: 0; border-radius: 16px; border: 1px solid #e2e8f0; overflow: hidden;">
-          <!-- Header with logo -->
-          <div style="background: linear-gradient(135deg, #1e3a5f 0%, #0f2a4a 100%); padding: 28px 24px; text-align: center;">
-            ${companyLogoUrl
-              ? `<img src="${companyLogoUrl}" alt="${companyName}" style="max-height: 64px; max-width: 200px; object-fit: contain; display: block; margin: 0 auto;" />`
-              : `<h2 style="color: #ffffff; margin: 0; font-size: 22px; letter-spacing: 0.5px;">${companyName}</h2>`
-            }
-            <p style="color: #94a3b8; font-size: 12px; margin: 8px 0 0 0; letter-spacing: 1px; text-transform: uppercase;">Curated Journeys. Lasting Memories.</p>
-          </div>
-
-          <!-- Body -->
-          <div style="padding: 28px 24px;">
-            <p style="color: #334155; font-size: 15px; margin: 0 0 8px 0;">Dear <strong>${billingData.query.name || 'Valued Guest'}</strong>,</p>
-            <p style="color: #64748b; font-size: 14px; line-height: 1.6; margin: 0 0 20px 0;">
-              Thank you for choosing <strong>${companyName}</strong>. Below is your updated billing & payment statement:
-            </p>
-
-            <!-- Amounts table -->
-            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; margin-bottom: 20px;">
-              <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
-                <tr>
-                  <td style="padding: 8px 0; color: #64748b;">Total Package Amount</td>
-                  <td style="padding: 8px 0; font-weight: 700; text-align: right; color: #0f172a; font-size: 15px;">₹${Number(billingData.customer.totalAmount).toLocaleString('en-IN')}</td>
-                </tr>
-                <tr>
-                  <td style="padding: 8px 0; color: #166534; font-weight: 600;">Total Amount Received ✓</td>
-                  <td style="padding: 8px 0; font-weight: 700; text-align: right; color: #166534; font-size: 15px;">₹${Number(billingData.customer.totalReceived).toLocaleString('en-IN')}</td>
-                </tr>
-                <tr style="border-top: 2px dashed #cbd5e1;">
-                  <td style="padding: 10px 0 0 0; color: #b91c1c; font-weight: 700;">Pending Balance Due</td>
-                  <td style="padding: 10px 0 0 0; font-weight: 800; text-align: right; color: #b91c1c; font-size: 18px;">₹${Number(billingData.customer.totalPending).toLocaleString('en-IN')}</td>
-                </tr>
-              </table>
-            </div>
-
-            ${billingData.proposal?.itinerary ? `
-              <div style="text-align: center; margin: 24px 0;">
-                <a href="${(process.env.FRONTEND_URL || 'https://crm.imagicaholidays.com')}/share/${billingData.proposal.itinerary.shareSlug || billingData.proposal.itinerary.slug || billingData.proposal.itinerary.id}" style="background-color: #1e3a5f; color: #ffffff; padding: 13px 26px; border-radius: 10px; font-size: 14px; font-weight: 600; text-decoration: none; display: inline-block; box-shadow: 0 4px 12px rgba(30,58,95,0.25);">📱 View Full Itinerary Online</a>
-              </div>
-            ` : ''}
-
-            <p style="color: #64748b; font-size: 13px; line-height: 1.6; margin: 0;">
-              Please find your official <strong>Billing Statement PDF</strong> attached with complete transaction details.
-            </p>
-          </div>
-
-          <!-- Footer -->
-          <div style="background: #f8fafc; padding: 16px 24px; border-top: 1px solid #e2e8f0; text-align: center;">
-            <p style="margin: 0; color: #94a3b8; font-size: 12px;">${companyName} &bull; ${companyPhone} &bull; <a href="mailto:${fromEmail}" style="color: #64748b;">${fromEmail}</a></p>
-          </div>
-        </div>
-      `,
+      html: artisanalHtml,
       attachments: [{ filename, content: Buffer.from(pdfBuffer), contentType: 'application/pdf' }]
     });
 

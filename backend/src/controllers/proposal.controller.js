@@ -686,11 +686,21 @@ const sendEmail = async (req, res, next) => {
 
     const combinedBody = rawContent + pdfLinkHtml;
 
-    // Wrap in Artisanal V3 Frame
+    // Fetch Org Settings for brand logo and company details
+    const orgSettingService = require('../services/org-setting.service');
+    const settings = await orgSettingService.getAllSettings();
+
+    // Wrap in Artisanal Frame
     const htmlContent = getArtisanalEmailFrame({
       subject: finalSubject,
       bodyContent: combinedBody,
-      inviteType: 'proposal'
+      inviteType: 'proposal',
+      companyLogoUrl: settings.companyLogoUrl || settings.companyLogo || '',
+      companyName: settings.companyName || 'Imagica Holidays',
+      companySlogan: settings.companySlogan || 'CURATED JOURNEYS. LASTING MEMORIES.',
+      companyPhone: settings.companyPhone || settings.phone || '+91 99999 99999',
+      companyEmail: settings.companyEmail || settings.email || 'info@imagicaholidays.com',
+      companyWebsite: settings.companyWebsite || settings.website || 'imagicaholidays.com'
     });
 
     // Prepare attachments — only include extra file if user uploaded one (and it's small enough)
