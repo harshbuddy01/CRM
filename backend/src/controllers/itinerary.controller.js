@@ -1770,7 +1770,7 @@ const exportPdf = async (req, res, next) => {
     res.setHeader('Content-Length', buffer.length);
     res.setHeader(
       'Content-Disposition',
-      `attachment; filename=Itinerary-${itinerary.title.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`
+      `attachment; filename="Itinerary-${itinerary.title.replace(/[^a-zA-Z0-9]/g, '_')}.pdf"`
     );
     res.end(buffer);
   } catch (err) {

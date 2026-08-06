@@ -559,7 +559,7 @@ const downloadPdf = async (req, res, next) => {
 
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Length', buffer.length);
-    res.setHeader('Content-Disposition', `attachment; filename=Proposal-v${proposal.version}-${proposal.query.queryCode}.pdf`);
+    res.setHeader('Content-Disposition', `attachment; filename="Proposal-v${proposal.version}-${proposal.query.queryCode}.pdf"`);
     
     // Log Activity (Non-blocking)
     prisma.activityLog.create({
