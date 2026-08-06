@@ -464,14 +464,23 @@ export default function SettingsPage() {
                 This signature will be automatically appended to the bottom of every outbound communications sent from the CRM (like Proposals or Custom Emails).
               </CardDescription>
             </CardHeader>
-            <CardContent>
-              <div className="mb-8">
+            <CardContent className="space-y-6">
+              <div className="mb-4">
                 <Label className="mb-2 block">Signature Body</Label>
                 <RichTextEditor 
                   value={formData.emailSignature || ''}
                   onChange={(val) => setFormData({ ...formData, emailSignature: val })}
                   placeholder="Warm regards,&#10;The Team at Travel Dreams"
                   className="min-h-[250px]"
+                />
+              </div>
+              <div className="pt-6 border-t border-dashed border-muted-foreground/20">
+                <ImageUploadField 
+                  label="Email Template Hero Image" 
+                  placeholder="https://example.com/hero-banner.jpg" 
+                  value={formData.emailHeroImageUrl || ''} 
+                  onChange={(val) => setFormData({ ...formData, emailHeroImageUrl: val })}
+                  description="Upload a custom hero image (e.g., arched banner) to display at the top of client-facing proposal emails. If empty, the default mountain illustration will be used."
                 />
               </div>
             </CardContent>

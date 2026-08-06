@@ -708,7 +708,8 @@ const sendEmail = async (req, res, next) => {
       companySlogan: settings.companySlogan || 'CURATED JOURNEYS. LASTING MEMORIES.',
       companyPhone: settings.companyPhone || settings.phone || '8910759317',
       companyEmail: settings.companyEmail || settings.email || 'info@imagicaholidays.com',
-      companyWebsite: settings.companyWebsite || settings.website || 'imagicaholidays.com'
+      companyWebsite: settings.companyWebsite || settings.website || 'imagicaholidays.com',
+      emailHeroImageUrl: settings.emailHeroImageUrl || ''
     });
 
     // Prepare attachments — only include extra file if user uploaded one (and it's small enough)

@@ -39,7 +39,8 @@ const getArtisanalEmailFrame = (options) => {
     companyPhone = '8910759317',
     companyEmail = 'info@imagicaholidays.com',
     companyWebsite = 'imagicaholidays.com',
-    headerTitle = 'Bespoke Travel Proposal'
+    headerTitle = 'Bespoke Travel Proposal',
+    emailHeroImageUrl = ''
   } = options;
 
   // Resolve relative logo URL to absolute URL using backend API_URL env prefix
@@ -52,7 +53,10 @@ const getArtisanalEmailFrame = (options) => {
 
   // Get optimized URLs for instant client loading
   const optimizedLogoUrl = getOptimizedImageUrl(logoUrl, 320);
-  const optimizedHeroUrl = getOptimizedImageUrl('https://images.unsplash.com/photo-1464822759023-fed622ff2c3b', 600);
+  const optimizedHeroUrl = getOptimizedImageUrl(
+    emailHeroImageUrl || 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b', 
+    600
+  );
 
   return `<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
