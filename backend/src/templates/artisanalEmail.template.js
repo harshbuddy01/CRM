@@ -47,56 +47,88 @@ const getArtisanalEmailFrame = (options) => {
     @media screen and (max-width: 620px) {
       .main-container { width: 100% !important; border-radius: 0 !important; }
       .content-padding { padding: 30px 20px !important; }
+      
+      /* Responsive Header */
+      .mobile-hide { display: none !important; }
+      .mobile-center-logo { width: 100% !important; display: block !important; text-align: center !important; }
+      .header-padding { padding: 20px !important; }
+
+      /* Arched Image Responsive Scaling */
+      .outer-arch {
+        border-radius: 180px 180px 0 0 !important;
+        padding: 8px !important;
+      }
+      .hero-image {
+        width: 100% !important;
+        height: 170px !important;
+        border-radius: 170px 170px 0 0 !important;
+      }
+
+      /* Stack columns inside card */
       .grid-col { display: block !important; width: 100% !important; padding-left: 0 !important; padding-right: 0 !important; margin-bottom: 15px !important; }
-      .val-prop { display: block !important; width: 100% !important; margin-bottom: 25px !important; border: none !important; }
-      .val-prop-border { border: none !important; }
+      
+      /* 2x2 Value Props Grid on Mobile */
+      .val-prop { display: inline-block !important; width: 48% !important; margin-bottom: 25px !important; border: none !important; vertical-align: top !important; }
+      .val-prop-border { border-left: none !important; }
+      
+      /* Stack Footer columns */
+      .footer-col { display: block !important; width: 100% !important; padding-left: 0 !important; padding-right: 0 !important; border-left: none !important; margin-bottom: 25px !important; }
     }
   </style>
 </head>
 <body style="margin: 0; padding: 0; background-color: #faf9f6;">
   <!-- MAIN OUTER TABLE -->
-  <table border="0; " cellpadding="0" cellspacing="0" width="100%" style="background-color: #faf9f6; padding: 40px 0;">
+  <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #faf9f6; padding: 40px 0;">
     <tr>
       <td align="center">
         
         <!-- MAIN CONTAINER CARD -->
         <table border="0" cellpadding="0" cellspacing="0" width="620" class="main-container" style="background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.04); border: 1px solid #ebdcc5;">
           
-          <!-- 1. SOPHISTICATED BRAND HEADER -->
+          <!-- 1. SOPHISTICATED BRAND HEADER (RESPONSIVE MULTI-COLUMN) -->
           <tr>
-            <td style="background-color: #ffffff; padding: 30px 40px; border-bottom: 1px solid #f3ece0; text-align: center;">
-              <div style="font-size: 9px; color: #a5813b; font-weight: 700; letter-spacing: 3px; text-transform: uppercase; margin-bottom: 12px;">
-                Bespoke Travel Collection
-              </div>
-              <div style="margin: 0 auto; text-align: center;">
-                ${logoUrl ? `
-                  <img src="${logoUrl}" alt="${companyName}" width="160" style="width: 160px; max-height: 55px; display: block; margin: 0 auto; object-fit: contain;" />
-                ` : `
-                  <div style="border: 1px solid #b89249; padding: 12px 24px; display: inline-block; background-color: #0b1a12;">
-                    <div class="serif-font" style="font-size: 22px; font-weight: 700; color: #ffffff; letter-spacing: 4px; text-transform: uppercase; line-height: 1.1;">
-                      IMAGICA
-                    </div>
-                    <div class="serif-font" style="font-size: 9px; letter-spacing: 6px; font-weight: 500; color: #b89249; text-transform: uppercase; margin-top: 3px; line-height: 1;">
-                      HOLIDAYS
-                    </div>
-                  </div>
-                `}
-              </div>
-              <div style="font-size: 9px; color: #64748b; font-weight: 500; letter-spacing: 2px; text-transform: uppercase; margin-top: 14px;">
-                ${companySlogan}
-              </div>
+            <td class="header-padding" style="background-color: #ffffff; padding: 30px 40px; border-bottom: 1px solid #f3ece0;">
+              <table border="0" cellpadding="0" cellspacing="0" width="100%">
+                <tr>
+                  <!-- Left Branding Text (Hidden on Mobile) -->
+                  <td width="30%" align="left" class="mobile-hide body-font" style="font-size: 9px; color: #a5813b; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; line-height: 1.5;">
+                    Curated Journeys<br/><span style="color: #64748b; font-weight: 500;">Lasting Memories</span>
+                  </td>
+                  
+                  <!-- Center Logo Container -->
+                  <td width="40%" align="center" class="mobile-center-logo">
+                    ${logoUrl ? `
+                      <img src="${logoUrl}" alt="${companyName}" width="150" style="width: 150px; max-height: 50px; display: block; margin: 0 auto; object-fit: contain;" />
+                    ` : `
+                      <div style="border: 1px solid #b89249; padding: 10px 20px; display: inline-block; background-color: #0b1a12;">
+                        <div class="serif-font" style="font-size: 20px; font-weight: 700; color: #ffffff; letter-spacing: 3px; text-transform: uppercase; line-height: 1.1;">
+                          IMAGICA
+                        </div>
+                        <div class="serif-font" style="font-size: 8px; letter-spacing: 5px; font-weight: 500; color: #b89249; text-transform: uppercase; margin-top: 2px; line-height: 1;">
+                          HOLIDAYS
+                        </div>
+                      </div>
+                    `}
+                  </td>
+                  
+                  <!-- Right Branding Text (Hidden on Mobile) -->
+                  <td width="30%" align="right" class="mobile-hide body-font" style="font-size: 9px; color: #a5813b; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; line-height: 1.5;">
+                    Your Journey<br/><span style="color: #64748b; font-weight: 500;">Our Passion</span>
+                  </td>
+                </tr>
+              </table>
             </td>
           </tr>
 
-          <!-- 2. HIGH-END EDITORIAL ARCHED GALLERY FRAME (BULLETPROOF GMAIL RENDER) -->
+          <!-- 2. HIGH-END EDITORIAL ARCHED GALLERY FRAME (RESPONSIVE) -->
           <tr>
             <td style="background-color: #ffffff; padding: 40px 40px 0 40px; text-align: center;">
               
               <!-- Outer Arch Border (Stationery Frame) -->
-              <div style="border: 1px solid #ebdcc5; border-radius: 280px 280px 0 0; padding: 12px; display: inline-block; max-width: 95%;">
+              <div class="outer-arch" style="border: 1px solid #ebdcc5; border-radius: 280px 280px 0 0; padding: 12px; display: inline-block; max-width: 95%;">
                 
-                <!-- Arched Image with Gold Border directly on the img tag (prevents collapses in Gmail) -->
-                <img src="https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?q=80&w=1000&auto=format&fit=crop" width="450" height="260" style="display: block; width: 450px; max-width: 100%; height: 260px; border: 3px solid #b89249; border-radius: 260px 260px 0 0; object-fit: cover;" alt="Majestic Alps" />
+                <!-- Arched Image with Gold Border directly on the img tag (prevents collapses & stretching) -->
+                <img class="hero-image" src="https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?q=80&w=1000&auto=format&fit=crop" width="450" height="260" style="display: block; width: 450px; max-width: 100%; height: 260px; border: 3px solid #b89249; border-radius: 260px 260px 0 0; object-fit: cover;" alt="Majestic Alps" />
                 
               </div>
               
