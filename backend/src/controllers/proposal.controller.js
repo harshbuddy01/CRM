@@ -593,8 +593,10 @@ const sendWhatsapp = async (req, res, next) => {
     // Update lastSentAt immediately
     await prisma.proposal.update({ where: { id: proposal.id }, data: { lastSentAt: now } });
 
-    // Automatically move query to 'quoted' status
-    await prisma.query.update({ where: { id: proposal.queryId }, data: { status: 'quoted' } });
+    // Automatically move query to 'quoted' status ONLY if it's not already confirmed or further along
+    if (proposal.query && !['confirmed', 'in_progress', 'completed'].includes(proposal.query.status)) {
+      await prisma.query.update({ where: { id: proposal.queryId }, data: { status: 'quoted' } });
+    }
 
     // Enqueue Job
     const phone = proposal.query.phone;
@@ -722,8 +724,10 @@ const sendEmail = async (req, res, next) => {
     // Update lastSentAt
     await prisma.proposal.update({ where: { id: proposal.id }, data: { lastSentAt: now } });
     
-    // Automatically move query to 'quoted' status
-    await prisma.query.update({ where: { id: proposal.queryId }, data: { status: 'quoted' } });
+    // Automatically move query to 'quoted' status ONLY if it's not already confirmed or further along
+    if (proposal.query && !['confirmed', 'in_progress', 'completed'].includes(proposal.query.status)) {
+      await prisma.query.update({ where: { id: proposal.queryId }, data: { status: 'quoted' } });
+    }
     
     // Log Activity
     await prisma.integrationLog.create({
