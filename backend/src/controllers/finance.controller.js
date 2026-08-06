@@ -332,11 +332,6 @@ const downloadBillingStatementPdf = async (req, res, next) => {
       'Content-Length': buffer.length,
       'Content-Disposition': `attachment; filename="Billing-Statement-${billingData.query.queryCode || queryId.slice(0,8)}.pdf"`,
     });
-    res.set({
-      'Content-Type': 'application/pdf',
-      'Content-Length': buffer.length,
-      'Content-Disposition': `attachment; filename="Billing-Statement-${billingData.query.queryCode || queryId.slice(0,8)}.pdf"`,
-    });
     res.send(buffer);
   } catch (err) {
     next(err);
@@ -360,30 +355,64 @@ const sendBillingStatementEmail = async (req, res, next) => {
     const pdfBuffer = await pdfService.generatePdfFromHtml(html);
     const filename = `Billing-Statement-${billingData.query.queryCode || queryId.slice(0,8)}.pdf`;
 
+    // Get org settings for logo, company name and phone
+    const orgSettings = billingData.orgSettings || {};
+    const companyName = orgSettings.companyName || 'Imagica Holidays';
+    const companyLogoUrl = orgSettings.companyLogoUrl || '';
+    const companyPhone = orgSettings.phone || orgSettings.companyPhone || '+91 99999 99999';
+    const fromEmail = process.env.EMAIL_FROM || 'info@imagicaholidays.com';
+    const fromName = process.env.EMAIL_FROM_NAME || companyName;
+
     const { sendMail } = require('../config/mailer');
     await sendMail({
+      from: `"${fromName}" <${fromEmail}>`,
       to: recipientEmail,
+      replyTo: fromEmail,
       subject: `Billing Statement & Payment Receipt — ${billingData.query.title || 'Your Trip'} (${billingData.query.queryCode || 'IH'})`,
       html: `
-        <div style="font-family: 'Inter', sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff; padding: 24px; border-radius: 16px; border: 1px solid #e2e8f0;">
-          <div style="text-align: center; border-bottom: 2px solid #f1f5f9; padding-bottom: 16px; margin-bottom: 20px;">
-            <h2 style="color: #0f172a; margin: 0; font-size: 20px;">Imagica Holidays</h2>
-            <p style="color: #64748b; font-size: 13px; margin: 4px 0 0 0;">Curated Journeys. Lasting Memories.</p>
+        <div style="font-family: 'Inter', Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff; padding: 0; border-radius: 16px; border: 1px solid #e2e8f0; overflow: hidden;">
+          <!-- Header with logo -->
+          <div style="background: linear-gradient(135deg, #1e3a5f 0%, #0f2a4a 100%); padding: 28px 24px; text-align: center;">
+            ${companyLogoUrl
+              ? `<img src="${companyLogoUrl}" alt="${companyName}" style="max-height: 64px; max-width: 200px; object-fit: contain; display: block; margin: 0 auto;" />`
+              : `<h2 style="color: #ffffff; margin: 0; font-size: 22px; letter-spacing: 0.5px;">${companyName}</h2>`
+            }
+            <p style="color: #94a3b8; font-size: 12px; margin: 8px 0 0 0; letter-spacing: 1px; text-transform: uppercase;">Curated Journeys. Lasting Memories.</p>
           </div>
-          <p style="color: #334155; font-size: 14px;">Dear <strong>${billingData.query.name || 'Valued Guest'}</strong>,</p>
-          <p style="color: #334155; font-size: 14px; line-height: 1.6;">
-            Thank you for choosing <strong>Imagica Holidays</strong>. Below is your updated financial statement:
-          </p>
-          <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px; margin: 20px 0;">
-            <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
-              <tr><td style="padding: 6px 0; color: #64748b;">Total Package Amount:</td><td style="padding: 6px 0; font-weight: bold; text-align: right; color: #0f172a;">₹${Number(billingData.customer.totalAmount).toLocaleString('en-IN')}</td></tr>
-              <tr><td style="padding: 6px 0; color: #166534; font-weight: bold;">Total Amount Received:</td><td style="padding: 6px 0; font-weight: bold; text-align: right; color: #166534;">₹${Number(billingData.customer.totalReceived).toLocaleString('en-IN')}</td></tr>
-              <tr style="border-top: 1px dashed #cbd5e1;"><td style="padding: 8px 0 0 0; color: #b91c1c; font-weight: bold;">Pending Balance Due:</td><td style="padding: 8px 0 0 0; font-weight: bold; text-align: right; color: #b91c1c; font-size: 16px;">₹${Number(billingData.customer.totalPending).toLocaleString('en-IN')}</td></tr>
-            </table>
+
+          <!-- Body -->
+          <div style="padding: 28px 24px;">
+            <p style="color: #334155; font-size: 15px; margin: 0 0 8px 0;">Dear <strong>${billingData.query.name || 'Valued Guest'}</strong>,</p>
+            <p style="color: #64748b; font-size: 14px; line-height: 1.6; margin: 0 0 20px 0;">
+              Thank you for choosing <strong>${companyName}</strong>. Below is your updated billing & payment statement:
+            </p>
+
+            <!-- Amounts table -->
+            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; margin-bottom: 20px;">
+              <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+                <tr>
+                  <td style="padding: 8px 0; color: #64748b;">Total Package Amount</td>
+                  <td style="padding: 8px 0; font-weight: 700; text-align: right; color: #0f172a; font-size: 15px;">₹${Number(billingData.customer.totalAmount).toLocaleString('en-IN')}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 0; color: #166534; font-weight: 600;">Total Amount Received ✓</td>
+                  <td style="padding: 8px 0; font-weight: 700; text-align: right; color: #166534; font-size: 15px;">₹${Number(billingData.customer.totalReceived).toLocaleString('en-IN')}</td>
+                </tr>
+                <tr style="border-top: 2px dashed #cbd5e1;">
+                  <td style="padding: 10px 0 0 0; color: #b91c1c; font-weight: 700;">Pending Balance Due</td>
+                  <td style="padding: 10px 0 0 0; font-weight: 800; text-align: right; color: #b91c1c; font-size: 18px;">₹${Number(billingData.customer.totalPending).toLocaleString('en-IN')}</td>
+                </tr>
+              </table>
+            </div>
+
+            <p style="color: #64748b; font-size: 13px; line-height: 1.6; margin: 0;">
+              Please find your official <strong>Billing Statement PDF</strong> attached with complete transaction details.
+            </p>
           </div>
-          <p style="color: #334155; font-size: 14px; line-height: 1.6;">Please find your official <strong>Billing Statement PDF</strong> attached.</p>
-          <div style="margin-top: 24px; padding-top: 16px; border-top: 1px solid #f1f5f9; text-align: center; color: #94a3b8; font-size: 12px;">
-            <p style="margin: 0;">Imagica Holidays • Support: +91 99999 99999</p>
+
+          <!-- Footer -->
+          <div style="background: #f8fafc; padding: 16px 24px; border-top: 1px solid #e2e8f0; text-align: center;">
+            <p style="margin: 0; color: #94a3b8; font-size: 12px;">${companyName} &bull; ${companyPhone} &bull; <a href="mailto:${fromEmail}" style="color: #64748b;">${fromEmail}</a></p>
           </div>
         </div>
       `,
