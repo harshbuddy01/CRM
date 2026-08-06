@@ -550,16 +550,21 @@ const getProposalById = async (req, res, next) => {
   }
 };
 
-// PDF download with Cloudinary caching — first download generates, subsequent ones are instant.
 const downloadPdf = async (req, res, next) => {
   try {
     const proposal = await proposalService.getProposalById(req.params.id);
+    if (!proposal) {
+      return res.status(404).send('Proposal not found or has been deleted.');
+    }
     
     const buffer = await getOrGeneratePdf(proposal);
 
+    const safeQueryCode = proposal.query?.queryCode ? String(proposal.query.queryCode).replace(/[^a-zA-Z0-9_-]/g, '_') : 'export';
+    const filename = `Proposal-v${proposal.version}-${safeQueryCode}.pdf`;
+
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Length', buffer.length);
-    res.setHeader('Content-Disposition', `attachment; filename="Proposal-v${proposal.version}-${proposal.query?.queryCode || 'export'}.pdf"`);
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
     res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
     res.setHeader('Pragma', 'no-cache');
     res.setHeader('Expires', '0');
@@ -576,9 +581,9 @@ const downloadPdf = async (req, res, next) => {
     }).catch(err => logger.error('History Log Error:', err));
 
     res.end(buffer);
-  } catch (error) {
-    logger.error('PDF Generation Controller Error:', error.message);
-    next(error);
+  } catch (err) {
+    logger.error('PDF Download Error:', err);
+    res.status(500).send(`<html><body style="font-family:sans-serif;padding:40px;text-align:center;"><h2>Unable to download PDF</h2><p>Please try again or contact support.</p></body></html>`);
   }
 };
 
@@ -658,8 +663,12 @@ const sendEmail = async (req, res, next) => {
 
     // Build the PDF download link (avoids attaching large PDF binary — fixes 552 5.3.4 SMTP size error)
     const protocol = req.headers['x-forwarded-proto'] || req.protocol;
-    const baseUrl = (config.apiUrl || `${protocol}://${req.get('host')}/api/v1`).replace(/\/$/, '');
-    const pdfDownloadUrl = `${baseUrl}/proposals/${proposal.id}/pdf`;
+    const host = req.get('host');
+    let base = (config.apiUrl || `${protocol}://${host}`).replace(/\/$/, '');
+    if (!base.endsWith('/api/v1') && !base.endsWith('/v1')) {
+      base = `${base}/api/v1`;
+    }
+    const pdfDownloadUrl = `${base}/proposals/${proposal.id}/pdf`;
 
     const finalSubject = subject || 'Your Travel Proposal is Ready!';
     const rawContent = body || bodyRichText || `<p>Hi ${proposal.query.name}, your travel proposal is ready.</p>`;
