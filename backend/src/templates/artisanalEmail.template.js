@@ -1,5 +1,6 @@
 // ============================================================
-// TravelCRM — Clean Modern Gradient Email Template
+// TravelCRM — Clean Minimalist Luxury Travel Proposal Template
+// Inspired by Virtuoso & Black Tomato Luxury Travel Design
 // ============================================================
 
 const getArtisanalEmailFrame = (options) => {
@@ -11,12 +12,20 @@ const getArtisanalEmailFrame = (options) => {
     viewOnlineUrl = '',
     companyLogoUrl = '',
     companyName = process.env.APP_NAME || 'Imagica Holidays',
-    companySlogan = 'CURATED JOURNEYS, LASTING MEMORIES.',
+    companySlogan = 'CURATED JOURNEYS. LASTING MEMORIES.',
     companyPhone = '8910759317',
     companyEmail = 'info@imagicaholidays.com',
     companyWebsite = 'imagicaholidays.com',
-    headerTitle = 'Your Travel Proposal'
+    headerTitle = 'Bespoke Travel Proposal'
   } = options;
+
+  // Resolve relative logo URL to absolute URL using backend API_URL env prefix
+  let logoUrl = companyLogoUrl || '';
+  if (logoUrl && !logoUrl.startsWith('http://') && !logoUrl.startsWith('https://') && !logoUrl.startsWith('data:')) {
+    const backendUrl = (process.env.API_URL || 'https://api.imagicaholidays.com').replace(/\/$/, '');
+    const separator = logoUrl.startsWith('/') ? '' : '/';
+    logoUrl = `${backendUrl}${separator}${logoUrl}`;
+  }
 
   return `<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
@@ -25,143 +34,130 @@ const getArtisanalEmailFrame = (options) => {
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>${subject || 'A Message from ' + companyName}</title>
   <style type="text/css">
-    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
     
     body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
     table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
     img { -ms-interpolation-mode: bicubic; border: 0; outline: none; text-decoration: none; }
-    body { margin: 0; padding: 0; width: 100% !important; background-color: #f1f5f9 !important; }
+    body { margin: 0; padding: 0; width: 100% !important; background-color: #faf9f6 !important; }
     
     .body-font { font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, Arial, sans-serif; }
-    .serif-font { font-family: 'Playfair Display', Georgia, serif; }
+    .serif-font { font-family: 'Cormorant Garamond', Georgia, serif; }
 
     @media screen and (max-width: 620px) {
-      .container-table { width: 100% !important; border-radius: 0 !important; }
-      .content-padding { padding: 25px 20px !important; }
-      .grid-col { display: block !important; width: 100% !important; padding: 0 !important; margin-bottom: 15px !important; }
+      .main-container { width: 100% !important; border-radius: 0 !important; }
+      .content-padding { padding: 30px 20px !important; }
+      .grid-col { display: block !important; width: 100% !important; padding-left: 0 !important; padding-right: 0 !important; margin-bottom: 15px !important; }
+      .val-prop { display: block !important; width: 100% !important; margin-bottom: 25px !important; border: none !important; }
+      .val-prop-border { border: none !important; }
     }
   </style>
 </head>
-<body style="margin: 0; padding: 0; background-color: #f1f5f9;">
-  <!-- OUTER WRAPPER -->
-  <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #f1f5f9; padding: 30px 10px;">
+<body style="margin: 0; padding: 0; background-color: #faf9f6;">
+  <!-- MAIN OUTER TABLE -->
+  <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #faf9f6; padding: 40px 0;">
     <tr>
       <td align="center">
         
-        <!-- MAIN GRADIENT CARD CONTAINER -->
-        <table border="0" cellpadding="0" cellspacing="0" width="640" class="container-table" style="background-color: #ffffff; border-radius: 20px; overflow: hidden; box-shadow: 0 15px 35px rgba(15,23,42,0.08); border: 1px solid #e2e8f0;">
+        <!-- MAIN CONTAINER CARD -->
+        <table border="0" cellpadding="0" cellspacing="0" width="620" class="main-container" style="background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.04); border: 1px solid #ebdcc5;">
           
-          <!-- 1. SLEEK GRADIENT HEADER WITH LARGE LOGO -->
+          <!-- 1. SOPHISTICATED BRAND HEADER -->
           <tr>
-            <td align="center" style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 60%, #334155 100%); padding: 40px 30px; border-bottom: 4px solid #c59b27;">
-              <!-- CRM LOGO (LARGE DISPLAY) -->
-              <div style="margin-bottom: 15px;">
-                ${companyLogoUrl ? `
-                  <img src="${companyLogoUrl}" alt="${companyName}" style="max-height: 75px; max-width: 280px; width: auto; height: auto; display: block; margin: 0 auto; object-fit: contain;" />
+            <td style="background-color: #ffffff; padding: 30px 40px; border-bottom: 1px solid #f3ece0; text-align: center;">
+              <div style="font-size: 9px; color: #a5813b; font-weight: 700; letter-spacing: 3px; text-transform: uppercase; margin-bottom: 12px;">
+                Bespoke Travel Collection
+              </div>
+              <div style="margin: 0 auto; display: inline-block;">
+                ${logoUrl ? `
+                  <img src="${logoUrl}" alt="${companyName}" style="max-height: 55px; max-width: 240px; display: block; margin: 0 auto; object-fit: contain;" />
                 ` : `
-                  <span class="serif-font" style="font-size: 28px; font-weight: 700; color: #ffffff; letter-spacing: 3px; display: block;">
-                    ${companyName.toUpperCase()}
-                  </span>
+                  <div style="border: 1px solid #b89249; padding: 12px 24px; display: inline-block; background-color: #0b1a12;">
+                    <div class="serif-font" style="font-size: 22px; font-weight: 700; color: #ffffff; letter-spacing: 4px; text-transform: uppercase; line-height: 1.1;">
+                      IMAGICA
+                    </div>
+                    <div class="serif-font" style="font-size: 9px; letter-spacing: 6px; font-weight: 500; color: #b89249; text-transform: uppercase; margin-top: 3px; line-height: 1;">
+                      HOLIDAYS
+                    </div>
+                  </div>
                 `}
               </div>
-              
-              <!-- SLOGAN / SUBTITLE -->
-              <div class="body-font" style="font-size: 11px; font-weight: 600; color: #cbd5e1; letter-spacing: 2.5px; text-transform: uppercase;">
-                ${companyName} &bull; <span style="color: #fbbf24;">${companySlogan}</span>
+              <div style="font-size: 9px; color: #64748b; font-weight: 500; letter-spacing: 2px; text-transform: uppercase; margin-top: 14px;">
+                ${companySlogan}
               </div>
             </td>
           </tr>
 
-          <!-- 2. MAIN BODY CONTENT AREA -->
+          <!-- 2. HIGH-END EDITORIAL ARCHED GALLERY FRAME -->
           <tr>
-            <td class="content-padding" style="padding: 40px 45px; background-color: #ffffff;">
+            <td style="background-color: #ffffff; padding: 40px 40px 0 40px; text-align: center;">
               
-              <!-- CRM Dynamic Email Text / Body -->
-              <div class="body-font" style="font-size: 15px; line-height: 1.7; color: #334155; margin-bottom: 30px;">
+              <!-- Outer Arch Border (Stationery Frame) -->
+              <div style="border: 1px solid #ebdcc5; border-radius: 280px 280px 0 0; padding: 12px; display: inline-block; max-width: 90%; box-sizing: border-box;">
+                
+                <!-- Inner Arch Image Frame with Gold Border -->
+                <div style="border: 3px solid #b89249; border-radius: 260px 260px 0 0; overflow: hidden; width: 450px; max-width: 100%; height: 260px; box-shadow: 0 8px 25px rgba(0,0,0,0.08); background-color: #0b1a12;">
+                  <img src="https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?q=80&w=1000&auto=format&fit=crop" width="450" height="260" style="width: 100%; height: 100%; object-fit: cover; display: block;" alt="Majestic Alps" />
+                </div>
+                
+              </div>
+              
+              <!-- Elegant Quote Divider -->
+              <div style="margin-top: 25px; margin-bottom: 5px; text-align: center;">
+                <div style="color: #b89249; font-size: 14px; margin-bottom: 8px;">❖</div>
+                <div class="serif-font" style="font-size: 24px; font-style: italic; color: #0b1a12; font-weight: 400; line-height: 1.4; max-width: 480px; margin: 0 auto;">
+                  "To travel is to live, to live is to remember."
+                </div>
+                <div style="width: 40px; height: 1px; background-color: #b89249; margin: 15px auto 0 auto;"></div>
+              </div>
+
+            </td>
+          </tr>
+
+          <!-- 3. MAIN EDITORIAL BODY -->
+          <tr>
+            <td class="content-padding" style="padding: 35px 50px 40px 50px; background-color: #ffffff;">
+              
+              <!-- Greeting & Body Text -->
+              <div class="body-font" style="font-size: 15px; line-height: 1.85; color: #2d3748; margin-bottom: 35px;">
                 ${bodyContent}
               </div>
 
-              <!-- 3. ACTION BUTTONS (VIEW ONLINE & DOWNLOAD PDF) -->
-              ${(viewOnlineUrl || pdfDownloadUrl) ? `
-              <table border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-top: 25px; margin-bottom: 35px;">
-                ${viewOnlineUrl ? `
-                <tr>
-                  <td align="center" style="padding-bottom: 14px;">
-                    <a href="${viewOnlineUrl}" target="_blank" class="body-font" style="display: block; width: 100%; box-sizing: border-box; background: linear-gradient(135deg, #d97706 0%, #b45309 100%); color: #ffffff; text-align: center; padding: 17px 24px; border-radius: 10px; text-decoration: none; font-size: 14px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; box-shadow: 0 4px 14px rgba(217,119,6,0.3);">
-                      👁️ VIEW PROPOSAL ONLINE &nbsp; →
-                    </a>
-                  </td>
-                </tr>
-                ` : ''}
-
-                ${pdfDownloadUrl ? `
-                <tr>
-                  <td align="center" style="padding-bottom: 18px;">
-                    <a href="${pdfDownloadUrl}" download target="_blank" class="body-font" style="display: block; width: 100%; box-sizing: border-box; background-color: #0f172a; color: #ffffff; text-align: center; padding: 17px 24px; border-radius: 10px; text-decoration: none; font-size: 14px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; box-shadow: 0 4px 14px rgba(15,23,42,0.25);">
-                      📄 DOWNLOAD YOUR PROPOSAL PDF &nbsp; →
-                    </a>
-                  </td>
-                </tr>
-                ` : ''}
-
-                <tr>
-                  <td align="center">
-                    <div class="body-font" style="font-size: 12px; color: #64748b; background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 15px; text-align: center;">
-                      🛡️ For your security, this document link is active for 14 days.
-                    </div>
-                  </td>
-                </tr>
-              </table>
-              ` : ''}
-
-              <!-- 4. COMPANY CONTACT DETAILS SUMMARY CARD -->
-              <table border="0" cellpadding="0" cellspacing="0" width="100%" style="border: 1px solid #e2e8f0; border-radius: 12px; background-color: #f8fafc; padding: 22px 25px;">
+              <!-- 4. INVITE CARD WITH MINIMALIST STATIONERY DESIGN -->
+              <table border="0" cellpadding="0" cellspacing="0" width="100%" style="border: 1px solid #ebdcc5; border-radius: 8px; background-color: #faf9f6; padding: 25px 30px; margin-top: 35px;">
                 <tr>
                   <td>
-                    <div class="body-font" style="font-size: 12px; font-weight: 700; color: #d97706; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 15px;">
-                      Need assistance with your booking?
+                    <div style="border-left: 2px solid #b89249; padding-left: 15px; margin-bottom: 20px;">
+                      <div class="serif-font" style="font-size: 20px; font-weight: 700; color: #0b1a12; letter-spacing: 0.5px;">Your Personal Concierge</div>
+                      <div class="body-font" style="font-size: 8.5px; font-weight: 700; letter-spacing: 1.5px; color: #b89249; text-transform: uppercase; margin-top: 2px;">IMAGICA HOLIDAYS &bull; PRIVATE SERVICES</div>
                     </div>
 
                     <table border="0" cellpadding="0" cellspacing="0" width="100%">
                       <tr>
                         <!-- Left Column -->
-                        <td width="50%" valign="top" class="grid-col">
-                          <table border="0" cellpadding="0" cellspacing="0" style="margin-bottom: 10px;">
-                            <tr>
-                              <td width="24" style="font-size: 14px;">📞</td>
-                              <td class="body-font" style="font-size: 13px; color: #334155;">
-                                <strong>Bookings:</strong> ${companyPhone}
-                              </td>
-                            </tr>
-                          </table>
-                          <table border="0" cellpadding="0" cellspacing="0">
-                            <tr>
-                              <td width="24" style="font-size: 14px;">💳</td>
-                              <td class="body-font" style="font-size: 13px; color: #334155;">
-                                <strong>Finance:</strong> 7889006633
-                              </td>
-                            </tr>
-                          </table>
+                        <td width="50%" valign="top" class="grid-col" style="padding-right: 15px;">
+                          <div class="body-font" style="font-size: 11px; color: #718096; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 3px;">Bookings Desk</div>
+                          <div class="body-font" style="font-size: 14px; color: #1a202c; font-weight: 600; margin-bottom: 15px;">
+                            ${companyPhone} <a href="https://wa.me/91${companyPhone.replace(/\D/g, '')}" style="text-decoration: none; font-size: 13px;">💬</a>
+                          </div>
+
+                          <div class="body-font" style="font-size: 11px; color: #718096; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 3px;">Finance Support</div>
+                          <div class="body-font" style="font-size: 14px; color: #1a202c; font-weight: 600;">
+                            7889006633
+                          </div>
                         </td>
 
                         <!-- Right Column -->
-                        <td width="50%" valign="top" class="grid-col">
-                          <table border="0" cellpadding="0" cellspacing="0" style="margin-bottom: 10px;">
-                            <tr>
-                              <td width="24" style="font-size: 14px;">✉️</td>
-                              <td class="body-font" style="font-size: 13px;">
-                                <strong>Email:</strong> <a href="mailto:${companyEmail}" style="color: #2563eb; text-decoration: none;">${companyEmail}</a>
-                              </td>
-                            </tr>
-                          </table>
-                          <table border="0" cellpadding="0" cellspacing="0">
-                            <tr>
-                              <td width="24" style="font-size: 14px;">🌐</td>
-                              <td class="body-font" style="font-size: 13px;">
-                                <strong>Web:</strong> <a href="https://${companyWebsite}" style="color: #2563eb; text-decoration: none;">${companyWebsite}</a>
-                              </td>
-                            </tr>
-                          </table>
+                        <td width="50%" valign="top" class="grid-col" style="padding-left: 15px;">
+                          <div class="body-font" style="font-size: 11px; color: #718096; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 3px;">Email Address</div>
+                          <div class="body-font" style="font-size: 14px; color: #1a202c; font-weight: 600; margin-bottom: 15px;">
+                            <a href="mailto:${companyEmail}" style="color: #0b1a12; text-decoration: underline;">${companyEmail}</a>
+                          </div>
+
+                          <div class="body-font" style="font-size: 11px; color: #718096; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 3px;">Digital Portal</div>
+                          <div class="body-font" style="font-size: 14px; color: #1a202c; font-weight: 600;">
+                            <a href="https://${companyWebsite}" target="_blank" style="color: #0b1a12; text-decoration: underline;">${companyWebsite}</a>
+                          </div>
                         </td>
                       </tr>
                     </table>
@@ -169,43 +165,189 @@ const getArtisanalEmailFrame = (options) => {
                 </tr>
               </table>
 
+              <!-- 5. CALL TO ACTION BUTTONS -->
+              <table border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-top: 35px;">
+                ${viewOnlineUrl ? `
+                <tr>
+                  <td align="center" style="padding-bottom: 16px;">
+                    <a href="${viewOnlineUrl}" target="_blank" class="body-font" style="display: block; width: 100%; box-sizing: border-box; background: linear-gradient(135deg, #c59b27 0%, #a5813b 100%); color: #ffffff; text-align: center; padding: 18px 24px; border-radius: 4px; text-decoration: none; font-size: 13px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; box-shadow: 0 4px 15px rgba(197,155,39,0.25);">
+                      View Bespoke Itinerary &nbsp;&nbsp; →
+                    </a>
+                  </td>
+                </tr>
+                ` : ''}
+                
+                ${pdfDownloadUrl ? `
+                <tr>
+                  <td align="center" style="padding-bottom: 25px;">
+                    <a href="${pdfDownloadUrl}" download target="_blank" class="body-font" style="display: block; width: 100%; box-sizing: border-box; background-color: #ffffff; color: #0b1a12; text-align: center; padding: 17px 24px; border-radius: 4px; text-decoration: none; font-size: 13px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; border: 1px solid #ebdcc5;">
+                      Download Proposal PDF &nbsp;&nbsp; →
+                    </a>
+                  </td>
+                </tr>
+                ` : ''}
+
+                <tr>
+                  <td align="center">
+                    <div class="body-font" style="font-size: 11px; color: #94a3b8; text-align: center; letter-spacing: 0.5px;">
+                      🛡️ Secure Link. Active for 14 days.
+                    </div>
+                  </td>
+                </tr>
+              </table>
+
             </td>
           </tr>
 
-          <!-- 5. ELEGANT DARK GRADIENT FOOTER WITH SOCIAL LINKS -->
+          <!-- 6. VALUE PROPOSITION ROW (WITH GOLD SVG VECTORS) -->
           <tr>
-            <td align="center" style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); padding: 35px 30px; text-align: center; border-top: 1px solid #334155;">
-              
-              <!-- Company Name in Footer -->
-              <div class="serif-font" style="font-size: 20px; font-weight: 700; color: #ffffff; letter-spacing: 2px; margin-bottom: 8px;">
-                ${companyName.toUpperCase()}
-              </div>
+            <td style="background-color: #faf9f6; border-top: 1px solid #ebdcc5; padding: 40px 30px;">
+              <table border="0" cellpadding="0" cellspacing="0" width="100%">
+                <tr>
+                  <td align="center" style="padding-bottom: 30px;">
+                    <div class="serif-font" style="font-size: 24px; font-weight: 500; color: #b89249; font-style: italic;">The Imagica Distinction</div>
+                    <div style="width: 25px; height: 1px; background-color: #b89249; margin: 10px auto 0 auto;"></div>
+                  </td>
+                </tr>
+                <tr>
+                  <td>
+                    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+                      <tr>
+                        <!-- 1st Badges -->
+                        <td width="25%" align="center" valign="top" class="val-prop">
+                          <div style="margin-bottom: 12px;">
+                            <!-- Gold Map Pin SVG -->
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#b89249" stroke-width="1.5" style="display: block; margin: 0 auto;">
+                              <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/>
+                              <circle cx="12" cy="9" r="2.5" fill="#b89249"/>
+                            </svg>
+                          </div>
+                          <div class="body-font" style="font-size: 9px; font-weight: 700; letter-spacing: 1.5px; color: #1a202c; text-transform: uppercase; line-height: 1.4;">Curated<br/>Destinations</div>
+                        </td>
+                        
+                        <!-- 2nd Badges -->
+                        <td width="25%" align="center" valign="top" class="val-prop val-prop-border" style="border-left: 1px solid #e6dec9;">
+                          <div style="margin-bottom: 12px;">
+                            <!-- Gold Compass SVG -->
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#b89249" stroke-width="1.5" style="display: block; margin: 0 auto;">
+                              <circle cx="12" cy="12" r="9"/>
+                              <path d="M16.24 7.76l-2.12 6.36-6.36 2.12 2.12-6.36 6.36-2.12z" fill="#b89249"/>
+                            </svg>
+                          </div>
+                          <div class="body-font" style="font-size: 9px; font-weight: 700; letter-spacing: 1.5px; color: #1a202c; text-transform: uppercase; line-height: 1.4;">Bespoke<br/>Itineraries</div>
+                        </td>
+                        
+                        <!-- 3rd Badges -->
+                        <td width="25%" align="center" valign="top" class="val-prop val-prop-border" style="border-left: 1px solid #e6dec9;">
+                          <div style="margin-bottom: 12px;">
+                            <!-- Gold Support SVG -->
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#b89249" stroke-width="1.5" style="display: block; margin: 0 auto;">
+                              <path d="M3 18c0-3.87 3.13-7 7-7h4c3.87 0 7 3.13 7 7M12 11a4 4 0 100-8 4 4 0 000 8z"/>
+                            </svg>
+                          </div>
+                          <div class="body-font" style="font-size: 9px; font-weight: 700; letter-spacing: 1.5px; color: #1a202c; text-transform: uppercase; line-height: 1.4;">Concierge<br/>Assistance</div>
+                        </td>
+                        
+                        <!-- 4th Badges -->
+                        <td width="25%" align="center" valign="top" class="val-prop val-prop-border" style="border-left: 1px solid #e6dec9;">
+                          <div style="margin-bottom: 12px;">
+                            <!-- Gold Medal SVG -->
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#b89249" stroke-width="1.5" style="display: block; margin: 0 auto;">
+                              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                            </svg>
+                          </div>
+                          <div class="body-font" style="font-size: 9px; font-weight: 700; letter-spacing: 1.5px; color: #1a202c; text-transform: uppercase; line-height: 1.4;">Uncompromising<br/>Value</div>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
 
-              <!-- Slogan -->
-              <div class="body-font" style="font-size: 12px; color: #94a3b8; margin-bottom: 20px;">
-                Crafting extraordinary journeys &bull; Creating memories that last a lifetime
-              </div>
+          <!-- 7. EDITORIAL SLATE DARK FOOTER -->
+          <tr>
+            <td style="background-color: #0b1a12; padding: 50px 40px 30px 40px; border-top: 3px solid #b89249;">
+              <table border="0" cellpadding="0" cellspacing="0" width="100%">
+                <tr>
+                  <!-- Footer Left Column -->
+                  <td width="55%" valign="top" class="footer-col" style="padding-right: 25px;">
+                    <div style="margin-bottom: 15px;">
+                      ${logoUrl ? `
+                        <img src="${logoUrl}" alt="${companyName}" style="max-height: 48px; max-width: 200px; display: block; object-fit: contain; filter: brightness(0) invert(1);" />
+                      ` : `
+                        <div class="serif-font" style="color: #ffffff; font-size: 20px; font-weight: 700; letter-spacing: 3px; line-height: 1;">
+                          IMAGICA<br/><span style="font-size: 9px; letter-spacing: 5px; font-weight: 400; color: #b89249;">HOLIDAYS</span>
+                        </div>
+                      `}
+                    </div>
+                    <p class="body-font" style="color: #8da298; font-size: 12px; line-height: 1.7; margin: 0 0 20px 0;">
+                      Designing exceptional luxury travel experiences around the globe. Curating memories that stay with you forever.
+                    </p>
+                    
+                    <!-- SVG Social Links (No cheap Emojis) -->
+                    <table border="0" cellpadding="0" cellspacing="0">
+                      <tr>
+                        <td style="padding-right: 15px;">
+                          <a href="#" style="text-decoration: none;">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#b89249" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                              <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/>
+                              <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/>
+                              <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/>
+                            </svg>
+                          </a>
+                        </td>
+                        <td style="padding-right: 15px;">
+                          <a href="#" style="text-decoration: none;">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#b89249" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                              <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/>
+                            </svg>
+                          </a>
+                        </td>
+                        <td>
+                          <a href="#" style="text-decoration: none;">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#b89249" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                              <path d="M22.54 6.42a2.78 2.78 0 0 0-1.94-2C18.88 4 12 4 12 4s-6.88 0-8.6.46a2.78 2.78 0 0 0-1.94 2A29 29 0 0 0 1 11.75a29 29 0 0 0 .46 5.33A2.78 2.78 0 0 0 3.4 19c1.72.46 8.6.46 8.6.46s6.88 0 8.6-.46a2.78 2.78 0 0 0 1.94-2 29 29 0 0 0 .46-5.25 29 29 0 0 0-.46-5.33z"/>
+                              <polygon points="9.75 15.02 15.5 11.75 9.75 8.48 9.75 15.02"/>
+                            </svg>
+                          </a>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
 
-              <!-- SOCIAL MEDIA LOGOS / LINKS (INSTAGRAM, FACEBOOK, YOUTUBE, WEBSITE) -->
-              <div style="margin-bottom: 25px;">
-                <a href="https://instagram.com" target="_blank" style="display: inline-block; background-color: #1e293b; color: #f43f5e; padding: 10px 16px; border-radius: 20px; font-size: 12px; text-decoration: none; margin: 0 4px; font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 600; border: 1px solid #334155;">
-                  📷 Instagram
-                </a>
-                <a href="https://facebook.com" target="_blank" style="display: inline-block; background-color: #1e293b; color: #3b82f6; padding: 10px 16px; border-radius: 20px; font-size: 12px; text-decoration: none; margin: 0 4px; font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 600; border: 1px solid #334155;">
-                  📘 Facebook
-                </a>
-                <a href="https://youtube.com" target="_blank" style="display: inline-block; background-color: #1e293b; color: #ef4444; padding: 10px 16px; border-radius: 20px; font-size: 12px; text-decoration: none; margin: 0 4px; font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 600; border: 1px solid #334155;">
-                  ▶️ YouTube
-                </a>
-              </div>
+                  <!-- Footer Right Column -->
+                  <td width="45%" valign="top" class="footer-col" style="padding-left: 20px; border-left: 1px solid #1c3629;">
+                    <div class="serif-font" style="color: #b89249; font-size: 15px; font-weight: 600; margin-bottom: 15px; letter-spacing: 0.5px;">Bespoke Inquiries</div>
+                    <table border="0" cellpadding="0" cellspacing="0" class="body-font" style="font-size: 12px; color: #8da298; line-height: 1.8;">
+                      <tr>
+                        <td style="color: #b89249; font-weight: 600; padding-bottom: 6px; padding-right: 8px;">M:</td>
+                        <td style="color: #cbd5e1; padding-bottom: 6px;">${companyPhone}</td>
+                      </tr>
+                      <tr>
+                        <td style="color: #b89249; font-weight: 600; padding-bottom: 6px; padding-right: 8px;">E:</td>
+                        <td style="padding-bottom: 6px;"><a href="mailto:${companyEmail}" style="color: #cbd5e1; text-decoration: none;">${companyEmail}</a></td>
+                      </tr>
+                      <tr>
+                        <td style="color: #b89249; font-weight: 600; padding-right: 8px;">W:</td>
+                        <td><a href="https://${companyWebsite}" style="color: #cbd5e1; text-decoration: none;">${companyWebsite}</a></td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
 
-              <!-- Copyright -->
-              <div style="border-top: 1px solid #334155; padding-top: 20px;" class="body-font">
-                <span style="font-size: 11px; color: #64748b;">
-                  &copy; ${new Date().getFullYear()} ${companyName}. All rights reserved.
-                </span>
-              </div>
-
+                <!-- Bottom Copyright Line -->
+                <tr>
+                  <td colspan="2" align="center" style="padding-top: 40px;">
+                    <div style="border-top: 1px solid #1c3629; padding-top: 20px; text-align: center;">
+                      <span class="body-font" style="color: #556e61; font-size: 10px; letter-spacing: 1px;">
+                        &copy; ${new Date().getFullYear()} ${companyName.toUpperCase()}. ALL RIGHTS RESERVED.
+                      </span>
+                    </div>
+                  </td>
+                </tr>
+              </table>
             </td>
           </tr>
 

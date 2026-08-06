@@ -21,7 +21,10 @@ const pdfCacheMap = new Map();
  * Generate PDF for a proposal, cache it in memory & MinIO Vault, and return the buffer.
  */
 const getOrGeneratePdf = async (proposal) => {
-  const cacheKey = `${proposal.id}_${proposal.updatedAt ? new Date(proposal.updatedAt).getTime() : '0'}`;
+  // Construct a cache key based on the proposal version, itinerary ID, and itinerary updatedAt timestamp
+  // This avoids invalidation when we update proposal.pdfUrl in the database (which changes proposal.updatedAt)
+  const itineraryPart = proposal.itinerary ? `_iti_${proposal.itinerary.updatedAt ? new Date(proposal.itinerary.updatedAt).getTime() : '0'}` : '';
+  const cacheKey = `${proposal.id}_v${proposal.version}${itineraryPart}`;
   if (pdfCacheMap.has(cacheKey)) {
     logger.info(`[PDF Cache] Serving PDF instantly from memory cache for proposal ${proposal.id}`);
     return pdfCacheMap.get(cacheKey);
