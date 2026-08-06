@@ -661,9 +661,18 @@ const sendEmail = async (req, res, next) => {
     const finalSubject = subject || 'Your Travel Proposal is Ready!';
     const rawContent = body || bodyRichText || `<p>Hi ${proposal.query.name}, your travel proposal is ready.</p>`;
 
-    // Append PDF download button to the email body
+    // Add "View Online" link if itinerary exists
+    const viewOnlineHtml = proposal.itinerary ? `
+        <a href="${(process.env.FRONTEND_URL || 'https://crm.imagicaholidays.com')}/share/${proposal.itinerary.shareSlug || proposal.itinerary.id}" 
+           style="display:inline-block;background:#a5813b;color:#ffffff;padding:14px 32px;border-radius:8px;text-decoration:none;font-weight:bold;font-size:15px;letter-spacing:0.5px;margin-bottom:12px;box-shadow:0 4px 12px rgba(165,129,59,0.25);">
+          🌐 View Proposal Online
+        </a><br/>
+    ` : '';
+
+    // Append buttons to the email body
     const pdfLinkHtml = `
       <div style="margin-top:24px;text-align:center;">
+        ${viewOnlineHtml}
         <a href="${pdfDownloadUrl}" 
            style="display:inline-block;background:#1a1a2e;color:#ffffff;padding:14px 32px;border-radius:8px;text-decoration:none;font-weight:bold;font-size:15px;letter-spacing:0.5px;">
           📄 Download Your Proposal PDF
