@@ -41,14 +41,14 @@ const getAbbr = (name) => {
 const getPlaceOfSupply = (dest) => {
   if (!dest) return 'West Bengal';
   const d = dest.toLowerCase();
-  if (d.includes('sikkim')) return 'Sikkim (11)';
-  if (d.includes('west bengal') || d.includes('darjeeling') || d.includes('pelling') || d.includes('lachung') || d.includes('gangtok')) return 'West Bengal (19)';
-  if (d.includes('kerala') || d.includes('munnar')) return 'Kerala (32)';
-  if (d.includes('kashmir')) return 'Jammu & Kashmir (01)';
-  if (d.includes('himachal') || d.includes('manali')) return 'Himachal Pradesh (02)';
-  if (d.includes('rajasthan') || d.includes('jaipur') || d.includes('udaipur')) return 'Rajasthan (08)';
-  if (d.includes('srinagar')) return 'Jammu & Kashmir (01)';
-  if (d.includes('karnataka') || d.includes('coorg') || d.includes('ooty') || d.includes('tamil nadu')) return 'Tamil Nadu (33)';
+  if (d.includes('sikkim')) return 'Sikkim';
+  if (d.includes('west bengal') || d.includes('darjeeling') || d.includes('pelling') || d.includes('lachung') || d.includes('gangtok')) return 'West Bengal';
+  if (d.includes('kerala') || d.includes('munnar')) return 'Kerala';
+  if (d.includes('kashmir')) return 'Jammu & Kashmir';
+  if (d.includes('himachal') || d.includes('manali')) return 'Himachal Pradesh';
+  if (d.includes('rajasthan') || d.includes('jaipur') || d.includes('udaipur')) return 'Rajasthan';
+  if (d.includes('srinagar')) return 'Jammu & Kashmir';
+  if (d.includes('karnataka') || d.includes('coorg') || d.includes('ooty') || d.includes('tamil nadu')) return 'Tamil Nadu';
   return dest;
 };
 
@@ -129,10 +129,10 @@ const getBillingStatementTemplate = (data) => {
   const companyLogoUrl = settings.companyLogoUrl || '';
   const companyGst = settings.companyGst || '';
   const companyPan = settings.companyPan || '';
-  const bankAccountName = settings.bankAccountName || companyName;
-  const bankName = settings.bankName || 'Yes Bank';
-  const bankAccountNumber = settings.bankAccountNumber || '002300800123456';
-  const bankIfscCode = settings.bankIfscCode || 'YESB0002308';
+  const bankAccountName = settings.bankAccountName || 'Imagica Holidays';
+  const bankName = settings.bankName || 'Indian Bank';
+  const bankAccountNumber = settings.bankAccountNumber || '8349072629';
+  const bankIfscCode = settings.bankIfscCode || 'IDIB000K688';
   const invoiceBannerUrl = settings.invoiceBannerUrl || 'https://images.unsplash.com/photo-1544735716-392fe2489ffa?q=80&w=1000&auto=format&fit=crop';
   
   const companyAbbr = getAbbr(companyName);
@@ -157,19 +157,8 @@ const getBillingStatementTemplate = (data) => {
     
   const isPaidInFull = customer.totalPending <= 0;
   
-  const gstRow = companyGst ? `
-    <div class="details-row">
-      <span class="details-label">GSTIN</span>
-      <span class="details-value">: ${companyGst}</span>
-    </div>
-  ` : '';
-  
-  const panRow = companyPan ? `
-    <div class="details-row">
-      <span class="details-label">PAN</span>
-      <span class="details-value">: ${companyPan}</span>
-    </div>
-  ` : '';
+  const gstRow = '';
+  const panRow = '';
 
   return `
     <!DOCTYPE html>

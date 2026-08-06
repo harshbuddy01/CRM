@@ -392,7 +392,7 @@ export default function SettingsPage() {
                 <div className="space-y-2">
                   <Label>Account Name</Label>
                   <Input 
-                    placeholder={`E.g. ${process.env.NEXT_PUBLIC_APP_NAME || 'TravelCRM'} Pvt. Ltd.`}
+                    placeholder="E.g. Imagica Holidays"
                     value={formData.bankAccountName || ''}
                     onChange={(e) => setFormData({ ...formData, bankAccountName: e.target.value })}
                   />
@@ -400,7 +400,7 @@ export default function SettingsPage() {
                 <div className="space-y-2">
                   <Label>Bank Name</Label>
                   <Input 
-                    placeholder="E.g. Yes Bank" 
+                    placeholder="E.g. Indian Bank" 
                     value={formData.bankName || ''}
                     onChange={(e) => setFormData({ ...formData, bankName: e.target.value })}
                   />
@@ -408,7 +408,7 @@ export default function SettingsPage() {
                 <div className="space-y-2">
                   <Label>Account Number</Label>
                   <Input 
-                    placeholder="E.g. 002300800123456" 
+                    placeholder="E.g. 8349072629" 
                     value={formData.bankAccountNumber || ''}
                     onChange={(e) => setFormData({ ...formData, bankAccountNumber: e.target.value })}
                   />
@@ -416,7 +416,7 @@ export default function SettingsPage() {
                 <div className="space-y-2">
                   <Label>IFSC Code</Label>
                   <Input 
-                    placeholder="E.g. YESB0002308" 
+                    placeholder="E.g. IDIB000K688" 
                     value={formData.bankIfscCode || ''}
                     onChange={(e) => setFormData({ ...formData, bankIfscCode: e.target.value })}
                   />
