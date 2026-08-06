@@ -1027,14 +1027,17 @@ const getBillingStatementTemplate = (data = {}) => {
                 </tr>
                 
                 <!-- Payment Received Rows -->
-                ${pymts.map(p => `
-                  <tr>
-                    <td style="color: #4a5568; font-weight: 500;">Payment Received (${p.mode.toUpperCase()})</td>
-                    <td class="text-center" style="color: #4a5568;">${formatDate(p.paymentDate)}</td>
-                    <td class="text-center" style="text-transform: uppercase; color: #4a5568;">${p.mode}</td>
-                    <td class="text-right amount-green">- ${formatCurrency(p.amount)}</td>
-                  </tr>
-                `).join('')}
+                ${pymts.map(p => {
+                  const modeStr = String(p?.mode || 'ONLINE').toUpperCase();
+                  return `
+                    <tr>
+                      <td style="color: #4a5568; font-weight: 500;">Payment Received (${modeStr})</td>
+                      <td class="text-center" style="color: #4a5568;">${formatDate(p?.paymentDate)}</td>
+                      <td class="text-center" style="text-transform: uppercase; color: #4a5568;">${modeStr}</td>
+                      <td class="text-right amount-green">- ${formatCurrency(p?.amount)}</td>
+                    </tr>
+                  `;
+                }).join('')}
                 
                 <!-- Sub Total Row -->
                 <tr class="ledger-subtotal-row">
@@ -1079,15 +1082,21 @@ const getBillingStatementTemplate = (data = {}) => {
               </tr>
             </thead>
             <tbody>
-              ${pymts.map(p => `
-                <tr>
-                  <td>${formatDate(p.paymentDate)}</td>
-                  <td style="text-transform: uppercase;">${p.mode}</td>
-                  <td>${p.referenceUtr || p.id.slice(0, 18).toUpperCase()}</td>
-                  <td>${p.notes && p.notes.toLowerCase().includes('bank') ? p.notes : bankName} - ${bankAccountNumber.slice(-4)}</td>
-                  <td>${p.user?.name || 'Harsh Buddy'}</td>
-                </tr>
-              `).join('')}
+              ${pymts.map(p => {
+                const modeStr = String(p?.mode || 'ONLINE').toUpperCase();
+                const refStr = String(p?.referenceUtr || p?.referenceId || (p?.id ? String(p.id).slice(0, 18) : 'TXN')).toUpperCase();
+                const notesStr = String(p?.notes || '');
+                const recUser = p?.user?.name || 'Team Imagica';
+                return `
+                  <tr>
+                    <td>${formatDate(p?.paymentDate)}</td>
+                    <td style="text-transform: uppercase;">${modeStr}</td>
+                    <td>${refStr}</td>
+                    <td>${notesStr.toLowerCase().includes('bank') ? escapeHtml(notesStr) : bankName + ' - ' + String(bankAccountNumber).slice(-4)}</td>
+                    <td>${escapeHtml(recUser)}</td>
+                  </tr>
+                `;
+              }).join('')}
               ${pymts.length === 0 ? `
                 <tr>
                   <td colspan="5" style="text-align: center; color: #a0aec0; padding: 8px;">No transaction details recorded for verified payments.</td>
