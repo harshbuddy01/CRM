@@ -124,7 +124,6 @@ const getBillingDataForQuery = async (queryId) => {
         select: {
           id: true,
           shareSlug: true,
-          slug: true,
           title: true,
           costingBreakdown: true,
           sellingPrice: true,
@@ -133,6 +132,9 @@ const getBillingDataForQuery = async (queryId) => {
         }
       }
     },
+  }).catch((err) => {
+    logger.error('Error fetching proposal in getBillingDataForQuery:', err);
+    return null;
   });
 
   const customerPayments = await prisma.payment.findMany({
