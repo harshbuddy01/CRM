@@ -2,6 +2,8 @@
 // TravelCRM — Tax Invoice / Billing Statement Template
 // ============================================================
 
+const escapeHtml = (str) => String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+
 const formatCurrency = (amount) => {
   if (amount === null || amount === undefined || isNaN(Number(amount))) return '₹0';
   return '₹' + Number(amount).toLocaleString('en-IN', { maximumFractionDigits: 0 });

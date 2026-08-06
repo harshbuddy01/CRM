@@ -133,7 +133,7 @@ const getBillingDataForQuery = async (queryId) => {
       }
     },
   }).catch((err) => {
-    logger.error('Error fetching proposal in getBillingDataForQuery:', err);
+    console.error('Error fetching proposal in getBillingDataForQuery:', err?.message || err);
     return null;
   });
 
@@ -393,7 +393,7 @@ const sendBillingStatementEmail = async (req, res, next) => {
 
       ${billingData.proposal?.itinerary ? `
         <div style="text-align: center; margin: 30px 0 20px 0;">
-          <a href="${(process.env.FRONTEND_URL || 'https://crm.imagicaholidays.com')}/share/${billingData.proposal.itinerary.shareSlug || billingData.proposal.itinerary.slug || billingData.proposal.itinerary.id}" 
+          <a href="${(process.env.FRONTEND_URL || 'https://crm.imagicaholidays.com')}/share/${billingData.proposal.itinerary.shareSlug || billingData.proposal.itinerary.id}" 
              style="background-color: #a5813b; color: #ffffff; padding: 14px 30px; border-radius: 8px; font-size: 15px; font-weight: 700; text-decoration: none; display: inline-block; letter-spacing: 0.5px; box-shadow: 0 6px 18px rgba(165,129,59,0.25);">
             📱 View Full Itinerary Online
           </a>
