@@ -55,7 +55,7 @@ const getArtisanalEmailFrame = (options) => {
 </head>
 <body style="margin: 0; padding: 0; background-color: #faf9f6;">
   <!-- MAIN OUTER TABLE -->
-  <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #faf9f6; padding: 40px 0;">
+  <table border="0; " cellpadding="0" cellspacing="0" width="100%" style="background-color: #faf9f6; padding: 40px 0;">
     <tr>
       <td align="center">
         
@@ -68,9 +68,9 @@ const getArtisanalEmailFrame = (options) => {
               <div style="font-size: 9px; color: #a5813b; font-weight: 700; letter-spacing: 3px; text-transform: uppercase; margin-bottom: 12px;">
                 Bespoke Travel Collection
               </div>
-              <div style="margin: 0 auto; display: inline-block;">
+              <div style="margin: 0 auto; text-align: center;">
                 ${logoUrl ? `
-                  <img src="${logoUrl}" alt="${companyName}" style="max-height: 55px; max-width: 240px; display: block; margin: 0 auto; object-fit: contain;" />
+                  <img src="${logoUrl}" alt="${companyName}" width="160" style="width: 160px; max-height: 55px; display: block; margin: 0 auto; object-fit: contain;" />
                 ` : `
                   <div style="border: 1px solid #b89249; padding: 12px 24px; display: inline-block; background-color: #0b1a12;">
                     <div class="serif-font" style="font-size: 22px; font-weight: 700; color: #ffffff; letter-spacing: 4px; text-transform: uppercase; line-height: 1.1;">
@@ -88,17 +88,15 @@ const getArtisanalEmailFrame = (options) => {
             </td>
           </tr>
 
-          <!-- 2. HIGH-END EDITORIAL ARCHED GALLERY FRAME -->
+          <!-- 2. HIGH-END EDITORIAL ARCHED GALLERY FRAME (BULLETPROOF GMAIL RENDER) -->
           <tr>
             <td style="background-color: #ffffff; padding: 40px 40px 0 40px; text-align: center;">
               
               <!-- Outer Arch Border (Stationery Frame) -->
-              <div style="border: 1px solid #ebdcc5; border-radius: 280px 280px 0 0; padding: 12px; display: inline-block; max-width: 90%; box-sizing: border-box;">
+              <div style="border: 1px solid #ebdcc5; border-radius: 280px 280px 0 0; padding: 12px; display: inline-block; max-width: 95%;">
                 
-                <!-- Inner Arch Image Frame with Gold Border -->
-                <div style="border: 3px solid #b89249; border-radius: 260px 260px 0 0; overflow: hidden; width: 450px; max-width: 100%; height: 260px; box-shadow: 0 8px 25px rgba(0,0,0,0.08); background-color: #0b1a12;">
-                  <img src="https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?q=80&w=1000&auto=format&fit=crop" width="450" height="260" style="width: 100%; height: 100%; object-fit: cover; display: block;" alt="Majestic Alps" />
-                </div>
+                <!-- Arched Image with Gold Border directly on the img tag (prevents collapses in Gmail) -->
+                <img src="https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?q=80&w=1000&auto=format&fit=crop" width="450" height="260" style="display: block; width: 450px; max-width: 100%; height: 260px; border: 3px solid #b89249; border-radius: 260px 260px 0 0; object-fit: cover;" alt="Majestic Alps" />
                 
               </div>
               
@@ -275,7 +273,7 @@ const getArtisanalEmailFrame = (options) => {
                   <td width="55%" valign="top" class="footer-col" style="padding-right: 25px;">
                     <div style="margin-bottom: 15px;">
                       ${logoUrl ? `
-                        <img src="${logoUrl}" alt="${companyName}" style="max-height: 48px; max-width: 200px; display: block; object-fit: contain; filter: brightness(0) invert(1);" />
+                        <img src="${logoUrl}" alt="${companyName}" width="140" style="width: 140px; max-height: 48px; display: block; object-fit: contain; filter: brightness(0) invert(1);" />
                       ` : `
                         <div class="serif-font" style="color: #ffffff; font-size: 20px; font-weight: 700; letter-spacing: 3px; line-height: 1;">
                           IMAGICA<br/><span style="font-size: 9px; letter-spacing: 5px; font-weight: 400; color: #b89249;">HOLIDAYS</span>
@@ -357,7 +355,4 @@ const getArtisanalEmailFrame = (options) => {
     </tr>
   </table>
 </body>
-</html>`;
-};
-
-module.exports = { getArtisanalEmailFrame };
+</html>
