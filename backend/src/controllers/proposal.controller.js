@@ -664,27 +664,8 @@ const sendEmail = async (req, res, next) => {
     const finalSubject = subject || 'Your Travel Proposal is Ready!';
     const rawContent = body || bodyRichText || `<p>Hi ${proposal.query.name}, your travel proposal is ready.</p>`;
 
-    // Add "View Online" link if itinerary exists
-    const viewOnlineHtml = proposal.itinerary ? `
-        <a href="${(process.env.FRONTEND_URL || 'https://crm.imagicaholidays.com')}/share/${proposal.itinerary.shareSlug || proposal.itinerary.id}" 
-           style="display:inline-block;background:#a5813b;color:#ffffff;padding:14px 32px;border-radius:8px;text-decoration:none;font-weight:bold;font-size:15px;letter-spacing:0.5px;margin-bottom:12px;box-shadow:0 4px 12px rgba(165,129,59,0.25);">
-          🌐 View Proposal Online
-        </a><br/>
-    ` : '';
-
-    // Append buttons to the email body
-    const pdfLinkHtml = `
-      <div style="margin-top:24px;text-align:center;">
-        ${viewOnlineHtml}
-        <a href="${pdfDownloadUrl}" 
-           style="display:inline-block;background:#1a1a2e;color:#ffffff;padding:14px 32px;border-radius:8px;text-decoration:none;font-weight:bold;font-size:15px;letter-spacing:0.5px;">
-          📄 Download Your Proposal PDF
-        </a>
-        <p style="margin-top:10px;font-size:12px;color:#888;">Or copy this link: <a href="${pdfDownloadUrl}" style="color:#666;">${pdfDownloadUrl}</a></p>
-      </div>
-    `;
-
-    const combinedBody = rawContent + pdfLinkHtml;
+    const viewOnlineUrl = proposal.itinerary ? `${(process.env.FRONTEND_URL || 'https://crm.imagicaholidays.com')}/share/${proposal.itinerary.shareSlug || proposal.itinerary.id}` : '';
+    const combinedBody = rawContent; // We no longer append buttons here; the template handles it
 
     // Fetch Org Settings for brand logo and company details
     const orgSettingService = require('../services/org-setting.service');
@@ -695,6 +676,8 @@ const sendEmail = async (req, res, next) => {
       subject: finalSubject,
       bodyContent: combinedBody,
       inviteType: 'proposal',
+      pdfDownloadUrl: pdfDownloadUrl,
+      viewOnlineUrl: viewOnlineUrl,
       companyLogoUrl: settings.companyLogoUrl || settings.companyLogo || '',
       companyName: settings.companyName || 'Imagica Holidays',
       companySlogan: settings.companySlogan || 'CURATED JOURNEYS. LASTING MEMORIES.',
