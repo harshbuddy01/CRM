@@ -844,6 +844,8 @@ export function BillingTab({ queryId }: { queryId: string }) {
             </div>
           </form>
         </DialogContent>
+      </Dialog>
+
       {/* Send Billing Statement Email Modal */}
       <Dialog open={isSendBillingEmailOpen} onOpenChange={setIsSendBillingEmailOpen}>
         <DialogContent className="sm:max-w-[425px]">
