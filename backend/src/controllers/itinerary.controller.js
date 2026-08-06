@@ -412,7 +412,7 @@ const generateItineraryHtml = (itinerary, settings = {}) => {
           <path d="M 0 115 Q 400 95 800 115" stroke="${pdfAccentColor}" stroke-width="2" fill="none" />
         </svg>
         <div style="display: flex; align-items: center; gap: 10px; margin-top: 4mm;">
-          ${companyLogo ? `<img src="${getSafeImageUrl(companyLogo)}" alt="Logo" style="height: 22mm; max-width: 65mm; object-fit: contain;" />` : `<div style="font-family: 'Playfair Display', serif; font-size: 16px; font-weight: bold; color: var(--pdf-primary); border: 2px solid var(--pdf-accent); padding: 2px 6px;">IH</div>`}
+          ${companyLogo ? `<img src="${getSafeImageUrl(companyLogo)}" alt="Logo" style="height: 15mm; max-height: 16mm; max-width: 55mm; object-fit: contain; display: block;" />` : `<div style="font-family: 'Playfair Display', serif; font-size: 16px; font-weight: bold; color: var(--pdf-primary); border: 2px solid var(--pdf-accent); padding: 2px 6px;">IH</div>`}
           ${companyLogo ? '' : `<div style="display: flex; flex-direction: column;"><span style="font-family: 'Playfair Display', serif; font-size: 15px; font-weight: 700; color: var(--pdf-primary); letter-spacing: 0.5px; text-transform: uppercase;">${escapeHtml(companyName)}</span><span style="font-family: 'Montserrat', sans-serif; font-size: 6px; font-weight: 600; color: #888; letter-spacing: 1px; text-transform: uppercase;">${escapeHtml(companySlogan)}</span></div>`}
         </div>
         <div style="text-align: right; margin-top: 5mm;">
@@ -745,14 +745,14 @@ const generateItineraryHtml = (itinerary, settings = {}) => {
                 <path d="M 0 115 Q 400 95 800 115" stroke="${pdfAccentColor}" stroke-width="2" fill="none" />
               </svg>
               <div style="display: flex; align-items: center; gap: 10px; margin-top: 4mm;">
-                ${companyLogo ? `<img src="${getSafeImageUrl(companyLogo)}" alt="Logo" style="height: 22mm; max-width: 65mm; object-fit: contain;" />` : `<div style="font-family: 'Playfair Display', serif; font-size: 16px; font-weight: bold; color: var(--pdf-primary); border: 2px solid var(--pdf-accent); padding: 2px 6px;">IH</div>`}
+                ${companyLogo ? `<img src="${getSafeImageUrl(companyLogo)}" alt="Logo" style="height: 15mm; max-height: 16mm; max-width: 55mm; object-fit: contain; display: block;" />` : `<div style="font-family: 'Playfair Display', serif; font-size: 16px; font-weight: bold; color: var(--pdf-primary); border: 2px solid var(--pdf-accent); padding: 2px 6px;">IH</div>`}
                 ${companyLogo ? '' : `<div style="display: flex; flex-direction: column;"><span style="font-family: 'Playfair Display', serif; font-size: 15px; font-weight: 700; color: var(--pdf-primary); letter-spacing: 0.5px; text-transform: uppercase;">${escapeHtml(companyName)}</span><span style="font-family: 'Montserrat', sans-serif; font-size: 6px; font-weight: 600; color: #888; letter-spacing: 1px; text-transform: uppercase;">${escapeHtml(companySlogan)}</span></div>`}
               </div>
 
             </div>
 
             <!-- Hero Image with Overlay -->
-            <div style="height: 125mm; width: 100%; margin-top: 28mm; position: relative; background-image: url('${pdfCoverPhoto || coverImageUrl}'); background-size: cover; background-position: center;">
+            <div style="height: 125mm; width: 100%; margin-top: 35mm; position: relative; background-image: url('${pdfCoverPhoto || coverImageUrl}'); background-size: cover; background-position: center;">
               <div style="position: absolute; inset: 0; background: linear-gradient(to bottom, rgba(15, 61, 47, 0.12), rgba(15, 61, 47, 0.45));"></div>
               <div style="position: absolute; bottom: 18mm; left: 15mm; color: white; text-align: left; max-width: 75%;">
                 <h2 style="font-family: 'Playfair Display', serif; font-size: 34px; font-weight: 800; color: white; margin: 0; letter-spacing: 1.5px; text-transform: uppercase; line-height: 1.1; text-shadow: 0 2px 8px rgba(0,0,0,0.5);">
@@ -905,7 +905,7 @@ const generateItineraryHtml = (itinerary, settings = {}) => {
               <path d="M 0 115 Q 400 95 800 115" stroke="${pdfAccentColor}" stroke-width="2" fill="none" />
             </svg>
             <div style="display: flex; align-items: center; gap: 10px; margin-top: 4mm;">
-              ${companyLogo ? `<img src="${getSafeImageUrl(companyLogo)}" alt="Logo" style="height: 22mm; max-width: 65mm; object-fit: contain;" />` : `<div style="font-family: 'Playfair Display', serif; font-size: 16px; font-weight: bold; color: var(--pdf-primary); border: 2px solid var(--pdf-accent); padding: 2px 6px;">IH</div>`}
+              ${companyLogo ? `<img src="${getSafeImageUrl(companyLogo)}" alt="Logo" style="height: 15mm; max-height: 16mm; max-width: 55mm; object-fit: contain; display: block;" />` : `<div style="font-family: 'Playfair Display', serif; font-size: 16px; font-weight: bold; color: var(--pdf-primary); border: 2px solid var(--pdf-accent); padding: 2px 6px;">IH</div>`}
               ${companyLogo ? '' : `<div style="display: flex; flex-direction: column;"><span style="font-family: 'Playfair Display', serif; font-size: 15px; font-weight: 700; color: var(--pdf-primary); letter-spacing: 0.5px; text-transform: uppercase;">${escapeHtml(companyName)}</span><span style="font-family: 'Montserrat', sans-serif; font-size: 6px; font-weight: 600; color: #888; letter-spacing: 1px; text-transform: uppercase;">${escapeHtml(companySlogan)}</span></div>`}
             </div>
             <div style="text-align: right; margin-top: 5mm;">
@@ -1030,7 +1030,7 @@ const generateItineraryHtml = (itinerary, settings = {}) => {
                   <path d="M 0 115 Q 400 95 800 115" stroke="${pdfAccentColor}" stroke-width="2" fill="none" />
                 </svg>
                 <div style="display: flex; align-items: center; gap: 10px; margin-top: 4mm;">
-                  ${companyLogo ? `<img src="${getSafeImageUrl(companyLogo)}" alt="Logo" style="height: 22mm; max-width: 65mm; object-fit: contain;" />` : `<div style="font-family: 'Playfair Display', serif; font-size: 16px; font-weight: bold; color: var(--pdf-primary); border: 2px solid var(--pdf-accent); padding: 2px 6px;">IH</div>`}
+                  ${companyLogo ? `<img src="${getSafeImageUrl(companyLogo)}" alt="Logo" style="height: 15mm; max-height: 16mm; max-width: 55mm; object-fit: contain; display: block;" />` : `<div style="font-family: 'Playfair Display', serif; font-size: 16px; font-weight: bold; color: var(--pdf-primary); border: 2px solid var(--pdf-accent); padding: 2px 6px;">IH</div>`}
                   ${companyLogo ? '' : `<div style="display: flex; flex-direction: column;"><span style="font-family: 'Playfair Display', serif; font-size: 15px; font-weight: 700; color: var(--pdf-primary); letter-spacing: 0.5px; text-transform: uppercase;">${escapeHtml(companyName)}</span><span style="font-family: 'Montserrat', sans-serif; font-size: 6px; font-weight: 600; color: #888; letter-spacing: 1px; text-transform: uppercase;">${escapeHtml(companySlogan)}</span></div>`}
                 </div>
                 <div style="text-align: right; margin-top: 5mm;">
@@ -1066,7 +1066,7 @@ const generateItineraryHtml = (itinerary, settings = {}) => {
                 <path d="M 0 115 Q 400 95 800 115" stroke="${pdfAccentColor}" stroke-width="2" fill="none" />
               </svg>
               <div style="display: flex; align-items: center; gap: 10px; margin-top: 4mm;">
-                ${companyLogo ? `<img src="${getSafeImageUrl(companyLogo)}" alt="Logo" style="height: 22mm; max-width: 65mm; object-fit: contain;" />` : `<div style="font-family: 'Playfair Display', serif; font-size: 16px; font-weight: bold; color: var(--pdf-primary); border: 2px solid var(--pdf-accent); padding: 2px 6px;">IH</div>`}
+                ${companyLogo ? `<img src="${getSafeImageUrl(companyLogo)}" alt="Logo" style="height: 15mm; max-height: 16mm; max-width: 55mm; object-fit: contain; display: block;" />` : `<div style="font-family: 'Playfair Display', serif; font-size: 16px; font-weight: bold; color: var(--pdf-primary); border: 2px solid var(--pdf-accent); padding: 2px 6px;">IH</div>`}
                 ${companyLogo ? '' : `<div style="display: flex; flex-direction: column;"><span style="font-family: 'Playfair Display', serif; font-size: 15px; font-weight: 700; color: var(--pdf-primary); letter-spacing: 0.5px; text-transform: uppercase;">${escapeHtml(companyName)}</span><span style="font-family: 'Montserrat', sans-serif; font-size: 6px; font-weight: 600; color: #888; letter-spacing: 1px; text-transform: uppercase;">${escapeHtml(companySlogan)}</span></div>`}
               </div>
               <div style="text-align: right; margin-top: 5mm;">
@@ -1193,7 +1193,7 @@ const generateItineraryHtml = (itinerary, settings = {}) => {
               <path d="M 0 115 Q 400 95 800 115" stroke="${pdfAccentColor}" stroke-width="2" fill="none" />
             </svg>
             <div style="display: flex; align-items: center; gap: 10px; margin-top: 4mm;">
-              ${companyLogo ? `<img src="${getSafeImageUrl(companyLogo)}" alt="Logo" style="height: 22mm; max-width: 65mm; object-fit: contain;" />` : `<div style="font-family: 'Playfair Display', serif; font-size: 16px; font-weight: bold; color: var(--pdf-primary); border: 2px solid var(--pdf-accent); padding: 2px 6px;">IH</div>`}
+              ${companyLogo ? `<img src="${getSafeImageUrl(companyLogo)}" alt="Logo" style="height: 15mm; max-height: 16mm; max-width: 55mm; object-fit: contain; display: block;" />` : `<div style="font-family: 'Playfair Display', serif; font-size: 16px; font-weight: bold; color: var(--pdf-primary); border: 2px solid var(--pdf-accent); padding: 2px 6px;">IH</div>`}
               ${companyLogo ? '' : `<div style="display: flex; flex-direction: column;"><span style="font-family: 'Playfair Display', serif; font-size: 15px; font-weight: 700; color: var(--pdf-primary); letter-spacing: 0.5px; text-transform: uppercase;">${escapeHtml(companyName)}</span><span style="font-family: 'Montserrat', sans-serif; font-size: 6px; font-weight: 600; color: #888; letter-spacing: 1px; text-transform: uppercase;">${escapeHtml(companySlogan)}</span></div>`}
             </div>
             <div style="text-align: right; margin-top: 5mm;">
@@ -1299,7 +1299,7 @@ const generateItineraryHtml = (itinerary, settings = {}) => {
               <path d="M 0 115 Q 400 95 800 115" stroke="${pdfAccentColor}" stroke-width="2" fill="none" />
             </svg>
             <div style="display: flex; align-items: center; gap: 10px; margin-top: 4mm;">
-              ${companyLogo ? `<img src="${getSafeImageUrl(companyLogo)}" alt="Logo" style="height: 22mm; max-width: 65mm; object-fit: contain;" />` : `<div style="font-family: 'Playfair Display', serif; font-size: 16px; font-weight: bold; color: var(--pdf-primary); border: 2px solid var(--pdf-accent); padding: 2px 6px;">IH</div>`}
+              ${companyLogo ? `<img src="${getSafeImageUrl(companyLogo)}" alt="Logo" style="height: 15mm; max-height: 16mm; max-width: 55mm; object-fit: contain; display: block;" />` : `<div style="font-family: 'Playfair Display', serif; font-size: 16px; font-weight: bold; color: var(--pdf-primary); border: 2px solid var(--pdf-accent); padding: 2px 6px;">IH</div>`}
               ${companyLogo ? '' : `<div style="display: flex; flex-direction: column;"><span style="font-family: 'Playfair Display', serif; font-size: 15px; font-weight: 700; color: var(--pdf-primary); letter-spacing: 0.5px; text-transform: uppercase;">${escapeHtml(companyName)}</span><span style="font-family: 'Montserrat', sans-serif; font-size: 6px; font-weight: 600; color: #888; letter-spacing: 1px; text-transform: uppercase;">${escapeHtml(companySlogan)}</span></div>`}
             </div>
             <div style="text-align: right; margin-top: 5mm;">
@@ -1363,7 +1363,7 @@ const generateItineraryHtml = (itinerary, settings = {}) => {
               <path d="M 0 115 Q 400 95 800 115" stroke="${pdfAccentColor}" stroke-width="2" fill="none" />
             </svg>
             <div style="display: flex; align-items: center; gap: 10px; margin-top: 4mm;">
-              ${companyLogo ? `<img src="${getSafeImageUrl(companyLogo)}" alt="Logo" style="height: 22mm; max-width: 65mm; object-fit: contain;" />` : `<div style="font-family: 'Playfair Display', serif; font-size: 16px; font-weight: bold; color: var(--pdf-primary); border: 2px solid var(--pdf-accent); padding: 2px 6px;">IH</div>`}
+              ${companyLogo ? `<img src="${getSafeImageUrl(companyLogo)}" alt="Logo" style="height: 15mm; max-height: 16mm; max-width: 55mm; object-fit: contain; display: block;" />` : `<div style="font-family: 'Playfair Display', serif; font-size: 16px; font-weight: bold; color: var(--pdf-primary); border: 2px solid var(--pdf-accent); padding: 2px 6px;">IH</div>`}
               ${companyLogo ? '' : `<div style="display: flex; flex-direction: column;"><span style="font-family: 'Playfair Display', serif; font-size: 15px; font-weight: 700; color: var(--pdf-primary); letter-spacing: 0.5px; text-transform: uppercase;">${escapeHtml(companyName)}</span><span style="font-family: 'Montserrat', sans-serif; font-size: 6px; font-weight: 600; color: #888; letter-spacing: 1px; text-transform: uppercase;">${escapeHtml(companySlogan)}</span></div>`}
             </div>
             <div style="text-align: right; margin-top: 5mm;">
@@ -1459,7 +1459,7 @@ const generateItineraryHtml = (itinerary, settings = {}) => {
               <path d="M 0 115 Q 400 95 800 115" stroke="${pdfAccentColor}" stroke-width="2" fill="none" />
             </svg>
             <div style="display: flex; align-items: center; gap: 10px; margin-top: 4mm;">
-              ${companyLogo ? `<img src="${getSafeImageUrl(companyLogo)}" alt="Logo" style="height: 22mm; max-width: 65mm; object-fit: contain;" />` : `<div style="font-family: 'Playfair Display', serif; font-size: 16px; font-weight: bold; color: var(--pdf-primary); border: 2px solid var(--pdf-accent); padding: 2px 6px;">IH</div>`}
+              ${companyLogo ? `<img src="${getSafeImageUrl(companyLogo)}" alt="Logo" style="height: 15mm; max-height: 16mm; max-width: 55mm; object-fit: contain; display: block;" />` : `<div style="font-family: 'Playfair Display', serif; font-size: 16px; font-weight: bold; color: var(--pdf-primary); border: 2px solid var(--pdf-accent); padding: 2px 6px;">IH</div>`}
               ${companyLogo ? '' : `<div style="display: flex; flex-direction: column;"><span style="font-family: 'Playfair Display', serif; font-size: 15px; font-weight: 700; color: var(--pdf-primary); letter-spacing: 0.5px; text-transform: uppercase;">${escapeHtml(companyName)}</span><span style="font-family: 'Montserrat', sans-serif; font-size: 6px; font-weight: 600; color: #888; letter-spacing: 1px; text-transform: uppercase;">${escapeHtml(companySlogan)}</span></div>`}
             </div>
             <div style="text-align: right; margin-top: 5mm;">
