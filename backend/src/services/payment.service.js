@@ -266,10 +266,43 @@ const getOverdueTracker = async () => {
   return overdue;
 };
 
+const updatePayment = async (paymentId, data, userId) => {
+  const payment = await prisma.payment.findUnique({ where: { id: paymentId } });
+  if (!payment) throw new NotFoundError('Payment');
+
+  const updated = await prisma.payment.update({
+    where: { id: paymentId },
+    data: {
+      ...(data.amount !== undefined && { amount: Number(data.amount) }),
+      ...(data.mode !== undefined && { mode: data.mode }),
+      ...(data.referenceUtr !== undefined && { referenceUtr: data.referenceUtr }),
+      ...(data.paymentDate !== undefined && { paymentDate: new Date(data.paymentDate) }),
+      ...(data.notes !== undefined && { notes: data.notes }),
+      ...(data.status !== undefined && { status: data.status }),
+    }
+  });
+
+  return updated;
+};
+
+const deletePayment = async (paymentId, userId) => {
+  const payment = await prisma.payment.findUnique({ where: { id: paymentId } });
+  if (!payment) throw new NotFoundError('Payment');
+
+  const deleted = await prisma.payment.update({
+    where: { id: paymentId },
+    data: { deletedAt: new Date() }
+  });
+
+  return deleted;
+};
+
 module.exports = {
   listPayments,
   recordManualPayment,
   generateRazorpayLink,
   handleWebhook,
-  getOverdueTracker
+  getOverdueTracker,
+  updatePayment,
+  deletePayment
 };

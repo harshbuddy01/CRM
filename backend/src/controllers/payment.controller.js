@@ -77,10 +77,30 @@ const overdue = async (req, res, next) => {
   }
 };
 
+const updatePayment = async (req, res, next) => {
+  try {
+    const result = await paymentService.updatePayment(req.params.id, req.body, req.user.id);
+    res.json({ success: true, message: 'Payment updated', data: result });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const deletePayment = async (req, res, next) => {
+  try {
+    const result = await paymentService.deletePayment(req.params.id, req.user.id);
+    res.json({ success: true, message: 'Payment deleted', data: result });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   list,
   recordPayment,
   razorpayLink,
   webhook,
   overdue,
+  updatePayment,
+  deletePayment,
 };

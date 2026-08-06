@@ -3,7 +3,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { Card, CardContent } from '@/components/ui/card';
-import { Loader2, IndianRupee, TrendingUp, CreditCard, Copy, ExternalLink, Send, RefreshCw, Download } from 'lucide-react';
+import { Loader2, IndianRupee, TrendingUp, CreditCard, Copy, ExternalLink, Send, RefreshCw, Download, Pencil, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
@@ -245,8 +245,39 @@ export function BillingTab({ queryId }: { queryId: string }) {
       queryClient.invalidateQueries({ queryKey: ['payments', queryId] });
       queryClient.invalidateQueries({ queryKey: ['booking-services', queryId] });
     },
+  const [editingPayment, setEditingPayment] = useState<any>(null);
+  const [editAmount, setEditAmount] = useState('');
+  const [editMode, setEditMode] = useState('upi');
+  const [editUtr, setEditUtr] = useState('');
+
+  const updatePaymentMutation = useMutation({
+    mutationFn: async (payload: any) => {
+      const res = await api.put(`/payments/${editingPayment.id}`, payload);
+      return res.data;
+    },
+    onSuccess: () => {
+      toast.success('Payment updated successfully');
+      setEditingPayment(null);
+      queryClient.invalidateQueries({ queryKey: ['billing-summary', queryId] });
+      queryClient.invalidateQueries({ queryKey: ['payments', queryId] });
+    },
     onError: (err: any) => {
-      toast.error('Failed to record supplier payment', { description: err.response?.data?.message || err.message });
+      toast.error('Failed to update payment', { description: err.response?.data?.message || err.message });
+    }
+  });
+
+  const deletePaymentMutation = useMutation({
+    mutationFn: async (paymentId: string) => {
+      const res = await api.delete(`/payments/${paymentId}`);
+      return res.data;
+    },
+    onSuccess: () => {
+      toast.success('Payment record removed');
+      queryClient.invalidateQueries({ queryKey: ['billing-summary', queryId] });
+      queryClient.invalidateQueries({ queryKey: ['payments', queryId] });
+    },
+    onError: (err: any) => {
+      toast.error('Failed to remove payment', { description: err.response?.data?.message || err.message });
     }
   });
 
@@ -580,7 +611,7 @@ export function BillingTab({ queryId }: { queryId: string }) {
                       {isSupplier ? <p className="text-[10px] font-semibold text-amber-700 mt-0.5">TO: {p.vendorName}</p> : null}
                     </div>
                   </div>
-                  <div className="text-right">
+                  <div className="text-right flex flex-col items-end">
                     {isSupplier ? (
                       <span className="px-2 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-700">supplier payment</span>
                     ) : (
@@ -589,6 +620,35 @@ export function BillingTab({ queryId }: { queryId: string }) {
                       }`}>customer • {p.status}</span>
                     )}
                     <p className="text-xs text-muted-foreground mt-1">{format(new Date(p.paymentDate), 'PP')}</p>
+                    {!isSupplier && (
+                      <div className="flex items-center gap-1 mt-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 px-2 text-xs font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-md"
+                          onClick={() => {
+                            setEditingPayment(p);
+                            setEditAmount(String(p.amount));
+                            setEditMode(p.mode || 'upi');
+                            setEditUtr(p.referenceUtr || p.referenceId || '');
+                          }}
+                        >
+                          <Pencil className="w-3 h-3 mr-1 text-slate-500" /> Edit
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 px-2 text-xs font-semibold text-red-600 hover:text-red-700 hover:bg-red-50 rounded-md"
+                          onClick={() => {
+                            if (confirm(`Are you sure you want to remove this payment entry of ₹${Number(p.amount).toLocaleString('en-IN')}?`)) {
+                              deletePaymentMutation.mutate(p.id);
+                            }
+                          }}
+                        >
+                          <Trash2 className="w-3 h-3 mr-1 text-red-500" /> Delete
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -669,6 +729,70 @@ export function BillingTab({ queryId }: { queryId: string }) {
           </Card>
         )}
       </div>
+
+      {/* Edit Payment Dialog Modal */}
+      <Dialog open={!!editingPayment} onOpenChange={(open) => { if (!open) setEditingPayment(null); }}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Edit Recorded Payment</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={(e) => {
+            e.preventDefault();
+            if (!editAmount || Number(editAmount) <= 0) {
+              toast.error('Please enter a valid amount');
+              return;
+            }
+            updatePaymentMutation.mutate({
+              amount: Number(editAmount),
+              mode: editMode,
+              referenceUtr: editUtr,
+            });
+          }} className="space-y-4 pt-2">
+            <div className="space-y-2">
+              <Label>Payment Amount (₹)</Label>
+              <Input
+                type="number"
+                placeholder="e.g. 40000"
+                value={editAmount}
+                onChange={(e) => setEditAmount(e.target.value)}
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Payment Mode</Label>
+              <select
+                className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm"
+                value={editMode}
+                onChange={(e) => setEditMode(e.target.value)}
+              >
+                <option value="upi">UPI / GPay / PhonePe</option>
+                <option value="neft">NEFT / RTGS / IMPS</option>
+                <option value="card">Credit / Debit Card</option>
+                <option value="cash">Cash</option>
+                <option value="cheque">Cheque</option>
+              </select>
+            </div>
+            <div className="space-y-2">
+              <Label>Reference UTR / Txn ID (Optional)</Label>
+              <Input
+                type="text"
+                placeholder="e.g. UTR12345678"
+                value={editUtr}
+                onChange={(e) => setEditUtr(e.target.value)}
+              />
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <Button type="button" variant="outline" onClick={() => setEditingPayment(null)}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={updatePaymentMutation.isPending}>
+                {updatePaymentMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                Save Changes
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
