@@ -117,16 +117,19 @@ const numberToWords = (num) => {
   return words.trim() + ' Rupees Only';
 };
 
-const getBillingStatementTemplate = (data) => {
+const getBillingStatementTemplate = (data = {}) => {
   const { query, customer, payments, date, orgSettings, tourCode } = data;
+  const q = query || {};
+  const cust = customer || { totalAmount: 0, totalReceived: 0, totalPending: 0 };
+  const pymts = payments || [];
   
   const settings = orgSettings || {};
-  const companyName = settings.companyName || process.env.APP_NAME || 'TravelCRM';
-  const companyEmail = settings.companyEmail || process.env.APP_EMAIL || 'noreply@travelcrm.app';
-  const companyPhone = settings.companyPhone || '+91 99999 99999';
-  const companyWebsite = settings.companyWebsite || process.env.APP_DOMAIN || 'travelcrm.app';
-  const companyAddress = settings.companyAddress || '2nd Floor, Adventure House, Hill Cart Road, Siliguri, West Bengal - 734001, India';
-  const companyLogoUrl = settings.companyLogoUrl || '';
+  const companyName = settings.companyName || process.env.APP_NAME || 'Imagica Holidays';
+  const companyEmail = settings.companyEmail || process.env.APP_EMAIL || 'info@imagicaholidays.com';
+  const companyPhone = settings.companyPhone || settings.phone || '+91 99999 99999';
+  const companyWebsite = settings.companyWebsite || process.env.APP_DOMAIN || 'imagicaholidays.com';
+  const companyAddress = settings.companyAddress || 'Siliguri, West Bengal, India';
+  const companyLogoUrl = settings.companyLogoUrl || settings.companyLogo || '';
   const companyGst = settings.companyGst || '';
   const companyPan = settings.companyPan || '';
   const bankAccountName = settings.bankAccountName || 'Imagica Holidays';
@@ -137,25 +140,25 @@ const getBillingStatementTemplate = (data) => {
   
   const companyAbbr = getAbbr(companyName);
   const year = new Date().getFullYear();
-  const queryNum = query.queryCode ? query.queryCode.split('-').pop() : query.id.slice(0, 6).toUpperCase();
+  const queryNum = q.queryCode ? q.queryCode.split('-').pop() : (q.id || '000000').slice(0, 6).toUpperCase();
   const invoiceNumber = `${companyAbbr}/INV/${year}/${queryNum.padStart(6, '0')}`;
   
-  const referenceId = `#${(query.queryCode || query.id.slice(0, 8)).replace(/-/g, '').toUpperCase()}`;
+  const referenceId = `#${(q.queryCode || (q.id || '').slice(0, 8)).replace(/-/g, '').toUpperCase()}`;
   const tripId = tourCode || `${companyAbbr}-${queryNum}`;
-  const placeOfSupply = getPlaceOfSupply(query.destination);
+  const placeOfSupply = getPlaceOfSupply(q.destination);
   const invoiceDate = date;
   
-  let guestsText = `${query.adults} Adults`;
-  if (query.children > 0) {
-    guestsText += `, ${query.children} Child`;
+  let guestsText = `${q.adults || 0} Adults`;
+  if (q.children > 0) {
+    guestsText += `, ${q.children} Child`;
   }
   
-  const nightsDaysText = calculateNightsAndDays(query.travelDateFrom, query.travelDateTo);
-  const travelDatesFormatted = (query.travelDateFrom && query.travelDateTo) 
-    ? `${formatDate(query.travelDateFrom)} - ${formatDate(query.travelDateTo)}`
+  const nightsDaysText = calculateNightsAndDays(q.travelDateFrom, q.travelDateTo);
+  const travelDatesFormatted = (q.travelDateFrom && q.travelDateTo) 
+    ? `${formatDate(q.travelDateFrom)} - ${formatDate(q.travelDateTo)}`
     : '—';
     
-  const isPaidInFull = customer.totalPending <= 0;
+  const isPaidInFull = (cust.totalPending || 0) <= 0;
   
   const gstRow = '';
   const panRow = '';

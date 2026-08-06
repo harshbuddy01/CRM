@@ -20,21 +20,7 @@ const { getArtisanalEmailFrame } = require('../templates/artisanalEmail.template
  * If a cached PDF exists (pdfUrl is set), skip regeneration.
  */
 const getOrGeneratePdf = async (proposal) => {
-  // Use cached PDF if available
-  if (proposal.pdfUrl && proposal.pdfStatus === 'ready' && proposal.pdfUrl.startsWith('minio://')) {
-    try {
-      // Extract filename from 'minio://bucket-name/pdfs/filename.pdf'
-      const parts = proposal.pdfUrl.split('/');
-      const filename = parts[parts.length - 1];
-      
-      const stream = await getPdfStreamFromVault(filename);
-      const chunks = [];
-      for await (const chunk of stream) chunks.push(chunk);
-      return Buffer.concat(chunks);
-    } catch (err) {
-      logger.warn(`[PDF Cache] Failed to fetch cached PDF for ${proposal.id} from Vault, regenerating...`);
-    }
-  }
+  // Always generate fresh PDF to apply latest templates, logo, terms layout & styles
 
   // Generate fresh PDF
   let htmlContent;
