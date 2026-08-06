@@ -1,5 +1,5 @@
 // ============================================================
-// TravelCRM — Premium Proposal Email Template (Gmail Compatible)
+// TravelCRM — Premium Proposal Email Template (Reference Mockup Matched)
 // ============================================================
 
 const getArtisanalEmailFrame = (options) => {
@@ -63,7 +63,7 @@ const getArtisanalEmailFrame = (options) => {
             <!-- MAIN CARD CONTAINER -->
             <td width="650" align="center" style="background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.06); border: 1px solid #e8e3d8;">
               
-              <!-- 1. TOP BRAND HEADER -->
+              <!-- 1. TOP BRAND HEADER BAR -->
               <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #ffffff; padding: 18px 30px;">
                 <tr>
                   <td width="32%" align="left" class="body-font" style="font-size: 10px; color: #4b5563; font-weight: 500;">
@@ -86,20 +86,20 @@ const getArtisanalEmailFrame = (options) => {
                 </tr>
               </table>
 
-              <!-- 2. HERO IMAGE WITH MOUNTAIN RANGE & GOLD CURVE -->
+              <!-- 2. HERO TROPICAL RESORT BANNER WITH GOLDEN CURVE -->
               <table border="0" cellpadding="0" cellspacing="0" width="100%">
                 <tr>
                   <td align="center" style="position: relative; background-color: #0b1a28;">
-                    <!-- 4K Mountain Range Hero Image -->
-                    <img src="https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?q=80&w=1200&auto=format&fit=crop" width="650" style="width: 100%; max-width: 650px; height: auto; display: block;" alt="Your Journey Awaits" />
+                    <!-- Tropical Ocean Resort Banner Photo matching the mockup -->
+                    <img src="https://images.unsplash.com/photo-1540555700478-4be289fbecef?q=80&w=1200&auto=format&fit=crop" width="650" style="width: 100%; max-width: 650px; height: auto; display: block;" alt="Your Journey Awaits" />
                   </td>
                 </tr>
-                <!-- Gold Curved Border Graphic -->
+                <!-- Gold Curved S-Wave Line Graphic under photo -->
                 <tr>
                   <td style="line-height: 0; font-size: 0; background-color: #ffffff;">
-                    <svg width="100%" height="30" viewBox="0 0 650 30" preserveAspectRatio="none" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M0 0C150 25 500 25 650 0V30H0V0Z" fill="#ffffff"/>
-                      <path d="M0 2C150 27 500 27 650 2" stroke="#d4af37" stroke-width="3" fill="none"/>
+                    <svg width="100%" height="32" viewBox="0 0 650 32" preserveAspectRatio="none" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M0 0C150 28 500 28 650 0V32H0V0Z" fill="#ffffff"/>
+                      <path d="M0 2C150 30 500 30 650 2" stroke="#d4af37" stroke-width="3.5" fill="none"/>
                     </svg>
                   </td>
                 </tr>
@@ -113,7 +113,7 @@ const getArtisanalEmailFrame = (options) => {
                   </td>
                 </tr>
 
-                <!-- 4. CONTACT PARTNER CARD -->
+                <!-- 4. CONTACT PARTNER CARD WITH GOLD RIBBON -->
                 <tr>
                   <td style="padding-top: 30px;">
                     <table border="0" cellpadding="0" cellspacing="0" width="100%" style="border: 1px solid #ebdcc5; border-radius: 12px; overflow: hidden; background-color: #fdfbf7;">
@@ -314,7 +314,7 @@ const getArtisanalEmailFrame = (options) => {
 
                   <!-- Footer Right Column -->
                   <td width="33%" valign="top" align="center" class="footer-col" style="padding-left: 15px; border-left: 1px solid #1a2638;">
-                    <!-- 4K Mountain Landscape Thumbnail -->
+                    <!-- 4K Mountain Scenery Photo -->
                     <img src="https://images.unsplash.com/photo-1506744038136-46273834b3fb?q=80&w=400&auto=format&fit=crop" width="160" style="border-radius: 8px; width: 100%; max-width: 160px; height: auto; display: block; margin-bottom: 8px; border: 1px solid #2d3748;" alt="Mountain Scenery" />
                     <span class="body-font" style="color: #e2e8f0; font-size: 10px; font-weight: 500;">Every trail tells a unique story.</span>
                     <div style="color: #b38b3f; font-size: 9px; margin-top: 4px;">— 🍁 —</div>

@@ -15,12 +15,17 @@ const { uploadPdfToVault, getPdfStreamFromVault } = require('../utils/vault');
 const { getArtisanalEmailFrame } = require('../templates/artisanalEmail.template');
 
 
+const pdfCacheMap = new Map();
+
 /**
- * Generate PDF for a proposal, cache it in MinIO Vault, and return the buffer.
- * If a cached PDF exists (pdfUrl is set), skip regeneration.
+ * Generate PDF for a proposal, cache it in memory & MinIO Vault, and return the buffer.
  */
 const getOrGeneratePdf = async (proposal) => {
-  // Always generate fresh PDF to apply latest templates, logo, terms layout & styles
+  const cacheKey = `${proposal.id}_${proposal.updatedAt ? new Date(proposal.updatedAt).getTime() : '0'}`;
+  if (pdfCacheMap.has(cacheKey)) {
+    logger.info(`[PDF Cache] Serving PDF instantly from memory cache for proposal ${proposal.id}`);
+    return pdfCacheMap.get(cacheKey);
+  }
 
   // Generate fresh PDF
   let htmlContent;
@@ -56,6 +61,14 @@ const getOrGeneratePdf = async (proposal) => {
 
   const pdfBuffer = await pdfService.generatePdfFromHtml(htmlContent);
   const buffer = Buffer.from(pdfBuffer);
+
+  // Store in memory cache for instant future downloads
+  pdfCacheMap.set(cacheKey, buffer);
+  if (pdfCacheMap.size > 50) {
+    const firstKey = pdfCacheMap.keys().next().value;
+    pdfCacheMap.delete(firstKey);
+  }
+
   const filename = `proposal-${proposal.id}.pdf`;
 
   // Cache to MinIO (non-blocking — don't hold up the response)
