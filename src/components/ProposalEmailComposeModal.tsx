@@ -36,10 +36,9 @@ export function ProposalEmailComposeModal({ isOpen, onClose, proposalId, custome
 
   useEffect(() => {
     if (settings?.emailSignature && isOpen) {
-      setBody(`<p>Hi ${customerName},</p><p>Please find your travel proposal attached.</p><p><br></p>${settings.emailSignature}`);
+      setBody(`<p>Hi ${customerName},</p><p>Please find your travel proposal attached. We've designed a personalized plan to make your journey unforgettable.</p><br/>${settings.emailSignature}`);
     } else if (isOpen) {
-      // Revert to initial static if no signature configured yet
-      setBody(`<p>Hi ${customerName},</p><p>Please find your travel proposal attached.</p><p><br></p><p>Best Regards,<br><strong>Team Sikkim Holidays</strong><br>📍 Sikkim Holidays ( A Unit of ETNHO TRAILS HOLIDAY Pvt Ltd.)<br>📞 For Booking: +91 8981510077<br>💳 For Service/Finance: +91 9007762137<br>✉️ Email: sikkimholidays.booking@gmail.com | support@sikkimholidays.in<br>🌐 Website: <a href="https://sikkimholidays.in">sikkimholidays.in</a></p>`);
+      setBody(`<p>Hi ${customerName},</p><p>Please find your travel proposal attached.</p><p>We've designed a personalized plan to make your journey unforgettable.</p>`);
     }
   }, [settings, isOpen, customerName]);
 
