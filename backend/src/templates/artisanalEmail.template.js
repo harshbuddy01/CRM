@@ -26,7 +26,7 @@ const getArtisanalEmailFrame = (options) => {
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>${subject || \`A Message from \${companyName}\`}</title>
+  <title>${subject || 'A Message from ' + companyName}</title>
   <style type="text/css">
     @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
     
@@ -185,24 +185,24 @@ const getArtisanalEmailFrame = (options) => {
 
               <!-- ACTION BUTTONS -->
               <table border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-top: 35px;">
-                ${viewOnlineUrl ? \`
+                ${viewOnlineUrl ? `
                 <tr>
                   <td align="center" style="padding-bottom: 15px;">
-                    <a href="\${viewOnlineUrl}" class="btn-gold body-font" style="display: block; width: 100%; box-sizing: border-box; background-color: #a5813b; color: #ffffff; text-align: center; padding: 18px 20px; border-radius: 8px; text-decoration: none; font-size: 13px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase;">
+                    <a href="${viewOnlineUrl}" class="btn-gold body-font" style="display: block; width: 100%; box-sizing: border-box; background-color: #a5813b; color: #ffffff; text-align: center; padding: 18px 20px; border-radius: 8px; text-decoration: none; font-size: 13px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase;">
                       👁️ View Proposal Online &nbsp; →
                     </a>
                   </td>
                 </tr>
-                \` : ''}
-                ${pdfDownloadUrl ? \`
+                ` : ''}
+                ${pdfDownloadUrl ? `
                 <tr>
                   <td align="center" style="padding-bottom: 25px;">
-                    <a href="\${pdfDownloadUrl}" class="btn-navy body-font" style="display: block; width: 100%; box-sizing: border-box; background-color: #111928; color: #ffffff; text-align: center; padding: 18px 20px; border-radius: 8px; text-decoration: none; font-size: 13px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase;">
+                    <a href="${pdfDownloadUrl}" class="btn-navy body-font" style="display: block; width: 100%; box-sizing: border-box; background-color: #111928; color: #ffffff; text-align: center; padding: 18px 20px; border-radius: 8px; text-decoration: none; font-size: 13px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase;">
                       📄 Download Your Proposal PDF &nbsp; →
                     </a>
                   </td>
                 </tr>
-                \` : ''}
+                ` : ''}
                 <tr>
                   <td align="center">
                     <div style="border: 1px solid #e5e7eb; border-radius: 6px; padding: 12px; text-align: center;">
@@ -316,4 +316,4 @@ const getArtisanalEmailFrame = (options) => {
 </html>`;
 };
 
-module.exports = { getArtisanalEmailFrame };Frame };
+module.exports = { getArtisanalEmailFrame };
