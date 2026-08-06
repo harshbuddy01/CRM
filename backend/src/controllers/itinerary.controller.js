@@ -1401,8 +1401,53 @@ const generateItineraryHtml = (itinerary, settings = {}) => {
                   `)}
                 </div>
               </div>
+            </div>
+          </div>
 
-              <!-- Bottom Row: Payment & Cancellation Policies Side by Side -->
+          <!-- Bottom Silhouette Background -->
+          ${pdfBottomSilhouette ? `<img src="${pdfBottomSilhouette}" style="position: absolute; bottom: 12mm; left: 0; width: 100%; height: 32mm; object-fit: cover; object-position: center bottom; opacity: 1.0; pointer-events: none;" />` : `
+          <svg viewBox="0 0 800 100" preserveAspectRatio="none" style="position: absolute; bottom: 12mm; left: 0; width: 100%; height: 20mm; opacity: 0.15; pointer-events: none;">
+            <path d="M0 100 L50 70 L120 85 L200 60 L280 75 L380 45 L480 70 L580 50 L680 80 L800 65 L800 100 Z" fill="#94a3b8" />
+            <path d="M0 100 L80 80 L160 90 L240 70 L340 85 L440 60 L540 80 L640 70 L720 90 L800 75 L800 100 Z" fill="#cbd5e1" />
+          </svg>
+          `}
+
+          <!-- Standard Footer -->
+          ${standardFooterHtml}
+        </div>
+
+        <!-- PAGE 6B: PAYMENT & CANCELLATION POLICIES -->
+        <div class="page">
+          <!-- Curved Top Header -->
+          <div class="page-header" style="height: 34mm;">
+            <svg viewBox="0 0 800 130" preserveAspectRatio="none" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: -1;">
+              <path d="M 0 0 L 800 0 L 800 115 Q 400 95 0 115 Z" fill="white" />
+              <path d="M 0 115 Q 400 95 800 115" stroke="${pdfAccentColor}" stroke-width="2" fill="none" />
+            </svg>
+            <div style="display: flex; align-items: center; gap: 10px; margin-top: 4mm;">
+              ${companyLogo ? `<img src="${getSafeImageUrl(companyLogo)}" alt="Logo" style="height: 15mm; max-height: 16mm; max-width: 55mm; object-fit: contain; display: block;" />` : `<div style="font-family: 'Playfair Display', serif; font-size: 16px; font-weight: bold; color: var(--pdf-primary); border: 2px solid var(--pdf-accent); padding: 2px 6px;">IH</div>`}
+              ${companyLogo ? '' : `<div style="display: flex; flex-direction: column;"><span style="font-family: 'Playfair Display', serif; font-size: 15px; font-weight: 700; color: var(--pdf-primary); letter-spacing: 0.5px; text-transform: uppercase;">${escapeHtml(companyName)}</span><span style="font-family: 'Montserrat', sans-serif; font-size: 6px; font-weight: 600; color: #888; letter-spacing: 1px; text-transform: uppercase;">${escapeHtml(companySlogan)}</span></div>`}
+            </div>
+            <div style="text-align: right; margin-top: 5mm;">
+              <span style="font-family: 'Montserrat', sans-serif; font-size: 8px; font-weight: 700; color: var(--pdf-primary); letter-spacing: 1px; text-transform: uppercase;">${escapeHtml(destinations)}</span>
+              <span style="font-family: 'EB Garamond', serif; font-size: 10px; font-style: italic; color: var(--pdf-accent); display: block; margin-top: 2px;">${computedTotalDays} Days / ${Math.max(1, computedTotalDays - 1)} Nights</span>
+            </div>
+          </div>
+
+          <!-- Horizontal Illustration Banner -->
+          <div style="height: 25mm; width: 100%; margin-top: 10mm; border-radius: 6px; border: 1.5px solid var(--pdf-accent); background-image: url('${pdfHeaderBanner || 'https://images.unsplash.com/photo-1544735716-392fe2489ffa?q=80&w=800'}'); background-size: cover; background-position: center; position: relative; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.03);">
+            <div style="position: absolute; inset: 0; background: linear-gradient(to right, rgba(15, 61, 47, 0.55), rgba(15, 61, 47, 0.08));"></div>
+            <div style="position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: white; text-align: left;">
+              <h3 style="font-family: 'Playfair Display', serif; font-size: 18px; font-weight: 700; margin: 0 0 2px 0; text-shadow: 0 2px 4px rgba(0,0,0,0.4);">Payment & Cancellation</h3>
+              <p style="font-family: 'Montserrat', sans-serif; font-size: 7px; font-weight: 600; color: var(--pdf-accent); text-transform: uppercase; letter-spacing: 1px; margin: 0; text-shadow: 0 2px 4px rgba(0,0,0,0.4);">Important policies and timelines</p>
+            </div>
+          </div>
+
+          <!-- Content -->
+          <div class="page-content" style="margin-top: 4mm;">
+            <div style="display: flex; flex-direction: column; gap: 12px; text-align: left; box-sizing: border-box;">
+
+              <!-- Payment & Cancellation Policies Side by Side -->
               <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; box-sizing: border-box;">
                 <!-- Payment Policy -->
                 <div style="display: flex; flex-direction: column; background: white; border: 1.5px solid #efe4d2; border-radius: 8px; padding: 12px 14px; box-shadow: 0 4px 12px rgba(0,0,0,0.02); box-sizing: border-box;">
