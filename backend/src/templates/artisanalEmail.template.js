@@ -5,6 +5,7 @@
 
 /**
  * Optimizes image URLs by injecting compression parameters (Cloudinary / Unsplash)
+ * Uses XML/HTML escaped amp (&amp;) to ensure robust parsing across mail clients.
  */
 const getOptimizedImageUrl = (url, width = 300) => {
   if (!url) return '';
@@ -19,7 +20,7 @@ const getOptimizedImageUrl = (url, width = 300) => {
   // 2. Optimize Unsplash URLs
   if (url.includes('images.unsplash.com')) {
     const cleanUrl = url.split('?')[0];
-    return `${cleanUrl}?auto=format&fit=crop&w=${width}&q=60`;
+    return `${cleanUrl}?auto=format&amp;fit=crop&amp;w=${width}&amp;q=60`;
   }
   
   return url;
@@ -81,12 +82,11 @@ const getArtisanalEmailFrame = (options) => {
 
       /* Arched Image Responsive Scaling */
       .outer-arch {
+        width: 90% !important;
         border-radius: 180px 180px 0 0 !important;
         padding: 8px !important;
       }
       .hero-image {
-        width: 100% !important;
-        height: 170px !important;
         border-radius: 170px 170px 0 0 !important;
       }
 
@@ -121,10 +121,12 @@ const getArtisanalEmailFrame = (options) => {
                     Curated Journeys<br/><span style="color: #64748b; font-weight: 500;">Lasting Memories</span>
                   </td>
                   
-                  <!-- Center Logo Container -->
+                  <!-- Center Logo Container (Explicit Width to prevent collapse) -->
                   <td width="40%" align="center" class="mobile-center-logo">
                     ${optimizedLogoUrl ? `
-                      <img src="${optimizedLogoUrl}" alt="${companyName}" width="150" style="width: 150px; max-height: 50px; display: block; margin: 0 auto; object-fit: contain;" />
+                      <div style="display: block; margin: 0 auto; text-align: center; width: 150px; max-width: 100%;">
+                        <img src="${optimizedLogoUrl}" alt="${companyName}" width="150" style="width: 100% !important; height: auto !important; display: block; margin: 0 auto; object-fit: contain;" />
+                      </div>
                     ` : `
                       <div style="border: 1px solid #b89249; padding: 10px 20px; display: inline-block; background-color: #0b1a12;">
                         <div class="serif-font" style="font-size: 20px; font-weight: 700; color: #ffffff; letter-spacing: 3px; text-transform: uppercase; line-height: 1.1;">
@@ -146,15 +148,15 @@ const getArtisanalEmailFrame = (options) => {
             </td>
           </tr>
 
-          <!-- 2. HIGH-END EDITORIAL ARCHED GALLERY FRAME (RESPONSIVE) -->
+          <!-- 2. HIGH-END EDITORIAL ARCHED GALLERY FRAME (ANTI-COLLAPSE RESPONSIVE) -->
           <tr>
             <td style="background-color: #ffffff; padding: 40px 40px 0 40px; text-align: center;">
               
-              <!-- Outer Arch Border (Stationery Frame) -->
-              <div class="outer-arch" style="border: 1px solid #ebdcc5; border-radius: 280px 280px 0 0; padding: 12px; display: inline-block; max-width: 95%;">
+              <!-- Outer Arch Border (Explicit width resolves circular dependency collapse on mobile) -->
+              <div class="outer-arch" style="border: 1px solid #ebdcc5; border-radius: 300px 300px 0 0; padding: 12px; display: inline-block; width: 450px; max-width: 95%; box-sizing: border-box; margin: 0 auto; text-align: center;">
                 
                 <!-- Arched Image with Gold Border directly on the img tag (prevents collapses & stretching) -->
-                <img class="hero-image" src="${optimizedHeroUrl}" width="450" height="260" style="display: block; width: 450px; max-width: 100%; height: 260px; border: 3px solid #b89249; border-radius: 260px 260px 0 0; object-fit: cover;" alt="Majestic Alps" />
+                <img class="hero-image" src="${optimizedHeroUrl}" width="450" style="display: block; width: 100% !important; height: auto !important; border: 3px solid #b89249; border-radius: 300px 300px 0 0; object-fit: cover;" alt="Majestic Alps" />
                 
               </div>
               
@@ -331,7 +333,9 @@ const getArtisanalEmailFrame = (options) => {
                   <td width="55%" valign="top" class="footer-col" style="padding-right: 25px;">
                     <div style="margin-bottom: 15px;">
                       ${optimizedLogoUrl ? `
-                        <img src="${optimizedLogoUrl}" alt="${companyName}" width="140" style="width: 140px; max-height: 48px; display: block; object-fit: contain; filter: brightness(0) invert(1);" />
+                        <div style="display: block; text-align: left; width: 140px; max-width: 100%;">
+                          <img src="${optimizedLogoUrl}" alt="${companyName}" width="140" style="width: 100% !important; height: auto !important; display: block; object-fit: contain; filter: brightness(0) invert(1);" />
+                        </div>
                       ` : `
                         <div class="serif-font" style="color: #ffffff; font-size: 20px; font-weight: 700; letter-spacing: 3px; line-height: 1;">
                           IMAGICA<br/><span style="font-size: 9px; letter-spacing: 5px; font-weight: 400; color: #b89249;">HOLIDAYS</span>
@@ -413,7 +417,4 @@ const getArtisanalEmailFrame = (options) => {
     </tr>
   </table>
 </body>
-</html>`;
-};
-
-module.exports = { getArtisanalEmailFrame };
+</html>
