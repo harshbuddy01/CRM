@@ -245,6 +245,11 @@ export function BillingTab({ queryId }: { queryId: string }) {
       queryClient.invalidateQueries({ queryKey: ['payments', queryId] });
       queryClient.invalidateQueries({ queryKey: ['booking-services', queryId] });
     },
+    onError: (err: any) => {
+      toast.error('Failed to record supplier payment', { description: err.response?.data?.message || err.message });
+    }
+  });
+
   const [editingPayment, setEditingPayment] = useState<any>(null);
   const [editAmount, setEditAmount] = useState('');
   const [editMode, setEditMode] = useState('upi');
