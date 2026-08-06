@@ -332,7 +332,17 @@ const downloadBillingStatementPdf = async (req, res, next) => {
       'Content-Length': buffer.length,
       'Content-Disposition': `attachment; filename="Billing-Statement-${billingData.query.queryCode || queryId.slice(0,8)}.pdf"`,
     });
+    res.set({
+      'Content-Type': 'application/pdf',
+      'Content-Length': buffer.length,
+      'Content-Disposition': `attachment; filename="Billing-Statement-${billingData.query.queryCode || queryId.slice(0,8)}.pdf"`,
+    });
     res.send(buffer);
+  } catch (err) {
+    next(err);
+  }
+};
+
 const sendBillingStatementEmail = async (req, res, next) => {
   try {
     const queryId = req.params.id;
@@ -362,42 +372,22 @@ const sendBillingStatementEmail = async (req, res, next) => {
           </div>
           <p style="color: #334155; font-size: 14px;">Dear <strong>${billingData.query.name || 'Valued Guest'}</strong>,</p>
           <p style="color: #334155; font-size: 14px; line-height: 1.6;">
-            Thank you for choosing <strong>Imagica Holidays</strong>. Below is the updated financial statement and ledger summary for your trip:
+            Thank you for choosing <strong>Imagica Holidays</strong>. Below is your updated financial statement:
           </p>
-          
           <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px; margin: 20px 0;">
             <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
-              <tr>
-                <td style="padding: 6px 0; color: #64748b;">Total Package Amount:</td>
-                <td style="padding: 6px 0; font-weight: bold; text-align: right; color: #0f172a;">₹${Number(billingData.customer.totalAmount).toLocaleString('en-IN')}</td>
-              </tr>
-              <tr>
-                <td style="padding: 6px 0; color: #166534; font-weight: bold;">Total Amount Received:</td>
-                <td style="padding: 6px 0; font-weight: bold; text-align: right; color: #166534;">₹${Number(billingData.customer.totalReceived).toLocaleString('en-IN')}</td>
-              </tr>
-              <tr style="border-top: 1px dashed #cbd5e1;">
-                <td style="padding: 8px 0 0 0; color: #b91c1c; font-weight: bold;">Pending Balance Due:</td>
-                <td style="padding: 8px 0 0 0; font-weight: bold; text-align: right; color: #b91c1c; font-size: 16px;">₹${Number(billingData.customer.totalPending).toLocaleString('en-IN')}</td>
-              </tr>
+              <tr><td style="padding: 6px 0; color: #64748b;">Total Package Amount:</td><td style="padding: 6px 0; font-weight: bold; text-align: right; color: #0f172a;">₹${Number(billingData.customer.totalAmount).toLocaleString('en-IN')}</td></tr>
+              <tr><td style="padding: 6px 0; color: #166534; font-weight: bold;">Total Amount Received:</td><td style="padding: 6px 0; font-weight: bold; text-align: right; color: #166534;">₹${Number(billingData.customer.totalReceived).toLocaleString('en-IN')}</td></tr>
+              <tr style="border-top: 1px dashed #cbd5e1;"><td style="padding: 8px 0 0 0; color: #b91c1c; font-weight: bold;">Pending Balance Due:</td><td style="padding: 8px 0 0 0; font-weight: bold; text-align: right; color: #b91c1c; font-size: 16px;">₹${Number(billingData.customer.totalPending).toLocaleString('en-IN')}</td></tr>
             </table>
           </div>
-
-          <p style="color: #334155; font-size: 14px; line-height: 1.6;">
-            Please find your official <strong>Billing Statement PDF</strong> attached to this email containing complete transaction details.
-          </p>
-
+          <p style="color: #334155; font-size: 14px; line-height: 1.6;">Please find your official <strong>Billing Statement PDF</strong> attached.</p>
           <div style="margin-top: 24px; padding-top: 16px; border-top: 1px solid #f1f5f9; text-align: center; color: #94a3b8; font-size: 12px;">
             <p style="margin: 0;">Imagica Holidays • Support: +91 99999 99999</p>
           </div>
         </div>
       `,
-      attachments: [
-        {
-          filename,
-          content: Buffer.from(pdfBuffer),
-          contentType: 'application/pdf'
-        }
-      ]
+      attachments: [{ filename, content: Buffer.from(pdfBuffer), contentType: 'application/pdf' }]
     });
 
     res.json({ success: true, message: `Billing statement PDF emailed successfully to ${recipientEmail}` });
