@@ -71,7 +71,7 @@ const getArtisanalEmailFrame = (options) => {
                   </td>
                   <td width="36%" align="center">
                     ${companyLogoUrl ? `
-                      <img src="${companyLogoUrl}" alt="${companyName}" style="max-height: 40px; display: block; margin: 0 auto;" />
+                      <img src="${companyLogoUrl}" alt="${companyName}" style="max-height: 50px; max-width: 200px; display: block; margin: 0 auto; object-fit: contain;" />
                     ` : `
                       <div style="background-color: #0d1520; padding: 10px 18px; border-radius: 3px; display: inline-block;">
                         <span class="serif-font" style="font-size: 13px; color: #ffffff; font-weight: 700; letter-spacing: 3.5px; text-transform: uppercase;">
@@ -86,12 +86,12 @@ const getArtisanalEmailFrame = (options) => {
                 </tr>
               </table>
 
-              <!-- 2. HERO IMAGE WITH TROPICAL RESORT & GOLD CURVE -->
+              <!-- 2. HERO IMAGE WITH MOUNTAIN RANGE & GOLD CURVE -->
               <table border="0" cellpadding="0" cellspacing="0" width="100%">
                 <tr>
                   <td align="center" style="position: relative; background-color: #0b1a28;">
-                    <!-- Hero Image Banner -->
-                    <img src="https://images.unsplash.com/photo-1540555700478-4be289fbecef?q=80&w=1200&auto=format&fit=crop" width="650" style="width: 100%; max-width: 650px; height: auto; display: block;" alt="Your Journey Awaits" />
+                    <!-- 4K Mountain Range Hero Image -->
+                    <img src="https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?q=80&w=1200&auto=format&fit=crop" width="650" style="width: 100%; max-width: 650px; height: auto; display: block;" alt="Your Journey Awaits" />
                   </td>
                 </tr>
                 <!-- Gold Curved Border Graphic -->
@@ -274,8 +274,14 @@ const getArtisanalEmailFrame = (options) => {
                 <tr>
                   <!-- Footer Left Column -->
                   <td width="34%" valign="top" class="footer-col" style="padding-right: 15px;">
-                    <div class="serif-font" style="color: #ffffff; font-size: 18px; font-weight: 700; letter-spacing: 2px; margin-bottom: 12px;">
-                      IMAGICA<br/><span style="font-size: 10px; letter-spacing: 4px; font-weight: 400; color: #a0aec0;">HOLIDAYS</span>
+                    <div style="margin-bottom: 12px;">
+                      ${companyLogoUrl ? `
+                        <img src="${companyLogoUrl}" alt="${companyName}" style="max-height: 40px; max-width: 160px; display: block; object-fit: contain; filter: brightness(0) invert(1);" />
+                      ` : `
+                        <div class="serif-font" style="color: #ffffff; font-size: 18px; font-weight: 700; letter-spacing: 2px;">
+                          IMAGICA<br/><span style="font-size: 10px; letter-spacing: 4px; font-weight: 400; color: #a0aec0;">HOLIDAYS</span>
+                        </div>
+                      `}
                     </div>
                     <p class="body-font" style="color: #a0aec0; font-size: 11px; line-height: 1.6; margin: 0 0 16px 0;">
                       Crafting journeys that last a lifetime. Creating memories that stay forever.
@@ -293,22 +299,23 @@ const getArtisanalEmailFrame = (options) => {
                     <table border="0" cellpadding="0" cellspacing="0" class="body-font" style="font-size: 11px; color: #cbd5e0;">
                       <tr>
                         <td width="20" style="padding-bottom: 8px;">📞</td>
-                        <td style="padding-bottom: 8px;">8910759317</td>
+                        <td style="padding-bottom: 8px;">${companyPhone}</td>
                       </tr>
                       <tr>
                         <td width="20" style="padding-bottom: 8px;">✉️</td>
-                        <td style="padding-bottom: 8px;">info@imagicaholidays.com</td>
+                        <td style="padding-bottom: 8px;">${companyEmail}</td>
                       </tr>
                       <tr>
                         <td width="20">🌐</td>
-                        <td>imagicaholidays.com</td>
+                        <td>${companyWebsite}</td>
                       </tr>
                     </table>
                   </td>
 
                   <!-- Footer Right Column -->
                   <td width="33%" valign="top" align="center" class="footer-col" style="padding-left: 15px; border-left: 1px solid #1a2638;">
-                    <img src="https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?q=80&w=300&auto=format&fit=crop" width="160" style="border-radius: 8px; width: 100%; max-width: 160px; height: auto; display: block; margin-bottom: 8px; border: 1px solid #2d3748;" alt="Scenery" />
+                    <!-- 4K Mountain Landscape Thumbnail -->
+                    <img src="https://images.unsplash.com/photo-1506744038136-46273834b3fb?q=80&w=400&auto=format&fit=crop" width="160" style="border-radius: 8px; width: 100%; max-width: 160px; height: auto; display: block; margin-bottom: 8px; border: 1px solid #2d3748;" alt="Mountain Scenery" />
                     <span class="body-font" style="color: #e2e8f0; font-size: 10px; font-weight: 500;">Every trail tells a unique story.</span>
                     <div style="color: #b38b3f; font-size: 9px; margin-top: 4px;">— 🍁 —</div>
                   </td>
@@ -319,7 +326,7 @@ const getArtisanalEmailFrame = (options) => {
                   <td colspan="3" align="center" style="padding-top: 30px;">
                     <div style="border-top: 1px solid #1a2638; padding-top: 18px;">
                       <span class="body-font" style="color: #718096; font-size: 10px;">
-                        &copy; 2024 Imagica Holidays. All rights reserved.
+                        &copy; ${new Date().getFullYear()} ${companyName}. All rights reserved.
                       </span>
                     </div>
                   </td>

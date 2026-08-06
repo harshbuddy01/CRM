@@ -687,10 +687,10 @@ const sendEmail = async (req, res, next) => {
       inviteType: 'proposal',
       pdfDownloadUrl: pdfDownloadUrl,
       viewOnlineUrl: viewOnlineUrl,
-      companyLogoUrl: settings.companyLogoUrl || settings.companyLogo || '',
+      companyLogoUrl: settings.companyLogoUrl || settings.companyLogo || settings.logoUrl || settings.logo || '',
       companyName: settings.companyName || 'Imagica Holidays',
       companySlogan: settings.companySlogan || 'CURATED JOURNEYS. LASTING MEMORIES.',
-      companyPhone: settings.companyPhone || settings.phone || '+91 99999 99999',
+      companyPhone: settings.companyPhone || settings.phone || '8910759317',
       companyEmail: settings.companyEmail || settings.email || 'info@imagicaholidays.com',
       companyWebsite: settings.companyWebsite || settings.website || 'imagicaholidays.com'
     });
