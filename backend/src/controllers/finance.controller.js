@@ -315,13 +315,15 @@ const generateBillingStatementHtml = (data) => {
 const downloadBillingStatementPdf = async (req, res, next) => {
   try {
     const queryId = req.params.id;
-    const canViewAll = req.user?.permissions?.['query.view_all'] || false;
+    const userRole = (typeof req.user?.role === 'string' ? req.user.role : req.user?.role?.name || '').toUpperCase();
+    const isAdmin = ['ADMIN', 'SUPER_ADMIN', 'SYSTEM_OWNER', 'OWNER'].includes(userRole);
+    const canViewAll = isAdmin || req.user?.permissions?.['query.view_all'] || req.user?.permissions?.['payment.view_all'] || false;
     
     const billingData = await getBillingDataForQuery(queryId);
     if (!billingData) return res.status(404).json({ success: false, message: 'Query not found' });
 
     // Ownership check: only the assigned user or admins can generate this PDF
-    if (!canViewAll && billingData.query.assignedTo !== req.user.id) {
+    if (!canViewAll && billingData.query.assignedTo !== req.user?.id) {
       return res.status(403).json({ success: false, message: 'You do not have access to this billing statement' });
     }
 
