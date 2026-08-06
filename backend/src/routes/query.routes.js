@@ -221,6 +221,7 @@ router.get('/:id/history', async (req, res, next) => {
 
 // Billing Summary (Sprint 10)
 router.get('/:id/billing-statement/pdf', authenticate, can('payment.view_all'), financeController.downloadBillingStatementPdf);
+router.post('/:id/billing-statement/send-email', authenticate, can('payment.view_all'), financeController.sendBillingStatementEmail);
 router.get('/:id/billing-summary', async (req, res, next) => {
   try {
     const canViewAll = req.user.permissions['query.view_all'];

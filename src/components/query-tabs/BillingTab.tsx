@@ -3,7 +3,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { Card, CardContent } from '@/components/ui/card';
-import { Loader2, IndianRupee, TrendingUp, CreditCard, Copy, ExternalLink, Send, RefreshCw, Download, Pencil, Trash2 } from 'lucide-react';
+import { Loader2, IndianRupee, TrendingUp, CreditCard, Copy, ExternalLink, Send, RefreshCw, Download, Pencil, Trash2, Mail, MessageSquare } from 'lucide-react';
 import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
@@ -278,6 +278,20 @@ export function BillingTab({ queryId }: { queryId: string }) {
     },
     onError: (err: any) => {
       toast.error('Failed to remove payment', { description: err.response?.data?.message || err.message });
+  const [isSendBillingEmailOpen, setIsSendBillingEmailOpen] = useState(false);
+  const [billingEmailRecipient, setBillingEmailRecipient] = useState('');
+
+  const sendBillingEmailMutation = useMutation({
+    mutationFn: async (email: string) => {
+      const res = await api.post(`/queries/${queryId}/billing-statement/send-email`, { email });
+      return res.data;
+    },
+    onSuccess: () => {
+      toast.success('Billing statement PDF emailed to customer successfully!');
+      setIsSendBillingEmailOpen(false);
+    },
+    onError: (err: any) => {
+      toast.error('Failed to send billing email', { description: err.response?.data?.message || err.message });
     }
   });
 
@@ -354,6 +368,36 @@ export function BillingTab({ queryId }: { queryId: string }) {
           >
             {isDownloading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
             Download Statement
+          </Button>
+          <Button 
+            size="sm" 
+            variant="outline" 
+            className="gap-2 border-blue-200 text-blue-700 hover:bg-blue-50 hover:border-blue-500 transition-all font-bold shadow-sm"
+            onClick={() => {
+              setBillingEmailRecipient(queryObj?.email || '');
+              setIsSendBillingEmailOpen(true);
+            }}
+          >
+            <Mail className="w-4 h-4 text-blue-600" />
+            Email Statement
+          </Button>
+          <Button 
+            size="sm" 
+            variant="outline" 
+            className="gap-2 border-emerald-200 text-emerald-700 hover:bg-emerald-50 hover:border-emerald-500 transition-all font-bold shadow-sm"
+            onClick={() => {
+              const name = queryObj?.name || 'Customer';
+              const total = Number(customer?.totalAmount || 0).toLocaleString('en-IN');
+              const received = Number(customer?.totalReceived || 0).toLocaleString('en-IN');
+              const pending = Number(customer?.totalPending || 0).toLocaleString('en-IN');
+              const text = `Hi ${name}! 🌟\n\nHere is your updated billing statement from *Imagica Holidays*:\n\n💰 *Total Package:* ₹${total}\n✅ *Amount Received:* ₹${received}\n📌 *Pending Balance:* ₹${pending}\n\nThank you for choosing Imagica Holidays! 🙏`;
+              const phone = (queryObj?.phone || '').replace(/\D/g, '');
+              const waUrl = phone ? `https://wa.me/${phone.length === 10 ? '91' + phone : phone}?text=${encodeURIComponent(text)}` : `https://wa.me/?text=${encodeURIComponent(text)}`;
+              window.open(waUrl, '_blank');
+            }}
+          >
+            <MessageSquare className="w-4 h-4 text-emerald-600" />
+            WhatsApp
           </Button>
           <Dialog open={isPaymentModalOpen} onOpenChange={(open) => {
             setIsPaymentModalOpen(open);
@@ -788,6 +832,51 @@ export function BillingTab({ queryId }: { queryId: string }) {
               <Button type="submit" disabled={updatePaymentMutation.isPending}>
                 {updatePaymentMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                 Save Changes
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      {/* Send Billing Statement Email Modal */}
+      <Dialog open={isSendBillingEmailOpen} onOpenChange={setIsSendBillingEmailOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-slate-800">
+              <Mail className="w-5 h-5 text-blue-600" /> Email Billing Statement PDF
+            </DialogTitle>
+          </DialogHeader>
+          <form onSubmit={(e) => {
+            e.preventDefault();
+            if (!billingEmailRecipient) {
+              toast.error('Please enter a valid email address');
+              return;
+            }
+            sendBillingEmailMutation.mutate(billingEmailRecipient);
+          }} className="space-y-4 pt-2">
+            <p className="text-xs text-slate-500">
+              This will email the official <strong>Billing Statement PDF</strong> (identical to the downloaded statement) directly to your customer.
+            </p>
+            <div className="space-y-2">
+              <Label>Customer Email Address</Label>
+              <Input
+                type="email"
+                placeholder="e.g. customer@example.com"
+                value={billingEmailRecipient}
+                onChange={(e) => setBillingEmailRecipient(e.target.value)}
+                required
+              />
+            </div>
+            <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 text-xs space-y-1 text-slate-600">
+              <div className="flex justify-between"><span>Total Package:</span><span className="font-bold text-slate-800">₹{Number(customer?.totalAmount || 0).toLocaleString('en-IN')}</span></div>
+              <div className="flex justify-between"><span>Amount Received:</span><span className="font-bold text-emerald-600">₹{Number(customer?.totalReceived || 0).toLocaleString('en-IN')}</span></div>
+              <div className="flex justify-between border-t border-slate-200 pt-1"><span>Balance Pending:</span><span className="font-bold text-rose-600">₹{Number(customer?.totalPending || 0).toLocaleString('en-IN')}</span></div>
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <Button type="button" variant="outline" onClick={() => setIsSendBillingEmailOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={sendBillingEmailMutation.isPending} className="bg-blue-600 hover:bg-blue-700 text-white font-bold">
+                {sendBillingEmailMutation.isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Send className="w-4 h-4 mr-2" />}
+                Send PDF Statement
               </Button>
             </div>
           </form>
