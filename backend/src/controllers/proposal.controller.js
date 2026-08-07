@@ -981,11 +981,21 @@ const confirmProposal = async (req, res, next) => {
                 let checkIn = null;
                 let checkOut = null;
                 if (serviceType === 'hotel') {
-                  checkIn = serviceDate;
-                  checkOut = new Date(serviceDate);
-                  checkOut.setDate(checkOut.getDate() + 1); 
-                  // Note: In real scenarios, check-out might be multiple days later if it's a multi-night stay event
-                  // But itineraries usually list events per day.
+                  let meta = event.metadata;
+                  if (meta && typeof meta === 'string') {
+                    try { meta = JSON.parse(meta); } catch (e) {}
+                  }
+                  if (meta && meta.checkInDate) {
+                    checkIn = new Date(meta.checkInDate);
+                  } else {
+                    checkIn = serviceDate;
+                  }
+                  if (meta && meta.checkOutDate) {
+                    checkOut = new Date(meta.checkOutDate);
+                  } else {
+                    checkOut = new Date(serviceDate);
+                    checkOut.setDate(checkOut.getDate() + 1);
+                  }
                 }
 
                 await tx.bookingService.create({

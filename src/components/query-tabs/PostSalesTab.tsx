@@ -5,7 +5,7 @@ import { api } from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Loader2, Hotel, Car, Send, DollarSign, Plus, CheckCircle } from 'lucide-react';
+import { Loader2, Hotel, Car, Send, DollarSign, Plus, CheckCircle, Edit, Mail, Phone } from 'lucide-react';
 import { toast } from 'sonner';
 import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
@@ -14,6 +14,37 @@ export function PostSalesTab({ queryId }: { queryId: string }) {
   const queryClient = useQueryClient();
   const [paymentModal, setPaymentModal] = useState<{ id: string; name: string } | null>(null);
   const [paymentAmount, setPaymentAmount] = useState('');
+
+  const [editModal, setEditModal] = useState<any | null>(null);
+  const [editName, setEditName] = useState('');
+  const [editEmail, setEditEmail] = useState('');
+  const [editPhone, setEditPhone] = useState('');
+  const [editConfirmation, setEditConfirmation] = useState('');
+  const [editNotes, setEditNotes] = useState('');
+
+  const handleOpenEdit = (svc: any) => {
+    setEditModal(svc);
+    setEditName(svc.supplierName || '');
+    setEditEmail(svc.supplierEmail || '');
+    setEditPhone(svc.supplierPhone || '');
+    setEditConfirmation(svc.confirmationNumber || '');
+    setEditNotes(svc.notes || '');
+  };
+
+  const handleSaveEdit = () => {
+    if (!editModal) return;
+    updateMutation.mutate({
+      id: editModal.id,
+      data: {
+        supplierName: editName,
+        supplierEmail: editEmail,
+        supplierPhone: editPhone,
+        confirmationNumber: editConfirmation,
+        notes: editNotes,
+      }
+    });
+    setEditModal(null);
+  };
 
   const { data: services, isLoading } = useQuery({
     queryKey: ['booking-services', queryId],
@@ -134,7 +165,7 @@ export function PostSalesTab({ queryId }: { queryId: string }) {
           <p className="text-sm"><span className="text-muted-foreground">Confirmation #:</span> <span className="font-medium">{svc.confirmationNumber}</span></p>
         )}
 
-        <div className="flex gap-2 pt-2">
+        <div className="flex flex-wrap gap-2 pt-2">
           {svc.mailStatus !== 'sent' && svc.supplierEmail && (
             <Button size="sm" variant="outline" className="gap-1" onClick={() => sendMailMutation.mutate(svc.id)} disabled={sendMailMutation.isPending}>
               <Send className="w-3 h-3" /> Send Booking Mail
@@ -143,10 +174,42 @@ export function PostSalesTab({ queryId }: { queryId: string }) {
           <Button size="sm" variant="outline" className="gap-1" onClick={() => setPaymentModal({ id: svc.id, name: svc.serviceName })}>
             <DollarSign className="w-3 h-3" /> Record Payment
           </Button>
+          <Button size="sm" variant="outline" className="gap-1" onClick={() => handleOpenEdit(svc)}>
+            <Edit className="w-3 h-3" /> Edit Details
+          </Button>
         </div>
 
-        {svc.supplier && (
-          <p className="text-xs text-muted-foreground">Supplier: {svc.supplier.companyName || 'Assigned'} {svc.supplierEmail && `(${svc.supplierEmail})`}</p>
+        {(svc.supplier || svc.supplierName || svc.supplierEmail || svc.supplierPhone) && (
+          <div className="text-xs text-muted-foreground bg-muted/40 p-3 rounded-lg border border-border/50 mt-1 space-y-1.5">
+            <p className="font-semibold text-foreground uppercase tracking-wider text-[9px]">Supplier & Contact Info</p>
+            <p>Name: <span className="font-medium text-foreground">{svc.supplier?.companyName || svc.supplierName || 'Not set'}</span></p>
+            {(svc.supplierEmail || svc.supplier?.email) && (
+              <p className="flex items-center gap-1.5">
+                Email: <span className="font-medium text-foreground">{svc.supplierEmail || svc.supplier?.email}</span>
+                <a 
+                  href={`mailto:${svc.supplierEmail || svc.supplier?.email}?subject=Booking%20Confirmation%20-%20${encodeURIComponent(svc.serviceName)}`}
+                  className="text-blue-600 hover:underline inline-flex items-center text-[10px] ml-1 font-medium"
+                >
+                  ✉️ Compose
+                </a>
+              </p>
+            )}
+            {(svc.supplierPhone || svc.supplier?.phone) && (
+              <p className="flex items-center gap-1.5">
+                Phone: <span className="font-medium text-foreground">{svc.supplierPhone || svc.supplier?.phone}</span>
+                <button
+                  onClick={() => {
+                    const phone = (svc.supplierPhone || svc.supplier?.phone || '').replace(/\D/g, '');
+                    const waUrl = `https://wa.me/${phone.startsWith('91') ? phone : '91' + phone}?text=Hi%20there%2C%20regarding%20booking%20for%20${encodeURIComponent(svc.serviceName)}`;
+                    window.open(waUrl, '_blank');
+                  }}
+                  className="text-emerald-600 hover:underline inline-flex items-center text-[10px] ml-1 font-semibold"
+                >
+                  💬 WhatsApp
+                </button>
+              </p>
+            )}
+          </div>
         )}
       </CardContent>
     </Card>
@@ -179,6 +242,63 @@ export function PostSalesTab({ queryId }: { queryId: string }) {
             <Button variant="ghost" onClick={() => setPaymentModal(null)}>Cancel</Button>
             <Button onClick={() => paymentModal && paymentMutation.mutate({ id: paymentModal.id, amount: paymentAmount })} disabled={!paymentAmount || paymentMutation.isPending}>
               {paymentMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />} Save Payment
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!editModal} onOpenChange={() => setEditModal(null)}>
+        <DialogContent className="max-w-md w-full">
+          <DialogHeader>
+            <DialogTitle>Edit Supplier Details — {editModal?.serviceName}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-1">
+              <label className="text-xs font-semibold text-muted-foreground uppercase">Supplier / Hotel Name</label>
+              <Input 
+                value={editName} 
+                onChange={e => setEditName(e.target.value)} 
+                placeholder="e.g. Sunmount Hotel" 
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-semibold text-muted-foreground uppercase">Email Address</label>
+              <Input 
+                type="email"
+                value={editEmail} 
+                onChange={e => setEditEmail(e.target.value)} 
+                placeholder="e.g. booking@hotel.com" 
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-semibold text-muted-foreground uppercase">Phone / WhatsApp Number</label>
+              <Input 
+                value={editPhone} 
+                onChange={e => setEditPhone(e.target.value)} 
+                placeholder="e.g. 9876543210" 
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-semibold text-muted-foreground uppercase">Confirmation Number</label>
+              <Input 
+                value={editConfirmation} 
+                onChange={e => setEditConfirmation(e.target.value)} 
+                placeholder="e.g. CNF-88273" 
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-semibold text-muted-foreground uppercase">Internal Notes</label>
+              <Input 
+                value={editNotes} 
+                onChange={e => setEditNotes(e.target.value)} 
+                placeholder="e.g. Deluxe Room, MAP Meal Plan" 
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setEditModal(null)}>Cancel</Button>
+            <Button onClick={handleSaveEdit} disabled={updateMutation.isPending}>
+              {updateMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />} Save Details
             </Button>
           </DialogFooter>
         </DialogContent>

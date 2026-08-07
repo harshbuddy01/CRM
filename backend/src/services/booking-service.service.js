@@ -119,6 +119,7 @@ const updateService = async (id, data) => {
   if (data.supplierId !== undefined) updateData.supplierId = data.supplierId;
   if (data.supplierName !== undefined) updateData.supplierName = data.supplierName;
   if (data.supplierEmail !== undefined) updateData.supplierEmail = data.supplierEmail;
+  if (data.supplierPhone !== undefined) updateData.supplierPhone = data.supplierPhone;
   if (data.confirmationNumber !== undefined) updateData.confirmationNumber = data.confirmationNumber;
   if (data.notes !== undefined) updateData.notes = data.notes;
   if (data.checkIn !== undefined) updateData.checkIn = new Date(data.checkIn);

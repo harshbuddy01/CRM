@@ -970,6 +970,7 @@ model BookingService {
   supplierId           String?   @map("supplier_id")
   supplierName         String?   @map("supplier_name")
   supplierEmail        String?   @map("supplier_email")
+  supplierPhone        String?   @map("supplier_phone")
   checkIn              DateTime? @map("check_in") @db.Date
   checkOut             DateTime? @map("check_out") @db.Date
   serviceDate          DateTime? @map("service_date") @db.Date
