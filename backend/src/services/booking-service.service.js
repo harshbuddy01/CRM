@@ -126,7 +126,12 @@ const listByQuery = async (queryId) => {
       creator: { select: { id: true, name: true } },
       query: { select: { id: true, name: true, phone: true, adults: true, children: true } },
     },
-    orderBy: [{ serviceType: 'asc' }, { createdAt: 'asc' }],
+    orderBy: [
+      { serviceType: 'asc' },
+      { checkIn: 'asc' },
+      { serviceDate: 'asc' },
+      { createdAt: 'asc' }
+    ],
   });
 };
 
