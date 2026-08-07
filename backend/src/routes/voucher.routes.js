@@ -201,6 +201,7 @@ router.delete('/vouchers/:id', async (req, res, next) => {
 
 module.exports = router;
 module.exports.downloadPdfPublic = downloadPdfPublic;
+module.exports.generateVoucherHtml = generateVoucherHtml;
 
 // ─── HTML Generator ───────────────────────────────────────────
 const esc = (s) => String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
@@ -288,6 +289,24 @@ function generateVoucherHtml(voucher, settings = {}) {
           box-shadow: 0 4px 20px rgba(0,0,0,0.02);
           max-width: 800px;
           margin: 0 auto;
+          position: relative;
+          overflow: hidden;
+        }
+
+        .watermark {
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%) rotate(-30deg);
+          font-family: 'Playfair Display', 'EB Garamond', serif;
+          font-size: 64px;
+          font-weight: 800;
+          color: rgba(30, 58, 138, 0.04);
+          white-space: nowrap;
+          pointer-events: none;
+          z-index: 0;
+          letter-spacing: 5px;
+          text-transform: uppercase;
         }
 
         /* 1. Header Area with Brand Identity */
@@ -495,6 +514,8 @@ function generateVoucherHtml(voucher, settings = {}) {
     </head>
     <body>
       <div class="voucher-card">
+        <!-- Watermark Background -->
+        <div class="watermark">Imagica Holidays</div>
         
         <!-- 1. Brand Identity Header -->
         <div class="brand-header">
