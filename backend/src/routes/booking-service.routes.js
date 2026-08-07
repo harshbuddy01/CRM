@@ -69,6 +69,8 @@ router.post('/booking-services/:id/send-mail', authenticate, async (req, res, ne
 
       try {
         await sendMail({
+          from: `"Imagica Holidays Reservations" <reservation@imagicaholidays.com>`,
+          replyTo: 'reservation@imagicaholidays.com',
           to: svc.supplierEmail,
           subject: `Booking Confirmation Request - ${svc.serviceName}`,
           html: emailBody,
