@@ -26,11 +26,16 @@ const generateFromProposal = async (queryId, userId) => {
 
   if (!proposal) throw new BusinessError('No proposal found for this query');
 
-  // Check if booking services already exist
-  const existing = await prisma.bookingService.count({ where: { queryId } });
-  if (existing > 0) {
-    return { message: 'Booking services already generated', count: existing };
+  // Check if booking services already exist with payments. If so, don't auto-regenerate.
+  const paymentsRecorded = await prisma.bookingService.count({
+    where: { queryId, supplierAmountPaid: { gt: 0 } }
+  });
+  if (paymentsRecorded > 0) {
+    throw new BusinessError('Cannot regenerate: Some booking services already have payments recorded. Please edit details manually.');
   }
+
+  // Delete existing booking services to allow fresh generation/updates
+  await prisma.bookingService.deleteMany({ where: { queryId } });
 
   const services = [];
 
@@ -51,11 +56,26 @@ const generateFromProposal = async (queryId, userId) => {
     }
   }
 
-  // Create hotel booking services
+  // Create hotel booking services with actual check-in/out dates
   for (const [, stay] of Object.entries(hotelStays)) {
     const nights = stay.days.length;
     const ratePerUnit = Number(stay.hotel.basePrice || 0);
     const totalCost = ratePerUnit * nights;
+
+    let checkIn = null;
+    let checkOut = null;
+    if (proposal.travelDateFrom && stay.days.length > 0) {
+      const sortedDays = [...stay.days].sort((a, b) => a.dayNumber - b.dayNumber);
+      const firstDay = sortedDays[0];
+      const lastDay = sortedDays[sortedDays.length - 1];
+      
+      const start = new Date(proposal.travelDateFrom);
+      checkIn = new Date(start);
+      checkIn.setDate(start.getDate() + (firstDay.dayNumber - 1));
+      
+      checkOut = new Date(start);
+      checkOut.setDate(start.getDate() + lastDay.dayNumber);
+    }
 
     services.push({
       queryId,
@@ -68,12 +88,21 @@ const generateFromProposal = async (queryId, userId) => {
       supplierAmountPaid: 0,
       supplierAmountPending: totalCost,
       createdBy: userId,
+      checkIn,
+      checkOut,
     });
   }
 
-  // Create transport booking services from proposal days that have transport
+  // Create transport booking services from proposal days that have transport, with service dates
   for (const day of proposal.days) {
     if (day.transport && day.transport.trim()) {
+      let serviceDate = null;
+      if (proposal.travelDateFrom) {
+        const start = new Date(proposal.travelDateFrom);
+        serviceDate = new Date(start);
+        serviceDate.setDate(start.getDate() + (day.dayNumber - 1));
+      }
+
       services.push({
         queryId,
         proposalDayId: day.id,
@@ -85,6 +114,7 @@ const generateFromProposal = async (queryId, userId) => {
         supplierAmountPaid: 0,
         supplierAmountPending: Number(day.dayCost || 0),
         createdBy: userId,
+        serviceDate,
       });
     }
   }
