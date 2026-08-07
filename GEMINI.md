@@ -1,3 +1,8 @@
+# CRITICAL DIRECTIVE: STRICT PROJECT SEPARATION
+- **Imagica Holidays Production CRM** (`harshbuddy01/CRM.git`, `crm.imagicaholidays.com` / `api.imagicaholidays.com`) is the LIVE PRODUCTION client system.
+- **Demo CRM** (`harshbuddy01/demo-crm.git`, `streamkart.shop` / `api.streamkart.shop`) is the PERSONAL DEMO / SANDBOX system.
+- **STRICT RULE**: NEVER mix features, experimental code, driver/guest/hotel portal testing features, or WhatsApp automation between these two projects. They are 100% separate repositories and separate deployments.
+
 <!-- code-review-graph MCP tools -->
 ## MCP Tools: code-review-graph
 

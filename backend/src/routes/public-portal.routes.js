@@ -6,6 +6,7 @@
 const express = require('express');
 const router = express.Router();
 const ctrl = require('../controllers/public-portal.controller');
+const { downloadPdfPublic } = require('./voucher.routes');
 const rateLimit = require('express-rate-limit');
 
 const portalLimiter = rateLimit({
@@ -38,5 +39,8 @@ router.post('/hotel/login', ctrl.hotelLogin);
 router.get('/hotel/:hotelName/guests', ctrl.getHotelGuests);
 router.get('/hotel/:hotelId/requests', ctrl.getHotelRequests);
 router.patch('/hotel/:hotelId/requests/:requestId', ctrl.updateHotelRequestStatus);
+
+// ── Voucher Public Download ───────────────────────────────
+router.get('/vouchers/:id/download-pdf', downloadPdfPublic);
 
 module.exports = router;
