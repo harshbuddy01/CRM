@@ -422,3 +422,9 @@ const getArtisanalEmailFrame = (options) => {
   </table>
 </body>
 </html>
+`;
+};
+
+module.exports = {
+  getArtisanalEmailFrame
+};
