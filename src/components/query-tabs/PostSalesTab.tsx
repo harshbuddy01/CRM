@@ -10,6 +10,81 @@ import { toast } from 'sonner';
 import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 
+const generateTemplate = (svc: any, type: 'email' | 'whatsapp') => {
+  const isHotel = svc.serviceType === 'hotel';
+  const guestName = svc.query?.name || 'Mr. Lukesh Mohare';
+  const guestContact = svc.query?.phone || '+91 8007975674';
+  const adultsCount = svc.query?.adults || 7;
+  const totalCostVal = svc.totalCost ? Number(svc.totalCost) : 0;
+  
+  const checkIn = svc.checkIn ? new Date(svc.checkIn) : null;
+  const checkOut = svc.checkOut ? new Date(svc.checkOut) : null;
+  const nights = (checkIn && checkOut) 
+    ? Math.max(1, Math.round((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24)))
+    : 1;
+
+  const dateOptions: Intl.DateTimeFormatOptions = { day: '2-digit', month: 'short' };
+  const formattedDates = isHotel
+    ? (checkIn ? `${checkIn.toLocaleDateString('en-IN', dateOptions)} – ${checkOut ? checkOut.toLocaleDateString('en-IN', { ...dateOptions, year: 'numeric' }) : 'TBD'}` : 'TBD')
+    : (svc.serviceDate ? new Date(svc.serviceDate).toLocaleDateString('en-IN', { ...dateOptions, year: 'numeric' }) : 'TBD');
+
+  const mealPlan = svc.notes || 'MAP';
+
+  if (isHotel) {
+    return `Dear Sir/Madam,
+
+Greetings from *Imagica Holidays*.
+
+Kindly *BOOK & CONFIRM* the following reservation.
+
+🏨 *Hotel:* ${svc.serviceName || 'PERLI AKROT, PELLING'}
+
+👤 *Guest:* ${guestName}
+📞 *Contact:* ${guestContact}
+👥 *Guests:* ${String(adultsCount).padStart(2, '0')} Adults
+
+📅 *Stay:* ${formattedDates}
+
+🍽 *Meal Plan:* ${mealPlan}
+
+🏠 *Room Requirement:*
+• 03 Deluxe Rooms
+
+💰 *Calculation:*
+₹${Number(svc.ratePerUnit).toLocaleString()} × ${String(adultsCount).padStart(2, '0')} Adults × ${String(nights).padStart(2, '0')} Nights = ₹${totalCostVal.toLocaleString()}/-
+
+💵 *Total Amount:* **₹${totalCostVal.toLocaleString()}/-**
+
+Kindly confirm the booking at the earliest.
+
+Regards,
+*Reservations Team*
+*Imagica Holidays*`;
+  } else {
+    return `Dear Sir/Madam,
+
+Greetings from *Imagica Holidays*.
+
+Kindly *BOOK & CONFIRM* the following transport reservation.
+
+🚗 *Service/Vehicle:* ${svc.serviceName}
+
+👤 *Guest:* ${guestName}
+📞 *Contact:* ${guestContact}
+👥 *Guests:* ${String(adultsCount).padStart(2, '0')} Adults
+
+📅 *Date:* ${formattedDates}
+
+💵 *Total Amount:* **₹${totalCostVal.toLocaleString()}/-**
+
+Kindly confirm the booking at the earliest.
+
+Regards,
+*Reservations Team*
+*Imagica Holidays*`;
+  }
+};
+
 export function PostSalesTab({ queryId }: { queryId: string }) {
   const queryClient = useQueryClient();
   const [paymentModal, setPaymentModal] = useState<{ id: string; name: string } | null>(null);
@@ -46,6 +121,38 @@ export function PostSalesTab({ queryId }: { queryId: string }) {
     setEditModal(null);
   };
 
+  const [composeModal, setComposeModal] = useState<any | null>(null);
+  const [composeSubject, setComposeSubject] = useState('');
+  const [composeBody, setComposeBody] = useState('');
+
+  const handleOpenCompose = (svc: any, type: 'email' | 'whatsapp') => {
+    const body = generateTemplate(svc, type);
+    setComposeModal({
+      type,
+      service: svc,
+      recipient: type === 'email' 
+        ? (svc.supplierEmail || svc.supplier?.email || '') 
+        : (svc.supplierPhone || svc.supplier?.phone || ''),
+    });
+    setComposeSubject(type === 'email' ? `Booking Confirmation Request - ${svc.serviceName}` : '');
+    setComposeBody(body);
+  };
+
+  const handleSendCompose = () => {
+    if (!composeModal) return;
+    if (composeModal.type === 'email') {
+      sendMailMutation.mutate({
+        id: composeModal.service.id,
+        emailBody: composeBody,
+      });
+    } else {
+      const phone = composeModal.recipient.replace(/\D/g, '');
+      const waUrl = `https://wa.me/${phone.startsWith('91') ? phone : '91' + phone}?text=${encodeURIComponent(composeBody)}`;
+      window.open(waUrl, '_blank');
+      setComposeModal(null);
+    }
+  };
+
   const { data: services, isLoading } = useQuery({
     queryKey: ['booking-services', queryId],
     queryFn: async () => {
@@ -66,11 +173,12 @@ export function PostSalesTab({ queryId }: { queryId: string }) {
   });
 
   const sendMailMutation = useMutation({
-    mutationFn: async (id: string) => {
-      await api.post(`/booking-services/${id}/send-mail`, {});
+    mutationFn: async ({ id, emailBody }: { id: string; emailBody: string }) => {
+      await api.post(`/booking-services/${id}/send-mail`, { emailBody });
     },
     onSuccess: () => {
       toast.success('Booking mail sent to supplier');
+      setComposeModal(null);
       queryClient.invalidateQueries({ queryKey: ['booking-services', queryId] });
     },
     onError: (err: any) => toast.error(err.response?.data?.message || 'Failed'),
@@ -186,23 +294,19 @@ export function PostSalesTab({ queryId }: { queryId: string }) {
             {(svc.supplierEmail || svc.supplier?.email) && (
               <p className="flex items-center gap-1.5">
                 Email: <span className="font-medium text-foreground">{svc.supplierEmail || svc.supplier?.email}</span>
-                <a 
-                  href={`mailto:${svc.supplierEmail || svc.supplier?.email}?subject=Booking%20Confirmation%20-%20${encodeURIComponent(svc.serviceName)}`}
+                <button 
+                  onClick={() => handleOpenCompose(svc, 'email')}
                   className="text-blue-600 hover:underline inline-flex items-center text-[10px] ml-1 font-medium"
                 >
                   ✉️ Compose
-                </a>
+                </button>
               </p>
             )}
             {(svc.supplierPhone || svc.supplier?.phone) && (
               <p className="flex items-center gap-1.5">
                 Phone: <span className="font-medium text-foreground">{svc.supplierPhone || svc.supplier?.phone}</span>
                 <button
-                  onClick={() => {
-                    const phone = (svc.supplierPhone || svc.supplier?.phone || '').replace(/\D/g, '');
-                    const waUrl = `https://wa.me/${phone.startsWith('91') ? phone : '91' + phone}?text=Hi%20there%2C%20regarding%20booking%20for%20${encodeURIComponent(svc.serviceName)}`;
-                    window.open(waUrl, '_blank');
-                  }}
+                  onClick={() => handleOpenCompose(svc, 'whatsapp')}
                   className="text-emerald-600 hover:underline inline-flex items-center text-[10px] ml-1 font-semibold"
                 >
                   💬 WhatsApp
@@ -320,6 +424,55 @@ export function PostSalesTab({ queryId }: { queryId: string }) {
             <Button variant="ghost" onClick={() => setEditModal(null)}>Cancel</Button>
             <Button onClick={handleSaveEdit} disabled={updateMutation.isPending}>
               {updateMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />} Save Details
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!composeModal} onOpenChange={() => setComposeModal(null)}>
+        <DialogContent className="max-w-xl w-full">
+          <DialogHeader>
+            <DialogTitle>
+              {composeModal?.type === 'email' ? 'Compose Booking Email' : 'Compose WhatsApp Message'}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-3">
+            <div className="space-y-1">
+              <label className="text-xs font-semibold text-muted-foreground uppercase">Recipient</label>
+              <Input 
+                value={composeModal?.recipient || ''} 
+                onChange={e => setComposeModal({ ...composeModal, recipient: e.target.value })}
+                placeholder={composeModal?.type === 'email' ? 'e.g. supplier@email.com' : 'e.g. 9876543210'}
+              />
+            </div>
+            {composeModal?.type === 'email' && (
+              <div className="space-y-1">
+                <label className="text-xs font-semibold text-muted-foreground uppercase">Subject</label>
+                <Input 
+                  value={composeSubject} 
+                  onChange={e => setComposeSubject(e.target.value)}
+                  placeholder="Subject line"
+                />
+              </div>
+            )}
+            <div className="space-y-1">
+              <label className="text-xs font-semibold text-muted-foreground uppercase">Message Draft</label>
+              <textarea 
+                value={composeBody} 
+                onChange={e => setComposeBody(e.target.value)} 
+                className="w-full text-xs font-sans p-3 border border-border rounded-xl min-h-[280px] focus:outline-none focus:ring-2 focus:ring-primary/20 bg-muted/20"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setComposeModal(null)}>Cancel</Button>
+            <Button 
+              onClick={handleSendCompose} 
+              disabled={sendMailMutation.isPending || !composeModal?.recipient}
+              className={composeModal?.type === 'whatsapp' ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : ''}
+            >
+              {sendMailMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+              {composeModal?.type === 'email' ? 'Send Booking Email' : 'Open in WhatsApp'}
             </Button>
           </DialogFooter>
         </DialogContent>

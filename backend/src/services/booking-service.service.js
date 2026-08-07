@@ -136,6 +136,7 @@ const listByQuery = async (queryId) => {
     include: {
       supplier: { select: { id: true, companyName: true, email: true, phone: true } },
       creator: { select: { id: true, name: true } },
+      query: { select: { id: true, name: true, phone: true, adults: true, children: true } },
     },
     orderBy: [{ serviceType: 'asc' }, { createdAt: 'asc' }],
   });
