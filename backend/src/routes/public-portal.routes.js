@@ -66,12 +66,7 @@ router.get('/booking-services/:id/billing-pdf', async (req, res, next) => {
       orderBy: { paymentDate: 'asc' }
     });
 
-    const puppeteer = require('puppeteer');
-    const browser = await puppeteer.launch({
-      headless: 'new',
-      args: ['--no-sandbox', '--disable-setuid-sandbox']
-    });
-    const page = await browser.newPage();
+    // Browser page instantiation is handled by standard PDF service
 
     const checkInStr = service.checkIn ? new Date(service.checkIn).toLocaleDateString('en-IN') : 'TBD';
     const checkOutStr = service.checkOut ? new Date(service.checkOut).toLocaleDateString('en-IN') : 'TBD';
@@ -209,14 +204,8 @@ router.get('/booking-services/:id/billing-pdf', async (req, res, next) => {
       </html>
     `;
 
-    await page.setContent(htmlContent, { waitUntil: 'networkidle0' });
-    const pdfBuffer = await page.pdf({
-      format: 'A4',
-      printBackground: true,
-      margin: { top: '20px', right: '20px', bottom: '20px', left: '20px' }
-    });
-
-    await browser.close();
+    const { generatePdfFromHtml } = require('../services/pdf.service');
+    const pdfBuffer = await generatePdfFromHtml(htmlContent);
 
     res.contentType('application/pdf');
     res.setHeader('Content-Disposition', `attachment; filename=purchase_order_${service.id.substring(0,8)}.pdf`);

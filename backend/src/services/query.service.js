@@ -434,37 +434,61 @@ const changeQueryStatus = async (id, status, userId, canViewAll, canEditAll) => 
     if (!existing.travelDateFrom) {
       throw new BusinessError('Travel start date is required before confirming a booking to create a Tour.');
     }
-    // Safe generated tour code block
-    let tourCode;
-    for (let attempt = 1; attempt <= 3; attempt++) {
-      const year = new Date().getFullYear();
-      const count = await prisma.tour.count({
-        where: { tourCode: { startsWith: `TUR-${year}-` } },
-      });
-      // Added attempt to handle racing offsets
-      tourCode = `TUR-${year}-${String(count + attempt).padStart(3, '0')}`;
-      
-      const exists = await prisma.tour.findUnique({ where: { tourCode } });
-      if (!exists) break;
-    }
-
-    // Find latest proposal
-    const proposal = await prisma.proposal.findFirst({
-      where: { queryId: id },
-      orderBy: { version: 'desc' }
+    // Check if tour already exists for this query
+    const existingTour = await prisma.tour.findFirst({
+      where: { queryId: id, deletedAt: null }
     });
 
-    await prisma.tour.create({
-      data: {
-        queryId: id,
-        proposalId: proposal ? proposal.id : null,
-        tourCode,
-        status: 'upcoming',
-        startDate: existing.travelDateFrom,
-        endDate: existing.travelDateTo || existing.travelDateFrom,
-        totalPax: existing.adults + existing.children,
+    if (!existingTour) {
+      // Safe generated tour code block
+      let tourCode;
+      for (let attempt = 1; attempt <= 3; attempt++) {
+        const year = new Date().getFullYear();
+        const count = await prisma.tour.count({
+          where: { tourCode: { startsWith: `TUR-${year}-` } },
+        });
+        // Added attempt to handle racing offsets
+        tourCode = `TUR-${year}-${String(count + attempt).padStart(3, '0')}`;
+        
+        const exists = await prisma.tour.findUnique({ where: { tourCode } });
+        if (!exists) break;
       }
-    });
+
+      // Find latest proposal
+      const proposal = await prisma.proposal.findFirst({
+        where: { queryId: id },
+        orderBy: { version: 'desc' }
+      });
+
+      await prisma.tour.create({
+        data: {
+          queryId: id,
+          proposalId: proposal ? proposal.id : null,
+          tourCode,
+          status: 'upcoming',
+          startDate: existing.travelDateFrom,
+          endDate: existing.travelDateTo || existing.travelDateFrom,
+          totalPax: existing.adults + existing.children,
+        }
+      });
+    } else {
+      // Find latest proposal
+      const proposal = await prisma.proposal.findFirst({
+        where: { queryId: id },
+        orderBy: { version: 'desc' }
+      });
+
+      await prisma.tour.update({
+        where: { id: existingTour.id },
+        data: {
+          proposalId: proposal ? proposal.id : null,
+          status: 'upcoming',
+          startDate: existing.travelDateFrom,
+          endDate: existing.travelDateTo || existing.travelDateFrom,
+          totalPax: existing.adults + existing.children,
+        }
+      });
+    }
   }
 
   const updated = await prisma.query.update({
