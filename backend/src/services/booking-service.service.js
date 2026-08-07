@@ -14,17 +14,12 @@ const generateFromProposal = async (queryId, userId) => {
     where: { queryId, deletedAt: null },
     orderBy: { version: 'desc' },
     include: {
-      days: {
-        include: {
-          hotel: true,
-          destination: true,
-        },
-        orderBy: { dayNumber: 'asc' },
-      },
-    },
+      query: true,
+    }
   });
 
   if (!proposal) throw new BusinessError('No proposal found for this query');
+  if (!proposal.itineraryId) throw new BusinessError('No itinerary linked to this proposal');
 
   // Check if booking services already exist with payments. If so, don't auto-regenerate.
   const paymentsRecorded = await prisma.bookingService.count({
@@ -34,94 +29,87 @@ const generateFromProposal = async (queryId, userId) => {
     throw new BusinessError('Cannot regenerate: Some booking services already have payments recorded. Please edit details manually.');
   }
 
-  // Delete existing booking services to allow fresh generation/updates
-  await prisma.bookingService.deleteMany({ where: { queryId } });
+  // Fetch full itinerary with days and events
+  const fullItinerary = await prisma.itinerary.findUnique({
+    where: { id: proposal.itineraryId },
+    include: {
+      days: {
+        orderBy: { dayNumber: 'asc' },
+        include: { events: { orderBy: { sortOrder: 'asc' } } }
+      }
+    }
+  });
+
+  if (!fullItinerary || !fullItinerary.days) {
+    throw new BusinessError('No itinerary details found for this proposal.');
+  }
+
+  const adults = proposal.query?.adults || 0;
+  const children = proposal.query?.children || 0;
+  const totalPaxCount = adults + children;
+  const startDate = proposal.travelDateFrom || new Date();
 
   const services = [];
 
-  // Group consecutive days at the same hotel
-  const hotelStays = {};
-  for (const day of proposal.days) {
-    if (day.hotelId && day.hotel) {
-      const key = day.hotelId;
-      if (!hotelStays[key]) {
-        hotelStays[key] = {
-          hotel: day.hotel,
-          destination: day.destination,
-          days: [],
-          proposalDayId: day.id,
-        };
+  for (const day of fullItinerary.days) {
+    // Calculate actual date for this day
+    const serviceDate = new Date(startDate);
+    serviceDate.setDate(serviceDate.getDate() + (day.dayNumber - 1));
+
+    for (const event of (day.events || [])) {
+      let serviceType = null;
+      if (event.type === 'accommodation') serviceType = 'hotel';
+      else if (['transport', 'activity', 'sightseeing'].includes(event.type)) serviceType = 'transport';
+
+      if (serviceType) {
+        // Determine check-in/out for hotels
+        let checkIn = null;
+        let checkOut = null;
+        if (serviceType === 'hotel') {
+          let meta = event.metadata;
+          if (meta && typeof meta === 'string') {
+            try { meta = JSON.parse(meta); } catch (e) {}
+          }
+          if (meta && meta.checkInDate) {
+            checkIn = new Date(meta.checkInDate);
+          } else {
+            checkIn = serviceDate;
+          }
+          if (meta && meta.checkOutDate) {
+            checkOut = new Date(meta.checkOutDate);
+          } else {
+            checkOut = new Date(serviceDate);
+            checkOut.setDate(checkOut.getDate() + 1);
+          }
+        }
+
+        services.push({
+          queryId,
+          proposalDayId: null,
+          serviceType,
+          serviceName: event.title || 'Untitled Service',
+          serviceDate: serviceType === 'transport' ? serviceDate : null,
+          checkIn,
+          checkOut,
+          totalCost: event.cost ? Number(event.cost) : 0,
+          supplierAmountPaid: 0,
+          supplierAmountPending: event.cost ? Number(event.cost) : 0,
+          units: totalPaxCount || 1,
+          createdBy: userId,
+          notes: event.description || null,
+          mailStatus: 'not_sent',
+          paymentStatus: 'pending',
+        });
       }
-      hotelStays[key].days.push(day);
-    }
-  }
-
-  // Create hotel booking services with actual check-in/out dates
-  for (const [, stay] of Object.entries(hotelStays)) {
-    const nights = stay.days.length;
-    const ratePerUnit = Number(stay.hotel.basePrice || 0);
-    const totalCost = ratePerUnit * nights;
-
-    let checkIn = null;
-    let checkOut = null;
-    if (proposal.travelDateFrom && stay.days.length > 0) {
-      const sortedDays = [...stay.days].sort((a, b) => a.dayNumber - b.dayNumber);
-      const firstDay = sortedDays[0];
-      const lastDay = sortedDays[sortedDays.length - 1];
-      
-      const start = new Date(proposal.travelDateFrom);
-      checkIn = new Date(start);
-      checkIn.setDate(start.getDate() + (firstDay.dayNumber - 1));
-      
-      checkOut = new Date(start);
-      checkOut.setDate(start.getDate() + lastDay.dayNumber);
-    }
-
-    services.push({
-      queryId,
-      proposalDayId: stay.proposalDayId,
-      serviceType: 'hotel',
-      serviceName: stay.hotel.name,
-      ratePerUnit,
-      units: nights,
-      totalCost,
-      supplierAmountPaid: 0,
-      supplierAmountPending: totalCost,
-      createdBy: userId,
-      checkIn,
-      checkOut,
-    });
-  }
-
-  // Create transport booking services from proposal days that have transport, with service dates
-  for (const day of proposal.days) {
-    if (day.transport && day.transport.trim()) {
-      let serviceDate = null;
-      if (proposal.travelDateFrom) {
-        const start = new Date(proposal.travelDateFrom);
-        serviceDate = new Date(start);
-        serviceDate.setDate(start.getDate() + (day.dayNumber - 1));
-      }
-
-      services.push({
-        queryId,
-        proposalDayId: day.id,
-        serviceType: 'transport',
-        serviceName: day.transport,
-        ratePerUnit: Number(day.dayCost || 0),
-        units: 1,
-        totalCost: Number(day.dayCost || 0),
-        supplierAmountPaid: 0,
-        supplierAmountPending: Number(day.dayCost || 0),
-        createdBy: userId,
-        serviceDate,
-      });
     }
   }
 
   if (services.length === 0) {
-    return { message: 'No hotel/transport entries found in proposal', count: 0 };
+    throw new BusinessError('No hotel or transport events found in the approved itinerary.');
   }
+
+  // Only delete existing bookings if we have successfully found new ones to insert
+  await prisma.bookingService.deleteMany({ where: { queryId } });
 
   const created = await prisma.bookingService.createMany({ data: services });
   return { message: `Generated ${created.count} booking services`, count: created.count };
