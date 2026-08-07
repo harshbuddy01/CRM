@@ -217,6 +217,27 @@ export function PostSalesTab({ queryId }: { queryId: string }) {
 
   return (
     <div className="space-y-6">
+      <div className="flex justify-between items-center pb-2 border-b">
+        <div>
+          <h2 className="text-xl font-bold tracking-tight">Booking Services</h2>
+          <p className="text-xs text-muted-foreground">Manage operations and vouchers for hotel and transport bookings</p>
+        </div>
+        <Button 
+          size="sm" 
+          variant="outline" 
+          className="gap-1 border-primary/30 text-primary hover:bg-primary/5" 
+          onClick={() => {
+            if (confirm("Are you sure you want to sync booking services with the approved itinerary? This will overwrite the current list of services (existing payments will be preserved).")) {
+              generateMutation.mutate();
+            }
+          }} 
+          disabled={generateMutation.isPending}
+        >
+          {generateMutation.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Plus className="w-3 h-3" />}
+          Sync with Itinerary
+        </Button>
+      </div>
+
       {hotels.length > 0 && (
         <div>
           <h3 className="font-semibold text-lg flex items-center gap-2 mb-3"><Hotel className="w-5 h-5 text-blue-500" /> Accommodation</h3>
