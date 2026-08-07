@@ -176,6 +176,20 @@ const recordPayment = async (id, amount) => {
   const newPending = Number(service.totalCost) - newPaid;
   const paymentStatus = newPending <= 0 ? 'paid' : newPaid > 0 ? 'partial' : 'pending';
 
+  // Log in vendor_payments table automatically for billing history!
+  await prisma.vendorPayment.create({
+    data: {
+      supplierId: service.supplierId,
+      queryId: service.queryId,
+      vendorName: service.supplierName || 'Unknown Supplier',
+      amount: parseFloat(amount),
+      mode: 'UPI',
+      paymentDate: new Date(),
+      recordedBy: service.createdBy,
+      notes: `Payment recorded for service: ${service.serviceName}`,
+    }
+  });
+
   return prisma.bookingService.update({
     where: { id },
     data: {

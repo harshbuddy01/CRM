@@ -5,7 +5,7 @@ import { api } from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Loader2, Hotel, Car, Send, DollarSign, Plus, CheckCircle, Edit, Mail, Phone } from 'lucide-react';
+import { Loader2, Hotel, Car, Send, DollarSign, Plus, CheckCircle, Edit, Mail, Phone, Download } from 'lucide-react';
 import { toast } from 'sonner';
 import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
@@ -96,6 +96,8 @@ export function PostSalesTab({ queryId }: { queryId: string }) {
   const [editPhone, setEditPhone] = useState('');
   const [editConfirmation, setEditConfirmation] = useState('');
   const [editNotes, setEditNotes] = useState('');
+  const [editRate, setEditRate] = useState('');
+  const [editUnits, setEditUnits] = useState('');
 
   const handleOpenEdit = (svc: any) => {
     setEditModal(svc);
@@ -104,6 +106,8 @@ export function PostSalesTab({ queryId }: { queryId: string }) {
     setEditPhone(svc.supplierPhone || '');
     setEditConfirmation(svc.confirmationNumber || '');
     setEditNotes(svc.notes || '');
+    setEditRate(svc.ratePerUnit ? String(svc.ratePerUnit) : '0');
+    setEditUnits(svc.units ? String(svc.units) : '1');
   };
 
   const handleSaveEdit = () => {
@@ -116,6 +120,8 @@ export function PostSalesTab({ queryId }: { queryId: string }) {
         supplierPhone: editPhone,
         confirmationNumber: editConfirmation,
         notes: editNotes,
+        ratePerUnit: parseFloat(editRate) || 0,
+        units: parseInt(editUnits, 10) || 1,
       }
     });
     setEditModal(null);
@@ -275,7 +281,7 @@ export function PostSalesTab({ queryId }: { queryId: string }) {
 
         <div className="flex flex-wrap gap-2 pt-2">
           {svc.mailStatus !== 'sent' && svc.supplierEmail && (
-            <Button size="sm" variant="outline" className="gap-1" onClick={() => sendMailMutation.mutate(svc.id)} disabled={sendMailMutation.isPending}>
+            <Button size="sm" variant="outline" className="gap-1" onClick={() => handleOpenCompose(svc, 'email')} disabled={sendMailMutation.isPending}>
               <Send className="w-3 h-3" /> Send Booking Mail
             </Button>
           )}
@@ -284,6 +290,14 @@ export function PostSalesTab({ queryId }: { queryId: string }) {
           </Button>
           <Button size="sm" variant="outline" className="gap-1" onClick={() => handleOpenEdit(svc)}>
             <Edit className="w-3 h-3" /> Edit Details
+          </Button>
+          <Button 
+            size="sm" 
+            variant="outline" 
+            className="gap-1 text-blue-600 border-blue-200 hover:bg-blue-50" 
+            onClick={() => window.open(`${api.defaults.baseURL?.replace('/api/v1', '')}/public/booking-services/${svc.id}/billing-pdf`, '_blank')}
+          >
+            <Download className="w-3 h-3" /> Download Billing
           </Button>
         </div>
 
@@ -403,7 +417,7 @@ export function PostSalesTab({ queryId }: { queryId: string }) {
                 placeholder="e.g. 9876543210" 
               />
             </div>
-            <div className="space-y-1">
+             <div className="space-y-1">
               <label className="text-xs font-semibold text-muted-foreground uppercase">Confirmation Number</label>
               <Input 
                 value={editConfirmation} 
@@ -411,8 +425,28 @@ export function PostSalesTab({ queryId }: { queryId: string }) {
                 placeholder="e.g. CNF-88273" 
               />
             </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <label className="text-xs font-semibold text-muted-foreground uppercase">Rate per Unit (₹)</label>
+                <Input 
+                  type="number"
+                  value={editRate} 
+                  onChange={e => setEditRate(e.target.value)} 
+                  placeholder="e.g. 1000" 
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs font-semibold text-muted-foreground uppercase">Qty (Units)</label>
+                <Input 
+                  type="number"
+                  value={editUnits} 
+                  onChange={e => setEditUnits(e.target.value)} 
+                  placeholder="e.g. 7" 
+                />
+              </div>
+            </div>
             <div className="space-y-1">
-              <label className="text-xs font-semibold text-muted-foreground uppercase">Internal Notes</label>
+              <label className="text-xs font-semibold text-muted-foreground uppercase">Internal Notes / Details</label>
               <Input 
                 value={editNotes} 
                 onChange={e => setEditNotes(e.target.value)} 
