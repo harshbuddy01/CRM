@@ -228,6 +228,7 @@ app.get('/api/v1/itineraries/share/:slug',        itineraryCtrl.getByShareSlug);
 
 // ── Portal APIs (Guest, Driver, Hotel) ──
 const portalRoutes = require('./routes/public-portal.routes');
+app.use('/public', portalRoutes);
 app.use('/v1/public', portalRoutes);
 app.use('/api/v1/public', portalRoutes);
 
