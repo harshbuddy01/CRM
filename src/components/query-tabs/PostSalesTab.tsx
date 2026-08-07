@@ -295,7 +295,7 @@ export function PostSalesTab({ queryId }: { queryId: string }) {
             size="sm" 
             variant="outline" 
             className="gap-1 text-blue-600 border-blue-200 hover:bg-blue-50" 
-            onClick={() => window.open(`${api.defaults.baseURL?.replace('/api/v1', '')}/public/booking-services/${svc.id}/billing-pdf`, '_blank')}
+            onClick={() => window.open(`${api.defaults.baseURL}/public/booking-services/${svc.id}/billing-pdf`, '_blank')}
           >
             <Download className="w-3 h-3" /> Download Billing
           </Button>
