@@ -138,6 +138,7 @@ const getArtisanalTemplate = (data) => {
   const invoiceMiddleBannerUrl = customMiddleUrl || query?.invoiceMiddleBannerUrl || settings.invoiceMiddleBannerUrl || 'https://images.unsplash.com/photo-1544735716-392fe2489ffa?q=80&w=1400&auto=format&fit=crop';
   const appDomainForQr = process.env.APP_DOMAIN || 'travelcrm.app';
   const invoiceQrCodeUrl = customQrUrl || settings.invoiceQrCodeUrl || `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https%3A%2F%2F${appDomainForQr}%2Frate-us`;
+  const companyLogoUrl = customLogoUrl || settings.companyLogoUrl || '';
   
   const companyAbbr = getAbbr(companyName);
   const year = new Date().getFullYear();
