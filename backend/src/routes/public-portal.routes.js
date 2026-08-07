@@ -207,9 +207,10 @@ router.get('/booking-services/:id/billing-pdf', async (req, res, next) => {
     const { generatePdfFromHtml } = require('../services/pdf.service');
     const pdfBuffer = await generatePdfFromHtml(htmlContent);
 
-    res.contentType('application/pdf');
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Length', pdfBuffer.length);
     res.setHeader('Content-Disposition', `attachment; filename=purchase_order_${service.id.substring(0,8)}.pdf`);
-    res.send(pdfBuffer);
+    res.end(pdfBuffer);
 
   } catch (err) { next(err); }
 });
