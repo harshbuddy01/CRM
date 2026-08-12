@@ -62,7 +62,7 @@ const config = {
   },
   
   whatsapp: {
-    mode: process.env.WHATSAPP_MODE || 'manual', // was 'interakt'
+    mode: process.env.WHATSAPP_MODE || 'api', // was 'interakt'
     interaktApiKey: process.env.INTERAKT_API_KEY,
     accessToken: process.env.WHATSAPP_ACCESS_TOKEN,
     phoneNumberId: process.env.WHATSAPP_PHONE_NUMBER_ID,
