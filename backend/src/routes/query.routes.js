@@ -43,6 +43,8 @@ router.post('/webhook/website', webhookApiKeyGuard, queryValidator.validateCreat
 
 // Public Webhooks for external lead sources (WhatsApp, Facebook, Google)
 router.post('/webhook/whatsapp', webhookApiKeyGuard, webhookController.createFromWhatsapp);
+router.get('/webhook/whatsapp/meta', webhookController.handleMetaWhatsappWebhook);
+router.post('/webhook/whatsapp/meta', webhookController.handleMetaWhatsappWebhook);
 router.post('/webhook/facebook', webhookController.createFromFacebook); // Facebook verifies via GET challenge
 router.get('/webhook/facebook', webhookController.createFromFacebook);  // Facebook subscription verification
 router.post('/webhook/google', webhookApiKeyGuard, webhookController.createFromGoogle);

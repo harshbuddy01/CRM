@@ -64,6 +64,30 @@ const sendTemplateMessage = async (phone, templateName, components = [], languag
 
     const messageId = response.data?.messages?.[0]?.id;
     logger.info(`[WhatsApp Service] ✅ Message sent successfully. Meta Msg ID: ${messageId}`);
+
+    // Auto-store in WhatsappMessage DB so it appears in Live Chat Inbox
+    try {
+      const prisma = require('../config/prisma');
+      let bodyText = `[Template: ${templateName}]`;
+      if (components && components.length > 0) {
+        const bodyComp = components.find((c: any) => c.type === 'body');
+        if (bodyComp && bodyComp.parameters && bodyComp.parameters.length > 0) {
+          const params = bodyComp.parameters.map((p: any) => p.text || '').join(', ');
+          bodyText += ` (${params})`;
+        }
+      }
+      await prisma.whatsappMessage.create({
+        data: {
+          phone: cleanPhone,
+          direction: 'OUTBOUND',
+          message: bodyText,
+          status: 'SENT'
+        }
+      });
+    } catch (dbErr) {
+      logger.error('[WhatsApp Service] Failed to store outbound template message in DB:', dbErr.message);
+    }
+
     return { success: true, messageId };
   } catch (error) {
     const errorMsg = error.response?.data?.error?.message || error.message;
