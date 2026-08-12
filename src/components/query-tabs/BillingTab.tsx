@@ -599,6 +599,7 @@ export function BillingTab({ queryId }: { queryId: string }) {
         <KpiCard label="Gross Profit" value={customer.grossProfit} color={customer.grossProfit >= 0 ? 'text-green-600' : 'text-red-600'} icon={TrendingUp} />
       </div>
 
+      <div>
         <div className="flex items-center justify-between mb-4">
           <div>
             <h3 className="font-semibold text-lg text-slate-800">Supplier Side</h3>
