@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { authenticate } = require('../middleware/auth');
+const { authenticate } = require('../middlewares/authenticate');
 const chatController = require('../controllers/whatsapp-chat.controller');
 
 // All chat routes require authentication
