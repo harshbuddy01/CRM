@@ -167,10 +167,7 @@ function VPForm({ onClose, onSaved }: { onClose: () => void; onSaved: () => void
     e.preventDefault(); setSaving(true);
     try { 
       const res = await api.post('/finance/vendor-payments', form); 
-      toast.success('Payment recorded!'); 
-      if (res.data.waLink) {
-        window.open(res.data.waLink, '_blank');
-      }
+      toast.success('Payment recorded & WhatsApp receipt dispatched via Meta API! 🚀'); 
       onSaved(); 
       onClose(); 
     }

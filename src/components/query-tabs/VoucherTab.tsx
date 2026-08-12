@@ -174,7 +174,19 @@ export function VoucherTab({ queryId }: { queryId: string }) {
                       >
                         <Mail className="w-3 h-3" /> Email
                       </Button>
-                      <Button size="sm" variant="outline" className="gap-1 text-green-600 hover:text-green-700" onClick={() => getShareLinksMutation.mutate({ id: v.id, type: 'wa' })} disabled={getShareLinksMutation.isPending}>
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        className="gap-1 text-green-600 hover:text-green-700 font-bold" 
+                        onClick={async () => {
+                          try {
+                            await api.post(`/vouchers/${v.id}/send-whatsapp`);
+                            toast.success(`Voucher ${v.voucherNumber} PDF dispatched directly via WhatsApp API! 🚀`);
+                          } catch (err: any) {
+                            toast.error(err.response?.data?.message || 'Failed to send WhatsApp voucher');
+                          }
+                        }}
+                      >
                         WhatsApp
                       </Button>
                       <Button size="sm" variant="outline" className="gap-1 text-orange-600 hover:text-orange-700" onClick={() => getShareLinksMutation.mutate({ id: v.id, type: 'sms' })} disabled={getShareLinksMutation.isPending}>

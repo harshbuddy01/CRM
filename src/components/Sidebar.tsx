@@ -66,6 +66,7 @@ export function Sidebar({ open, setOpen }: SidebarProps) {
     { href: '/tours/ops', label: 'Operations', icon: MapPin, show: user?.permissions['tour.view_all'] },
     { href: '/tours/field', label: 'Field Agent', icon: Navigation, show: user?.permissions['tour.view_assigned'] },
     { href: '/proposals', label: 'Proposals', icon: FileText, show: true },
+    { href: '/whatsapp', label: 'WhatsApp Inbox', icon: MessageSquare, show: true },
     { href: '/itineraries', label: 'Itineraries', icon: CalendarRange, show: true },
     { href: '/payments', label: 'Payment Ledger', icon: CreditCard, show: user?.role === 'admin' || user?.permissions['payment.view_all'] || user?.permissions['payment.view_assigned'] },
     { href: '/reports/lead-funnel', label: 'Reports', icon: BarChart3, show: user?.permissions['query.view_all'] },

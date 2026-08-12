@@ -1311,3 +1311,21 @@ model HotelRequest {
   @@map("hotel_requests")
 }
 
+model WhatsappMessage {
+  id         String   @id @default(uuid())
+  phone      String   @map("phone")
+  direction  String   @default("INBOUND") @map("direction") /// 'INBOUND' or 'OUTBOUND'
+  message    String   @db.Text
+  mediaUrl   String?  @map("media_url")
+  status     String   @default("DELIVERED") @map("status")
+  clientName String?  @map("client_name")
+  queryId    String?  @map("query_id")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  @@index([phone])
+  @@index([createdAt])
+  @@map("whatsapp_messages")
+}
+
+

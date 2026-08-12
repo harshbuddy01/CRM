@@ -9,6 +9,7 @@ const runSnapshot = require('./scripts/backup-db');
 const config = require('./config');
 
 const prisma = require('./config/prisma');
+const whatsappService = require('./services/whatsapp.service');
 
 console.log('👷 BullMQ Worker service initialized.');
 console.log(`📡 Connecting to Redis at ${config.redisUrl.replace(/:[^:]*@/, ':***@')}`);
@@ -99,39 +100,36 @@ if (emailConfigured) {
 // --- WhatsApp Worker ---
 const whatsappWorker = new Worker('whatsapp-sending', async job => {
   const { queryId, phone, templateName, components } = job.data;
-  console.log(`[WhatsApp] Sending template ${templateName} to ${phone}`);
+  console.log(`[WhatsApp] Processing job: template ${templateName} to ${phone}`);
   
   try {
-    const companyName = process.env.COMPANY_NAME || 'TravelCRM';
-    const fakeMessageBody = `
-${companyName}
-Hi ${components[0]?.parameters[0]?.text || 'Traveler'},
-Please find your proposal attached.
-    `.trim();
-
-    // Mock Interakt Integration Request 
+    const result = await whatsappService.sendTemplateMessage(phone, templateName, components);
     
+    if (!result.success) {
+      throw new Error(result.error || 'Meta API returned success = false');
+    }
+
     await prisma.integrationLog.create({
       data: {
         type: 'whatsapp',
         direction: 'outbound',
         status: 'success',
-        payload: { provider: 'interakt', phone, templateName, body: fakeMessageBody },
-        relatedId: queryId,
+        payload: { provider: 'meta', phone, templateName, components, messageId: result.messageId, mock: result.mock },
+        relatedId: queryId || null,
       }
     });
   } catch (error) {
-    console.error('[WhatsApp Worker Error]', error);
+    console.error(`[WhatsApp Worker Error] template ${templateName} to ${phone}:`, error.message);
     await prisma.integrationLog.create({
       data: {
         type: 'whatsapp',
         direction: 'outbound',
         status: 'failed',
-        payload: { provider: 'interakt', phone, templateName },
+        payload: { provider: 'meta', phone, templateName, components },
         errorMessage: error.message,
-        relatedId: queryId,
+        relatedId: queryId || null,
       }
-    });
+    }).catch(() => {});
     throw error;
   }
 }, { connection });

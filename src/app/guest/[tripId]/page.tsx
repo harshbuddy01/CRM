@@ -1073,8 +1073,8 @@ export default function GuestWebApp() {
                     <p className="text-xs text-gray-400 mt-2 mb-6 px-4">
                       Chat directly with the Imagica Operations Desk via WhatsApp for rapid route changes or SOS support.
                     </p>
-                    <button onClick={() => window.open('https://wa.me/919999988888')} className="w-full py-3.5 bg-[#25D366] hover:bg-[#20ba5a] text-white font-extrabold rounded-2xl flex items-center justify-center gap-2 active:scale-95 transition-transform shadow-lg shadow-green-500/20 cursor-pointer">
-                      <MessageSquare className="w-5 h-5" /> Open WhatsApp
+                    <button onClick={() => window.open('https://wa.me/916291426647')} className="w-full py-3.5 bg-[#25D366] hover:bg-[#20ba5a] text-white font-extrabold rounded-2xl flex items-center justify-center gap-2 active:scale-95 transition-transform shadow-lg shadow-green-500/20 cursor-pointer">
+                      <MessageSquare className="w-5 h-5" /> Chat on WhatsApp
                     </button>
                   </div>
                 </motion.div>

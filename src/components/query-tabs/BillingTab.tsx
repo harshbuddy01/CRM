@@ -393,15 +393,20 @@ export function BillingTab({ queryId }: { queryId: string }) {
             size="sm" 
             variant="outline" 
             className="gap-2 border-emerald-200 text-emerald-700 hover:bg-emerald-50 hover:border-emerald-500 transition-all font-bold shadow-sm"
-            onClick={() => {
+            onClick={async () => {
               const name = queryObj?.name || 'Customer';
               const total = Number(customer?.totalAmount || 0).toLocaleString('en-IN');
               const received = Number(customer?.totalReceived || 0).toLocaleString('en-IN');
               const pending = Number(customer?.totalPending || 0).toLocaleString('en-IN');
               const text = `Hi ${name}! 🌟\n\nHere is your updated billing statement from *Imagica Holidays*:\n\n💰 *Total Package:* ₹${total}\n✅ *Amount Received:* ₹${received}\n📌 *Pending Balance:* ₹${pending}\n\nThank you for choosing Imagica Holidays! 🙏`;
               const phone = (queryObj?.phone || '').replace(/\D/g, '');
-              const waUrl = phone ? `https://wa.me/${phone.length === 10 ? '91' + phone : phone}?text=${encodeURIComponent(text)}` : `https://wa.me/?text=${encodeURIComponent(text)}`;
-              window.open(waUrl, '_blank');
+              if (!phone) return toast.error('Client phone number missing');
+              try {
+                await api.post(`/v1/whatsapp-chat/conversations/${phone}/send`, { message: text });
+                toast.success('Billing statement sent directly via WhatsApp API! 🚀');
+              } catch (err: any) {
+                toast.error('Failed to dispatch WhatsApp message');
+              }
             }}
           >
             <MessageSquare className="w-4 h-4 text-emerald-600" />

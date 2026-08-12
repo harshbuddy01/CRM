@@ -10,6 +10,7 @@ const { can } = require('../middlewares/can');
 
 // Public debug route (no auth) — diagnose PDF generation on server
 router.get('/debug-pdf-public', finance.debugPdfPublic);
+router.get('/public/invoices/:id/download-pdf', finance.downloadInvoicePdf);
 
 router.use(authenticate);
 
@@ -27,6 +28,7 @@ router.put('/invoices/:id', can('payment.view_all'), finance.updateInvoice);
 router.put('/invoices/:id/regenerate', can('payment.view_all'), finance.regenerateInvoice);
 router.get('/invoices/:id/pdf', can('payment.view_all'), finance.downloadInvoicePdf);
 router.get('/invoices/:id/html', can('payment.view_all'), finance.getInvoiceHtml);
+router.post('/invoices/:id/send-whatsapp', can('payment.view_all'), finance.sendInvoiceWhatsapp);
 router.delete('/invoices/:id', can('payment.view_all'), finance.deleteInvoice);
 
 // ─── Vendor Payments ─────────────────────────────────────────

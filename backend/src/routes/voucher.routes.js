@@ -186,6 +186,119 @@ router.post('/vouchers/:id/send', async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
+// Send voucher by WhatsApp (Meta Cloud API / Manual Link)
+router.post('/vouchers/:id/send-whatsapp', async (req, res, next) => {
+  try {
+    const voucher = await voucherService.getById(req.params.id);
+    if (!voucher) return res.status(404).json({ success: false, message: 'Voucher not found' });
+
+    const prisma = require('../config/prisma');
+    const queueService = require('../services/queue.service');
+    const config = require('../config');
+
+    // Resolve recipient phone
+    let phone = req.body.phone || null;
+    let recipientName = voucher.leadPaxName || voucher.query?.name || 'Customer';
+
+    if (!phone) {
+      if (voucher.voucherType === 'supplier') {
+        const supplier = await prisma.supplier.findFirst({
+          where: { companyName: { equals: voucher.supplierName, mode: 'insensitive' } }
+        });
+        phone = supplier?.phone || null;
+        recipientName = voucher.supplierName || recipientName;
+      } else {
+        phone = voucher.query?.phone || null;
+      }
+    }
+
+    if (!phone) {
+      return res.status(400).json({
+        success: false,
+        message: voucher.voucherType === 'supplier'
+          ? 'No phone number found for this supplier. Please add one first.'
+          : 'No phone number found for this customer.'
+      });
+    }
+
+    // Normalize phone
+    let normalizedPhone = phone.replace(/\D/g, '');
+    if (normalizedPhone.length === 10) {
+      normalizedPhone = `91${normalizedPhone}`;
+    }
+
+    const publicPdfUrl = `${process.env.API_URL || 'https://api.imagicaholidays.com/api/v1'}/public/vouchers/${voucher.id}/download-pdf`;
+
+    if (config.whatsapp.mode === 'manual') {
+      const msgText = `Hi ${recipientName}, here is your ${voucher.voucherType === 'customer' ? 'booking confirmation voucher' : 'supplier reservation voucher'} (${voucher.voucherNumber}) for ${voucher.hotelName || 'your booking'}:\n${publicPdfUrl}`;
+      const waLink = `https://wa.me/${normalizedPhone}?text=${encodeURIComponent(msgText)}`;
+      return res.json({ mode: 'manual', waLink });
+    }
+
+    // API Mode: Enqueue templates
+    let templateName = 'guest_voucher_ready';
+    let components = [];
+
+    if (voucher.voucherType === 'supplier') {
+      templateName = 'hotel_reservation_notice';
+      components = [
+        {
+          type: 'header',
+          parameters: [
+            {
+              type: 'document',
+              document: {
+                link: publicPdfUrl,
+                filename: `Reservation-${voucher.voucherNumber}.pdf`
+              }
+            }
+          ]
+        },
+        {
+          type: 'body',
+          parameters: [
+            { type: 'text', text: voucher.supplierName || 'Hotel Manager' },
+            { type: 'text', text: voucher.leadPaxName || 'Guest' },
+            { type: 'text', text: voucher.checkIn ? new Date(voucher.checkIn).toLocaleDateString('en-IN') : 'N/A' },
+            { type: 'text', text: `${voucher.roomType || 'Room'} (${voucher.mealPlan || 'Meal Plan'})` }
+          ]
+        }
+      ];
+    } else {
+      templateName = 'guest_voucher_ready';
+      components = [
+        {
+          type: 'header',
+          parameters: [
+            {
+              type: 'document',
+              document: {
+                link: publicPdfUrl,
+                filename: `Voucher-${voucher.voucherNumber}.pdf`
+              }
+            }
+          ]
+        },
+        {
+          type: 'body',
+          parameters: [
+            { type: 'text', text: recipientName },
+            { type: 'text', text: voucher.voucherNumber },
+            { type: 'text', text: voucher.hotelName || 'Hotel' }
+          ]
+        }
+      ];
+    }
+
+    await queueService.enqueueWhatsappJob(voucher.queryId, normalizedPhone, templateName, components);
+
+    // Update status to sent
+    await voucherService.markSent(req.params.id);
+
+    res.json({ success: true, message: `Voucher WhatsApp queued to ${normalizedPhone} successfully` });
+  } catch (err) { next(err); }
+});
+
 // Delete a voucher
 router.delete('/vouchers/:id', async (req, res, next) => {
   try {

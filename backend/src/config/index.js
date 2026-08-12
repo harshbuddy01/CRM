@@ -40,9 +40,9 @@ const config = {
     port: parseInt(process.env.SMTP_PORT, 10) || 587,
     user: process.env.SMTP_USER,
     pass: process.env.SMTP_PASS,
-    from: process.env.EMAIL_FROM || 'noreply@yourdomain.com',
-    adminFrom: process.env.ADMIN_EMAIL_FROM || process.env.APP_EMAIL || 'noreply@travelcrm.app',
-    adminFromName: process.env.ADMIN_EMAIL_FROM_NAME || `${process.env.APP_NAME || 'TravelCRM'} (Admin)`,
+    from: process.env.EMAIL_FROM || 'noreply@imagicaholidays.com',
+    adminFrom: process.env.ADMIN_EMAIL_FROM || process.env.APP_EMAIL || 'noreply@imagicaholidays.com',
+    adminFromName: process.env.ADMIN_EMAIL_FROM_NAME || 'Imagica Holidays',
   },
 
   // --- Redis ---
@@ -64,6 +64,10 @@ const config = {
   whatsapp: {
     mode: process.env.WHATSAPP_MODE || 'manual', // was 'interakt'
     interaktApiKey: process.env.INTERAKT_API_KEY,
+    accessToken: process.env.WHATSAPP_ACCESS_TOKEN,
+    phoneNumberId: process.env.WHATSAPP_PHONE_NUMBER_ID,
+    businessAccountId: process.env.WHATSAPP_BUSINESS_ACCOUNT_ID,
+    apiVersion: process.env.WHATSAPP_API_VERSION || 'v18.0',
   },
 
   // --- Google Ads Enhanced Conversions ---

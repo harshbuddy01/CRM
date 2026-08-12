@@ -151,12 +151,11 @@ export function PostSalesTab({ queryId }: { queryId: string }) {
         id: composeModal.service.id,
         emailBody: composeBody,
       });
-    } else {
       const phone = composeModal.recipient.replace(/\D/g, '');
-      const waUrl = `https://wa.me/${phone.startsWith('91') ? phone : '91' + phone}?text=${encodeURIComponent(composeBody)}`;
-      window.open(waUrl, '_blank');
+      api.post(`/v1/whatsapp-chat/conversations/${phone}/send`, { message: composeBody })
+        .then(() => toast.success('Supplier notice dispatched directly via WhatsApp API! 🚀'))
+        .catch(() => toast.error('Failed to dispatch WhatsApp message'));
       setComposeModal(null);
-    }
   };
 
   const { data: services, isLoading } = useQuery({

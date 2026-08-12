@@ -551,14 +551,20 @@ export default function TourDispatchPage() {
                 />
               </div>
               <Button 
-                onClick={() => {
+                onClick={async () => {
                   const phone = waRecipient.replace(/\D/g, '');
-                  window.open(`https://wa.me/${phone.startsWith('91') ? phone : '91' + phone}?text=${encodeURIComponent(waMessage)}`, '_blank');
+                  if (!phone) return toast.error('Phone number missing');
+                  try {
+                    await api.post(`/v1/whatsapp-chat/conversations/${phone}/send`, { message: waMessage });
+                    toast.success('Tour dispatch details sent directly via WhatsApp API! 🚀');
+                  } catch (err) {
+                    toast.error('Failed to send WhatsApp dispatch details');
+                  }
                   setIsShareModalOpen(false);
                 }} 
                 className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold h-9 text-xs"
               >
-                Open in WhatsApp
+                Send via WhatsApp API
               </Button>
             </div>
           )}

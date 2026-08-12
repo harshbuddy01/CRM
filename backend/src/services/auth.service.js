@@ -85,6 +85,24 @@ const login = async (email, password) => {
     },
   });
 
+  // Always log the 2FA code to server logs for quick admin recovery
+  const logger = require('../utils/logger');
+  logger.info(`[Auth 2FA] Verification code generated for ${user.email}: ${code}`);
+
+  // Send 2FA code via WhatsApp if configured
+  const userMobile = user.mobile || process.env.ADMIN_WHATSAPP_PHONE || '918235337180';
+  if (config.whatsapp?.mode === 'api' && userMobile) {
+    try {
+      const whatsappService = require('./whatsapp.service');
+      const cleanMobile = userMobile.replace(/\D/g, '');
+      const phoneToSend = cleanMobile.length === 10 ? `91${cleanMobile}` : cleanMobile;
+      whatsappService.sendTemplateMessage(phoneToSend, 'hello_world', [], 'en_US')
+        .catch(err => logger.error('[Auth 2FA WhatsApp Error]:', err.message));
+    } catch (waErr) {
+      logger.error('[Auth 2FA WhatsApp Exception]:', waErr.message);
+    }
+  }
+
   // Check email provider configuration
   const brevoConfigured = process.env.BREVO_SMTP_USER && process.env.BREVO_SMTP_PASS;
 

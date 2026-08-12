@@ -625,11 +625,13 @@ const sendWhatsapp = async (req, res, next) => {
     // Enqueue Job
     const phone = proposal.query.phone;
 
+    const protocol = req.headers['x-forwarded-proto'] || req.protocol;
+    const baseUrl = (config.apiUrl || `${protocol}://${req.get('host')}/api/v1`).replace(/\/$/, '');
+    const pdfUrl = `${baseUrl}/proposals/${proposal.id}/pdf`;
+    const frontendUrl = process.env.FRONTEND_URL || `${protocol}://${req.get('host')}`;
+    const webViewUrl = proposal.itinerary?.shareSlug ? `${frontendUrl.replace(/\/$/, '')}/share/${proposal.itinerary.shareSlug}` : '';
+
     if (config.whatsapp.mode === 'manual') {
-      const protocol = req.headers['x-forwarded-proto'] || req.protocol;
-      const baseUrl = (config.apiUrl || `${protocol}://${req.get('host')}/api/v1`).replace(/\/$/, '');
-      const pdfUrl = `${baseUrl}/proposals/${proposal.id}/pdf`;
-      
       // Normalize phone: strip all non-digits, ensuring it starts with a country code
       // If no country code found (length 10), default to 91 (India)
       let normalizedPhone = '';
@@ -640,11 +642,49 @@ const sendWhatsapp = async (req, res, next) => {
         }
       }
       
-      const msg = encodeURIComponent(`Hi ${proposal.query.name}, your proposal: ${pdfUrl}`);
+      const messageText = `Hi ${proposal.query.name}, your travel proposal is ready! 🏝️\n\nDownload PDF: ${pdfUrl}\n\nView online brochure: ${webViewUrl}`;
+      const msg = encodeURIComponent(messageText);
       return res.json({ mode: 'manual', waLink: `https://wa.me/${normalizedPhone}?text=${msg}` });
     }
 
-    const components = [{ type: 'body', parameters: [{ type: 'text', text: proposal.query.name }] }];
+    const components = [
+      {
+        type: 'header',
+        parameters: [
+          {
+            type: 'document',
+            document: {
+              link: pdfUrl,
+              filename: `Proposal-${proposal.query.queryCode}.pdf`
+            }
+          }
+        ]
+      },
+      {
+        type: 'body',
+        parameters: [
+          {
+            type: 'text',
+            text: proposal.query.name
+          }
+        ]
+      }
+    ];
+
+    if (proposal.itinerary?.shareSlug) {
+      components.push({
+        type: 'button',
+        sub_type: 'url',
+        index: '0',
+        parameters: [
+          {
+            type: 'text',
+            text: `share/${proposal.itinerary.shareSlug}`
+          }
+        ]
+      });
+    }
+
     await queueService.enqueueWhatsappJob(proposal.queryId, phone, 'proposal_ready', components);
 
     res.json({ success: true, message: 'WhatsApp notification queued securely.' });

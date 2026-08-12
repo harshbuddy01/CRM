@@ -202,6 +202,9 @@ apiRouter.use('/', require('./routes/booking-service.routes'));
 apiRouter.use('/', require('./routes/voucher.routes'));
 apiRouter.use('/', require('./routes/query-document.routes'));
 
+// 2-Way WhatsApp Live Chat System
+apiRouter.use('/whatsapp-chat', require('./routes/whatsapp-chat.routes'));
+
 // ── Public endpoints (no auth required) for website consumption ──
 const wcCtrl = require('./controllers/website-content.controller');
 const websiteConfigCtrl = require('./controllers/website-config.controller');

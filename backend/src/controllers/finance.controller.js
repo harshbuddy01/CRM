@@ -944,9 +944,79 @@ const debugPdfPublic = async (req, res) => {
   }
 };
 
+const sendInvoiceWhatsapp = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const invoice = await prisma.invoice.findUnique({
+      where: { id }
+    });
+    if (!invoice) return res.status(404).json({ success: false, message: 'Invoice not found' });
+
+    const queueService = require('../services/queue.service');
+    const config = require('../config');
+
+    // Fetch the query to get phone and name
+    let phone = req.body.phone;
+    let clientName = invoice.clientName;
+
+    if (!phone && invoice.queryId) {
+      const query = await prisma.query.findUnique({ where: { id: invoice.queryId } });
+      phone = query?.phone || null;
+      clientName = query?.name || clientName;
+    }
+
+    if (!phone) {
+      return res.status(400).json({ success: false, message: 'No phone number found for this customer.' });
+    }
+
+    let normalizedPhone = phone.replace(/\D/g, '');
+    if (normalizedPhone.length === 10) {
+      normalizedPhone = `91${normalizedPhone}`;
+    }
+
+    const publicPdfUrl = `${process.env.API_URL || 'https://api.imagicaholidays.com/api/v1'}/finance/public/invoices/${invoice.id}/download-pdf`;
+
+    if (config.whatsapp.mode === 'manual') {
+      const msgText = `Hi ${clientName}, please find your invoice ${invoice.invoiceNumber} for your upcoming trip here:\n${publicPdfUrl}`;
+      const waLink = `https://wa.me/${normalizedPhone}?text=${encodeURIComponent(msgText)}`;
+      return res.json({ mode: 'manual', waLink });
+    }
+
+    // API Mode: Enqueue templates
+    const components = [
+      {
+        type: 'header',
+        parameters: [
+          {
+            type: 'document',
+            document: {
+              link: publicPdfUrl,
+              filename: `${invoice.invoiceNumber}.pdf`
+            }
+          }
+        ]
+      },
+      {
+        type: 'body',
+        parameters: [
+          { type: 'text', text: clientName },
+          { type: 'text', text: invoice.invoiceNumber },
+          { type: 'text', text: `₹${Number(invoice.totalAmount).toLocaleString('en-IN')}` }
+        ]
+      }
+    ];
+
+    await queueService.enqueueWhatsappJob(invoice.queryId, normalizedPhone, 'client_invoice_ready', components);
+
+    res.json({ success: true, message: `Invoice WhatsApp queued to ${normalizedPhone} successfully` });
+  } catch (e) {
+    next(e);
+  }
+};
+
 module.exports = {
   listExpenses, createExpense, updateExpense, deleteExpense,
-  listInvoices, getInvoice, createInvoice, updateInvoice, deleteInvoice, regenerateInvoice, downloadInvoicePdf, getInvoiceHtml,
+  listInvoices, getInvoice, createInvoice, updateInvoice, deleteInvoice, regenerateInvoice, downloadInvoicePdf, getInvoiceHtml, sendInvoiceWhatsapp,
   listVendorPayments, createVendorPayment, deleteVendorPayment,
   getPnlSummary, downloadBillingStatementPdf, sendBillingStatementEmail, debugPdfPublic,
 };
