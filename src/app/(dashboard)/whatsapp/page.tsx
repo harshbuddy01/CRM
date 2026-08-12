@@ -80,14 +80,14 @@ export default function WhatsAppChatPage() {
 
   useEffect(() => {
     fetchConversations();
-    const interval = setInterval(fetchConversations, 5000); // Auto-refresh conversation list every 5s
+    const interval = setInterval(fetchConversations, 2000); // 2s realtime sync
     return () => clearInterval(interval);
   }, []);
 
   useEffect(() => {
     if (selectedPhone) {
       fetchChatHistory(selectedPhone);
-      const interval = setInterval(() => fetchChatHistory(selectedPhone), 3000); // Auto-refresh messages every 3s
+      const interval = setInterval(() => fetchChatHistory(selectedPhone), 2000); // 2s realtime sync
       return () => clearInterval(interval);
     }
   }, [selectedPhone]);
@@ -123,31 +123,34 @@ export default function WhatsAppChatPage() {
   const filteredConversations = conversations.filter(c => 
     c.phone.includes(searchQuery) || 
     (c.clientName && c.clientName.toLowerCase().includes(searchQuery.toLowerCase())) ||
-    c.lastMessage.toLowerCase().includes(searchQuery.toLowerCase())
+    (c.lastMessage && c.lastMessage.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
   return (
-    <div className="h-[calc(100vh-100px)] flex flex-col bg-slate-900 text-slate-100 rounded-2xl overflow-hidden border border-slate-800 shadow-2xl">
-      {/* Top Bar Header */}
-      <div className="px-6 py-4 bg-slate-950/80 border-b border-slate-800 flex items-center justify-between backdrop-blur-md">
+    <div className="h-[calc(100vh-90px)] flex flex-col bg-[#f0f2f5] rounded-2xl overflow-hidden border border-slate-200 shadow-xl font-sans">
+      {/* Top Header Bar */}
+      <div className="px-5 py-3 bg-[#00a884] text-white flex items-center justify-between shadow-sm">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
+          <div className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center text-white backdrop-blur-sm">
             <MessageSquare className="w-5 h-5" />
           </div>
           <div>
-            <h1 className="text-lg font-bold text-slate-100 flex items-center gap-2">
+            <h1 className="text-base font-bold flex items-center gap-2">
               WhatsApp Live Inbox
-              <span className="text-xs px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-medium flex items-center gap-1">
-                <ShieldCheck className="w-3 h-3" /> Meta Official Cloud API
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/20 text-white font-medium flex items-center gap-1 border border-white/30">
+                <ShieldCheck className="w-3 h-3" /> Meta Cloud API
               </span>
             </h1>
-            <p className="text-xs text-slate-400">2-Way Realtime WhatsApp Chat with Customers & Drivers</p>
+            <p className="text-[11px] text-emerald-100/90 font-medium">Realtime Customer & Driver Messaging</p>
           </div>
         </div>
         <button 
-          onClick={fetchConversations}
-          className="p-2.5 rounded-xl bg-slate-900 border border-slate-800 hover:bg-slate-800 text-slate-400 hover:text-slate-200 transition-colors"
-          title="Refresh Conversations"
+          onClick={() => {
+            fetchConversations();
+            if (selectedPhone) fetchChatHistory(selectedPhone);
+          }}
+          className="p-2 rounded-full hover:bg-white/10 text-white transition-colors"
+          title="Refresh Inbox Now"
         >
           <RefreshCw className="w-4 h-4" />
         </button>
@@ -156,27 +159,27 @@ export default function WhatsAppChatPage() {
       {/* Main 2-Column Chat Area */}
       <div className="flex-1 flex overflow-hidden">
         {/* Left Column: Conversations List */}
-        <div className="w-80 md:w-96 bg-slate-950/40 border-r border-slate-800 flex flex-col">
-          {/* Search Input */}
-          <div className="p-4 border-b border-slate-800">
+        <div className="w-80 md:w-96 bg-white border-r border-slate-200 flex flex-col">
+          {/* Search Box */}
+          <div className="p-3 bg-[#f0f2f5] border-b border-slate-200">
             <div className="relative">
-              <Search className="w-4 h-4 absolute left-3 top-3 text-slate-500" />
+              <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
               <input
                 type="text"
-                placeholder="Search by client or phone..."
+                placeholder="Search or start new chat..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-slate-900 border border-slate-800 rounded-xl pl-9 pr-4 py-2 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-emerald-500/50"
+                className="w-full bg-white border border-slate-200 rounded-lg pl-9 pr-4 py-1.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#00a884]"
               />
             </div>
           </div>
 
-          {/* Conversations Scroll View */}
-          <div className="flex-1 overflow-y-auto divide-y divide-slate-900">
+          {/* Conversations List */}
+          <div className="flex-1 overflow-y-auto divide-y divide-slate-100">
             {loading ? (
-              <div className="p-8 text-center text-slate-500 text-xs">Loading conversations...</div>
+              <div className="p-8 text-center text-slate-400 text-xs">Loading chats...</div>
             ) : filteredConversations.length === 0 ? (
-              <div className="p-8 text-center text-slate-500 text-xs">No active WhatsApp chats found.</div>
+              <div className="p-8 text-center text-slate-400 text-xs">No WhatsApp conversations yet.</div>
             ) : (
               filteredConversations.map((conv) => {
                 const isSelected = selectedPhone === conv.phone;
@@ -187,31 +190,31 @@ export default function WhatsAppChatPage() {
                       setSelectedPhone(conv.phone);
                       setActiveConversation(conv);
                     }}
-                    className={`w-full p-4 text-left flex items-start gap-3 transition-colors ${
+                    className={`w-full p-3.5 text-left flex items-start gap-3 transition-all ${
                       isSelected 
-                        ? 'bg-emerald-500/10 border-l-4 border-emerald-500' 
-                        : 'hover:bg-slate-900/60'
+                        ? 'bg-[#f0f2f5] border-l-4 border-[#00a884]' 
+                        : 'hover:bg-slate-50'
                     }`}
                   >
-                    <div className="w-10 h-10 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center font-bold text-slate-300 shrink-0">
-                      {conv.clientName ? conv.clientName[0].toUpperCase() : <User className="w-4 h-4 text-slate-400" />}
+                    <div className="w-10 h-10 rounded-full bg-emerald-100 text-[#00a884] font-bold border border-emerald-200 flex items-center justify-center shrink-0 text-sm">
+                      {conv.clientName ? conv.clientName[0].toUpperCase() : <User className="w-4 h-4" />}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="font-semibold text-xs text-slate-200 truncate">
+                      <div className="flex items-center justify-between mb-0.5">
+                        <span className="font-semibold text-xs text-slate-900 truncate">
                           {conv.clientName || `+${conv.phone}`}
                         </span>
-                        <span className="text-[10px] text-slate-500">
+                        <span className="text-[10px] text-slate-400">
                           {new Date(conv.lastMessageAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                         </span>
                       </div>
-                      <p className="text-xs text-slate-400 truncate font-normal">
-                        {conv.direction === 'OUTBOUND' && <span className="text-emerald-400 font-medium">You: </span>}
+                      <p className="text-xs text-slate-500 truncate font-normal">
+                        {conv.direction === 'OUTBOUND' && <span className="text-[#00a884] font-medium">You: </span>}
                         {conv.lastMessage}
                       </p>
                     </div>
                     {conv.unreadCount > 0 && (
-                      <span className="bg-emerald-500 text-slate-950 font-bold text-[10px] w-5 h-5 rounded-full flex items-center justify-center">
+                      <span className="bg-[#25d366] text-white font-bold text-[10px] w-4 h-4 rounded-full flex items-center justify-center">
                         {conv.unreadCount}
                       </span>
                     )}
@@ -222,37 +225,37 @@ export default function WhatsAppChatPage() {
           </div>
         </div>
 
-        {/* Right Column: Chat Window */}
+        {/* Right Column: Active Chat Window */}
         {selectedPhone ? (
-          <div className="flex-1 flex flex-col bg-slate-900/50">
-            {/* Chat Top Info Bar */}
-            <div className="px-6 py-3.5 bg-slate-950/60 border-b border-slate-800 flex items-center justify-between">
+          <div className="flex-1 flex flex-col bg-[#efeae2]">
+            {/* Active Chat Header */}
+            <div className="px-5 py-2.5 bg-[#f0f2f5] border-b border-slate-200 flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-full bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400 font-bold text-sm">
+                <div className="w-9 h-9 rounded-full bg-[#00a884] text-white font-bold flex items-center justify-center text-sm shadow-xs">
                   {activeConversation?.clientName ? activeConversation.clientName[0].toUpperCase() : <Phone className="w-4 h-4" />}
                 </div>
                 <div>
-                  <h2 className="font-bold text-sm text-slate-100">
+                  <h2 className="font-bold text-xs text-slate-900">
                     {activeConversation?.clientName || `Customer (+${selectedPhone})`}
                   </h2>
-                  <p className="text-xs text-slate-400 flex items-center gap-1">
-                    <Phone className="w-3 h-3 text-slate-500" /> +{selectedPhone}
+                  <p className="text-[11px] text-slate-500 flex items-center gap-1">
+                    +{selectedPhone}
                   </p>
                 </div>
               </div>
 
               <div className="flex items-center gap-2">
-                <span className="text-xs text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-3 py-1 rounded-lg font-medium flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> Connected
+                <span className="text-[11px] text-[#00a884] bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full font-medium flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-[#25d366] animate-pulse"></span> Active Online
                 </span>
               </div>
             </div>
 
             {/* Chat Messages Log */}
-            <div className="flex-1 p-6 overflow-y-auto space-y-4 bg-slate-950/20">
+            <div className="flex-1 p-5 overflow-y-auto space-y-3 bg-[#efeae2]/90">
               {messages.length === 0 ? (
-                <div className="text-center text-slate-500 py-12 text-xs">
-                  No previous chat history for this number. Start typing below to send a message!
+                <div className="text-center text-slate-400 py-12 text-xs bg-white/70 backdrop-blur-xs rounded-xl p-6 border border-slate-200/60 max-w-md mx-auto shadow-xs">
+                  No message history yet. Type below to send a WhatsApp message!
                 </div>
               ) : (
                 messages.map((msg) => {
@@ -263,16 +266,16 @@ export default function WhatsAppChatPage() {
                       className={`flex ${isOutbound ? 'justify-end' : 'justify-start'}`}
                     >
                       <div
-                        className={`max-w-[75%] rounded-2xl px-4.5 py-3 text-xs leading-relaxed ${
+                        className={`max-w-[75%] rounded-lg px-3.5 py-2 text-xs leading-relaxed shadow-xs ${
                           isOutbound
-                            ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-br-none shadow-lg shadow-emerald-950/40'
-                            : 'bg-slate-800 text-slate-200 border border-slate-700/80 rounded-bl-none shadow-md'
+                            ? 'bg-[#d9fdd3] text-[#111b21] rounded-tr-none border border-[#bbf2b1]'
+                            : 'bg-white text-[#111b21] rounded-tl-none border border-slate-200/80'
                         }`}
                       >
                         <p className="whitespace-pre-wrap">{msg.message}</p>
-                        <div className={`flex items-center justify-end gap-1 mt-1.5 text-[10px] ${isOutbound ? 'text-emerald-100/80' : 'text-slate-400'}`}>
+                        <div className={`flex items-center justify-end gap-1 mt-1 text-[10px] ${isOutbound ? 'text-slate-500' : 'text-slate-400'}`}>
                           <span>{new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                          {isOutbound && <CheckCheck className="w-3.5 h-3.5 text-emerald-200" />}
+                          {isOutbound && <CheckCheck className="w-3.5 h-3.5 text-[#53bdeb]" />}
                         </div>
                       </div>
                     </div>
@@ -282,11 +285,11 @@ export default function WhatsAppChatPage() {
               <div ref={messagesEndRef} />
             </div>
 
-            {/* Reply Input Box */}
-            <div className="p-4 bg-slate-950/80 border-t border-slate-800">
-              <div className="flex items-center gap-3">
+            {/* Message Input Footer */}
+            <div className="p-3 bg-[#f0f2f5] border-t border-slate-200">
+              <div className="flex items-center gap-2">
                 <textarea
-                  rows={2}
+                  rows={1}
                   value={replyText}
                   onChange={(e) => setReplyText(e.target.value)}
                   onKeyDown={(e) => {
@@ -295,28 +298,27 @@ export default function WhatsAppChatPage() {
                       handleSend();
                     }
                   }}
-                  placeholder="Type a reply... (Press Enter to send)"
-                  className="flex-1 bg-slate-900 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-emerald-500/50 resize-none"
+                  placeholder="Type a message..."
+                  className="flex-1 bg-white border border-slate-200 rounded-lg px-4 py-2 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#00a884] resize-none"
                 />
                 <button
                   onClick={handleSend}
                   disabled={sending || !replyText.trim()}
-                  className="h-12 px-5 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 disabled:opacity-50 text-slate-950 font-bold rounded-xl flex items-center justify-center gap-2 text-xs transition-all shadow-lg shadow-emerald-950/50"
+                  className="w-9 h-9 bg-[#00a884] hover:bg-[#008f70] disabled:opacity-50 text-white rounded-full flex items-center justify-center transition-all shadow-sm shrink-0"
+                  title="Send Message"
                 >
-                  {sending ? 'Sending...' : (
-                    <>
-                      <span>Send</span>
-                      <Send className="w-4 h-4" />
-                    </>
-                  )}
+                  {sending ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4 ml-0.5" />}
                 </button>
               </div>
             </div>
           </div>
         ) : (
-          <div className="flex-1 flex flex-col items-center justify-center text-slate-500 p-8">
-            <MessageSquare className="w-12 h-12 mb-3 text-slate-700" />
-            <p className="text-sm font-medium text-slate-400">Select a conversation from the left to view chat history.</p>
+          <div className="flex-1 flex flex-col items-center justify-center text-slate-400 p-8 bg-[#efeae2]/50">
+            <div className="w-16 h-16 rounded-full bg-emerald-100 text-[#00a884] flex items-center justify-center mb-3 border border-emerald-200">
+              <MessageSquare className="w-8 h-8" />
+            </div>
+            <h3 className="font-bold text-slate-700 text-sm mb-1">WhatsApp Web for TravelCRM</h3>
+            <p className="text-xs text-slate-500">Select a client conversation on the left to start chatting in real time.</p>
           </div>
         )}
       </div>
