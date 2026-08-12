@@ -671,19 +671,21 @@ const sendWhatsapp = async (req, res, next) => {
       }
     ];
 
-    if (proposal.itinerary?.shareSlug) {
-      components.push({
-        type: 'button',
-        sub_type: 'url',
-        index: '0',
-        parameters: [
-          {
-            type: 'text',
-            text: `share/${proposal.itinerary.shareSlug}`
-          }
-        ]
-      });
-    }
+    const buttonSlug = proposal.itinerary?.shareSlug 
+      ? `share/${proposal.itinerary.shareSlug}` 
+      : `api/v1/proposals/${proposal.id}/pdf`;
+    
+    components.push({
+      type: 'button',
+      sub_type: 'url',
+      index: '0',
+      parameters: [
+        {
+          type: 'text',
+          text: buttonSlug
+        }
+      ]
+    });
 
     await queueService.enqueueWhatsappJob(proposal.queryId, phone, 'proposal_ready', components);
 
