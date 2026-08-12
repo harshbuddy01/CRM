@@ -364,35 +364,45 @@ export function BillingTab({ queryId }: { queryId: string }) {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between mb-2">
-        <h3 className="font-semibold text-lg text-slate-800">Customer Side</h3>
-        <div className="flex items-center gap-3">
-          <Button 
-            size="sm" 
-            variant="outline" 
-            className="gap-2 border-emerald-200 text-emerald-700 hover:bg-emerald-50 hover:border-emerald-500 transition-all font-bold shadow-sm"
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <h3 className="font-semibold text-lg text-slate-800">Customer Side</h3>
+          <p className="text-xs text-slate-400 font-medium">Billing overview & customer payment actions</p>
+        </div>
+        <div className="flex items-center gap-2 bg-slate-100/80 backdrop-blur-sm p-1.5 rounded-full border border-slate-200 shadow-xs">
+          {/* 1. Download Statement */}
+          <button 
+            type="button"
             onClick={() => downloadBillingPdf.mutate()}
             disabled={isDownloading}
+            title="Download Billing Statement PDF"
+            className="relative group w-9 h-9 rounded-full flex items-center justify-center bg-white border border-slate-200 text-slate-700 hover:bg-emerald-600 hover:text-white hover:border-emerald-600 transition-all shadow-xs"
           >
-            {isDownloading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-            Download Statement
-          </Button>
-          <Button 
-            size="sm" 
-            variant="outline" 
-            className="gap-2 border-blue-200 text-blue-700 hover:bg-blue-50 hover:border-blue-500 transition-all font-bold shadow-sm"
+            {isDownloading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4 text-emerald-600 group-hover:text-white transition-colors" />}
+            <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 hidden group-hover:flex items-center px-2 py-1 bg-slate-900 text-white text-[10px] font-semibold rounded-md whitespace-nowrap z-50 shadow-md">
+              Download Statement
+            </span>
+          </button>
+
+          {/* 2. Email Statement */}
+          <button 
+            type="button"
             onClick={() => {
               setBillingEmailRecipient(queryObj?.email || '');
               setIsSendBillingEmailOpen(true);
             }}
+            title="Email Billing Statement"
+            className="relative group w-9 h-9 rounded-full flex items-center justify-center bg-white border border-slate-200 text-slate-700 hover:bg-blue-600 hover:text-white hover:border-blue-600 transition-all shadow-xs"
           >
-            <Mail className="w-4 h-4 text-blue-600" />
-            Email Statement
-          </Button>
-          <Button 
-            size="sm" 
-            variant="outline" 
-            className="gap-2 border-emerald-200 text-emerald-700 hover:bg-emerald-50 hover:border-emerald-500 transition-all font-bold shadow-sm"
+            <Mail className="w-4 h-4 text-blue-600 group-hover:text-white transition-colors" />
+            <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 hidden group-hover:flex items-center px-2 py-1 bg-slate-900 text-white text-[10px] font-semibold rounded-md whitespace-nowrap z-50 shadow-md">
+              Email Statement
+            </span>
+          </button>
+
+          {/* 3. WhatsApp Statement */}
+          <button 
+            type="button"
             onClick={async () => {
               const name = queryObj?.name || 'Customer';
               const total = Number(customer?.totalAmount || 0).toLocaleString('en-IN');
@@ -408,10 +418,18 @@ export function BillingTab({ queryId }: { queryId: string }) {
                 toast.error('Failed to dispatch WhatsApp message');
               }
             }}
+            title="Send Statement via WhatsApp"
+            className="relative group w-9 h-9 rounded-full flex items-center justify-center bg-white border border-slate-200 text-slate-700 hover:bg-emerald-500 hover:text-white hover:border-emerald-500 transition-all shadow-xs"
           >
-            <MessageSquare className="w-4 h-4 text-emerald-600" />
-            WhatsApp
-          </Button>
+            <MessageSquare className="w-4 h-4 text-emerald-600 group-hover:text-white transition-colors" />
+            <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 hidden group-hover:flex items-center px-2 py-1 bg-slate-900 text-white text-[10px] font-semibold rounded-md whitespace-nowrap z-50 shadow-md">
+              WhatsApp Statement
+            </span>
+          </button>
+
+          <div className="w-px h-5 bg-slate-200 mx-0.5" />
+
+          {/* 4. Request Payment */}
           <Dialog open={isPaymentModalOpen} onOpenChange={(open) => {
             setIsPaymentModalOpen(open);
             if (open) {
@@ -421,9 +439,16 @@ export function BillingTab({ queryId }: { queryId: string }) {
           }}>
             <DialogTrigger
               render={
-                <Button size="sm" variant="outline" className="gap-2 border-primary text-primary hover:bg-primary/5">
-                  <Send className="w-4 h-4" /> Request Payment
-                </Button>
+                <button
+                  type="button"
+                  title="Request Online Payment (Razorpay)"
+                  className="relative group w-9 h-9 rounded-full flex items-center justify-center bg-white border border-slate-200 text-indigo-600 hover:bg-indigo-600 hover:text-white hover:border-indigo-600 transition-all shadow-xs"
+                >
+                  <Send className="w-4 h-4 text-indigo-600 group-hover:text-white transition-colors" />
+                  <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 hidden group-hover:flex items-center px-2 py-1 bg-slate-900 text-white text-[10px] font-semibold rounded-md whitespace-nowrap z-50 shadow-md">
+                    Request Payment
+                  </span>
+                </button>
               }
             />
             <DialogContent>
@@ -483,10 +508,22 @@ export function BillingTab({ queryId }: { queryId: string }) {
             </DialogContent>
           </Dialog>
 
+          {/* 5. Record Manual Payment */}
           <Dialog open={isManualPaymentOpen} onOpenChange={setIsManualPaymentOpen}>
-            <DialogTrigger render={<Button size="sm" variant="outline" className="gap-2 border-emerald-600 text-emerald-600 hover:bg-emerald-50">
-              <CreditCard className="w-4 h-4" /> Record Manual Payment
-            </Button>} />
+            <DialogTrigger 
+              render={
+                <button
+                  type="button"
+                  title="Record Manual Payment"
+                  className="relative group w-9 h-9 rounded-full flex items-center justify-center bg-emerald-600 text-white hover:bg-emerald-700 transition-all shadow-sm"
+                >
+                  <CreditCard className="w-4 h-4" />
+                  <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 hidden group-hover:flex items-center px-2 py-1 bg-slate-900 text-white text-[10px] font-semibold rounded-md whitespace-nowrap z-50 shadow-md">
+                    Record Manual Payment
+                  </span>
+                </button>
+              } 
+            />
             <DialogContent className="sm:max-w-[425px]">
               <DialogHeader><DialogTitle>Record Manual Payment</DialogTitle></DialogHeader>
               <form onSubmit={(e) => {
@@ -562,13 +599,24 @@ export function BillingTab({ queryId }: { queryId: string }) {
         <KpiCard label="Gross Profit" value={customer.grossProfit} color={customer.grossProfit >= 0 ? 'text-green-600' : 'text-red-600'} icon={TrendingUp} />
       </div>
 
-      <div>
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="font-semibold text-lg">Supplier Side</h3>
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h3 className="font-semibold text-lg text-slate-800">Supplier Side</h3>
+            <p className="text-xs text-slate-400 font-medium">Hotel & transport vendor payouts</p>
+          </div>
           <Dialog open={isSupplierPaymentOpen} onOpenChange={setIsSupplierPaymentOpen}>
-            <DialogTrigger render={<Button size="sm" variant="outline" className="gap-2 border-amber-600 text-amber-600 hover:bg-amber-50">
-              <CreditCard className="w-4 h-4" /> Record Supplier Payment
-            </Button>} />
+            <DialogTrigger 
+              render={
+                <button
+                  type="button"
+                  title="Record Supplier Payment"
+                  className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-500 text-white text-xs font-semibold hover:bg-amber-600 transition-all shadow-xs"
+                >
+                  <CreditCard className="w-3.5 h-3.5" />
+                  Record Supplier Payment
+                </button>
+              } 
+            />
             <DialogContent className="sm:max-w-[425px]">
               <DialogHeader><DialogTitle>Record Supplier Payment</DialogTitle></DialogHeader>
               <form onSubmit={(e) => {
