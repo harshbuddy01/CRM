@@ -402,7 +402,7 @@ export function BillingTab({ queryId }: { queryId: string }) {
               const phone = (queryObj?.phone || '').replace(/\D/g, '');
               if (!phone) return toast.error('Client phone number missing');
               try {
-                await api.post(`/v1/whatsapp-chat/conversations/${phone}/send`, { message: text });
+                await api.post(`/whatsapp-chat/conversations/${phone}/send`, { message: text });
                 toast.success('Billing statement sent directly via WhatsApp API! 🚀');
               } catch (err: any) {
                 toast.error('Failed to dispatch WhatsApp message');

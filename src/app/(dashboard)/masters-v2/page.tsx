@@ -313,7 +313,7 @@ function MasterPanel({ category }: { category: typeof CATEGORIES[0] }) {
                   const phone = waRecipient.replace(/\D/g, '');
                   if (!phone) return toast.error('Phone number missing');
                   try {
-                    await api.post(`/v1/whatsapp-chat/conversations/${phone}/send`, { message: waMessage });
+                    await api.post(`/whatsapp-chat/conversations/${phone}/send`, { message: waMessage });
                     toast.success('Credentials sent directly via WhatsApp API! 🚀');
                   } catch (err) {
                     toast.error('Failed to send WhatsApp credentials');

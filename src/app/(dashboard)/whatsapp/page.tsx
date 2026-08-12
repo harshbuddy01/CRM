@@ -50,7 +50,7 @@ export default function WhatsAppChatPage() {
   // Fetch all conversations
   const fetchConversations = async () => {
     try {
-      const res = await api.get('/v1/whatsapp-chat/conversations');
+      const res = await api.get('/whatsapp-chat/conversations');
       if (res.data?.success) {
         setConversations(res.data.conversations || []);
         if (!selectedPhone && res.data.conversations?.length > 0) {
@@ -69,7 +69,7 @@ export default function WhatsAppChatPage() {
   // Fetch chat history for selected phone number
   const fetchChatHistory = async (phone: string) => {
     try {
-      const res = await api.get(`/v1/whatsapp-chat/conversations/${phone}`);
+      const res = await api.get(`/whatsapp-chat/conversations/${phone}`);
       if (res.data?.success) {
         setMessages(res.data.messages || []);
       }
@@ -104,7 +104,7 @@ export default function WhatsAppChatPage() {
     setReplyText('');
 
     try {
-      const res = await api.post(`/v1/whatsapp-chat/conversations/${selectedPhone}/send`, {
+      const res = await api.post(`/whatsapp-chat/conversations/${selectedPhone}/send`, {
         message: textToSend
       });
 
