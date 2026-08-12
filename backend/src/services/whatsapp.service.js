@@ -70,9 +70,9 @@ const sendTemplateMessage = async (phone, templateName, components = [], languag
       const prisma = require('../config/prisma');
       let bodyText = `[Template: ${templateName}]`;
       if (components && components.length > 0) {
-        const bodyComp = components.find((c: any) => c.type === 'body');
+        const bodyComp = components.find((c) => c.type === 'body');
         if (bodyComp && bodyComp.parameters && bodyComp.parameters.length > 0) {
-          const params = bodyComp.parameters.map((p: any) => p.text || '').join(', ');
+          const params = bodyComp.parameters.map((p) => p.text || '').join(', ');
           bodyText += ` (${params})`;
         }
       }
