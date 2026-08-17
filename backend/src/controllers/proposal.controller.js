@@ -631,6 +631,9 @@ const sendWhatsapp = async (req, res, next) => {
     const frontendUrl = process.env.FRONTEND_URL || `${protocol}://${req.get('host')}`;
     const webViewUrl = proposal.itinerary?.shareSlug ? `${frontendUrl.replace(/\/$/, '')}/share/${proposal.itinerary.shareSlug}` : '';
 
+    // Pre-generate / cache the PDF in memory so Meta Cloud API downloads it instantly (<50ms)
+    await getOrGeneratePdf(proposal).catch(err => logger.error('[PDF Pre-warm Error]', err));
+
     if (config.whatsapp.mode === 'manual') {
       // Normalize phone: strip all non-digits, ensuring it starts with a country code
       // If no country code found (length 10), default to 91 (India)
