@@ -39,6 +39,7 @@ interface ChatMessage {
 export default function WhatsAppChatPage() {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selectedPhone, setSelectedPhone] = useState<string | null>(null);
+  const selectedPhoneRef = useRef<string | null>(null);
   const [activeConversation, setActiveConversation] = useState<Conversation | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [replyText, setReplyText] = useState('');
@@ -47,16 +48,28 @@ export default function WhatsAppChatPage() {
   const [sending, setSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Fetch all conversations
+  // Sync ref with state
+  useEffect(() => {
+    selectedPhoneRef.current = selectedPhone;
+  }, [selectedPhone]);
+
+  // Fetch all conversations without resetting current selection
   const fetchConversations = async () => {
     try {
       const res = await api.get('/whatsapp-chat/conversations');
       if (res.data?.success) {
-        setConversations(res.data.conversations || []);
-        if (!selectedPhone && res.data.conversations?.length > 0) {
-          const first = res.data.conversations[0];
+        const list: Conversation[] = res.data.conversations || [];
+        setConversations(list);
+        if (!selectedPhoneRef.current && list.length > 0) {
+          const first = list[0];
+          selectedPhoneRef.current = first.phone;
           setSelectedPhone(first.phone);
           setActiveConversation(first);
+          fetchChatHistory(first.phone);
+        } else if (selectedPhoneRef.current) {
+          // Keep active conversation metadata updated
+          const current = list.find(c => c.phone === selectedPhoneRef.current);
+          if (current) setActiveConversation(current);
         }
       }
     } catch (err) {
@@ -78,6 +91,13 @@ export default function WhatsAppChatPage() {
     }
   };
 
+  const handleSelectConversation = (conv: Conversation) => {
+    selectedPhoneRef.current = conv.phone;
+    setSelectedPhone(conv.phone);
+    setActiveConversation(conv);
+    fetchChatHistory(conv.phone);
+  };
+
   useEffect(() => {
     fetchConversations();
     const interval = setInterval(fetchConversations, 2000); // 2s realtime sync
@@ -87,7 +107,11 @@ export default function WhatsAppChatPage() {
   useEffect(() => {
     if (selectedPhone) {
       fetchChatHistory(selectedPhone);
-      const interval = setInterval(() => fetchChatHistory(selectedPhone), 2000); // 2s realtime sync
+      const interval = setInterval(() => {
+        if (selectedPhoneRef.current) {
+          fetchChatHistory(selectedPhoneRef.current);
+        }
+      }, 2000);
       return () => clearInterval(interval);
     }
   }, [selectedPhone]);
@@ -186,10 +210,7 @@ export default function WhatsAppChatPage() {
                 return (
                   <button
                     key={conv.phone}
-                    onClick={() => {
-                      setSelectedPhone(conv.phone);
-                      setActiveConversation(conv);
-                    }}
+                    onClick={() => handleSelectConversation(conv)}
                     className={`w-full p-3.5 text-left flex items-start gap-3 transition-all ${
                       isSelected 
                         ? 'bg-[#f0f2f5] border-l-4 border-[#00a884]' 

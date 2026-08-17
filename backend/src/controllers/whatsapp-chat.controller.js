@@ -11,13 +11,16 @@ const getConversations = async (req, res, next) => {
     // 1. Fetch recent messages
     const recentMessages = await prisma.whatsappMessage.findMany({
       orderBy: { createdAt: 'desc' },
-      take: 100
+      take: 200
     });
 
-    // 2. Group by clean phone number
+    // 2. Group by normalized clean phone number (E.164 with 91 default)
     const conversationsMap = {};
     for (const msg of recentMessages) {
-      const cleanPhone = msg.phone.replace(/\D/g, '');
+      let cleanPhone = msg.phone.replace(/\D/g, '');
+      if (cleanPhone.length === 10) {
+        cleanPhone = `91${cleanPhone}`;
+      }
       if (!conversationsMap[cleanPhone]) {
         conversationsMap[cleanPhone] = {
           phone: cleanPhone,
@@ -34,22 +37,40 @@ const getConversations = async (req, res, next) => {
       }
     }
 
-    // 3. Match with Client/Query records for client names
+    // 3. Match with Client & Query records for client names
     const phoneList = Object.keys(conversationsMap);
     if (phoneList.length > 0) {
-      const clients = await prisma.client.findMany({
-        where: {
-          OR: phoneList.map(p => ({ phone: { contains: p.slice(-10) } }))
-        },
-        select: { phone: true, name: true }
-      });
+      const searchPatterns = phoneList.map(p => p.slice(-10));
+      const [clients, queries] = await Promise.all([
+        prisma.client.findMany({
+          where: {
+            OR: searchPatterns.map(sp => ({ phone: { contains: sp } }))
+          },
+          select: { phone: true, name: true }
+        }),
+        prisma.query.findMany({
+          where: {
+            OR: searchPatterns.map(sp => ({ phone: { contains: sp } })),
+            deletedAt: null
+          },
+          select: { phone: true, name: true }
+        })
+      ]);
 
-      for (const client of clients) {
-        const cleanClientPhone = client.phone.replace(/\D/g, '');
-        for (const phone of phoneList) {
-          if (cleanClientPhone.endsWith(phone.slice(-10))) {
-            conversationsMap[phone].clientName = client.name;
-          }
+      const nameMap = {};
+      for (const q of queries) {
+        const last10 = q.phone.replace(/\D/g, '').slice(-10);
+        if (last10 && q.name) nameMap[last10] = q.name;
+      }
+      for (const c of clients) {
+        const last10 = c.phone.replace(/\D/g, '').slice(-10);
+        if (last10 && c.name) nameMap[last10] = c.name;
+      }
+
+      for (const phone of phoneList) {
+        const last10 = phone.slice(-10);
+        if (nameMap[last10] && !conversationsMap[phone].clientName) {
+          conversationsMap[phone].clientName = nameMap[last10];
         }
       }
     }
