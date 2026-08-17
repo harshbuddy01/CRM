@@ -628,8 +628,21 @@ const sendWhatsapp = async (req, res, next) => {
     const protocol = req.headers['x-forwarded-proto'] || req.protocol;
     const baseUrl = (config.apiUrl || `${protocol}://${req.get('host')}/api/v1`).replace(/\/$/, '');
     const pdfUrl = `${baseUrl}/proposals/${proposal.id}/pdf`;
-    const frontendUrl = process.env.FRONTEND_URL || `${protocol}://${req.get('host')}`;
-    const webViewUrl = proposal.itinerary?.shareSlug ? `${frontendUrl.replace(/\/$/, '')}/share/${proposal.itinerary.shareSlug}` : '';
+    const frontendUrl = process.env.FRONTEND_URL || 'https://crm.imagicaholidays.com';
+
+    // Auto-generate shareSlug if missing so interactive online brochure is always accessible
+    let shareSlug = proposal.itinerary?.shareSlug;
+    if (!shareSlug && proposal.itineraryId) {
+      try {
+        const itineraryService = require('../services/itinerary.service');
+        const updatedItinerary = await itineraryService.generateShareSlug(proposal.itineraryId);
+        shareSlug = updatedItinerary?.shareSlug;
+      } catch (slugErr) {
+        logger.warn('[WhatsApp Proposal] Could not auto-generate shareSlug:', slugErr.message);
+      }
+    }
+
+    const webViewUrl = shareSlug ? `${frontendUrl.replace(/\/$/, '')}/share/${shareSlug}` : '';
 
     // Pre-generate / cache the PDF in memory so Meta Cloud API downloads it instantly (<50ms)
     await getOrGeneratePdf(proposal).catch(err => logger.error('[PDF Pre-warm Error]', err));
@@ -674,9 +687,7 @@ const sendWhatsapp = async (req, res, next) => {
       }
     ];
 
-    const buttonSlug = proposal.itinerary?.shareSlug 
-      ? `share/${proposal.itinerary.shareSlug}` 
-      : `api/v1/proposals/${proposal.id}/pdf`;
+    const buttonSlug = shareSlug ? `share/${shareSlug}` : `share/${proposal.itineraryId || proposal.id}`;
     
     components.push({
       type: 'button',
