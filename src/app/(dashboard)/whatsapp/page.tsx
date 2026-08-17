@@ -13,7 +13,8 @@ import {
   FileText,
   RefreshCw,
   Zap,
-  ShieldCheck
+  ShieldCheck,
+  ExternalLink
 } from 'lucide-react';
 import { api } from '@/lib/api';
 
@@ -281,22 +282,72 @@ export default function WhatsAppChatPage() {
               ) : (
                 messages.map((msg) => {
                   const isOutbound = msg.direction === 'OUTBOUND';
+                  const text = msg.message || '';
+                  
+                  // Check if message has a document header or link
+                  const hasDoc = text.includes('📄') || text.toLowerCase().includes('.pdf');
+                  const lines = text.split('\n');
+                  const docLine = lines.find(l => l.includes('📄') || l.toLowerCase().endsWith('.pdf'));
+                  const linkLine = lines.find(l => l.startsWith('🔗') || l.startsWith('http'));
+                  const cleanLink = linkLine ? linkLine.replace('🔗', '').trim() : '';
+
+                  // Filter out doc and link lines from main body
+                  const bodyLines = lines.filter(l => l !== docLine && l !== linkLine && !l.startsWith('🔘'));
+
                   return (
                     <div
                       key={msg.id}
                       className={`flex ${isOutbound ? 'justify-end' : 'justify-start'}`}
                     >
                       <div
-                        className={`max-w-[75%] rounded-lg px-3.5 py-2 text-xs leading-relaxed shadow-xs ${
+                        className={`max-w-[85%] md:max-w-[70%] rounded-xl text-xs leading-relaxed shadow-sm overflow-hidden ${
                           isOutbound
                             ? 'bg-[#d9fdd3] text-[#111b21] rounded-tr-none border border-[#bbf2b1]'
                             : 'bg-white text-[#111b21] rounded-tl-none border border-slate-200/80'
                         }`}
                       >
-                        <p className="whitespace-pre-wrap">{msg.message}</p>
-                        <div className={`flex items-center justify-end gap-1 mt-1 text-[10px] ${isOutbound ? 'text-slate-500' : 'text-slate-400'}`}>
-                          <span>{new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                          {isOutbound && <CheckCheck className="w-3.5 h-3.5 text-[#53bdeb]" />}
+                        {/* WhatsApp Document Card Header (if attached) */}
+                        {hasDoc && docLine && (
+                          <div className="p-3 bg-[#e7fce3] border-b border-[#bbf2b1]/80 flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-lg bg-red-500 text-white flex flex-col items-center justify-center shrink-0 shadow-xs font-black text-[10px] tracking-tighter">
+                              <FileText className="w-4 h-4 mb-0.5" />
+                              PDF
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="font-bold text-xs text-slate-900 truncate">
+                                {docLine.replace('📄', '').trim() || 'Itinerary-Proposal.pdf'}
+                              </p>
+                              <p className="text-[10px] text-slate-500 font-medium">Official Itinerary Document • PDF</p>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Message Body */}
+                        <div className="px-3.5 py-2.5">
+                          <p className="whitespace-pre-wrap font-normal text-slate-800 text-[13px] leading-relaxed">
+                            {bodyLines.join('\n').trim()}
+                          </p>
+
+                          {/* Interactive WhatsApp Button (if present) */}
+                          {cleanLink && (
+                            <div className="mt-3 pt-2 border-t border-[#bbf2b1]/70">
+                              <a
+                                href={cleanLink}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="w-full py-2 px-3 bg-white/90 hover:bg-white text-[#00a884] font-bold rounded-lg flex items-center justify-center gap-2 border border-[#00a884]/30 shadow-xs transition-all text-xs"
+                              >
+                                <ExternalLink className="w-3.5 h-3.5" />
+                                Explore Online Brochure
+                              </a>
+                            </div>
+                          )}
+
+                          {/* Timestamp & Read Receipt */}
+                          <div className={`flex items-center justify-end gap-1 mt-1.5 text-[10px] ${isOutbound ? 'text-slate-500' : 'text-slate-400'}`}>
+                            <span>{new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                            {isOutbound && <CheckCheck className="w-3.5 h-3.5 text-[#53bdeb]" />}
+                          </div>
                         </div>
                       </div>
                     </div>

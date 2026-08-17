@@ -65,22 +65,41 @@ const sendTemplateMessage = async (phone, templateName, components = [], languag
     const messageId = response.data?.messages?.[0]?.id;
     logger.info(`[WhatsApp Service] ✅ Message sent successfully. Meta Msg ID: ${messageId}`);
 
-    // Auto-store in WhatsappMessage DB so it appears in Live Chat Inbox
+    // Auto-store in WhatsappMessage DB with rich template details for authentic Live Chat Inbox
     try {
       const prisma = require('../config/prisma');
-      let bodyText = `[Template: ${templateName}]`;
-      if (components && components.length > 0) {
-        const bodyComp = components.find((c) => c.type === 'body');
-        if (bodyComp && bodyComp.parameters && bodyComp.parameters.length > 0) {
+      let bodyText = '';
+
+      // Extract details from components
+      const headerComp = components?.find((c) => c.type === 'header');
+      const bodyComp = components?.find((c) => c.type === 'body');
+      const buttonComp = components?.find((c) => c.type === 'button');
+
+      const docFilename = headerComp?.parameters?.[0]?.document?.filename || 'Document.pdf';
+      const docLink = headerComp?.parameters?.[0]?.document?.link || '';
+      const recipientName = bodyComp?.parameters?.[0]?.text || '';
+      const buttonSlug = buttonComp?.parameters?.[0]?.text || '';
+
+      if (templateName === 'proposal_ready') {
+        bodyText = `📄 ${docFilename}\n\nDear ${recipientName || 'Valued Guest'},\n\nGreetings from Imagica Holidays! 🌟\n\nWe take immense pleasure in presenting your bespoke travel itinerary, curated to offer you an exceptional and seamless holiday experience.\n\n📄 Please find your detailed itinerary attached above.\n\nYou can also explore the interactive online brochure with full day-by-day highlights.\n\nWarm regards,\nReservations & Concierge Team\nImagica Holidays ✈️\n\n🔗 ${buttonSlug ? `https://crm.imagicaholidays.com/${buttonSlug}` : ''}`;
+      } else if (templateName === 'client_invoice_ready') {
+        bodyText = `📄 ${docFilename}\n\nHi ${recipientName},\nPlease find your travel invoice attached. Thank you for choosing Imagica Holidays! 🙏`;
+      } else if (templateName === 'guest_voucher_ready') {
+        bodyText = `📄 ${docFilename}\n\nHi ${recipientName},\nYour official confirmed travel voucher is ready! Please find it attached above. Have a wonderful journey! ✨`;
+      } else {
+        bodyText = `[Template: ${templateName}]`;
+        if (bodyComp?.parameters?.length > 0) {
           const params = bodyComp.parameters.map((p) => p.text || '').join(', ');
           bodyText += ` (${params})`;
         }
       }
+
       await prisma.whatsappMessage.create({
         data: {
           phone: cleanPhone,
           direction: 'OUTBOUND',
-          message: bodyText,
+          message: bodyText.trim(),
+          clientName: recipientName || null,
           status: 'SENT'
         }
       });
