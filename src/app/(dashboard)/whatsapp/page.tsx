@@ -101,7 +101,9 @@ export default function WhatsAppChatPage() {
 
   useEffect(() => {
     fetchConversations();
-    const interval = setInterval(fetchConversations, 2000); // 2s realtime sync
+    const interval = setInterval(() => {
+      if (!document.hidden) fetchConversations();
+    }, 8000);
     return () => clearInterval(interval);
   }, []);
 
@@ -109,10 +111,10 @@ export default function WhatsAppChatPage() {
     if (selectedPhone) {
       fetchChatHistory(selectedPhone);
       const interval = setInterval(() => {
-        if (selectedPhoneRef.current) {
+        if (!document.hidden && selectedPhoneRef.current) {
           fetchChatHistory(selectedPhoneRef.current);
         }
-      }, 2000);
+      }, 5000);
       return () => clearInterval(interval);
     }
   }, [selectedPhone]);
