@@ -165,10 +165,75 @@ const sendTextMessage = async (phone, textMessage) => {
     logger.error(`[WhatsApp Service] Failed text message to ${cleanPhone}: ${errorMsg}`);
     return { success: false, error: errorMsg };
   }
+/**
+ * Send an official Meta Authentication OTP template message with 1-tap Copy Code
+ * 
+ * @param {string} phone - Recipient phone number (e.g., "918235337180")
+ * @param {string} code - 6-digit verification code
+ * @returns {Promise<{success: boolean, messageId?: string, error?: string}>}
+ */
+const sendOtpMessage = async (phone, code) => {
+  const { mode, accessToken, phoneNumberId, apiVersion } = config.whatsapp;
+
+  let cleanPhone = phone.replace(/\D/g, '');
+  if (cleanPhone.length === 10) {
+    cleanPhone = `91${cleanPhone}`;
+  }
+
+  if (mode !== 'api' || !accessToken || !phoneNumberId) {
+    logger.info(`[WhatsApp Service] Skipping OTP send to ${cleanPhone}: ${code}`);
+    return { success: true, mock: true };
+  }
+
+  const url = `https://graph.facebook.com/${apiVersion}/${phoneNumberId}/messages`;
+  const payload = {
+    messaging_product: 'whatsapp',
+    recipient_type: 'individual',
+    to: cleanPhone,
+    type: 'template',
+    template: {
+      name: 'admin_auth_otp',
+      language: { code: 'en_US' },
+      components: [
+        {
+          type: 'body',
+          parameters: [
+            { type: 'text', text: String(code) }
+          ]
+        },
+        {
+          type: 'button',
+          sub_type: 'url',
+          index: '0',
+          parameters: [
+            { type: 'text', text: String(code) }
+          ]
+        }
+      ]
+    }
+  };
+
+  try {
+    const response = await axios.post(url, payload, {
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    const messageId = response.data?.messages?.[0]?.id;
+    logger.info(`[WhatsApp Service] ✅ OTP sent via admin_auth_otp to ${cleanPhone}. Meta Msg ID: ${messageId}`);
+    return { success: true, messageId };
+  } catch (error) {
+    const errorMsg = error.response?.data?.error?.message || error.message;
+    logger.error(`[WhatsApp Service] ❌ Failed to send OTP to ${cleanPhone}: ${errorMsg}`);
+    return { success: false, error: errorMsg };
+  }
 };
 
 module.exports = {
   sendTemplateMessage,
-  sendTextMessage
+  sendTextMessage,
+  sendOtpMessage
 };
 
