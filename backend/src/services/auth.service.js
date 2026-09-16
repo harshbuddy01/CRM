@@ -105,10 +105,11 @@ const login = async (email, password) => {
     }
   }
 
-  // Check email provider configuration
-  const brevoConfigured = process.env.BREVO_SMTP_USER && process.env.BREVO_SMTP_PASS;
+  // Check email provider configuration (supports both Brevo and standard SMTP)
+  const emailConfigured = (process.env.SMTP_USER && process.env.SMTP_PASS) || 
+                          (process.env.BREVO_SMTP_USER && process.env.BREVO_SMTP_PASS);
 
-  if (!brevoConfigured) {
+  if (!emailConfigured) {
     const logger = require('../utils/logger');
     logger.info(`[Auth 2FA] Verification code for ${user.email} (no email provider): ${code}`);
   } else {
@@ -357,8 +358,9 @@ const forgotPassword = async (email) => {
   const resetToken = jwt.sign({ id: user.id, purpose: 'password_reset' }, resetSecret, { expiresIn: '15m' });
   const resetUrl = `${config.frontendUrl}/reset-password?token=${resetToken}&id=${user.id}`;
 
-  // Check if email provider is configured (Brevo SMTP)
-  const brevoConfigured = process.env.BREVO_SMTP_USER && process.env.BREVO_SMTP_PASS;
+  // Check if email provider is configured (Brevo SMTP or standard SMTP)
+  const brevoConfigured = (process.env.SMTP_USER && process.env.SMTP_PASS) ||
+                          (process.env.BREVO_SMTP_USER && process.env.BREVO_SMTP_PASS);
 
   // Case 3 — No email provider configured
   if (!brevoConfigured) {
