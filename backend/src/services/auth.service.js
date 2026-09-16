@@ -96,8 +96,10 @@ const login = async (email, password) => {
       const whatsappService = require('./whatsapp.service');
       const cleanMobile = userMobile.replace(/\D/g, '');
       const phoneToSend = cleanMobile.length === 10 ? `91${cleanMobile}` : cleanMobile;
-      whatsappService.sendTemplateMessage(phoneToSend, 'hello_world', [], 'en_US')
+      const otpMessage = `✈️ *TravelCRM — Login Verification*\n\nHi *${user.name}*,\n\nYour 6-digit verification code is:\n\n*${code}*\n\nThis code is valid for *10 minutes*. Do not share it with anyone.\n\n— Imagica Holidays`;
+      whatsappService.sendTextMessage(phoneToSend, otpMessage)
         .catch(err => logger.error('[Auth 2FA WhatsApp Error]:', err.message));
+      logger.info(`[Auth 2FA] OTP sent via WhatsApp to ${phoneToSend}`);
     } catch (waErr) {
       logger.error('[Auth 2FA WhatsApp Exception]:', waErr.message);
     }
