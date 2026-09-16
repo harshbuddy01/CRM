@@ -137,7 +137,14 @@ const loginLimiter = rateLimit({
 });
 
 const applyRateLimit = (req, res, next) => {
-  if (req.path.startsWith('/auth') || req.path.startsWith('/payments/webhook') || req.path.includes('/webhook') || req.path.includes('/send-whatsapp')) return next();
+  if (
+    req.path.startsWith('/auth') || 
+    req.path.startsWith('/payments/webhook') || 
+    req.path.includes('/webhook') || 
+    req.path.includes('/send-whatsapp') ||
+    req.path.startsWith('/whatsapp-chat') ||
+    req.path.startsWith('/notifications')
+  ) return next();
   return generalLimiter(req, res, next);
 };
 
