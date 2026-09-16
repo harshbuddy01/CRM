@@ -165,6 +165,8 @@ const sendTextMessage = async (phone, textMessage) => {
     logger.error(`[WhatsApp Service] Failed text message to ${cleanPhone}: ${errorMsg}`);
     return { success: false, error: errorMsg };
   }
+};
+
 /**
  * Send an official Meta Authentication OTP template message with 1-tap Copy Code
  * 
