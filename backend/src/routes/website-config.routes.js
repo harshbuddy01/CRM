@@ -8,7 +8,7 @@ const { can } = require('../middlewares/can');
 // Multer memory storage config — 100 MB to allow hero background videos
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 100 * 1024 * 1024 }, // 100MB limit for video uploads
+  limits: { fileSize: 500 * 1024 * 1024 }, // 500MB — ffmpeg auto-compresses to ~10-20MB
 });
 
 // Image / Video type check

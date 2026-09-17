@@ -339,7 +339,7 @@ function R2UploadButton({ label, onUploaded, accept = 'image/*', section = 'gene
   const [progress, setProgress] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const MAX_FILE_SIZE_MB = 100; // 100 MB max
+  const MAX_FILE_SIZE_MB = 500; // 500 MB max — ffmpeg auto-compresses to ~10-20 MB
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
