@@ -273,42 +273,68 @@ const launchCampaign = async (req, res, next) => {
         if (recipient.channel === 'whatsapp' && recipient.phone) {
           // Build WhatsApp template components
           const components = [];
+          const template = campaign.templateName || 'festive_exclusive_offer';
 
-          // Add document header if attachment exists
-          if (campaign.attachmentUrl) {
+          if (template === 'diwali_festive_poster') {
+            // Meta IMAGE header component
             components.push({
               type: 'header',
               parameters: [{
-                type: 'document',
-                document: {
-                  link: campaign.attachmentUrl,
-                  filename: campaign.attachmentName || 'Offer.pdf',
+                type: 'image',
+                image: {
+                  link: campaign.attachmentUrl || 'https://media.imagicaholidays.com/campaigns/diwali-festive-poster-2026.jpg',
                 },
               }],
             });
+          } else if (campaign.attachmentUrl && template !== 'festive_exclusive_offer') {
+            const isImage = /\.(jpe?g|png|webp)$/i.test(campaign.attachmentUrl);
+            if (isImage) {
+              components.push({
+                type: 'header',
+                parameters: [{
+                  type: 'image',
+                  image: {
+                    link: campaign.attachmentUrl,
+                  },
+                }],
+              });
+            } else {
+              components.push({
+                type: 'header',
+                parameters: [{
+                  type: 'document',
+                  document: {
+                    link: campaign.attachmentUrl,
+                    filename: campaign.attachmentName || 'Offer.pdf',
+                  },
+                }],
+              });
+            }
           }
 
           // Add body parameters (customer name)
           components.push({
             type: 'body',
-            parameters: [{ type: 'text', text: recipient.name || 'Valued Customer' }],
+            parameters: [{ type: 'text', text: recipient.name || 'Valued Traveler' }],
           });
 
           await enqueueWhatsappJob(
             recipient.queryId,
             recipient.phone,
-            campaign.templateName,
+            template,
             components,
             recipient.id,
             campaign.id
           );
         } else if (recipient.channel === 'email' && recipient.email) {
-          // Build email with optional personalization
+          // Build email with optional personalization and flyer replacement
           let htmlContent = campaign.emailContent || '';
-          htmlContent = htmlContent.replace(/\{\{name\}\}/gi, recipient.name || 'Valued Customer');
+          htmlContent = htmlContent.replace(/\{\{name\}\}/gi, recipient.name || 'Valued Traveler');
           htmlContent = htmlContent.replace(/\{\{destination\}\}/gi, recipient.destination || '');
+          const flyerUrl = campaign.attachmentUrl || 'https://media.imagicaholidays.com/campaigns/diwali-festive-poster-2026.jpg';
+          htmlContent = htmlContent.replace(/\{\{flyer_url\}\}/gi, flyerUrl);
 
-          const fromHeader = `"Imagica Holidays" <${process.env.EMAIL_FROM || process.env.SMTP_USER || process.env.BREVO_SMTP_USER}>`;
+          const fromHeader = `"Imagica Holidays" <${process.env.EMAIL_FROM || process.env.SMTP_USER || process.env.BREVO_SMTP_USER || 'info@imagicaholidays.com'}>`;
 
           await enqueueEmailJob(
             recipient.queryId,

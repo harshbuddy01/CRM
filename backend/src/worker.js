@@ -164,8 +164,21 @@ const whatsappWorker = new Worker('whatsapp-sending', async job => {
   console.log(`[WhatsApp] Processing job: template ${templateName} to ${phone}`);
   
   try {
-    const result = await whatsappService.sendTemplateMessage(phone, templateName, components);
+    let result = await whatsappService.sendTemplateMessage(phone, templateName, components);
     
+    // Smart fallback if diwali_festive_poster is still pending Meta review
+    if (!result.success && templateName === 'diwali_festive_poster' && result.error && (result.error.includes('132001') || result.error.includes('does not exist') || result.error.includes('pending'))) {
+      console.log(`[WhatsApp Worker] diwali_festive_poster pending Meta approval. Falling back to approved festive_exclusive_offer for ${phone}`);
+      const bodyParam = components.find(c => c.type === 'body')?.parameters?.[0]?.text || 'Valued Traveler';
+      const fallbackComponents = [
+        {
+          type: 'body',
+          parameters: [{ type: 'text', text: bodyParam }]
+        }
+      ];
+      result = await whatsappService.sendTemplateMessage(phone, 'festive_exclusive_offer', fallbackComponents);
+    }
+
     if (!result.success) {
       throw new Error(result.error || 'Meta API returned success = false');
     }
