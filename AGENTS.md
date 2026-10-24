@@ -3,6 +3,15 @@
 - **Demo CRM** (`harshbuddy01/demo-crm.git`, `streamkart.shop` / `api.streamkart.shop`) is the PERSONAL DEMO / SANDBOX system.
 - **STRICT RULE**: NEVER mix features, experimental code, driver/guest/hotel portal testing features, or WhatsApp automation between these two projects. They are 100% separate repositories and separate deployments.
 
+## 🔐 Production Server Access (Oracle Cloud VM)
+- **Host**: `141.148.205.224` (`imagica-crm-server`, Mumbai `ap-mumbai-1`)
+- **User**: `opc`
+- **SSH Key**: Permanent key located on Mac at `~/.ssh/id_ed25519`
+- **Connect Command**: `ssh -i ~/.ssh/id_ed25519 opc@141.148.205.224`
+- **App Path**: `/home/opc/app` (Docker Compose stack at `/home/opc/app/deployment/gcp`)
+- **Note**: The temporary OCI Bastion session was only used once to bootstrap this permanent key. Direct SSH is permanently active and requires NO Bastion sessions.
+
+
 <!-- code-review-graph MCP tools -->
 ## MCP Tools: code-review-graph
 

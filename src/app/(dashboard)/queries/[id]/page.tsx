@@ -701,6 +701,7 @@ export default function QueryDetailPage() {
                     queryCode={data?.queryCode || ''} 
                     customerName={data?.name || ''} 
                     customerEmail={data?.email || ''} 
+                    queryStatus={data?.status}
                   />
                 </TabsContent>
 
@@ -757,7 +758,7 @@ export default function QueryDetailPage() {
   );
 }
 
-function QueryProposalsList({ queryId, queryCode, customerName, customerEmail }: { queryId: string, queryCode: string, customerName: string, customerEmail: string }) {
+function QueryProposalsList({ queryId, queryCode, customerName, customerEmail, queryStatus }: { queryId: string, queryCode: string, customerName: string, customerEmail: string, queryStatus?: string }) {
   const queryClient = useQueryClient();
   const router = useRouter();
   const [waModalOpenId, setWaModalOpenId] = useState<string | null>(null);
@@ -964,11 +965,11 @@ function QueryProposalsList({ queryId, queryCode, customerName, customerEmail }:
 
       {!proposals || proposals.length === 0 ? renderEmptyState() : (
         <div className="grid grid-cols-1 gap-4">
-          {(proposals.some((p: any) => p.status === 'confirmed' && query?.status === 'confirmed') 
+          {(proposals.some((p: any) => p.status === 'confirmed' && queryStatus === 'confirmed') 
             ? proposals.filter((p: any) => p.status === 'confirmed') 
             : proposals
           ).map((p: any) => {
-            const isLeadLost = query?.status === 'lost' || query?.status === 'invalid';
+            const isLeadLost = queryStatus === 'lost' || queryStatus === 'invalid';
             const isProposalConfirmed = p.status === 'confirmed' && !isLeadLost;
             const isProposalRejected = p.status === 'rejected' || (p.status === 'confirmed' && isLeadLost);
 
