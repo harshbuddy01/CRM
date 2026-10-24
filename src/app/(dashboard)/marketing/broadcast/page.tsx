@@ -82,22 +82,21 @@ const TEMPLATE_PRESETS = [
     defaultOffer: 'Diwali Special Offer: Flat ₹3,000 OFF on All Packages (Code: DIWALI2026) across Gangtok, Darjeeling, Kerala & Andaman!',
     promoCode: 'DIWALI2026',
     emailSubject: '🪔 Exclusive Diwali Privilege: Flat ₹3,000 OFF on Luxury India Vacations | Imagica Holidays',
-    emailContent: `<div style="background-color: #f1f5f9; padding: 24px 12px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #1e293b; line-height: 1.6;">
-  <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 620px; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.06); border: 1px solid #e2e8f0; margin: 0 auto;">
+    emailContent: `<div style="background-color: #f1f5f9; padding: 28px 12px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #1e293b; line-height: 1.6;">
+  <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 620px; background-color: #ffffff; border-radius: 14px; overflow: hidden; box-shadow: 0 6px 24px rgba(0,0,0,0.07); border: 1px solid #e2e8f0; margin: 0 auto;">
     
-    <!-- TOP BRAND BAR -->
+    <!-- TOP HEADER BAR WITH CRM LOGO -->
     <tr>
-      <td style="background-color: #0c1524; padding: 18px 24px; border-bottom: 2px solid #f3c467;">
+      <td style="background-color: #ffffff; padding: 18px 24px; border-bottom: 2px solid #f1f5f9;">
         <table width="100%" border="0" cellpadding="0" cellspacing="0">
           <tr>
             <td align="left" style="vertical-align: middle;">
-              <div style="display: inline-block;">
-                <span style="font-family: 'Cinzel', Georgia, serif; font-size: 15px; font-weight: 800; letter-spacing: 4px; color: #ffffff;">IMAGICA<span style="color: #f3c467;">✦</span></span>
-                <span style="font-size: 8px; font-weight: 700; letter-spacing: 3px; color: #d4af37; display: block;">HOLIDAYS · KOLKATA</span>
-              </div>
+              <a href="https://imagicaholidays.com" target="_blank" style="text-decoration: none; display: inline-block;">
+                <img src="https://media.imagicaholidays.com/campaigns/imagica-crm-logo.png" alt="Imagica Holidays Logo" height="46" style="height: 46px; max-height: 46px; width: auto; display: block; border: 0;" />
+              </a>
             </td>
             <td align="right" style="vertical-align: middle;">
-              <a href="https://wa.me/918910759374?text=Hi%20Imagica%20Holidays%2C%20I%20am%20interested%20in%20your%20Diwali%20Festive%20Offers" target="_blank" style="display: inline-block; background-color: #25D366; color: #ffffff; font-size: 11px; font-weight: 700; padding: 7px 14px; border-radius: 20px; text-decoration: none;">
+              <a href="https://wa.me/918910759374?text=Hi%20Imagica%20Holidays%2C%20I%20am%20interested%20in%20your%20Diwali%20Festive%20Offers" target="_blank" style="display: inline-block; background-color: #25D366; color: #ffffff; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 12px; font-weight: 700; padding: 9px 18px; border-radius: 24px; text-decoration: none; box-shadow: 0 2px 8px rgba(37,211,102,0.3);">
                 💬 WhatsApp Concierge
               </a>
             </td>
@@ -106,23 +105,30 @@ const TEMPLATE_PRESETS = [
       </td>
     </tr>
 
-    <!-- GREETING & CLICK HERE SECTION -->
+    <!-- ATTRACTIVE GREETING & CONNECT SECTION -->
     <tr>
-      <td style="padding: 26px 24px 14px; background-color: #ffffff;">
-        <h2 style="margin: 0 0 10px; font-size: 18px; color: #0f172a; font-weight: 700;">
+      <td style="padding: 28px 26px 16px; background-color: #ffffff;">
+        <div style="display: inline-block; background-color: #fef3c7; color: #92400e; font-size: 11px; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; padding: 5px 14px; border-radius: 20px; margin-bottom: 14px;">
+          🪔 Festive Celebration 2026
+        </div>
+        <h1 style="margin: 0 0 10px; font-family: 'Playfair Display', Georgia, 'Times New Roman', serif; font-size: 24px; color: #0f172a; font-weight: 700; line-height: 1.25; letter-spacing: -0.3px;">
           Dear {{name}},
-        </h2>
-        <p style="margin: 0 0 14px; font-size: 14px; color: #334155; line-height: 1.6;">
-          Greetings from <strong>Imagica Holidays, Kolkata</strong>! 🪔✨ Wishing you and your loved ones a joyous, prosperous, and luminous Diwali!
+        </h1>
+        <p style="margin: 0 0 16px; font-size: 15px; color: #334155; line-height: 1.7; font-weight: 400;">
+          Warm greetings from <strong>Imagica Holidays, Kolkata</strong>! 🪔✨ May this auspicious festival of lights illuminate your life with joy, prosperity, and extraordinary journeys with loved ones.
         </p>
 
-        <!-- HIGH-VISIBILITY CONNECT LINK -->
-        <table width="100%" border="0" cellpadding="0" cellspacing="0" style="margin: 14px 0; background: #ecfdf5; border: 1.5px solid #10b981; border-radius: 8px;">
+        <!-- LUXURY WHATSAPP CONNECT BANNER -->
+        <table width="100%" border="0" cellpadding="0" cellspacing="0" style="margin: 18px 0; background: linear-gradient(135deg, #059669 0%, #10b981 100%); border-radius: 10px; box-shadow: 0 6px 18px rgba(16, 185, 129, 0.25);">
           <tr>
-            <td style="padding: 14px 18px; text-align: center;">
-              <span style="font-size: 16px; margin-right: 6px;">👉</span>
-              <a href="https://wa.me/918910759374?text=Hi%20Imagica%20Holidays%2C%20I%20am%20interested%20in%20your%20Diwali%20Festive%20Offers" target="_blank" style="color: #047857; font-size: 15px; font-weight: 800; text-decoration: underline;">
-                Click here to connect with our Travel Concierge on WhatsApp (+91 89107 59374)
+            <td style="padding: 16px 20px; text-align: center;">
+              <a href="https://wa.me/918910759374?text=Hi%20Imagica%20Holidays%2C%20I%20am%20interested%20in%20your%20Diwali%20Festive%20Offers" target="_blank" style="display: block; color: #ffffff; text-decoration: none; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+                <span style="font-size: 16px; font-weight: 800; letter-spacing: 0.3px; display: inline-block;">
+                  👉 Click Here to Connect with Our Travel Concierge on WhatsApp
+                </span>
+                <span style="display: block; font-size: 12px; font-weight: 500; opacity: 0.95; margin-top: 4px; color: #e6fffa;">
+                  Dedicated Concierge Line: +91 89107 59374 &bull; Kolkata, West Bengal
+                </span>
               </a>
             </td>
           </tr>
@@ -130,12 +136,12 @@ const TEMPLATE_PRESETS = [
       </td>
     </tr>
 
-    <!-- DIWALI FLYER / CATALOG IMAGE -->
+    <!-- DIWALI FLYER / CATALOG IMAGE (RETINA HD) -->
     <tr>
-      <td style="padding: 0 24px 16px; text-align: center; background-color: #ffffff;">
-        <div style="background-color: #0b121c; padding: 8px; border-radius: 10px; box-shadow: 0 4px 18px rgba(0,0,0,0.12);">
+      <td style="padding: 4px 26px 18px; text-align: center; background-color: #ffffff;">
+        <div style="background-color: #0c1524; padding: 10px; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.12);">
           <a href="https://wa.me/918910759374?text=Hi%20Imagica%20Holidays%2C%20I%20am%20interested%20in%20your%20Diwali%20Festive%20Offers" target="_blank" style="display: block; text-decoration: none;">
-            <img src="https://media.imagicaholidays.com/campaigns/diwali-festive-poster-2026.jpg" alt="Imagica Holidays Diwali Festive Offer Flyer" style="width: 100%; max-width: 572px; height: auto; display: block; margin: 0 auto; border-radius: 6px;" />
+            <img src="https://media.imagicaholidays.com/campaigns/diwali-festive-poster-2026.jpg" alt="Imagica Holidays Diwali Festive Offer Flyer" width="568" style="width: 100%; max-width: 568px; height: auto; display: block; margin: 0 auto; border-radius: 8px; image-rendering: -webkit-optimize-contrast;" />
           </a>
         </div>
       </td>
@@ -143,22 +149,22 @@ const TEMPLATE_PRESETS = [
 
     <!-- PROMO CODE & ACTION BUTTONS -->
     <tr>
-      <td style="padding: 10px 24px 26px; text-align: center; background-color: #ffffff;">
-        <div style="background-color: #fefce8; border: 1px dashed #ca8a04; border-radius: 8px; padding: 12px 16px; margin-bottom: 20px; display: inline-block;">
-          <span style="font-size: 12px; color: #854d0e; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">Festive Promo Code</span>
-          <div style="font-size: 20px; font-weight: 800; color: #a16207; letter-spacing: 2px; margin-top: 2px;">
+      <td style="padding: 10px 26px 28px; text-align: center; background-color: #ffffff;">
+        <div style="background-color: #fefce8; border: 1.5px dashed #ca8a04; border-radius: 10px; padding: 14px 20px; margin-bottom: 22px; display: inline-block;">
+          <span style="font-size: 12px; color: #854d0e; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px;">Festive Promo Code</span>
+          <div style="font-size: 22px; font-weight: 800; color: #a16207; letter-spacing: 2px; margin: 4px 0;">
             DIWALI2026
           </div>
-          <span style="font-size: 11px; color: #713f12;">Flat ₹3,000 OFF on Gangtok, Darjeeling, Kerala & Andaman</span>
+          <span style="font-size: 12px; color: #713f12; font-weight: 500;">Flat ₹3,000 OFF on Gangtok, Darjeeling, Kerala & Andaman</span>
         </div>
 
         <table width="100%" border="0" cellpadding="0" cellspacing="0">
           <tr>
             <td align="center">
-              <a href="https://wa.me/918910759374?text=Hi%20Imagica%20Holidays%2C%20I%20am%20interested%20in%20your%20Diwali%20Festive%20Offers" target="_blank" style="display: inline-block; background-color: #25D366; color: #ffffff; font-size: 14px; font-weight: 700; padding: 13px 26px; border-radius: 6px; text-decoration: none; box-shadow: 0 4px 12px rgba(37,211,102,0.3); margin: 4px;">
+              <a href="https://wa.me/918910759374?text=Hi%20Imagica%20Holidays%2C%20I%20am%20interested%20in%20your%20Diwali%20Festive%20Offers" target="_blank" style="display: inline-block; background-color: #25D366; color: #ffffff; font-size: 14px; font-weight: 700; padding: 13px 26px; border-radius: 8px; text-decoration: none; box-shadow: 0 4px 12px rgba(37,211,102,0.3); margin: 4px;">
                 💬 Chat on WhatsApp (+91 89107 59374)
               </a>
-              <a href="https://imagicaholidays.com/destinations" target="_blank" style="display: inline-block; background-color: #0f172a; color: #ffffff; font-size: 14px; font-weight: 600; padding: 13px 24px; border-radius: 6px; text-decoration: none; margin: 4px;">
+              <a href="https://imagicaholidays.com/destinations" target="_blank" style="display: inline-block; background-color: #0f172a; color: #ffffff; font-size: 14px; font-weight: 600; padding: 13px 24px; border-radius: 8px; text-decoration: none; margin: 4px;">
                 🌐 Explore Packages
               </a>
             </td>
@@ -169,7 +175,7 @@ const TEMPLATE_PRESETS = [
 
     <!-- FOOTER WITH KOLKATA & INFO@IMAGICAHOLIDAYS.COM -->
     <tr>
-      <td style="background-color: #f8fafc; border-top: 1px solid #e2e8f0; padding: 22px 24px; text-align: center; color: #64748b; font-size: 12px; line-height: 1.6;">
+      <td style="background-color: #f8fafc; border-top: 1px solid #e2e8f0; padding: 24px; text-align: center; color: #64748b; font-size: 12px; line-height: 1.6;">
         <strong style="color: #0f172a; font-size: 13px;">Imagica Holidays</strong><br>
         📍 Kolkata, West Bengal, India<br>
         ✉️ Email: <a href="mailto:info@imagicaholidays.com" style="color: #0f172a; text-decoration: none; font-weight: 600;">info@imagicaholidays.com</a> | 📞 Phone / WhatsApp: <a href="tel:+918910759374" style="color: #0f172a; text-decoration: none; font-weight: 600;">+91 89107 59374</a><br>
