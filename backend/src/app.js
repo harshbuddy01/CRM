@@ -216,6 +216,7 @@ apiRouter.use('/whatsapp-chat', require('./routes/whatsapp-chat.routes'));
 // ── Public endpoints (no auth required) for website consumption ──
 const wcCtrl = require('./controllers/website-content.controller');
 const websiteConfigCtrl = require('./controllers/website-config.controller');
+const cmsCtrl = require('./controllers/cms.controller');
 
 // Direct app-level public routes — mounted BEFORE apiRouter to guarantee NO auth
 // The main website (imagicaholidays.com) calls these exact URLs from its JS bundle
@@ -225,6 +226,10 @@ app.get('/v1/public/website-config',              websiteConfigCtrl.getWebsiteCo
 app.get('/api/v1/public/website-config',          websiteConfigCtrl.getWebsiteConfig);
 app.get('/v1/public/trending',                    wcCtrl.getPublicTrending);
 app.get('/api/v1/public/trending',                wcCtrl.getPublicTrending);
+app.get('/v1/public/testimonials',                cmsCtrl.listTestimonials);
+app.get('/api/v1/public/testimonials',            cmsCtrl.listTestimonials);
+app.get('/v1/cms/testimonials/public',             cmsCtrl.listTestimonials);
+app.get('/api/v1/cms/testimonials/public',         cmsCtrl.listTestimonials);
 // Legacy URL used by the live imagicaholidays.com website JS bundle
 app.get('/v1/website-configs/public',             websiteConfigCtrl.getWebsiteConfig);
 app.get('/api/v1/website-configs/public',         websiteConfigCtrl.getWebsiteConfig);
