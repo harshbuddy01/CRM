@@ -95,8 +95,12 @@ const TEMPLATE_PRESETS = [
 <p>📄 Please check the attached festive catalog for full itineraries and inclusions.</p>
 <p><strong>Exclusive Festive Coupon:</strong> Use code <strong>DIWALI2026</strong> for instant discounts up to ₹15,000/-</p>
 <hr />
-<p>Contact our holiday specialists today to secure your dates!</p>
-<p>Warm regards,<br /><strong>Imagica Holidays Concierge Team</strong><br />📞 +91 82353 37180 | 🌐 imagicaholidays.com</p>`
+<p style="margin: 18px 0;">
+  <a href="https://api.whatsapp.com/send/?phone=918910759374&text=Hi%21+I%27d+like+to+plan+a+trip+with+Imagica+Holidays.&type=phone_number&app_absent=0" style="display:inline-block;background-color:#25D366;color:#ffffff;padding:12px 20px;border-radius:6px;text-decoration:none;font-weight:bold;font-size:14px;">
+    💬 Chat with Travel Concierge (+91 89107 59374)
+  </a>
+</p>
+<p>Warm regards,<br /><strong>Imagica Holidays Concierge Team</strong><br />📞 +91 89107 59374 | 🌐 imagicaholidays.com</p>`
   },
   {
     id: 'winback_discount_deal',
@@ -112,7 +116,11 @@ const TEMPLATE_PRESETS = [
 <p>To welcome you back, we have unlocked a special <strong>10% instant rebate + complimentary local sightseeing tour</strong> on any booking confirmed this month!</p>
 <p>📄 Check out our curated catalog attached to see what makes an Imagica Holidays experience unforgettable.</p>
 <p>Promo code: <strong>COMEBACK10</strong></p>
-<p>Feel free to reply directly to this email or ping our team on WhatsApp anytime.</p>
+<p style="margin: 18px 0;">
+  <a href="https://api.whatsapp.com/send/?phone=918910759374&text=Hi%21+I%27d+like+to+plan+a+trip+with+Imagica+Holidays.&type=phone_number&app_absent=0" style="display:inline-block;background-color:#25D366;color:#ffffff;padding:12px 20px;border-radius:6px;text-decoration:none;font-weight:bold;font-size:14px;">
+    💬 Chat with Travel Concierge (+91 89107 59374)
+  </a>
+</p>
 <p>Best regards,<br /><strong>The Imagica Holidays Team</strong></p>`
   },
   {
@@ -133,6 +141,11 @@ const TEMPLATE_PRESETS = [
   <li><strong>Complimentary Room Upgrade:</strong> Subject to availability at our partner luxury hotels.</li>
 </ul>
 <p>Use code: <strong>VIPLOYALTY</strong> whenever you plan your next getaway.</p>
+<p style="margin: 18px 0;">
+  <a href="https://api.whatsapp.com/send/?phone=918910759374&text=Hi%21+I%27d+like+to+plan+a+trip+with+Imagica+Holidays.&type=phone_number&app_absent=0" style="display:inline-block;background-color:#25D366;color:#ffffff;padding:12px 20px;border-radius:6px;text-decoration:none;font-weight:bold;font-size:14px;">
+    💬 Chat with Travel Concierge (+91 89107 59374)
+  </a>
+</p>
 <p>Warmest regards,<br /><strong>Imagica Holidays Executive Concierge</strong></p>`
   }
 ];
@@ -157,6 +170,17 @@ export default function MarketingBroadcastPage() {
   const [emailSubject, setEmailSubject] = useState(TEMPLATE_PRESETS[0].emailSubject);
   const [emailContent, setEmailContent] = useState(TEMPLATE_PRESETS[0].emailContent);
   const [skipRecentDays, setSkipRecentDays] = useState(true);
+
+  // Dedicated Concierge WhatsApp Routing (Team Member Number)
+  const [conciergePhone, setConciergePhone] = useState('918910759374');
+  const [conciergeMessage, setConciergeMessage] = useState("Hi! I'd like to plan a trip with Imagica Holidays.");
+
+  // Computed Concierge WhatsApp Link
+  const conciergeWhatsAppUrl = useMemo(() => {
+    const cleanPhone = conciergePhone.replace(/\D/g, '') || '918910759374';
+    const encodedText = encodeURIComponent(conciergeMessage);
+    return `https://api.whatsapp.com/send/?phone=${cleanPhone}&text=${encodedText}&type=phone_number&app_absent=0`;
+  }, [conciergePhone, conciergeMessage]);
 
   // File Upload
   const [uploadingFile, setUploadingFile] = useState(false);
@@ -343,6 +367,8 @@ export default function MarketingBroadcastPage() {
         emailContent,
         attachmentUrl: attachment?.url || null,
         attachmentName: attachment?.filename || null,
+        conciergePhone,
+        conciergeUrl: conciergeWhatsAppUrl,
         recipients: selectedRecipients,
       });
 
@@ -780,6 +806,42 @@ export default function MarketingBroadcastPage() {
                     </div>
                   </div>
 
+                  {/* Dedicated Concierge WhatsApp Routing (Team Member Number) */}
+                  <div className="bg-emerald-50/60 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800/60 rounded-lg p-3.5 space-y-2.5">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1.5 text-xs font-semibold text-emerald-900 dark:text-emerald-300">
+                        <Phone className="h-4 w-4 text-emerald-600" />
+                        <span>Travel Concierge Routing (Destination Team Number)</span>
+                      </div>
+                      <Badge variant="outline" className="text-[10px] bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border-emerald-300">
+                        Incoming Lead Destination
+                      </Badge>
+                    </div>
+                    <p className="text-[11px] text-muted-foreground leading-relaxed">
+                      When customers click <strong>&quot;Chat with Travel Concierge&quot;</strong>, their chat will open directly with this team member&apos;s phone number.
+                    </p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                      <div className="space-y-1">
+                        <Label className="text-[11px] font-medium text-emerald-950 dark:text-emerald-200">Team Member WhatsApp Number</Label>
+                        <Input
+                          value={conciergePhone}
+                          onChange={e => setConciergePhone(e.target.value)}
+                          placeholder="918910759374"
+                          className="h-8 text-xs font-mono bg-white dark:bg-zinc-900"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-[11px] font-medium text-emerald-950 dark:text-emerald-200">Pre-filled Customer Message</Label>
+                        <Input
+                          value={conciergeMessage}
+                          onChange={e => setConciergeMessage(e.target.value)}
+                          placeholder="Hi! I'd like to plan a trip with Imagica Holidays."
+                          className="h-8 text-xs bg-white dark:bg-zinc-900"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
                   {/* Email Specific Inputs */}
                   {(channel === 'email' || channel === 'both') && (
                     <div className="space-y-3 border-t pt-4">
@@ -911,9 +973,22 @@ export default function MarketingBroadcastPage() {
                       {attachment && '📄 Please find our special travel catalog attached above.'}
                     </div>
 
-                    <div className="pt-2 border-t space-y-1">
-                      <div className="bg-emerald-50 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 text-center py-1 rounded text-[11px] font-medium border border-emerald-200">
-                        💬 Chat with Travel Concierge
+                    <div className="pt-2 border-t space-y-1.5">
+                      <a
+                        href={conciergeWhatsAppUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="group bg-[#25D366] hover:bg-[#20bd5a] text-white text-center py-2 px-3 rounded text-[11px] font-bold shadow-sm flex items-center justify-center gap-1.5 transition-all cursor-pointer no-underline"
+                        title={`Click to test opening WhatsApp chat to +${conciergePhone}`}
+                      >
+                        <span>💬 Chat with Travel Concierge</span>
+                        <ExternalLink className="h-3 w-3 opacity-90 group-hover:opacity-100" />
+                      </a>
+                      <div className="text-[10px] text-center text-emerald-800 dark:text-emerald-300 font-medium flex items-center justify-center gap-1">
+                        <span>👉 Opens chat with:</span>
+                        <code className="bg-emerald-100 dark:bg-emerald-950 px-1 py-0.5 rounded text-[10px] font-mono font-bold text-emerald-900 dark:text-emerald-200">
+                          +{conciergePhone}
+                        </code>
                       </div>
                       <div className="bg-zinc-100 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300 text-center py-1 rounded text-[10px]">
                         🛑 Stop Promotions
