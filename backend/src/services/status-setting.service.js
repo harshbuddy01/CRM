@@ -33,8 +33,8 @@ const seedDefaultStatuses = async () => {
     { code: 'negotiation', label: 'Negotiation', colorHex: '#f59e0b', isDashboardVisible: true, isLocked: false, takeNoteFlag: false, sequence: 30 },
     { code: 'confirmed', label: 'Confirmed', colorHex: '#10b981', isDashboardVisible: true, isLocked: true, takeNoteFlag: true, sequence: 40 },
     { code: 'in_progress', label: 'In Progress', colorHex: '#06b6d4', isDashboardVisible: true, isLocked: true, takeNoteFlag: true, sequence: 50 },
-    { code: 'completed', label: 'Completed', colorHex: '#64748b', isDashboardVisible: false, isLocked: true, takeNoteFlag: false, sequence: 60 },
-    { code: 'lost', label: 'Lost', colorHex: '#ef4444', isDashboardVisible: false, isLocked: true, takeNoteFlag: true, sequence: 70 },
+    { code: 'completed', label: 'Completed', colorHex: '#059669', isDashboardVisible: true, isLocked: false, takeNoteFlag: false, sequence: 60 },
+    { code: 'lost', label: 'Lost', colorHex: '#ef4444', isDashboardVisible: true, isLocked: false, takeNoteFlag: true, sequence: 70 },
     { code: 'invalid', label: 'Invalid', colorHex: '#9ca3af', isDashboardVisible: false, isLocked: true, takeNoteFlag: false, sequence: 80 },
   ];
 

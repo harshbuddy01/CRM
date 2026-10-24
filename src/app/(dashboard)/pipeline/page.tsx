@@ -11,13 +11,14 @@ import { useRouter } from 'next/navigation';
 import { TRANSITIONS } from '@/lib/constants';
 import { useAuthStore } from '@/lib/auth-store';
 
-// We will fetch pipeline columns dynamically from /status-settings
-// but we still export a default order fallback if API fails
+// Default pipeline stages including Completed and Lost
 const FALLBACK_COLUMNS = [
-  { id: 'new', title: 'New Leads', color: '#3b82f6' },
-  { id: 'quoted', title: 'Quoted', color: '#8b5cf6' },
-  { id: 'negotiation', title: 'Negotiation', color: '#f59e0b' },
-  { id: 'confirmed', title: 'Confirmed', color: '#10b981' },
+  { id: 'new', title: 'New Leads', color: '#3b82f6', isLocked: false },
+  { id: 'quoted', title: 'Quoted', color: '#8b5cf6', isLocked: false },
+  { id: 'negotiation', title: 'Negotiation', color: '#f59e0b', isLocked: false },
+  { id: 'confirmed', title: 'Confirmed', color: '#10b981', isLocked: true },
+  { id: 'completed', title: 'Completed', color: '#059669', isLocked: false },
+  { id: 'lost', title: 'Lost', color: '#ef4444', isLocked: false },
 ];
 
 type QueryData = {
@@ -61,8 +62,13 @@ export default function PipelinePage() {
 
   const columns = statusSettings 
     ? statusSettings
-        .filter((s:any) => s.isDashboardVisible)
-        .map((s:any) => ({ id: s.code, title: s.label, color: s.colorHex, isLocked: s.isLocked }))
+        .filter((s: any) => s.isDashboardVisible || s.code === 'completed' || s.code === 'lost')
+        .map((s: any) => ({
+          id: s.code,
+          title: s.label,
+          color: s.code === 'completed' ? '#059669' : (s.code === 'lost' ? '#ef4444' : s.colorHex),
+          isLocked: s.code === 'confirmed' ? true : false,
+        }))
     : FALLBACK_COLUMNS;
 
   // Organize queries into columns when data arrives

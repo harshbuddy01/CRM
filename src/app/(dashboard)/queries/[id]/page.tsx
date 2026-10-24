@@ -964,14 +964,19 @@ function QueryProposalsList({ queryId, queryCode, customerName, customerEmail }:
 
       {!proposals || proposals.length === 0 ? renderEmptyState() : (
         <div className="grid grid-cols-1 gap-4">
-          {(proposals.some((p: any) => p.status === 'confirmed') 
+          {(proposals.some((p: any) => p.status === 'confirmed' && query?.status === 'confirmed') 
             ? proposals.filter((p: any) => p.status === 'confirmed') 
-            : proposals.filter((p: any) => p.status !== 'rejected')
-          ).map((p: any) => (
+            : proposals
+          ).map((p: any) => {
+            const isLeadLost = query?.status === 'lost' || query?.status === 'invalid';
+            const isProposalConfirmed = p.status === 'confirmed' && !isLeadLost;
+            const isProposalRejected = p.status === 'rejected' || (p.status === 'confirmed' && isLeadLost);
+
+            return (
             <div key={p.id} className={cn(
               "p-5 border rounded-[32px] transition-all bg-white flex justify-between items-center group shadow-sm relative overflow-hidden",
-              p.status === 'confirmed' ? "border-emerald-500 ring-4 ring-emerald-50 shadow-emerald-100" : "hover:border-primary/40",
-              p.status === 'rejected' ? "opacity-60 grayscale-[0.5]" : "",
+              isProposalConfirmed ? "border-emerald-500 ring-4 ring-emerald-50 shadow-emerald-100" : "hover:border-primary/40",
+              isProposalRejected ? "opacity-75" : "",
               selectedIds.includes(p.id) ? "border-blue-500 bg-blue-50/20" : ""
             )}>
               <div className="flex items-center gap-4">
@@ -990,14 +995,14 @@ function QueryProposalsList({ queryId, queryCode, customerName, customerEmail }:
                       <ImageIcon className="w-8 h-8 text-slate-300" />
                     </div>
                   )}
-                  {p.status === 'confirmed' && (
+                  {isProposalConfirmed && (
                     <div className="absolute -top-2 -right-2 bg-emerald-500 text-white rounded-full p-1.5 shadow-lg border-2 border-white">
                       <CheckCircle2 className="w-4 h-4" />
                     </div>
                   )}
 
-                  {/* CONFIRMED BANNER — Go to Operations */}
-                  {p.status === 'confirmed' && p.tourId && (
+                  {/* CONFIRMED BANNER — Go to Operations (only when lead is actually confirmed) */}
+                  {isProposalConfirmed && p.tourId && (
                     <div className="absolute -bottom-px left-0 right-0 bg-gradient-to-r from-emerald-500 to-teal-500 text-white text-[10px] font-black uppercase tracking-widest px-3 py-1 flex items-center justify-between">
                       <span>✅ Confirmed Tour</span>
                       <Link href={`/tours/${p.tourId}/dispatch`} className="bg-white/20 hover:bg-white/30 px-2 py-0.5 rounded text-white font-black transition-colors">
@@ -1005,8 +1010,8 @@ function QueryProposalsList({ queryId, queryCode, customerName, customerEmail }:
                       </Link>
                     </div>
                   )}
-                  {p.status === 'rejected' && (
-                    <div className="absolute -top-2 -right-2 bg-slate-400 text-white rounded-full p-1.5 shadow-lg border-2 border-white">
+                  {(p.status === 'rejected' || isLeadLost) && !isProposalConfirmed && (
+                    <div className="absolute -top-2 -right-2 bg-rose-500 text-white rounded-full p-1.5 shadow-lg border-2 border-white">
                       <XCircle className="w-4 h-4" />
                     </div>
                   )}
@@ -1017,9 +1022,13 @@ function QueryProposalsList({ queryId, queryCode, customerName, customerEmail }:
                     {p.status !== 'pending' && (
                       <span className={cn(
                         "px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest",
-                        p.status === 'confirmed' ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-600"
+                        isLeadLost 
+                          ? "bg-rose-100 text-rose-700"
+                          : isProposalConfirmed 
+                          ? "bg-emerald-100 text-emerald-700" 
+                          : "bg-slate-100 text-slate-600"
                       )}>
-                        {p.status}
+                        {isLeadLost ? "LOST" : p.status}
                       </span>
                     )}
                   </div>
@@ -1100,7 +1109,7 @@ function QueryProposalsList({ queryId, queryCode, customerName, customerEmail }:
                   >
                     <MessageCircle className="w-4 h-4" />
                   </Button>
-                    {p.status !== 'confirmed' && (
+                    {!isProposalConfirmed && (
                       <Button 
                         size="sm" 
                         variant="ghost" 

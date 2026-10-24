@@ -200,6 +200,14 @@ const getQueryById = async (id, userId, canViewAll) => {
 
   query.activityLogs = activityLogs;
 
+  // Auto-repair legacy state: if lead is lost or invalid, make sure confirmed proposals are cleaned up
+  if (['lost', 'invalid'].includes(query.status)) {
+    await prisma.proposal.updateMany({
+      where: { queryId: id, status: 'confirmed' },
+      data: { status: 'rejected' }
+    }).catch(() => {});
+  }
+
   return query;
 };
 
@@ -495,6 +503,32 @@ const changeQueryStatus = async (id, status, userId, canViewAll, canEditAll) => 
     where: { id },
     data: { status },
   });
+
+  // Cascade status to linked proposals and tours
+  if (['lost', 'invalid'].includes(status)) {
+    // 1. Revert confirmed proposals to 'rejected'
+    await prisma.proposal.updateMany({
+      where: { queryId: id, status: 'confirmed' },
+      data: { status: 'rejected' }
+    });
+
+    // 2. Cancel any upcoming/running operational tours
+    await prisma.tour.updateMany({
+      where: { queryId: id, status: { in: ['upcoming', 'running'] }, deletedAt: null },
+      data: { status: 'cancelled' }
+    });
+  } else if (existing.status === 'confirmed' && status !== 'confirmed') {
+    // If moving back to negotiation, quoted, or new
+    await prisma.proposal.updateMany({
+      where: { queryId: id, status: 'confirmed' },
+      data: { status: 'pending' }
+    });
+
+    await prisma.tour.updateMany({
+      where: { queryId: id, status: 'upcoming', deletedAt: null },
+      data: { status: 'cancelled' }
+    });
+  }
 
   // Log activity
   try {
