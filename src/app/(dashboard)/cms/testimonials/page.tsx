@@ -92,7 +92,20 @@ export default function TestimonialsPage() {
           {items.map((t: any) => (
             <div key={t.id} className="border rounded-xl p-5 bg-card space-y-3">
               <div className="flex items-center gap-3">
-                {t.photoUrl ? <img src={t.photoUrl} alt={t.customerName} className="w-12 h-12 rounded-full object-cover" /> : <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">{t.customerName[0]}</div>}
+                {t.photoUrl && !t.photoUrl.includes('unsplash.com') && (t.photoUrl.includes('googleusercontent.com') || t.photoUrl.includes('cloudinary.com')) ? (
+                  <img
+                    src={t.photoUrl}
+                    alt={t.customerName}
+                    className="w-12 h-12 rounded-full object-cover ring-1 ring-border shadow-sm"
+                    onError={(e) => {
+                      (e.target as HTMLElement).style.display = 'none';
+                    }}
+                  />
+                ) : (
+                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 text-white flex items-center justify-center font-bold text-lg shadow-sm ring-1 ring-border select-none">
+                    {(t.customerName || 'G').trim().charAt(0).toUpperCase()}
+                  </div>
+                )}
                 <div>
                   <h3 className="font-semibold text-sm">{t.customerName}</h3>
                   {t.destination && <span className="text-xs text-muted-foreground">{t.destination}</span>}
