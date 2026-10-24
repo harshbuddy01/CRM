@@ -130,29 +130,28 @@ const TEMPLATE_PRESETS = [
       </td>
     </tr>
 
-    <!-- MINIMALIST ARCHITECTURAL PRIVILEGE BOX & CTAS -->
+    <!-- MINIMALIST ATTRACTIVE PRIVILEGE LOCKUP & PILL ACTIONS -->
     <tr>
-      <td style="padding: 6px 36px 38px; text-align: center; background-color: #ffffff;">
+      <td style="padding: 4px 36px 38px; text-align: center; background-color: #ffffff;">
         
-        <!-- Chic Minimal Privilege Code Box -->
-        <table align="center" border="0" cellpadding="0" cellspacing="0" style="margin: 0 auto 26px; border: 1px solid #d4af37; background: #faf8f5; border-radius: 3px; max-width: 380px; width: 100%;">
+        <!-- Minimalist Editorial Privilege Lockup (No clunky coupon box) -->
+        <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 460px; margin: 0 auto 26px; border-top: 1px solid #eee8df; border-bottom: 1px solid #eee8df; padding: 22px 0;">
           <tr>
-            <td style="padding: 20px 24px; text-align: center;">
-              <span style="display: block; font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif; font-size: 8.5px; font-weight: 800; letter-spacing: 3px; text-transform: uppercase; color: #8c733e; margin-bottom: 6px;">✦ &nbsp; FESTIVE PRIVILEGE CODE &nbsp; ✦</span>
-              <span style="display: block; font-family: 'Didot', 'Bodoni MT', 'Playfair Display', Georgia, serif; font-size: 26px; font-weight: 700; color: #0f172a; letter-spacing: 5px;">DIWALI2026</span>
-              <div style="width: 32px; height: 1px; background-color: #d4af37; margin: 8px auto;"></div>
-              <span style="display: block; font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif; font-size: 11.5px; color: #64748b; font-weight: 500;">Flat ₹3,000 Courtesy Savings on All Bespoke Retreats</span>
+            <td align="center">
+              <span style="display: block; font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif; font-size: 8.5px; font-weight: 800; letter-spacing: 3.5px; text-transform: uppercase; color: #8c733e; margin-bottom: 6px;">✦ &nbsp; FESTIVE PRIVILEGE &nbsp; ✦</span>
+              <span style="display: block; font-family: 'Didot', 'Bodoni MT', 'Playfair Display', Georgia, serif; font-size: 28px; font-weight: 400; color: #0f172a; letter-spacing: 6px; margin: 4px 0;">DIWALI2026</span>
+              <span style="display: block; font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif; font-size: 12px; color: #64748b; letter-spacing: 0.3px; margin-top: 4px;">Flat ₹3,000 Courtesy Savings &bull; Sikkim, Darjeeling, Kerala &amp; Andaman</span>
             </td>
           </tr>
         </table>
 
-        <!-- Elegant Action Buttons -->
-        <div>
-          <a href="https://wa.me/918910759374?text=Hi%20Imagica%20Holidays%2C%20I%20am%20interested%20in%20your%20Diwali%20Festive%20Offers" target="_blank" style="display: inline-block; background-color: #0f172a; color: #ffffff; font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif; font-size: 10.5px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; padding: 13px 28px; border-radius: 2px; text-decoration: none; margin: 4px; border: 1px solid #c5a059; box-shadow: 0 4px 12px rgba(0,0,0,0.08);">
+        <!-- Attractive Sleek Pill Buttons -->
+        <div style="margin: 0 auto;">
+          <a href="https://wa.me/918910759374?text=Hi%20Imagica%20Holidays%2C%20I%20am%20interested%20in%20your%20Diwali%20Festive%20Offers" target="_blank" style="display: inline-block; background-color: #0f172a; color: #ffffff; font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; padding: 13px 30px; border-radius: 50px; text-decoration: none; margin: 4px; border: 1px solid #c5a059; box-shadow: 0 4px 14px rgba(15,23,42,0.12);">
             💬 WhatsApp Concierge (+91 89107 59374)
           </a>
-          <a href="https://imagicaholidays.com/destinations" target="_blank" style="display: inline-block; background-color: transparent; color: #0f172a; border: 1px solid #cbd5e1; font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif; font-size: 10.5px; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; padding: 12px 24px; border-radius: 2px; text-decoration: none; margin: 4px;">
-            🌐 Explore Destinations
+          <a href="https://imagicaholidays.com/destinations" target="_blank" style="display: inline-block; background-color: #ffffff; color: #0f172a; border: 1px solid #d1d5db; font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase; padding: 12px 26px; border-radius: 50px; text-decoration: none; margin: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+            Explore Destinations &rarr;
           </a>
         </div>
 
