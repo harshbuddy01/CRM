@@ -77,135 +77,68 @@ const TEMPLATE_PRESETS = [
   {
     id: 'festive_exclusive_offer',
     name: '🪔 Diwali / Festive Grand Offer',
-    description: 'Bespoke Festive Retreats across Sikkim, Darjeeling, Kerala & Andaman (Save up to ₹5,000)',
+    description: 'Bespoke Festive Retreats across Sikkim, Darjeeling, Kerala & Andaman (Flat ₹3,000 OFF)',
     category: 'MARKETING',
-    defaultOffer: 'Festive Packages starting from ₹10,499 (Save ₹3,000 to ₹5,000 per guest across Sikkim, Darjeeling, Kerala & Andaman!)',
+    defaultOffer: 'Diwali Special Offer: Flat ₹3,000 OFF on All Packages (Code: DIWALI2026) across Gangtok, Darjeeling, Kerala & Andaman!',
     promoCode: 'DIWALI2026',
-    emailSubject: '🪔 Celebrate Diwali in Pure Luxury — Exclusive Holiday Privileges from Imagica Holidays',
-    emailContent: `<div style="background-color: #f1f5f9; padding: 24px 12px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #1e293b; line-height: 1.6;">
-  <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 620px; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.08); border: 1px solid #e2e8f0; margin: 0 auto;">
+    emailSubject: '🪔 This Diwali: Gift Yourself Extraordinary Journeys — Flat ₹3,000 OFF on All Packages',
+    emailContent: `<div style="background-color: #12151c; padding: 24px 10px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; color: #1e293b; line-height: 1.6;">
+  <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 640px; background-color: #faf7f2; border-radius: 12px; overflow: hidden; box-shadow: 0 15px 45px rgba(0,0,0,0.4); border: 1px solid #2d3748; margin: 0 auto;">
     
-    <!-- Top Luxury Header Banner -->
+    <!-- TOP HEADER BAR -->
     <tr>
-      <td style="background: linear-gradient(135deg, #091e2f 0%, #0f2b48 100%); padding: 34px 24px 26px; text-align: center; border-bottom: 3px solid #d4af37;">
-        <img src="https://imagicaholidays.com/logo_new.png" alt="Imagica Holidays" style="max-height: 52px; width: auto; margin-bottom: 8px; display: inline-block;" />
-        <p style="margin: 0; color: #d4af37; font-size: 11px; font-weight: 700; letter-spacing: 3px; text-transform: uppercase;">Bespoke Journeys & Luxury Retreats</p>
-      </td>
-    </tr>
-
-    <!-- Festive Greeting Hero -->
-    <tr>
-      <td style="padding: 34px 30px 22px; background-color: #fffbf2; text-align: center; border-bottom: 1px solid #fef3c7;">
-        <span style="display: inline-block; background-color: #fef08a; color: #854d0e; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; padding: 4px 12px; border-radius: 20px; margin-bottom: 12px;">🪔 Festive & Winter Special 2026</span>
-        <h1 style="margin: 0 0 10px; font-family: Georgia, 'Playfair Display', serif; font-size: 24px; line-height: 1.3; color: #0f172a; font-weight: bold;">
-          Celebrate The Festive Season In Pure Comfort & Luxury
-        </h1>
-        <p style="margin: 0 auto; font-size: 14px; color: #64748b; line-height: 1.6; max-width: 490px;">
-          Dear <strong>{{name}}</strong>, as the festival of lights approaches, we are delighted to unlock exclusive festive privileges on our signature handcrafted Indian retreats.
-        </p>
-      </td>
-    </tr>
-
-    <!-- Destination Highlights -->
-    <tr>
-      <td style="padding: 28px 24px 14px;">
-        <h2 style="margin: 0 0 18px; font-family: Georgia, serif; font-size: 17px; color: #0f172a; text-align: center; letter-spacing: 0.5px;">
-          Featured Destinations & Exclusive Festive Privileges
-        </h2>
-
-        <!-- Destination 1: Gangtok & North Sikkim -->
-        <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom: 14px; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; background: #ffffff;">
+      <td style="background-color: #08101a; padding: 16px 24px; border-bottom: 1px solid rgba(212,175,55,0.3);">
+        <table width="100%" border="0" cellpadding="0" cellspacing="0">
           <tr>
-            <td width="38%" style="vertical-align: middle; background-color: #0f172a;">
-              <img src="https://images.unsplash.com/photo-1589308078059-be1415eab4c3?q=80&w=600" alt="Gangtok Sikkim" style="width: 100%; height: 135px; object-fit: cover; display: block;" />
-            </td>
-            <td width="62%" style="padding: 14px 16px; vertical-align: top;">
-              <span style="font-size: 10px; font-weight: 700; color: #0284c7; text-transform: uppercase; letter-spacing: 1px;">Himalayan Sanctuary</span>
-              <h3 style="margin: 3px 0 5px; font-size: 15px; color: #0f172a; font-weight: 700;">Gangtok & North Sikkim Retreat</h3>
-              <p style="margin: 0 0 8px; font-size: 12px; color: #64748b; line-height: 1.4;">Tsomgo Lake, Yumthang Valley, alpine peaks, 4-Star boutique stays & private chauffeur.</p>
-              <div style="font-size: 13px;">
-                <span style="font-size: 11px; color: #94a3b8; text-decoration: line-through;">₹14,999</span>
-                <strong style="color: #0f172a; font-size: 15px; margin-left: 6px;">₹11,999/-</strong>
-                <span style="display: inline-block; background-color: #dcfce7; color: #15803d; font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 4px; margin-left: 6px;">You Save ₹3,000</span>
+            <td align="left" style="vertical-align: middle;">
+              <div style="display: inline-block; border: 1px solid rgba(255,255,255,0.25); background: rgba(5,10,18,0.8); padding: 5px 14px; border-radius: 4px;">
+                <div style="font-family: 'Cinzel', 'Playfair Display', Georgia, serif; font-size: 13px; font-weight: 800; letter-spacing: 4px; color: #ffffff;">
+                  IMAGICA<span style="color: #f3c467;">✦</span>
+                </div>
+                <div style="font-size: 7.5px; font-weight: 700; letter-spacing: 3.5px; color: #d4af37; border-top: 1px solid rgba(212,175,55,0.4); padding-top: 2px; text-align: center;">
+                  HOLIDAYS
+                </div>
               </div>
             </td>
-          </tr>
-        </table>
-
-        <!-- Destination 2: Darjeeling & Pelling -->
-        <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom: 14px; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; background: #ffffff;">
-          <tr>
-            <td width="38%" style="vertical-align: middle; background-color: #0f172a;">
-              <img src="https://media.imagicaholidays.com/destinations/667316a3-b64a-4c68-9ba8-c5a1b257df77-aman-upadhyay-5nPDGyAmZ10-unsplash.webp" alt="Darjeeling Pelling" style="width: 100%; height: 135px; object-fit: cover; display: block;" />
-            </td>
-            <td width="62%" style="padding: 14px 16px; vertical-align: top;">
-              <span style="font-size: 10px; font-weight: 700; color: #b45309; text-transform: uppercase; letter-spacing: 1px;">Colonial Hills & Skywalk</span>
-              <h3 style="margin: 3px 0 5px; font-size: 15px; color: #0f172a; font-weight: 700;">Darjeeling & Pelling Hideaway</h3>
-              <p style="margin: 0 0 8px; font-size: 12px; color: #64748b; line-height: 1.4;">Kanchenjunga sunrise view, heritage tea estates, Pelling skywalk & private tour.</p>
-              <div style="font-size: 13px;">
-                <span style="font-size: 11px; color: #94a3b8; text-decoration: line-through;">₹13,499</span>
-                <strong style="color: #0f172a; font-size: 15px; margin-left: 6px;">₹10,499/-</strong>
-                <span style="display: inline-block; background-color: #dcfce7; color: #15803d; font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 4px; margin-left: 6px;">You Save ₹3,000</span>
-              </div>
-            </td>
-          </tr>
-        </table>
-
-        <!-- Destination 3: Kerala Backwaters & Munnar -->
-        <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom: 14px; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; background: #ffffff;">
-          <tr>
-            <td width="38%" style="vertical-align: middle; background-color: #0f172a;">
-              <img src="https://images.unsplash.com/photo-1593693397690-362cb9666fc2?q=80&w=600" alt="Kerala Backwaters" style="width: 100%; height: 135px; object-fit: cover; display: block;" />
-            </td>
-            <td width="62%" style="padding: 14px 16px; vertical-align: top;">
-              <span style="font-size: 10px; font-weight: 700; color: #059669; text-transform: uppercase; letter-spacing: 1px;">God's Own Country</span>
-              <h3 style="margin: 3px 0 5px; font-size: 15px; color: #0f172a; font-weight: 700;">Kerala Houseboat & Munnar Hills</h3>
-              <p style="margin: 0 0 8px; font-size: 12px; color: #64748b; line-height: 1.4;">Alleppey luxury houseboat cruise, velvet tea plantations & spice hill sanctuary.</p>
-              <div style="font-size: 13px;">
-                <span style="font-size: 11px; color: #94a3b8; text-decoration: line-through;">₹16,999</span>
-                <strong style="color: #0f172a; font-size: 15px; margin-left: 6px;">₹12,999/-</strong>
-                <span style="display: inline-block; background-color: #dcfce7; color: #15803d; font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 4px; margin-left: 6px;">You Save ₹4,000</span>
-              </div>
-            </td>
-          </tr>
-        </table>
-
-        <!-- Destination 4: Andaman & Nicobar Islands -->
-        <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom: 14px; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; background: #ffffff;">
-          <tr>
-            <td width="38%" style="vertical-align: middle; background-color: #0f172a;">
-              <img src="https://images.unsplash.com/photo-1589182373726-e4f658ab50f0?q=80&w=600" alt="Andaman Islands" style="width: 100%; height: 135px; object-fit: cover; display: block;" />
-            </td>
-            <td width="62%" style="padding: 14px 16px; vertical-align: top;">
-              <span style="font-size: 10px; font-weight: 700; color: #0891b2; text-transform: uppercase; letter-spacing: 1px;">Tropical Island Haven</span>
-              <h3 style="margin: 3px 0 5px; font-size: 15px; color: #0f172a; font-weight: 700;">Andaman & Havelock Escape</h3>
-              <p style="margin: 0 0 8px; font-size: 12px; color: #64748b; line-height: 1.4;">Radhanagar beach sunset, luxury ferry transfers, snorkeling & private beach resort.</p>
-              <div style="font-size: 13px;">
-                <span style="font-size: 11px; color: #94a3b8; text-decoration: line-through;">₹21,999</span>
-                <strong style="color: #0f172a; font-size: 15px; margin-left: 6px;">₹16,999/-</strong>
-                <span style="display: inline-block; background-color: #dcfce7; color: #15803d; font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 4px; margin-left: 6px;">You Save ₹5,000</span>
-              </div>
+            <td align="right" style="vertical-align: middle;">
+              <span style="font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: #ffffff; font-weight: 600;">
+                <a href="https://imagicaholidays.com/destinations" target="_blank" style="color: #ffffff; text-decoration: none;">STAYS</a>
+                <span style="color: rgba(255,255,255,0.3); margin: 0 8px;">|</span>
+                <a href="https://imagicaholidays.com/destinations" target="_blank" style="color: #ffffff; text-decoration: none;">PACKAGES</a>
+                <span style="color: rgba(255,255,255,0.3); margin: 0 8px;">|</span>
+                <a href="https://imagicaholidays.com/testimonials" target="_blank" style="color: #ffffff; text-decoration: none;">EXPERIENCES</a>
+              </span>
             </td>
           </tr>
         </table>
       </td>
     </tr>
 
-    <!-- Luxury Inclusions & Voucher Box -->
+    <!-- HERO SECTION WITH FESTIVE EVENING BACKGROUND -->
     <tr>
-      <td style="padding: 0 24px 22px;">
-        <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #fffef5; border: 2px dashed #ca8a04; border-radius: 12px; padding: 18px;">
+      <td style="background: #1a100a url('https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?q=80&w=1200') center/cover no-repeat; padding: 40px 24px 35px; text-align: left; border-bottom: 2px solid #e7ded0;">
+        <table width="100%" border="0" cellpadding="0" cellspacing="0" style="background: rgba(10, 8, 6, 0.72); border-radius: 10px; padding: 24px;">
           <tr>
-            <td style="text-align: center;">
-              <span style="font-size: 11px; font-weight: 800; color: #854d0e; text-transform: uppercase; letter-spacing: 1.5px;">✨ The Imagica Luxury Guarantee</span>
-              <p style="margin: 8px 0 14px; font-size: 12px; color: #475569; line-height: 1.6;">
-                ✔ Handpicked 4-Star & Premium Stays &nbsp;|&nbsp; 
-                ✔ Private Chauffeur Vehicle &nbsp;|&nbsp; 
-                ✔ Daily Gourmet Breakfast &nbsp;|&nbsp; 
-                ✔ 24/7 Dedicated Concierge
+            <td style="vertical-align: top;">
+              <p style="margin: 0 0 6px; font-size: 11px; font-weight: 800; letter-spacing: 3px; color: #f3c467; text-transform: uppercase;">
+                THIS DIWALI
               </p>
-              <div style="display: inline-block; background: #0f172a; color: #fde047; padding: 8px 22px; border-radius: 8px; font-family: monospace; font-size: 15px; font-weight: bold; letter-spacing: 2px;">
-                FESTIVE CODE: DIWALI2026
+              <h1 style="margin: 0 0 12px; font-family: Georgia, 'Playfair Display', serif; font-size: 30px; line-height: 1.15; color: #ffffff; font-weight: 700;">
+                Gift Yourself<br>
+                <span style="color: #f3c467;">Extraordinary</span><br>
+                Journeys
+              </h1>
+              <p style="margin: 0 0 20px; font-size: 10px; font-weight: 700; letter-spacing: 2px; color: #f5f0e6; text-transform: uppercase; line-height: 1.4;">
+                EXCLUSIVE FESTIVE OFFERS ON<br>HANDPICKED DESTINATIONS
+              </p>
+              <a href="https://api.whatsapp.com/send/?phone=918910759374&text=Hi%21+I%27d+like+to+explore+Diwali+Holiday+Offers+with+Imagica+Holidays.&type=phone_number&app_absent=0" target="_blank" style="display: inline-block; background: linear-gradient(135deg, #f5c518 0%, #e5a522 100%); color: #1a1205; font-size: 11px; font-weight: 800; letter-spacing: 1.5px; padding: 12px 24px; border-radius: 30px; text-decoration: none; text-transform: uppercase; box-shadow: 0 6px 18px rgba(229,165,34,0.45);">
+                EXPLORE OFFERS &rarr;
+              </a>
+            </td>
+            <td align="right" style="vertical-align: top; width: 140px;">
+              <div style="font-family: 'Brush Script MT', 'Great Vibes', cursive; font-size: 27px; color: #f3c467; line-height: 1.1; text-align: center;">
+                Travel This<br>Diwali
+                <div style="font-size: 24px; margin-top: 6px;">🪔</div>
               </div>
             </td>
           </tr>
@@ -213,31 +146,337 @@ const TEMPLATE_PRESETS = [
       </td>
     </tr>
 
-    <!-- WhatsApp CTA Button -->
+    <!-- TOP 4-ICON BENEFIT STRIP -->
     <tr>
-      <td style="padding: 6px 24px 34px; text-align: center;">
-        <p style="margin: 0 0 16px; font-size: 14px; color: #475569;">
-          Ready to plan your bespoke journey? Connect directly with our lead concierge:
+      <td style="background-color: #faf7f2; padding: 18px 12px; border-bottom: 1px solid #ede3d5;">
+        <table width="100%" border="0" cellpadding="0" cellspacing="0" style="text-align: center;">
+          <tr>
+            <td width="25%" style="border-right: 1px solid #e7ded0; padding: 0 6px;">
+              <div style="font-size: 18px; margin-bottom: 4px;">🏷️</div>
+              <div style="font-size: 11px; font-weight: 700; color: #2b2723; line-height: 1.3;">Special<br>Diwali Prices</div>
+            </td>
+            <td width="25%" style="border-right: 1px solid #e7ded0; padding: 0 6px;">
+              <div style="font-size: 18px; margin-bottom: 4px;">🛏️</div>
+              <div style="font-size: 11px; font-weight: 700; color: #2b2723; line-height: 1.3;">Curated<br>Luxury Stays</div>
+            </td>
+            <td width="25%" style="border-right: 1px solid #e7ded0; padding: 0 6px;">
+              <div style="font-size: 18px; margin-bottom: 4px;">🚗</div>
+              <div style="font-size: 11px; font-weight: 700; color: #2b2723; line-height: 1.3;">Comfortable<br>Transfers</div>
+            </td>
+            <td width="25%" style="padding: 0 6px;">
+              <div style="font-size: 18px; margin-bottom: 4px;">🏔️</div>
+              <div style="font-size: 11px; font-weight: 700; color: #2b2723; line-height: 1.3;">Unique<br>Local Experiences</div>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+
+    <!-- DIWALI SPECIAL OFFER: MAROON & GOLD BANNER (FLAT ₹3,000 OFF) -->
+    <tr>
+      <td style="padding: 24px 20px 10px;">
+        <table width="100%" border="0" cellpadding="0" cellspacing="0" style="background: linear-gradient(135deg, #2b0409 0%, #450812 50%, #200206 100%); border: 1px solid #7a1524; border-radius: 12px; overflow: hidden; box-shadow: 0 8px 24px rgba(69,8,18,0.35);">
+          <tr>
+            <!-- Left Diyas & Flowers Image -->
+            <td width="36%" style="vertical-align: middle; background: #1a0206 url('https://images.unsplash.com/photo-1509198397868-475647b2a1e5?q=80&w=600') center/cover no-repeat; min-height: 160px;">
+              <div style="height: 100%; min-height: 160px; background: rgba(43,4,9,0.25);"></div>
+            </td>
+            <!-- Right Offer Text -->
+            <td width="64%" style="padding: 22px 20px; text-align: right; vertical-align: middle;">
+              <div style="font-size: 10px; font-weight: 800; letter-spacing: 2px; color: #e5b352; text-transform: uppercase; margin-bottom: 4px;">
+                DIWALI SPECIAL OFFER
+              </div>
+              <div style="font-family: Georgia, 'Playfair Display', serif; font-size: 26px; font-weight: 700; color: #ffffff; line-height: 1.1; margin-bottom: 2px;">
+                FLAT ₹3,000 OFF
+              </div>
+              <div style="font-size: 10px; font-weight: 700; letter-spacing: 2px; color: #f3c467; text-transform: uppercase; margin-bottom: 14px;">
+                ON ALL PACKAGES
+              </div>
+
+              <!-- Coupon Code Pill -->
+              <div style="display: inline-block; background: #170205; border: 1px solid #d4af37; border-radius: 6px; overflow: hidden; vertical-align: middle; margin-bottom: 8px;">
+                <table cellpadding="0" cellspacing="0" border="0">
+                  <tr>
+                    <td style="padding: 6px 10px; font-size: 10px; font-weight: 700; letter-spacing: 1px; color: #ffffff; text-transform: uppercase;">
+                      USE CODE
+                    </td>
+                    <td style="background-color: #f3c467; padding: 6px 12px; font-family: monospace; font-size: 13px; font-weight: 800; color: #1a1205; letter-spacing: 1px;">
+                      DIWALI2026
+                    </td>
+                    <td style="padding: 6px 8px; color: #f3c467; font-size: 12px;">
+                      📋
+                    </td>
+                  </tr>
+                </table>
+              </div>
+
+              <div style="font-size: 10px; color: #e5b352; font-weight: 600;">
+                ✓ Limited Time Offer
+              </div>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+
+    <!-- FEATURED DESTINATIONS HEADING -->
+    <tr>
+      <td style="padding: 30px 24px 18px; text-align: center;">
+        <p style="margin: 0 0 6px; font-size: 10.5px; font-weight: 800; letter-spacing: 2.5px; color: #8a7560; text-transform: uppercase;">
+          FEATURED DESTINATIONS
         </p>
-        <a href="https://api.whatsapp.com/send/?phone=918910759374&text=Hi%21+I%27d+like+to+plan+a+trip+with+Imagica+Holidays.&type=phone_number&app_absent=0" style="display: inline-block; background: linear-gradient(135deg, #25D366 0%, #128C7E 100%); color: #ffffff; padding: 14px 32px; border-radius: 30px; text-decoration: none; font-weight: bold; font-size: 15px; box-shadow: 0 6px 20px rgba(37,211,102,0.35);">
-          💬 Chat with Travel Concierge (+91 89107 59374)
-        </a>
-        <p style="margin: 12px 0 0; font-size: 12px; color: #94a3b8;">
-          Or call our concierge desk: <strong style="color: #0f172a;">+91 89107 59374</strong>
+        <h2 style="margin: 0 0 8px; font-family: Georgia, 'Playfair Display', serif; font-size: 24px; color: #1c1917; font-weight: 700;">
+          Festive Getaways, Handpicked for You
+        </h2>
+        <p style="margin: 0 auto; font-size: 12.5px; color: #665e55; line-height: 1.5; max-width: 480px;">
+          Breathtaking destinations, serene stays, and unforgettable experiences &mdash; at special Diwali prices.
         </p>
       </td>
     </tr>
 
-    <!-- Luxury Footer -->
+    <!-- 2x2 DESTINATION CARDS GRID -->
     <tr>
-      <td style="background-color: #0f172a; padding: 26px 20px; text-align: center; border-top: 1px solid #1e293b; color: #94a3b8; font-size: 12px; line-height: 1.6;">
-        <strong style="color: #ffffff; font-size: 13px;">IMAGICA HOLIDAYS</strong><br />
-        Crafting Handcrafted India Holidays with Unmatched Care & Luxury<br />
-        🌐 <a href="https://imagicaholidays.com" style="color: #d4af37; text-decoration: none;">imagicaholidays.com</a> &nbsp;|&nbsp; 📞 +91 89107 59374
-        <hr style="border: none; border-top: 1px solid #334155; margin: 16px 0;" />
-        <span style="font-size: 11px; color: #64748b;">
-          You received this email because you made an inquiry with Imagica Holidays. If you no longer wish to receive seasonal promotions, reply with STOP.
-        </span>
+      <td style="padding: 0 20px 24px;">
+        
+        <!-- ROW 1: Gangtok & Darjeeling -->
+        <table width="100%" border="0" cellpadding="0" cellspacing="0" style="margin-bottom: 20px;">
+          <tr>
+            <!-- CARD 1: Gangtok & North Sikkim -->
+            <td width="48%" style="vertical-align: top; background: #ffffff; border: 1px solid #e7dfd5; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.04);">
+              <div style="position: relative; height: 160px; background: #1a202c url('https://images.unsplash.com/photo-1589308078059-be1415eab4c3?q=80&w=600') center/cover no-repeat;">
+                <div style="position: absolute; bottom: 0; left: 0; right: 0; background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0) 100%); padding: 14px 12px 10px;">
+                  <h3 style="margin: 0; font-family: Georgia, serif; font-size: 14px; color: #ffffff; font-weight: 700; line-height: 1.25;">
+                    Gangtok &amp;<br>North Sikkim Retreat
+                  </h3>
+                </div>
+              </div>
+              <div style="padding: 12px 14px 14px;">
+                <div style="font-size: 11px; color: #4a453e; margin-bottom: 6px; line-height: 1.4;">
+                  🛏️ Premium Stays
+                </div>
+                <div style="font-size: 11px; color: #4a453e; margin-bottom: 6px; line-height: 1.4;">
+                  🏔️ Lakes, Monasteries &amp; Snow Peaks
+                </div>
+                <div style="font-size: 11px; color: #4a453e; margin-bottom: 12px; line-height: 1.4;">
+                  🚗 Transfers + Sightseeing
+                </div>
+                <hr style="border: none; border-top: 1px solid #f0e9df; margin: 0 0 10px;">
+                <table width="100%" border="0" cellpadding="0" cellspacing="0">
+                  <tr>
+                    <td style="vertical-align: middle;">
+                      <span style="font-size: 10px; color: #8c8275; text-decoration: line-through;">₹18,999</span>
+                      <strong style="display: block; font-size: 15px; color: #1a1714; font-weight: 800;">₹14,999*</strong>
+                    </td>
+                    <td align="right" style="vertical-align: middle;">
+                      <a href="https://api.whatsapp.com/send/?phone=918910759374&text=Hi%21+I+want+to+know+more+about+Gangtok+%26+North+Sikkim+Diwali+Package.&type=phone_number&app_absent=0" target="_blank" style="display: inline-block; background-color: #f3c467; color: #1a1205; font-size: 10px; font-weight: 800; padding: 7px 12px; border-radius: 20px; text-decoration: none; white-space: nowrap;">
+                        View Package &rarr;
+                      </a>
+                    </td>
+                  </tr>
+                </table>
+              </div>
+            </td>
+
+            <td width="4%">&nbsp;</td>
+
+            <!-- CARD 2: Darjeeling & Pelling Hideaway -->
+            <td width="48%" style="vertical-align: top; background: #ffffff; border: 1px solid #e7dfd5; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.04);">
+              <div style="position: relative; height: 160px; background: #1a202c url('https://images.unsplash.com/photo-1544735716-392fe2489ffa?q=80&w=600') center/cover no-repeat;">
+                <div style="position: absolute; bottom: 0; left: 0; right: 0; background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0) 100%); padding: 14px 12px 10px;">
+                  <h3 style="margin: 0; font-family: Georgia, serif; font-size: 14px; color: #ffffff; font-weight: 700; line-height: 1.25;">
+                    Darjeeling &amp;<br>Pelling Hideaway
+                  </h3>
+                </div>
+              </div>
+              <div style="padding: 12px 14px 14px;">
+                <div style="font-size: 11px; color: #4a453e; margin-bottom: 6px; line-height: 1.4;">
+                  🛏️ Boutique Hotels
+                </div>
+                <div style="font-size: 11px; color: #4a453e; margin-bottom: 6px; line-height: 1.4;">
+                  🏔️ Tea Gardens &amp; Kanchenjunga Views
+                </div>
+                <div style="font-size: 11px; color: #4a453e; margin-bottom: 12px; line-height: 1.4;">
+                  🚗 Transfers + Experiences
+                </div>
+                <hr style="border: none; border-top: 1px solid #f0e9df; margin: 0 0 10px;">
+                <table width="100%" border="0" cellpadding="0" cellspacing="0">
+                  <tr>
+                    <td style="vertical-align: middle;">
+                      <span style="font-size: 10px; color: #8c8275; text-decoration: line-through;">₹14,999</span>
+                      <strong style="display: block; font-size: 15px; color: #1a1714; font-weight: 800;">₹10,499*</strong>
+                    </td>
+                    <td align="right" style="vertical-align: middle;">
+                      <a href="https://api.whatsapp.com/send/?phone=918910759374&text=Hi%21+I+want+to+know+more+about+Darjeeling+%26+Pelling+Diwali+Package.&type=phone_number&app_absent=0" target="_blank" style="display: inline-block; background-color: #f3c467; color: #1a1205; font-size: 10px; font-weight: 800; padding: 7px 12px; border-radius: 20px; text-decoration: none; white-space: nowrap;">
+                        View Package &rarr;
+                      </a>
+                    </td>
+                  </tr>
+                </table>
+              </div>
+            </td>
+          </tr>
+        </table>
+
+        <!-- ROW 2: Kerala & Andaman -->
+        <table width="100%" border="0" cellpadding="0" cellspacing="0">
+          <tr>
+            <!-- CARD 3: Kerala Houseboat & Munnar Hills -->
+            <td width="48%" style="vertical-align: top; background: #ffffff; border: 1px solid #e7dfd5; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.04);">
+              <div style="position: relative; height: 160px; background: #1a202c url('https://images.unsplash.com/photo-1593693397690-362cb9666fc2?q=80&w=600') center/cover no-repeat;">
+                <div style="position: absolute; bottom: 0; left: 0; right: 0; background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0) 100%); padding: 14px 12px 10px;">
+                  <h3 style="margin: 0; font-family: Georgia, serif; font-size: 14px; color: #ffffff; font-weight: 700; line-height: 1.25;">
+                    Kerala Houseboat<br>&amp; Munnar Hills
+                  </h3>
+                </div>
+              </div>
+              <div style="padding: 12px 14px 14px;">
+                <div style="font-size: 11px; color: #4a453e; margin-bottom: 6px; line-height: 1.4;">
+                  🛏️ Luxury Houseboat + Resort
+                </div>
+                <div style="font-size: 11px; color: #4a453e; margin-bottom: 6px; line-height: 1.4;">
+                  🏔️ Tea Plantations &amp; Waterfalls
+                </div>
+                <div style="font-size: 11px; color: #4a453e; margin-bottom: 12px; line-height: 1.4;">
+                  🚗 Transfers + Sightseeing
+                </div>
+                <hr style="border: none; border-top: 1px solid #f0e9df; margin: 0 0 10px;">
+                <table width="100%" border="0" cellpadding="0" cellspacing="0">
+                  <tr>
+                    <td style="vertical-align: middle;">
+                      <span style="font-size: 10px; color: #8c8275; text-decoration: line-through;">₹22,999</span>
+                      <strong style="display: block; font-size: 15px; color: #1a1714; font-weight: 800;">₹17,499*</strong>
+                    </td>
+                    <td align="right" style="vertical-align: middle;">
+                      <a href="https://api.whatsapp.com/send/?phone=918910759374&text=Hi%21+I+want+to+know+more+about+Kerala+Houseboat+%26+Munnar+Diwali+Package.&type=phone_number&app_absent=0" target="_blank" style="display: inline-block; background-color: #f3c467; color: #1a1205; font-size: 10px; font-weight: 800; padding: 7px 12px; border-radius: 20px; text-decoration: none; white-space: nowrap;">
+                        View Package &rarr;
+                      </a>
+                    </td>
+                  </tr>
+                </table>
+              </div>
+            </td>
+
+            <td width="4%">&nbsp;</td>
+
+            <!-- CARD 4: Andaman & Havelock Escape -->
+            <td width="48%" style="vertical-align: top; background: #ffffff; border: 1px solid #e7dfd5; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.04);">
+              <div style="position: relative; height: 160px; background: #1a202c url('https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=600') center/cover no-repeat;">
+                <div style="position: absolute; bottom: 0; left: 0; right: 0; background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0) 100%); padding: 14px 12px 10px;">
+                  <h3 style="margin: 0; font-family: Georgia, serif; font-size: 14px; color: #ffffff; font-weight: 700; line-height: 1.25;">
+                    Andaman &amp;<br>Havelock Escape
+                  </h3>
+                </div>
+              </div>
+              <div style="padding: 12px 14px 14px;">
+                <div style="font-size: 11px; color: #4a453e; margin-bottom: 6px; line-height: 1.4;">
+                  🛏️ Beach Resorts
+                </div>
+                <div style="font-size: 11px; color: #4a453e; margin-bottom: 6px; line-height: 1.4;">
+                  🏔️ Crystal Clear Waters &amp; Islands
+                </div>
+                <div style="font-size: 11px; color: #4a453e; margin-bottom: 12px; line-height: 1.4;">
+                  🚗 Transfers + Activities
+                </div>
+                <hr style="border: none; border-top: 1px solid #f0e9df; margin: 0 0 10px;">
+                <table width="100%" border="0" cellpadding="0" cellspacing="0">
+                  <tr>
+                    <td style="vertical-align: middle;">
+                      <span style="font-size: 10px; color: #8c8275; text-decoration: line-through;">₹26,999</span>
+                      <strong style="display: block; font-size: 15px; color: #1a1714; font-weight: 800;">₹19,999*</strong>
+                    </td>
+                    <td align="right" style="vertical-align: middle;">
+                      <a href="https://api.whatsapp.com/send/?phone=918910759374&text=Hi%21+I+want+to+know+more+about+Andaman+%26+Havelock+Diwali+Package.&type=phone_number&app_absent=0" target="_blank" style="display: inline-block; background-color: #f3c467; color: #1a1205; font-size: 10px; font-weight: 800; padding: 7px 12px; border-radius: 20px; text-decoration: none; white-space: nowrap;">
+                        View Package &rarr;
+                      </a>
+                    </td>
+                  </tr>
+                </table>
+              </div>
+            </td>
+          </tr>
+        </table>
+
+      </td>
+    </tr>
+
+    <!-- BOTTOM 4-ICON TRUST STRIP -->
+    <tr>
+      <td style="background-color: #faf7f2; padding: 18px 12px; border-top: 1px solid #ede3d5; border-bottom: 1px solid #ede3d5;">
+        <table width="100%" border="0" cellpadding="0" cellspacing="0" style="text-align: center;">
+          <tr>
+            <td width="25%" style="border-right: 1px solid #e7ded0; padding: 0 6px;">
+              <div style="font-size: 18px; margin-bottom: 4px;">💎</div>
+              <div style="font-size: 11px; font-weight: 700; color: #2b2723; line-height: 1.3;">Handpicked<br>Stays</div>
+            </td>
+            <td width="25%" style="border-right: 1px solid #e7ded0; padding: 0 6px;">
+              <div style="font-size: 18px; margin-bottom: 4px;">🪷</div>
+              <div style="font-size: 11px; font-weight: 700; color: #2b2723; line-height: 1.3;">Authentic<br>Local Experiences</div>
+            </td>
+            <td width="25%" style="border-right: 1px solid #e7ded0; padding: 0 6px;">
+              <div style="font-size: 18px; margin-bottom: 4px;">🛡️</div>
+              <div style="font-size: 11px; font-weight: 700; color: #2b2723; line-height: 1.3;">Safe &amp; Reliable<br>Travel</div>
+            </td>
+            <td width="25%" style="padding: 0 6px;">
+              <div style="font-size: 18px; margin-bottom: 4px;">🎧</div>
+              <div style="font-size: 11px; font-weight: 700; color: #2b2723; line-height: 1.3;">24/7 Travel<br>Support</div>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+
+    <!-- PRE-FOOTER CTA WITH GOLDEN SUNSET VISTA -->
+    <tr>
+      <td style="background: #2a1608 url('https://images.unsplash.com/photo-1506744038136-46273834b3fb?q=80&w=1200') center/cover no-repeat; padding: 36px 20px; text-align: center;">
+        <div style="background: rgba(18, 10, 5, 0.72); border-radius: 12px; padding: 22px 16px; display: inline-block; max-width: 520px; width: 100%;">
+          <p style="margin: 0 0 14px; font-size: 11px; font-weight: 800; letter-spacing: 2.5px; color: #f3c467; text-transform: uppercase;">
+            READY TO PLAN YOUR FESTIVE ESCAPE?
+          </p>
+          <a href="https://api.whatsapp.com/send/?phone=918910759374&text=Hi%21+I%27d+like+to+plan+a+trip+with+Imagica+Holidays.&type=phone_number&app_absent=0" target="_blank" style="display: inline-block; background: linear-gradient(135deg, #f5c518 0%, #e5a522 100%); color: #1a1205; font-size: 13.5px; font-weight: 800; padding: 13px 26px; border-radius: 35px; text-decoration: none; box-shadow: 0 6px 20px rgba(229,165,34,0.45); line-height: 1.2;">
+            💬 Chat with Travel Concierge (+91 89107 59374) &rarr;
+          </a>
+        </div>
+      </td>
+    </tr>
+
+    <!-- FOOTER SECTION -->
+    <tr>
+      <td style="background-color: #08101a; padding: 28px 24px 20px; border-top: 1px solid rgba(212,175,55,0.4);">
+        <table width="100%" border="0" cellpadding="0" cellspacing="0" style="margin-bottom: 18px;">
+          <tr>
+            <!-- Left Logo -->
+            <td width="30%" align="left" style="vertical-align: middle;">
+              <div style="display: inline-block; border: 1px solid rgba(255,255,255,0.2); background: rgba(5,10,18,0.7); padding: 5px 12px; border-radius: 4px;">
+                <div style="font-family: 'Cinzel', 'Playfair Display', Georgia, serif; font-size: 12px; font-weight: 800; letter-spacing: 3px; color: #ffffff;">
+                  IMAGICA<span style="color: #f3c467;">✦</span>
+                </div>
+                <div style="font-size: 7px; font-weight: 700; letter-spacing: 3px; color: #d4af37; border-top: 1px solid rgba(212,175,55,0.4); padding-top: 2px; text-align: center;">
+                  HOLIDAYS
+                </div>
+              </div>
+            </td>
+            <!-- Middle Links -->
+            <td width="50%" align="center" style="vertical-align: middle; font-size: 11px; color: #c4b8a5; line-height: 1.6;">
+              <a href="mailto:enquiry@imagicaholidays.com" style="color: #c4b8a5; text-decoration: none;">✉️ enquiry@imagicaholidays.com</a><br>
+              <a href="tel:+918910759374" style="color: #c4b8a5; text-decoration: none;">📞 +91 89107 59374</a><br>
+              <a href="https://imagicaholidays.com" target="_blank" style="color: #f3c467; text-decoration: none; font-weight: 600;">🌐 www.imagicaholidays.com</a>
+            </td>
+            <!-- Right Social Icons -->
+            <td width="20%" align="right" style="vertical-align: middle;">
+              <span style="font-size: 16px; letter-spacing: 6px;">
+                <a href="https://instagram.com" target="_blank" style="text-decoration: none; color: #d4af37;">📷</a>
+                <a href="https://facebook.com" target="_blank" style="text-decoration: none; color: #d4af37;">📘</a>
+                <a href="https://youtube.com" target="_blank" style="text-decoration: none; color: #d4af37;">▶️</a>
+              </span>
+            </td>
+          </tr>
+        </table>
+
+        <!-- Disclaimer & T&C -->
+        <div style="border-top: 1px solid #1a2533; padding-top: 14px; text-align: center; font-size: 10px; color: #6e7e91; line-height: 1.5;">
+          You are receiving this email because you are a valued customer of Imagica Holidays.<br>
+          Offers are subject to availability. Prices may vary based on travel dates, number of travellers and inclusions. T&amp;C apply.
+        </div>
       </td>
     </tr>
 
