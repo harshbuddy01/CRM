@@ -82,160 +82,105 @@ const TEMPLATE_PRESETS = [
     defaultOffer: 'Diwali Special Offer: Flat ₹3,000 OFF on All Packages (Code: DIWALI2026) across Gangtok, Darjeeling, Kerala & Andaman!',
     promoCode: 'DIWALI2026',
     emailSubject: '🪔 Exclusive Diwali Privilege: Flat ₹3,000 OFF on Luxury India Vacations | Imagica Holidays',
-    emailContent: `<div style="background-color: #f4f2ee; padding: 36px 12px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #1e293b; line-height: 1.6;">
-  <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 620px; background-color: #ffffff; border-radius: 6px; overflow: hidden; box-shadow: 0 14px 40px rgba(0,0,0,0.06); border: 1px solid #e5ded3; margin: 0 auto;">
+    emailContent: `<div style="background-color: #f7f6f4; padding: 40px 12px; font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #1e293b; line-height: 1.6;">
+  <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 580px; background-color: #ffffff; border-radius: 2px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.04); border: 1px solid #eae5dc; margin: 0 auto;">
     
-    <!-- LUXURY EDITORIAL HEADER -->
+    <!-- MINIMALIST HEADER: JUST THE PURE LOGO WITH BREATHING ROOM -->
     <tr>
-      <td style="background-color: #ffffff; padding: 38px 24px 22px; text-align: center; border-bottom: 1px solid #eee8df;">
-        <table align="center" border="0" cellpadding="0" cellspacing="0">
-          <tr>
-            <td align="center">
-              <a href="https://imagicaholidays.com" target="_blank" style="text-decoration: none; display: inline-block;">
-                <img src="https://media.imagicaholidays.com/campaigns/imagica-crm-logo-dark-trans.png" alt="Imagica Holidays" height="44" style="height: 44px; max-height: 44px; width: auto; margin: 0 auto; display: block; border: 0;" />
-              </a>
-              
-              <!-- Minimalist Tracked-Out Menu -->
-              <div style="margin-top: 16px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 10px; font-weight: 700; letter-spacing: 3px; text-transform: uppercase; color: #8c733e;">
-                <a href="https://imagicaholidays.com/destinations" target="_blank" style="color: #64748b; text-decoration: none;">DESTINATIONS</a>
-                <span style="color: #d4af37; margin: 0 10px;">&bull;</span>
-                <a href="https://imagicaholidays.com/destinations" target="_blank" style="color: #64748b; text-decoration: none;">BESPOKE RETREATS</a>
-                <span style="color: #d4af37; margin: 0 10px;">&bull;</span>
-                <a href="https://wa.me/918910759374" target="_blank" style="color: #8c733e; text-decoration: none; font-weight: 700;">CONCIERGE</a>
-              </div>
-
-              <!-- Subtle Gold Divider Line -->
-              <div style="width: 54px; height: 1.5px; background-color: #d4af37; margin: 18px auto 0;"></div>
-            </td>
-          </tr>
-        </table>
+      <td style="background-color: #ffffff; padding: 42px 24px 30px; text-align: center;">
+        <a href="https://imagicaholidays.com" target="_blank" style="text-decoration: none; display: inline-block;">
+          <img src="https://media.imagicaholidays.com/campaigns/imagica-crm-logo-dark-trans.png" alt="Imagica Holidays" height="36" style="height: 36px; max-height: 36px; width: auto; margin: 0 auto; display: block; border: 0;" />
+        </a>
       </td>
     </tr>
 
-    <!-- EDITORIAL GREETING SECTION WITH BOLD CURSIVE ACCENTS -->
+    <!-- EDITORIAL GREETING (QUIET LUXURY) -->
     <tr>
-      <td style="padding: 36px 36px 16px; text-align: center; background-color: #ffffff;">
-        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 10px; font-weight: 800; letter-spacing: 3.5px; text-transform: uppercase; color: #8c733e; margin-bottom: 12px;">
-          &bull; FESTIVE PRIVILEGE &bull;
+      <td style="padding: 10px 42px 24px; text-align: center; background-color: #ffffff;">
+        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif; font-size: 9px; font-weight: 700; letter-spacing: 3.5px; text-transform: uppercase; color: #8c733e; margin-bottom: 14px;">
+          ✦ &nbsp; FESTIVE INVITATION &nbsp; ✦
         </div>
         
-        <!-- BOLD CURSIVE SALUTATION -->
-        <h1 style="margin: 0 0 14px; font-family: 'Playfair Display', 'Brush Script MT', 'Snell Roundhand', 'Apple Chancery', cursive, Georgia, serif; font-size: 34px; font-weight: 700; font-style: italic; line-height: 1.25; color: #111827; letter-spacing: 0.5px;">
+        <h1 style="margin: 0 0 16px; font-family: 'Didot', 'Bodoni MT', 'Playfair Display', Georgia, serif; font-size: 28px; font-weight: 400; line-height: 1.3; color: #111827; letter-spacing: 0.5px;">
           Dear {{name}},
         </h1>
 
-        <!-- CURSIVE HIGHLIGHT / FESTIVE BLESSING EFFECT CARD -->
-        <div style="margin: 18px auto 22px; padding: 18px 24px; background: linear-gradient(135deg, #fffcf5 0%, #fbf5e8 100%); border-left: 3px solid #d4af37; border-right: 3px solid #d4af37; border-radius: 6px; box-shadow: 0 4px 16px rgba(212,175,55,0.08); max-width: 500px;">
-          <p style="margin: 0; font-family: 'Playfair Display', 'Brush Script MT', 'Snell Roundhand', 'Apple Chancery', cursive, Georgia, serif; font-size: 19px; font-style: italic; font-weight: 700; color: #8c733e; line-height: 1.5; text-align: center;">
-            &ldquo;May this Diwali illuminate your life with boundless joy, prosperity, and cherished journeys.&rdquo;
-          </p>
-        </div>
-
-        <p style="margin: 0 auto 20px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 15px; line-height: 1.85; color: #4b5563; max-width: 520px;">
-          Diwali is a celebration of new horizons and cherished memories with loved ones. On behalf of <strong>Imagica Holidays, Kolkata</strong>, we take immense delight in unlocking an exclusive festive privilege crafted specifically for you.
+        <p style="margin: 0 auto 20px; font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif; font-size: 14.5px; line-height: 1.85; color: #475569; max-width: 480px;">
+          Diwali is a celebration of new journeys, warmth, and cherished moments. On behalf of <strong>Imagica Holidays, Kolkata</strong>, we warmly present our curated festive travel collection for you and your family.
         </p>
 
-        <!-- LUXURY EDITORIAL CONCIERGE INVITATION -->
-        <table width="100%" border="0" cellpadding="0" cellspacing="0" style="margin: 22px 0 24px; background: #faf8f5; border: 1px solid #e7ded0; border-radius: 6px; box-shadow: 0 4px 18px rgba(0,0,0,0.03);">
-          <tr>
-            <td style="padding: 24px 24px; text-align: center;">
-              <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 10px; font-weight: 800; letter-spacing: 2.5px; text-transform: uppercase; color: #8c733e; margin-bottom: 6px;">
-                Direct Travel Concierge &bull; Kolkata
-              </div>
-              <div style="font-family: 'Playfair Display', 'Brush Script MT', cursive, Georgia, serif; font-size: 20px; font-weight: 700; font-style: italic; color: #111827; margin-bottom: 6px;">
-                Curate Your Bespoke Festive Holiday
-              </div>
-              <p style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 13.5px; color: #64748b; line-height: 1.6; margin: 0 0 18px; max-width: 440px; margin-left: auto; margin-right: auto;">
-                Connect one-on-one with our senior destination specialist on WhatsApp to customize private villas, boutique tea estates, and chauffeurs across Sikkim, Darjeeling, Kerala &amp; Andaman.
-              </p>
-              <a href="https://wa.me/918910759374?text=Hi%20Imagica%20Holidays%2C%20I%20am%20interested%20in%20your%20Diwali%20Festive%20Offers" target="_blank" style="display: inline-block; background: linear-gradient(135deg, #111827 0%, #1f2937 100%); color: #ffffff; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 11.5px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; padding: 14px 30px; border-radius: 4px; text-decoration: none; border: 1px solid #c5a059; box-shadow: 0 6px 18px rgba(0,0,0,0.14);">
-                💬 Chat with Concierge (+91 89107 59374) &rarr;
-              </a>
-            </td>
-          </tr>
-        </table>
+        <!-- Direct Connect Link -->
+        <div style="margin: 8px 0 24px;">
+          <a href="https://wa.me/918910759374?text=Hi%20Imagica%20Holidays%2C%20I%20am%20interested%20in%20your%20Diwali%20Festive%20Offers" target="_blank" style="display: inline-block; color: #111827; text-decoration: none; font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; border-bottom: 1.5px solid #111827; padding-bottom: 4px;">
+            Connect with Concierge &rarr;
+          </a>
+        </div>
       </td>
     </tr>
 
     <!-- FULL-WIDTH SEAMLESS PHOTOGRAPHIC FLYER -->
     <tr>
-      <td style="padding: 0 24px 22px; text-align: center; background-color: #ffffff;">
-        <div style="border-radius: 6px; overflow: hidden; border: 1px solid #e7ded0; box-shadow: 0 10px 30px rgba(0,0,0,0.08);">
+      <td style="padding: 0 32px 24px; text-align: center; background-color: #ffffff;">
+        <div style="border-radius: 2px; overflow: hidden; border: 1px solid #eae5dc;">
           <a href="https://wa.me/918910759374?text=Hi%20Imagica%20Holidays%2C%20I%20am%20interested%20in%20your%20Diwali%20Festive%20Offers" target="_blank" style="display: block; text-decoration: none;">
-            <img src="https://media.imagicaholidays.com/campaigns/diwali-festive-poster-2026.jpg" alt="Imagica Holidays Diwali Travel Collection" width="572" style="width: 100%; max-width: 572px; height: auto; display: block; margin: 0 auto; border: 0;" />
+            <img src="https://media.imagicaholidays.com/campaigns/diwali-festive-poster-2026.jpg" alt="Imagica Holidays Diwali Travel Collection" width="516" style="width: 100%; max-width: 516px; height: auto; display: block; margin: 0 auto; border: 0;" />
           </a>
         </div>
       </td>
     </tr>
 
-    <!-- FESTIVE PRIVILEGE CERTIFICATE WITH BOLD CURSIVE & SHIMMERING EFFECT -->
+    <!-- MINIMALIST PRIVILEGE & ACTIONS -->
     <tr>
-      <td style="padding: 12px 24px 34px; text-align: center; background-color: #ffffff;">
+      <td style="padding: 10px 32px 38px; text-align: center; background-color: #ffffff;">
         
-        <!-- LUXURY CERTIFICATE BOX WITH GOLD EFFECT -->
-        <div style="display: inline-block; border: 2px solid #d4af37; outline: 1px dashed #c5a059; outline-offset: -6px; background: linear-gradient(180deg, #fffdfa 0%, #fef8ee 100%); border-radius: 8px; padding: 18px 34px; margin-bottom: 24px; box-shadow: 0 12px 36px rgba(212, 175, 55, 0.18);">
-          <span style="display: block; font-family: 'Playfair Display', 'Brush Script MT', 'Snell Roundhand', cursive, Georgia, serif; font-size: 16px; font-style: italic; font-weight: 700; color: #8c733e; letter-spacing: 1px; margin-bottom: 4px;">✦ Exclusive Festive Privilege Code ✦</span>
-          <span style="display: block; font-family: 'Playfair Display', 'Bodoni MT', Georgia, serif; font-size: 30px; font-weight: 800; color: #111827; letter-spacing: 5px; text-shadow: 0 1px 2px rgba(212,175,55,0.25); margin: 6px 0;">DIWALI2026</span>
-          <span style="display: block; font-family: 'Playfair Display', 'Brush Script MT', cursive, Georgia, serif; font-size: 15px; font-style: italic; font-weight: 700; color: #b45309; margin-top: 4px;">Flat ₹3,000 Complimentary Savings on All Bespoke Retreats</span>
-        </div>
+        <!-- Chic Minimal Privilege Code Box -->
+        <table align="center" border="0" cellpadding="0" cellspacing="0" style="margin: 0 auto 26px; border: 1px solid #d4af37; background: #faf8f5; border-radius: 2px; max-width: 380px; width: 100%;">
+          <tr>
+            <td style="padding: 18px 24px; text-align: center;">
+              <span style="display: block; font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif; font-size: 8.5px; font-weight: 700; letter-spacing: 3px; text-transform: uppercase; color: #8c733e; margin-bottom: 6px;">Festive Privilege Code</span>
+              <span style="display: block; font-family: 'Didot', 'Bodoni MT', 'Playfair Display', Georgia, serif; font-size: 24px; font-weight: 600; color: #111827; letter-spacing: 5px;">DIWALI2026</span>
+              <span style="display: block; font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif; font-size: 11px; color: #64748b; margin-top: 5px;">Flat ₹3,000 Savings on All Bespoke Holidays</span>
+            </td>
+          </tr>
+        </table>
 
-        <!-- ACTION BUTTONS -->
+        <!-- Elegant Action Buttons -->
         <div>
-          <a href="https://wa.me/918910759374?text=Hi%20Imagica%20Holidays%2C%20I%20am%20interested%20in%20your%20Diwali%20Festive%20Offers" target="_blank" style="display: inline-block; background: linear-gradient(135deg, #25D366 0%, #128C7E 100%); color: #ffffff; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 12.5px; font-weight: 800; letter-spacing: 0.5px; padding: 14px 28px; border-radius: 50px; text-decoration: none; margin: 4px; box-shadow: 0 6px 20px rgba(37,211,102,0.35); border: 1px solid #1ebe5d;">
+          <a href="https://wa.me/918910759374?text=Hi%20Imagica%20Holidays%2C%20I%20am%20interested%20in%20your%20Diwali%20Festive%20Offers" target="_blank" style="display: inline-block; background-color: #111827; color: #ffffff; font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif; font-size: 10.5px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; padding: 13px 28px; border-radius: 2px; text-decoration: none; margin: 4px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
             💬 WhatsApp Concierge (+91 89107 59374)
           </a>
-          <a href="https://imagicaholidays.com/destinations" target="_blank" style="display: inline-block; background: linear-gradient(135deg, #111827 0%, #1f2937 100%); color: #ffffff; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 12.5px; font-weight: 700; letter-spacing: 0.5px; padding: 14px 26px; border-radius: 50px; text-decoration: none; margin: 4px; box-shadow: 0 6px 18px rgba(0,0,0,0.18); border: 1px solid #d4af37;">
+          <a href="https://imagicaholidays.com/destinations" target="_blank" style="display: inline-block; background-color: transparent; color: #111827; border: 1px solid #cbd5e1; font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif; font-size: 10.5px; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; padding: 12px 24px; border-radius: 2px; text-decoration: none; margin: 4px;">
             🌐 Explore Destinations
           </a>
         </div>
 
-        <!-- BOLD CURSIVE PERSONAL SIGN-OFF FROM CONCIERGE DESK -->
-        <div style="margin-top: 28px; text-align: center; border-top: 1px solid #f1ece4; padding-top: 22px;">
-          <span style="font-family: 'Playfair Display', 'Brush Script MT', 'Snell Roundhand', cursive, Georgia, serif; font-size: 22px; font-style: italic; font-weight: 700; color: #8c733e; display: block;">
-            Warmest Festive Regards,
-          </span>
-          <span style="font-family: 'Playfair Display', 'Brush Script MT', cursive, Georgia, serif; font-size: 18px; font-style: italic; font-weight: 700; color: #111827; display: block; margin-top: 4px;">
-            Imagica Holidays Concierge Desk
-          </span>
-          <span style="font-size: 10px; font-weight: 700; letter-spacing: 3px; text-transform: uppercase; color: #94a3b8; display: block; margin-top: 4px;">
-            Direct Kolkata Desk &bull; +91 89107 59374
-          </span>
-        </div>
-
       </td>
     </tr>
 
-    <!-- ULTRA-PREMIUM ARCHITECTURAL FOOTER (SEAMLESS PURE-WHITE LOGO ON MIDNIGHT CANVAS) -->
+    <!-- MINIMALIST LUXURY FOOTER (CLEAN, AIRY, QUIET ELEGANCE) -->
     <tr>
-      <td style="background: linear-gradient(180deg, #0d131c 0%, #06090e 100%); padding: 42px 24px 34px; text-align: center; color: #94a3b8; border-top: 2px solid #d4af37;">
+      <td style="background-color: #0f141c; padding: 40px 24px 32px; text-align: center; border-top: 1px solid #1a2332;">
         
-        <!-- SEAMLESS PURE-WHITE LOGO (NO WHITE BOX) -->
+        <!-- Crisp White Transparent Logo -->
         <div style="margin-bottom: 16px;">
           <a href="https://imagicaholidays.com" target="_blank" style="text-decoration: none; display: inline-block;">
-            <img src="https://media.imagicaholidays.com/campaigns/imagica-crm-logo-white-trans.png" alt="Imagica Holidays" height="42" style="height: 42px; max-height: 42px; width: auto; margin: 0 auto; display: block; border: 0;" />
+            <img src="https://media.imagicaholidays.com/campaigns/imagica-crm-logo-white-trans.png" alt="Imagica Holidays" height="28" style="height: 28px; max-height: 28px; width: auto; margin: 0 auto; display: block; border: 0;" />
           </a>
         </div>
 
-        <!-- BOLD CURSIVE FOOTER TAGLINE -->
-        <p style="font-family: 'Playfair Display', 'Brush Script MT', 'Snell Roundhand', cursive, Georgia, serif; font-size: 17px; font-style: italic; font-weight: 700; color: #e2c275; margin: 0 0 16px; letter-spacing: 0.5px;">
-          Handcrafted Luxury Journeys &bull; Bespoke Retreats &bull; Private Chauffeurs
+        <p style="margin: 0 0 14px; font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif; font-size: 9px; font-weight: 700; letter-spacing: 3px; text-transform: uppercase; color: #c5a059;">
+          Handcrafted Luxury Journeys &bull; Kolkata, West Bengal
         </p>
 
-        <!-- OFFICIAL KOLKATA HEAD OFFICE CONTACT DETAILS -->
-        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 12px; line-height: 1.9; color: #cbd5e1; margin-bottom: 22px;">
-          <strong style="color: #ffffff;">Imagica Holidays Head Office:</strong> 46, Barrackpore Trunk Rd, Khardaha, Kolkata, West Bengal 700117<br>
-          Official Concierge: <a href="mailto:info@imagicaholidays.com" style="color: #e2c275; text-decoration: none; font-weight: 700;">info@imagicaholidays.com</a> &bull; WhatsApp: <a href="https://wa.me/918910759374" style="color: #e2c275; text-decoration: none; font-weight: 700;">+91 89107 59374</a><br>
-          Website: <a href="https://imagicaholidays.com" target="_blank" style="color: #ffffff; text-decoration: none; font-weight: 600;">www.imagicaholidays.com</a>
-        </div>
+        <p style="margin: 0 0 20px; font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif; font-size: 11.5px; color: #cbd5e1; line-height: 1.8;">
+          Concierge: <a href="https://wa.me/918910759374" style="color: #ffffff; text-decoration: none; font-weight: 600;">+91 89107 59374</a> &nbsp;&bull;&nbsp; <a href="mailto:info@imagicaholidays.com" style="color: #ffffff; text-decoration: none; font-weight: 600;">info@imagicaholidays.com</a> &nbsp;&bull;&nbsp; <a href="https://imagicaholidays.com" target="_blank" style="color: #ffffff; text-decoration: none; font-weight: 600;">imagicaholidays.com</a>
+        </p>
 
-        <!-- SUBTLE GOLD FILIGREE ACCENT -->
-        <div style="width: 60px; height: 1px; background-color: #c5a059; margin: 0 auto 18px;"></div>
+        <div style="width: 36px; height: 1px; background-color: #263345; margin: 0 auto 16px;"></div>
 
-        <!-- PREFERENCES & COPYRIGHT -->
-        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 10px; color: #64748b; line-height: 1.6;">
-          You are receiving this exclusive invitation as a valued patron of Imagica Holidays.<br>
-          To manage your travel communication preferences, reply with &quot;UNSUBSCRIBE&quot;.<br>
-          &copy; 2026 Imagica Holidays, Kolkata. All rights reserved.
+        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif; font-size: 9.5px; color: #64748b; line-height: 1.6;">
+          46, Barrackpore Trunk Rd, Khardaha, Kolkata 700117<br>
+          &copy; 2026 Imagica Holidays. All rights reserved. &bull; <a href="mailto:info@imagicaholidays.com?subject=Unsubscribe" style="color: #64748b; text-decoration: underline;">Unsubscribe</a>
         </div>
       </td>
     </tr>
