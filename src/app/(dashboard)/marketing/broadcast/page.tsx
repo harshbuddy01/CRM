@@ -457,8 +457,9 @@ const TEMPLATE_PRESETS = [
             </td>
             <!-- Middle Links -->
             <td width="50%" align="center" style="vertical-align: middle; font-size: 11px; color: #c4b8a5; line-height: 1.6;">
-              <a href="mailto:enquiry@imagicaholidays.com" style="color: #c4b8a5; text-decoration: none;">✉️ enquiry@imagicaholidays.com</a><br>
+              <a href="mailto:info@imagicaholidays.com" style="color: #c4b8a5; text-decoration: none;">✉️ info@imagicaholidays.com</a><br>
               <a href="tel:+918910759374" style="color: #c4b8a5; text-decoration: none;">📞 +91 89107 59374</a><br>
+              <span style="color: #94a3b8; font-size: 10px;">📍 Kolkata, West Bengal</span><br>
               <a href="https://imagicaholidays.com" target="_blank" style="color: #f3c467; text-decoration: none; font-weight: 600;">🌐 www.imagicaholidays.com</a>
             </td>
             <!-- Right Social Icons -->
