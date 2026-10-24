@@ -40,7 +40,6 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
 
 interface RecipientItem {
@@ -394,17 +393,32 @@ export default function MarketingBroadcastPage() {
     }
   };
 
-  // Calculations for selection
+  // Calculations for selection & channel routing
   const selectedItems = useMemo(() => {
     return audience.filter(item => selectedIds.has(item.queryId));
   }, [audience, selectedIds]);
 
   const reachablePhoneCount = selectedItems.filter(i => i.hasPhone).length;
   const reachableEmailCount = selectedItems.filter(i => i.hasEmail).length;
-  const estimatedCost = Math.round(reachablePhoneCount * 0.82);
+
+  const whatsappRecipientsCount = useMemo(() => {
+    if (channel === 'email') return 0;
+    return reachablePhoneCount;
+  }, [channel, reachablePhoneCount]);
+
+  const emailRecipientsCount = useMemo(() => {
+    if (channel === 'whatsapp') return 0;
+    return reachableEmailCount;
+  }, [channel, reachableEmailCount]);
+
+  // Meta charges ~₹0.78 per marketing conversation in India. Email is completely free.
+  const estimatedCost = useMemo(() => {
+    if (channel === 'email') return 0;
+    return Number((whatsappRecipientsCount * 0.78).toFixed(2));
+  }, [channel, whatsappRecipientsCount]);
 
   return (
-    <div className="space-y-6 pb-12">
+    <div className="space-y-6 pb-12 w-full">
       {/* Top Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b pb-5">
         <div>
@@ -431,31 +445,65 @@ export default function MarketingBroadcastPage() {
             <span className="text-emerald-700 dark:text-emerald-300 block text-[10px] uppercase font-semibold">Messages Sent</span>
             <span className="font-bold text-emerald-700 dark:text-emerald-300 text-sm">{stats?.totalSent ?? 0}</span>
           </div>
-          <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg px-3 py-1.5 text-xs">
-            <span className="text-amber-700 dark:text-amber-300 block text-[10px] uppercase font-semibold">Active Mode</span>
-            <span className="font-bold text-amber-700 dark:text-amber-300 text-sm">Dual WhatsApp + Email</span>
+          <div className={cn(
+            "border rounded-lg px-3 py-1.5 text-xs",
+            channel === 'email' 
+              ? "bg-blue-500/10 border-blue-500/20 text-blue-700 dark:text-blue-300"
+              : channel === 'whatsapp'
+              ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-700 dark:text-emerald-300"
+              : "bg-amber-500/10 border-amber-500/20 text-amber-700 dark:text-amber-300"
+          )}>
+            <span className="block text-[10px] uppercase font-semibold opacity-75">Active Channel</span>
+            <span className="font-bold text-sm">
+              {channel === 'email' ? 'Email Only (100% Free)' : channel === 'whatsapp' ? 'WhatsApp Only (~₹0.78)' : 'Dual (WA + Email)'}
+            </span>
           </div>
         </div>
       </div>
 
-      {/* Main Mode Navigation Tabs */}
-      <Tabs value={activeTab} onValueChange={v => {
-        setActiveTab(v as any);
-        if (v === 'history') fetchHistory();
-      }}>
-        <TabsList className="grid grid-cols-2 max-w-sm mb-6">
-          <TabsTrigger value="create" className="flex items-center gap-2">
+      {/* Top Level Mode Tabs (Full Width - eliminates the blank left space) */}
+      <div className="flex items-center justify-between border-b pb-3 gap-3 flex-wrap">
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setActiveTab('create')}
+            className={cn(
+              "flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all border cursor-pointer",
+              activeTab === 'create'
+                ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                : "bg-muted/40 hover:bg-muted text-muted-foreground hover:text-foreground border-border"
+            )}
+          >
             <Sparkles className="h-4 w-4" />
             <span>New Broadcast</span>
-          </TabsTrigger>
-          <TabsTrigger value="history" className="flex items-center gap-2">
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setActiveTab('history');
+              fetchHistory();
+            }}
+            className={cn(
+              "flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all border cursor-pointer",
+              activeTab === 'history'
+                ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                : "bg-muted/40 hover:bg-muted text-muted-foreground hover:text-foreground border-border"
+            )}
+          >
             <Clock className="h-4 w-4" />
-            <span>Campaign History</span>
-          </TabsTrigger>
-        </TabsList>
+            <span>Campaign History ({history.length || stats?.totalCampaigns || 0})</span>
+          </button>
+        </div>
 
-        {/* ── CREATE CAMPAIGN CONTENT ── */}
-        <TabsContent value="create" className="space-y-6">
+        <div className="text-xs text-muted-foreground flex items-center gap-1.5 font-medium">
+          <ShieldCheck className="h-4 w-4 text-emerald-600" />
+          <span>BullMQ Anti-Spam Throttled Queue Active</span>
+        </div>
+      </div>
+
+      {/* ── CREATE CAMPAIGN CONTENT ── */}
+      {activeTab === 'create' ? (
+        <div className="space-y-6 w-full">
           {/* STEP 1: AUDIENCE SELECTOR & SEGMENT */}
           <Card className="border-border shadow-sm">
             <CardHeader className="pb-3">
@@ -1012,22 +1060,54 @@ export default function MarketingBroadcastPage() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   {/* Cost & Recipient Stats */}
-                  <div className="bg-muted/50 rounded-lg p-3 space-y-1.5 text-xs">
+                  <div className="bg-muted/50 rounded-lg p-3 space-y-2 text-xs">
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Selected Recipients:</span>
+                      <span className="text-muted-foreground">Selected Contacts:</span>
                       <span className="font-bold">{selectedIds.size}</span>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">WhatsApp Eligible:</span>
-                      <span className="font-semibold text-emerald-600">{reachablePhoneCount}</span>
+
+                    <div className="flex justify-between items-center">
+                      <span className="text-muted-foreground flex items-center gap-1">
+                        <Phone className="h-3 w-3 text-emerald-600" />
+                        <span>WhatsApp Queue:</span>
+                      </span>
+                      {channel === 'email' ? (
+                        <Badge variant="outline" className="text-[10px] text-muted-foreground border-dashed">
+                          0 (Disabled)
+                        </Badge>
+                      ) : (
+                        <span className="font-semibold text-emerald-600">{whatsappRecipientsCount} recipients</span>
+                      )}
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Email Eligible:</span>
-                      <span className="font-semibold text-blue-600">{reachableEmailCount}</span>
+
+                    <div className="flex justify-between items-center">
+                      <span className="text-muted-foreground flex items-center gap-1">
+                        <Mail className="h-3 w-3 text-blue-600" />
+                        <span>Email Queue:</span>
+                      </span>
+                      {channel === 'whatsapp' ? (
+                        <Badge variant="outline" className="text-[10px] text-muted-foreground border-dashed">
+                          0 (Disabled)
+                        </Badge>
+                      ) : (
+                        <span className="font-semibold text-blue-600">{emailRecipientsCount} recipients</span>
+                      )}
                     </div>
-                    <div className="border-t pt-1.5 flex justify-between font-bold">
-                      <span>Est. Meta WhatsApp Cost:</span>
-                      <span className="text-emerald-600">~₹{estimatedCost}</span>
+
+                    <div className="border-t pt-2 flex justify-between items-center font-bold">
+                      <span>Est. Meta WhatsApp Fee:</span>
+                      {channel === 'email' ? (
+                        <span className="text-emerald-700 dark:text-emerald-300 font-bold bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-300 dark:border-emerald-800 px-2 py-0.5 rounded text-xs">
+                          ₹0.00 (100% Free / Brevo)
+                        </span>
+                      ) : estimatedCost === 0 ? (
+                        <span className="text-muted-foreground font-medium">₹0.00</span>
+                      ) : (
+                        <div className="text-right">
+                          <span className="text-emerald-600 text-sm">~₹{estimatedCost}</span>
+                          <span className="block text-[10px] font-normal text-muted-foreground">(@ ₹0.78 / conversation)</span>
+                        </div>
+                      )}
                     </div>
                   </div>
 
@@ -1068,10 +1148,10 @@ export default function MarketingBroadcastPage() {
               </Card>
             </div>
           </div>
-        </TabsContent>
-
-        {/* ── CAMPAIGN HISTORY CONTENT ── */}
-        <TabsContent value="history" className="space-y-4">
+        </div>
+      ) : (
+        /* ── CAMPAIGN HISTORY CONTENT ── */
+        <div className="space-y-4 w-full">
           <Card className="border-border shadow-sm">
             <CardHeader className="pb-3 flex flex-row items-center justify-between">
               <div>
@@ -1165,8 +1245,8 @@ export default function MarketingBroadcastPage() {
               )}
             </CardContent>
           </Card>
-        </TabsContent>
-      </Tabs>
+        </div>
+      )}
     </div>
   );
 }
