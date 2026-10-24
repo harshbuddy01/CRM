@@ -133,6 +133,7 @@ model User {
   vouchers               Voucher[]          @relation("VoucherCreatedBy")
   uploadedDocuments      QueryDocument[]    @relation("DocumentUploadedBy")
   itineraries            Itinerary[]        @relation("ItineraryCreatedBy")
+  broadcastCampaigns     BroadcastCampaign[] @relation("BroadcastCreatedBy")
 
   twoFactorCode      String?   @map("two_factor_code")
   twoFactorExpires   DateTime? @map("two_factor_expires")
@@ -1328,4 +1329,53 @@ model WhatsappMessage {
   @@map("whatsapp_messages")
 }
 
+// ── Marketing Broadcast System ──
+model BroadcastCampaign {
+  id              String    @id @default(uuid())
+  name            String    /// Campaign name e.g. "Diwali Lost Lead Win-Back"
+  segment         String    /// 'lost', 'completed', 'custom'
+  channel         String    /// 'whatsapp', 'email', 'both'
+  templateName    String?   @map("template_name") /// Meta WhatsApp template name
+  emailSubject    String?   @map("email_subject")
+  emailContent    String?   @map("email_content") @db.Text
+  attachmentUrl   String?   @map("attachment_url") /// R2 public URL of PDF/image
+  attachmentName  String?   @map("attachment_name")
+  totalRecipients Int       @default(0) @map("total_recipients")
+  sentCount       Int       @default(0) @map("sent_count")
+  failedCount     Int       @default(0) @map("failed_count")
+  status          String    @default("draft") /// 'draft','sending','completed','failed'
+  createdBy       String?   @map("created_by")
+  launchedAt      DateTime? @map("launched_at")
+  completedAt     DateTime? @map("completed_at")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  creator    User?               @relation("BroadcastCreatedBy", fields: [createdBy], references: [id])
+  recipients BroadcastRecipient[]
+
+  @@index([status])
+  @@index([segment])
+  @@map("broadcast_campaigns")
+}
+
+model BroadcastRecipient {
+  id           String    @id @default(uuid())
+  campaignId   String    @map("campaign_id")
+  queryId      String?   @map("query_id") /// Source query reference
+  name         String
+  phone        String?
+  email        String?
+  destination  String?
+  channel      String    /// 'whatsapp', 'email'
+  status       String    @default("pending") /// 'pending','queued','sent','failed','skipped'
+  errorMessage String?   @map("error_message")
+  sentAt       DateTime? @map("sent_at")
+  createdAt    DateTime  @default(now()) @map("created_at")
+
+  campaign BroadcastCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  @@index([campaignId])
+  @@index([status])
+  @@map("broadcast_recipients")
+}
 

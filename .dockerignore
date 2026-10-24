@@ -1,0 +1,9 @@
+node_modules
+.next
+.git
+backend
+deployment
+scratch
+*.mp4
+crm_backup.sql
+test_itinerary.pdf

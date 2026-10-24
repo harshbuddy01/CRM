@@ -1,4 +1,4 @@
-version: '3.8'
+version: "3.8"
 
 services:
   # --- Database (PostgreSQL) ---
@@ -40,7 +40,7 @@ services:
 
   # --- S3 Object Storage (MinIO) ---
   minio:
-    image: minio/minio
+    image: quay.io/minio/minio:latest
     container_name: crm-minio
     restart: always
     command: server /data --console-address ":9001"
@@ -73,9 +73,23 @@ services:
     networks:
       - crm-network
 
+  # --- TravelCRM Frontend (Next.js) ---
+  frontend:
+    build:
+      context: ../../
+      dockerfile: Dockerfile.frontend
+    container_name: crm-frontend
+    restart: always
+    environment:
+      NODE_ENV: production
+      HOSTNAME: 0.0.0.0
+      PORT: 3000
+    networks:
+      - crm-network
+
   # --- Automation Platform (n8n) ---
   n8n:
-    image: docker.n8n.io/n8nio/n8n
+    image: n8nio/n8n:latest
     container_name: crm-n8n
     restart: always
     environment:
@@ -109,6 +123,7 @@ services:
       - caddy_config:/config
     depends_on:
       - backend
+      - frontend
       - minio
       - meilisearch
       - n8n

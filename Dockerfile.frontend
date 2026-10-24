@@ -1,0 +1,27 @@
+# ---- Stage 1: Build ----
+FROM node:20-alpine AS builder
+WORKDIR /app
+
+COPY package*.json ./
+RUN npm ci
+
+COPY . .
+
+# Build-time env: API calls from browser go to public API URL
+ENV NEXT_PUBLIC_API_URL=https://api.imagicaholidays.com/api/v1
+RUN npm run build
+
+# ---- Stage 2: Run ----
+FROM node:20-alpine AS runner
+WORKDIR /app
+
+ENV NODE_ENV=production
+
+# Copy only what is needed to run
+COPY --from=builder /app/next.config.mjs ./
+COPY --from=builder /app/public ./public
+COPY --from=builder /app/.next/standalone ./
+COPY --from=builder /app/.next/static ./.next/static
+
+EXPOSE 3000
+CMD ["node", "server.js"]
