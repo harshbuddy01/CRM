@@ -2,99 +2,71 @@ const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
 const IMAGICA_PLACE_ID = 'ChIJ3UbvD4Kb-DkRFvv1VdWmFm4';
-
-// Curated authentic traveler reviews for Imagica Holidays (Sikkim, Darjeeling, Andaman, Kerala)
-const INITIAL_GOOGLE_REVIEWS = [
-  {
-    customerName: "Subhasish Roy",
-    rating: 5,
-    text: "Had an extraordinary trip to Gangtok & North Sikkim (Lachung, Yumthang Valley). The arrangement made by Imagica Holidays was impeccable. The driver was very skilled in mountain terrain and hotels were comfortable with great views.",
-    destination: "North Sikkim & Gangtok",
-    photoUrl: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=200&auto=format&fit=crop"
-  },
-  {
-    customerName: "Ananya Banerjee",
-    rating: 5,
-    text: "Darjeeling and Pelling tour with Imagica Holidays was simply wonderful! Sunrise from Tiger Hill and the Pelling Skywalk were magical. The entire team was reachable 24/7 on WhatsApp whenever we needed assistance.",
-    destination: "Darjeeling & Pelling",
-    photoUrl: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=200&auto=format&fit=crop"
-  },
-  {
-    customerName: "Debabrata Mukherjee",
-    rating: 5,
-    text: "Booked a family package for Kerala Backwaters (Munnar, Thekkady, Alleppey houseboat). Superb luxury experience. The houseboat hospitality and spice plantation tours were top-notch. Highly recommended tour operator!",
-    destination: "Kerala Backwaters",
-    photoUrl: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=200&auto=format&fit=crop"
-  },
-  {
-    customerName: "Pooja & Rohan Sharma",
-    rating: 5,
-    text: "Our Andaman honeymoon trip arranged by Imagica Holidays was paradise. Scuba diving at Havelock, private ferry tickets, and beachside candlelight dinner were arranged seamlessly without any delays.",
-    destination: "Andaman & Nicobar Islands",
-    photoUrl: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=200&auto=format&fit=crop"
-  },
-  {
-    customerName: "Rajeev Sen",
-    rating: 5,
-    text: "Very reliable and professional travel company in Kolkata / Khardah. Honest pricing, no hidden costs, sanitized cabs, and punctual drivers. Will definitely plan our next vacation with Imagica Holidays again.",
-    destination: "Himalayan Tour",
-    photoUrl: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?q=80&w=200&auto=format&fit=crop"
-  }
-];
+const DEFAULT_API_KEY = process.env.GOOGLE_PLACES_API_KEY || 'AIzaSyAb7PWktk-ExGldWC0bgQ-zf7dvxR149Is';
 
 /**
- * Sync Google Reviews:
- * 1. If Google Places API key is available, fetch live reviews from Google Maps Place Details.
- * 2. If API key is unavailable or fails, ensure initial authentic reviews are present in the DB.
+ * Sync Google Reviews using Google Places API (New):
+ * Fetches the real customer reviews from Google Maps for Imagica Holidays
+ * and upserts them into the database.
  */
 async function syncGoogleReviews(options = {}) {
-  const apiKey = options.apiKey || process.env.GOOGLE_PLACES_API_KEY;
+  const apiKey = options.apiKey || process.env.GOOGLE_PLACES_API_KEY || DEFAULT_API_KEY;
   const placeId = options.placeId || process.env.GOOGLE_PLACE_ID || IMAGICA_PLACE_ID;
 
   let liveFetched = [];
   let apiSuccess = false;
   let errorMsg = null;
+  let placeInfo = { name: 'IMAGICA HOLIDAYS', rating: 4.8, totalReviews: 16 };
 
   if (apiKey) {
+    // 1. Try Google Places API (New) first (preferred and active on the project)
     try {
-      // 1. Try legacy Places Details API
-      const url = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=name,rating,user_ratings_total,reviews,photos&language=en&reviews_sort=newest&key=${apiKey}`;
-      const res = await fetch(url);
-      if (res.ok) {
-        const json = await res.json();
-        if (json.status === 'OK' && json.result?.reviews?.length) {
-          liveFetched = json.result.reviews.map(r => ({
-            customerName: r.author_name,
+      const newUrl = `https://places.googleapis.com/v1/places/${placeId}?languageCode=en&key=${apiKey}`;
+      const newRes = await fetch(newUrl, {
+        headers: { 'X-Goog-FieldMask': 'displayName,rating,userRatingCount,reviews' }
+      });
+      if (newRes.ok) {
+        const newJson = await newRes.json();
+        if (newJson.rating) placeInfo.rating = newJson.rating;
+        if (newJson.userRatingCount) placeInfo.totalReviews = newJson.userRatingCount;
+        if (newJson.displayName?.text) placeInfo.name = newJson.displayName.text;
+
+        if (newJson.reviews?.length) {
+          liveFetched = newJson.reviews.map(r => ({
+            customerName: r.authorAttribution?.displayName || 'Google Reviewer',
             rating: r.rating || 5,
-            text: r.text || '',
-            destination: 'Verified Google Review',
-            photoUrl: r.profile_photo_url || null
+            text: r.text?.text || r.originalText?.text || '',
+            destination: r.relativePublishTimeDescription || 'Google Maps Verified Review',
+            photoUrl: r.authorAttribution?.photoUri || null,
+            googleUrl: r.authorAttribution?.uri || r.googleMapsUri || 'https://maps.app.goo.gl/nYMH3mYr92GBcfCTA'
           }));
           apiSuccess = true;
-        } else {
-          errorMsg = `Google Places API returned status: ${json.status} ${json.error_message || ''}`;
         }
+      } else {
+        const errJson = await newRes.json().catch(() => ({}));
+        errorMsg = errJson.error?.message || `Places API HTTP ${newRes.status}`;
       }
     } catch (e) {
       errorMsg = e.message;
     }
 
-    // 2. Try Places API (New) if legacy failed
+    // 2. Fallback to Legacy Places Details API if needed
     if (!apiSuccess) {
       try {
-        const newUrl = `https://places.googleapis.com/v1/places/${placeId}?languageCode=en&key=${apiKey}`;
-        const newRes = await fetch(newUrl, {
-          headers: { 'X-Goog-FieldMask': 'displayName,rating,userRatingCount,reviews' }
-        });
-        if (newRes.ok) {
-          const newJson = await newRes.json();
-          if (newJson.reviews?.length) {
-            liveFetched = newJson.reviews.map(r => ({
-              customerName: r.authorAttribution?.displayName || 'Google Traveler',
+        const url = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=name,rating,user_ratings_total,reviews,photos&language=en&reviews_sort=newest&key=${apiKey}`;
+        const res = await fetch(url);
+        if (res.ok) {
+          const json = await res.json();
+          if (json.status === 'OK' && json.result?.reviews?.length) {
+            if (json.result.rating) placeInfo.rating = json.result.rating;
+            if (json.result.user_ratings_total) placeInfo.totalReviews = json.result.user_ratings_total;
+            liveFetched = json.result.reviews.map(r => ({
+              customerName: r.author_name,
               rating: r.rating || 5,
-              text: r.text?.text || r.originalText?.text || '',
-              destination: 'Verified Google Review',
-              photoUrl: r.authorAttribution?.photoUri || null
+              text: r.text || '',
+              destination: r.relative_time_description || 'Google Maps Verified Review',
+              photoUrl: r.profile_photo_url || null,
+              googleUrl: r.author_url || 'https://maps.app.goo.gl/nYMH3mYr92GBcfCTA'
             }));
             apiSuccess = true;
           }
@@ -105,13 +77,10 @@ async function syncGoogleReviews(options = {}) {
     }
   }
 
-  // Choose reviews to upsert: live reviews from Google if found, else ensure standard verified reviews
-  const reviewsToSync = liveFetched.length > 0 ? liveFetched : INITIAL_GOOGLE_REVIEWS;
-
   let createdCount = 0;
   let updatedCount = 0;
 
-  for (const item of reviewsToSync) {
+  for (const item of liveFetched) {
     if (!item.customerName || !item.text) continue;
 
     const existing = await prisma.testimonial.findFirst({
@@ -127,7 +96,9 @@ async function syncGoogleReviews(options = {}) {
       await prisma.testimonial.update({
         where: { id: existing.id },
         data: {
+          customerName: item.customerName,
           rating: item.rating,
+          text: item.text,
           photoUrl: item.photoUrl || existing.photoUrl,
           destination: item.destination || existing.destination,
           isActive: true
@@ -156,10 +127,10 @@ async function syncGoogleReviews(options = {}) {
 
   return {
     success: true,
-    source: apiSuccess ? 'google_places_live_api' : 'verified_google_reviews',
+    source: apiSuccess ? 'google_places_new_api' : 'fallback',
     apiSuccess,
     apiError: errorMsg,
-    placeId,
+    place: placeInfo,
     syncedCount: createdCount + updatedCount,
     createdCount,
     updatedCount,
@@ -172,19 +143,8 @@ async function syncGoogleReviews(options = {}) {
  * Returns formatted Google reviews for website integration
  */
 async function getPublicGoogleReviews() {
-  let list = await prisma.testimonial.findMany({
-    where: { isActive: true },
-    orderBy: { customerName: 'asc' }
-  });
-
-  // If table is empty, auto-sync initial reviews so website never breaks
-  if (list.length === 0) {
-    await syncGoogleReviews();
-    list = await prisma.testimonial.findMany({
-      where: { isActive: true },
-      orderBy: { customerName: 'asc' }
-    });
-  }
+  const syncResult = await syncGoogleReviews();
+  const list = syncResult.reviews || [];
 
   const reviews = list.map(t => ({
     author: t.customerName,
@@ -199,10 +159,10 @@ async function getPublicGoogleReviews() {
 
   return {
     success: true,
-    place: {
+    place: syncResult.place || {
       name: 'IMAGICA HOLIDAYS',
       rating: 4.8,
-      totalReviews: reviews.length >= 5 ? reviews.length : 200
+      totalReviews: 16
     },
     reviews
   };
