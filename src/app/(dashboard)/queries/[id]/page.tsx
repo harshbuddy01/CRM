@@ -1179,7 +1179,8 @@ function QueryProposalsList({ queryId, queryCode, customerName, customerEmail }:
                 </Dialog>
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
       )}
       
