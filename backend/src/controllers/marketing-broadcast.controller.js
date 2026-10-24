@@ -276,18 +276,23 @@ const launchCampaign = async (req, res, next) => {
           const template = campaign.templateName || 'festive_exclusive_offer';
 
           if (template === 'diwali_festive_poster') {
-            // Meta IMAGE header component
+            // Meta IMAGE header component: Meta Cloud API ONLY supports JPEG & PNG (never WebP)
+            let headerImageUrl = campaign.attachmentUrl || 'https://media.imagicaholidays.com/campaigns/diwali-festive-poster-2026.jpg';
+            if (headerImageUrl.endsWith('.webp')) {
+              // WebP is strictly rejected by Meta image processor; fallback to verified HD JPEG
+              headerImageUrl = 'https://media.imagicaholidays.com/campaigns/diwali-festive-poster-2026.jpg';
+            }
             components.push({
               type: 'header',
               parameters: [{
                 type: 'image',
                 image: {
-                  link: campaign.attachmentUrl || 'https://media.imagicaholidays.com/campaigns/diwali-festive-poster-2026.jpg',
+                  link: headerImageUrl,
                 },
               }],
             });
           } else if (campaign.attachmentUrl && template !== 'festive_exclusive_offer') {
-            const isImage = /\.(jpe?g|png|webp)$/i.test(campaign.attachmentUrl);
+            const isImage = /\.(jpe?g|png)$/i.test(campaign.attachmentUrl);
             if (isImage) {
               components.push({
                 type: 'header',
@@ -298,7 +303,7 @@ const launchCampaign = async (req, res, next) => {
                   },
                 }],
               });
-            } else {
+            } else if (/\.pdf$/i.test(campaign.attachmentUrl) || /\.docx?$/i.test(campaign.attachmentUrl)) {
               components.push({
                 type: 'header',
                 parameters: [{

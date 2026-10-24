@@ -182,10 +182,24 @@ const uploadAsset = async (file, section = 'general') => {
   // Only optimize images (skip videos entirely)
   if (file.mimetype.startsWith('image/')) {
     try {
-      buffer = await optimizeImage(file.buffer, section);
-      // Replace extension with webp
-      filename = filename.replace(/\.[^.]+$/, '.webp');
-      contentType = 'image/webp';
+      if (section === 'campaigns') {
+        // WhatsApp Cloud API ONLY supports JPEG & PNG for image message headers.
+        // Never convert campaign flyers to WebP!
+        if (file.mimetype === 'image/png') {
+          buffer = await sharp(file.buffer).resize({ width: 1400, withoutEnlargement: true }).png({ quality: 95 }).toBuffer();
+          filename = filename.replace(/\.[^.]+$/, '.png');
+          contentType = 'image/png';
+        } else {
+          buffer = await sharp(file.buffer).resize({ width: 1400, withoutEnlargement: true }).jpeg({ quality: 95 }).toBuffer();
+          filename = filename.replace(/\.[^.]+$/, '.jpg');
+          contentType = 'image/jpeg';
+        }
+      } else {
+        buffer = await optimizeImage(file.buffer, section);
+        // Replace extension with webp
+        filename = filename.replace(/\.[^.]+$/, '.webp');
+        contentType = 'image/webp';
+      }
     } catch (err) {
       console.error('❌ [R2] Image optimization failed, uploading raw image:', err.message);
     }
