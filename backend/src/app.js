@@ -228,6 +228,8 @@ app.get('/v1/public/trending',                    wcCtrl.getPublicTrending);
 app.get('/api/v1/public/trending',                wcCtrl.getPublicTrending);
 app.get('/v1/public/testimonials',                cmsCtrl.listTestimonials);
 app.get('/api/v1/public/testimonials',            cmsCtrl.listTestimonials);
+app.get('/v1/public/google-reviews',              cmsCtrl.getPublicGoogleReviews);
+app.get('/api/v1/public/google-reviews',          cmsCtrl.getPublicGoogleReviews);
 app.get('/v1/cms/testimonials/public',             cmsCtrl.listTestimonials);
 app.get('/api/v1/cms/testimonials/public',         cmsCtrl.listTestimonials);
 // Legacy URL used by the live imagicaholidays.com website JS bundle

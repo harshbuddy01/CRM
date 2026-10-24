@@ -23,6 +23,7 @@ router.get('/pages', cms.listCmsPages);
 router.get('/pages/:slug', cms.getCmsPage);
 router.get('/banners', cms.listBanners);
 router.get('/testimonials', cms.listTestimonials);
+router.get('/google-reviews', cms.getPublicGoogleReviews);
 router.get('/gallery', cms.listGallery);
 router.get('/blog', cms.listBlogPosts);
 router.get('/blog/:slug', cms.getBlogPost);
@@ -44,6 +45,7 @@ router.put('/banners/:id', can('master.manage_destinations'), upload.single('ima
 router.delete('/banners/:id', can('master.manage_destinations'), cms.deleteBanner);
 
 // ─── Testimonials ────────────────────────────────────────────
+router.post('/testimonials/sync-google', can('master.manage_destinations'), cms.syncGoogleReviews);
 router.post('/testimonials', can('master.manage_destinations'), upload.single('photo'), checkImageType, cms.createTestimonial);
 router.put('/testimonials/:id', can('master.manage_destinations'), upload.single('photo'), checkImageType, cms.updateTestimonial);
 router.delete('/testimonials/:id', can('master.manage_destinations'), cms.deleteTestimonial);

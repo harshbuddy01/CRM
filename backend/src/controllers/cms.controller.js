@@ -3,6 +3,7 @@
 // ============================================================
 
 const cmsService = require('../services/cms.service');
+const googleReviewsService = require('../services/google-reviews.service');
 
 // ─── CMS Pages ───────────────────────────────────────────────
 const listCmsPages = async (req, res, next) => {
@@ -62,6 +63,14 @@ const updateTestimonial = async (req, res, next) => {
 };
 const deleteTestimonial = async (req, res, next) => {
   try { await cmsService.deleteTestimonial(req.params.id); res.json({ success: true, message: 'Testimonial deleted' }); }
+  catch (e) { next(e); }
+};
+const syncGoogleReviews = async (req, res, next) => {
+  try { res.json(await googleReviewsService.syncGoogleReviews(req.body)); }
+  catch (e) { next(e); }
+};
+const getPublicGoogleReviews = async (req, res, next) => {
+  try { res.json(await googleReviewsService.getPublicGoogleReviews()); }
   catch (e) { next(e); }
 };
 
@@ -146,6 +155,7 @@ module.exports = {
   listCmsPages, getCmsPage, createCmsPage, updateCmsPage, deleteCmsPage,
   listBanners, createBanner, updateBanner, deleteBanner,
   listTestimonials, createTestimonial, updateTestimonial, deleteTestimonial,
+  syncGoogleReviews, getPublicGoogleReviews,
   listGallery, createGalleryImage, updateGalleryImage, deleteGalleryImage,
   listBlogPosts, getBlogPost, createBlogPost, updateBlogPost, deleteBlogPost,
   listDestinationCms, getDestinationCms, upsertDestinationCms,

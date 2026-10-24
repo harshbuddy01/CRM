@@ -4,7 +4,7 @@ import { useState, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { toast } from 'sonner';
-import { Star, Plus, Edit2, Trash2, Loader2, X, Check, Upload, MessageSquareQuote } from 'lucide-react';
+import { Star, Plus, Edit2, Trash2, Loader2, X, Check, Upload, MessageSquareQuote, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -24,14 +24,40 @@ export default function TestimonialsPage() {
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['cms-testimonials'] }); toast.success('Deleted'); },
   });
 
+  const syncGoogleMut = useMutation({
+    mutationFn: () => api.post('/cms/testimonials/sync-google').then(r => r.data),
+    onSuccess: (data: any) => {
+      qc.invalidateQueries({ queryKey: ['cms-testimonials'] });
+      toast.success(`Google Reviews Synced: ${data.syncedCount || data.reviews?.length || 0} reviews updated in database`);
+    },
+    onError: (err: any) => {
+      toast.error(err.response?.data?.message || 'Failed to sync Google reviews');
+    }
+  });
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Testimonials</h1>
-          <p className="text-muted-foreground text-sm">Customer reviews for your website</p>
+          <h1 className="text-2xl font-bold">Testimonials & Google Reviews</h1>
+          <p className="text-muted-foreground text-sm">Customer reviews & Google Maps ratings for your website</p>
         </div>
-        <Button onClick={() => { setEditing(null); setShowForm(true); }}><Plus className="w-4 h-4 mr-2" /> Add Review</Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            onClick={() => syncGoogleMut.mutate()}
+            disabled={syncGoogleMut.isPending}
+            className="border-emerald-500/30 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/20"
+          >
+            {syncGoogleMut.isPending ? (
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+            ) : (
+              <RefreshCw className="w-4 h-4 mr-2 text-emerald-600" />
+            )}
+            Sync Google Reviews
+          </Button>
+          <Button onClick={() => { setEditing(null); setShowForm(true); }}><Plus className="w-4 h-4 mr-2" /> Add Review</Button>
+        </div>
       </div>
 
       {showForm && (
@@ -45,9 +71,21 @@ export default function TestimonialsPage() {
       {isLoading ? (
         <div className="flex justify-center py-16"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>
       ) : !items?.length ? (
-        <div className="border-2 border-dashed rounded-xl py-16 text-center text-muted-foreground">
-          <MessageSquareQuote className="w-10 h-10 mx-auto mb-3 opacity-30" />
-          <p>No testimonials yet</p>
+        <div className="border-2 border-dashed rounded-xl py-16 text-center text-muted-foreground space-y-4">
+          <MessageSquareQuote className="w-10 h-10 mx-auto opacity-30" />
+          <div>
+            <p className="font-semibold text-foreground">No testimonials in database yet</p>
+            <p className="text-xs text-muted-foreground mt-1">Click below to automatically sync verified customer reviews from Google Maps.</p>
+          </div>
+          <Button
+            variant="outline"
+            onClick={() => syncGoogleMut.mutate()}
+            disabled={syncGoogleMut.isPending}
+            className="border-emerald-500/30 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/20"
+          >
+            {syncGoogleMut.isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <RefreshCw className="w-4 h-4 mr-2" />}
+            Sync Now from Google Maps
+          </Button>
         </div>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
