@@ -298,7 +298,9 @@ const launchCampaign = async (req, res, next) => {
             recipient.queryId,
             recipient.phone,
             campaign.templateName,
-            components
+            components,
+            recipient.id,
+            campaign.id
           );
         } else if (recipient.channel === 'email' && recipient.email) {
           // Build email with optional personalization
@@ -314,7 +316,9 @@ const launchCampaign = async (req, res, next) => {
             campaign.emailSubject,
             htmlContent,
             null,
-            fromHeader
+            fromHeader,
+            recipient.id,
+            campaign.id
           );
         }
 
@@ -333,11 +337,11 @@ const launchCampaign = async (req, res, next) => {
       }
     }
 
-    // Update campaign counts
+    // Update campaign counts: initially 0 sent until worker processes them
     await prisma.broadcastCampaign.update({
       where: { id },
       data: {
-        sentCount: queuedCount,
+        sentCount: 0,
         failedCount: pendingRecipients.length - queuedCount,
         status: queuedCount > 0 ? 'sending' : 'failed',
         ...(queuedCount === 0 ? { completedAt: new Date() } : {}),

@@ -46,13 +46,51 @@ const pdfWorker = new Worker('pdf-generation', async job => {
   }
 }, { connection });
 
+// Helper to update campaign progress after each broadcast dispatch
+async function updateCampaignProgress(campaignId) {
+  if (!campaignId) return;
+  try {
+    const pendingOrQueued = await prisma.broadcastRecipient.count({
+      where: { campaignId, status: { in: ['pending', 'queued'] } }
+    });
+
+    const sentCount = await prisma.broadcastRecipient.count({
+      where: { campaignId, status: 'sent' }
+    });
+
+    const failedCount = await prisma.broadcastRecipient.count({
+      where: { campaignId, status: { in: ['failed', 'skipped'] } }
+    });
+
+    const isFinished = pendingOrQueued === 0;
+
+    let status = 'sending';
+    if (isFinished) {
+      status = sentCount > 0 ? 'completed' : 'failed';
+    }
+
+    await prisma.broadcastCampaign.update({
+      where: { id: campaignId },
+      data: {
+        sentCount,
+        failedCount,
+        status,
+        ...(isFinished ? { completedAt: new Date() } : {})
+      }
+    });
+    console.log(`[Broadcast Progress] Campaign ${campaignId}: sent=${sentCount}, failed=${failedCount}, status=${status}`);
+  } catch (err) {
+    console.error('[updateCampaignProgress Error]', err.message);
+  }
+}
+
 // --- Email Worker ---
 let emailWorker = null;
 
 const emailConfigured = (process.env.SMTP_USER && process.env.SMTP_PASS) || (process.env.BREVO_SMTP_USER && process.env.BREVO_SMTP_PASS);
 if (emailConfigured) {
   emailWorker = new Worker('email-sending', async job => {
-    const { queryId, to, subject, htmlContent, cc, from } = job.data;
+    const { queryId, to, subject, htmlContent, cc, from, recipientId, campaignId } = job.data;
     console.log(`[Email] Sending to ${to}${from ? ` (From: ${from})` : ''}`);
   
   try {
@@ -76,6 +114,17 @@ if (emailConfigured) {
         }
       });
     }
+
+    if (recipientId) {
+      await prisma.broadcastRecipient.update({
+        where: { id: recipientId },
+        data: { status: 'sent', sentAt: new Date() },
+      }).catch(err => console.error('[Broadcast Update Error]', err.message));
+    }
+
+    if (campaignId) {
+      await updateCampaignProgress(campaignId);
+    }
   } catch (error) {
     console.error('[Email Worker Error]', error);
     if (queryId) {
@@ -90,6 +139,18 @@ if (emailConfigured) {
         }
       });
     }
+
+    if (recipientId) {
+      await prisma.broadcastRecipient.update({
+        where: { id: recipientId },
+        data: { status: 'failed', errorMessage: error.message },
+      }).catch(err => console.error('[Broadcast Update Error]', err.message));
+    }
+
+    if (campaignId) {
+      await updateCampaignProgress(campaignId);
+    }
+
     throw error;
   }
 }, { connection });
@@ -99,7 +160,7 @@ if (emailConfigured) {
 
 // --- WhatsApp Worker ---
 const whatsappWorker = new Worker('whatsapp-sending', async job => {
-  const { queryId, phone, templateName, components } = job.data;
+  const { queryId, phone, templateName, components, recipientId, campaignId } = job.data;
   console.log(`[WhatsApp] Processing job: template ${templateName} to ${phone}`);
   
   try {
@@ -118,6 +179,17 @@ const whatsappWorker = new Worker('whatsapp-sending', async job => {
         relatedId: queryId || null,
       }
     });
+
+    if (recipientId) {
+      await prisma.broadcastRecipient.update({
+        where: { id: recipientId },
+        data: { status: 'sent', sentAt: new Date() },
+      }).catch(err => console.error('[Broadcast Update Error]', err.message));
+    }
+
+    if (campaignId) {
+      await updateCampaignProgress(campaignId);
+    }
   } catch (error) {
     console.error(`[WhatsApp Worker Error] template ${templateName} to ${phone}:`, error.message);
     await prisma.integrationLog.create({
@@ -130,6 +202,18 @@ const whatsappWorker = new Worker('whatsapp-sending', async job => {
         relatedId: queryId || null,
       }
     }).catch(() => {});
+
+    if (recipientId) {
+      await prisma.broadcastRecipient.update({
+        where: { id: recipientId },
+        data: { status: 'failed', errorMessage: error.message },
+      }).catch(err => console.error('[Broadcast Update Error]', err.message));
+    }
+
+    if (campaignId) {
+      await updateCampaignProgress(campaignId);
+    }
+
     throw error;
   }
 }, { connection });

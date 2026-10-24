@@ -43,8 +43,8 @@ const enqueuePdfJob = async (proposalId, queryId) => {
 /**
  * Email Sending Queue
  */
-const enqueueEmailJob = async (queryId, to, subject, htmlContent, cc = null, from = null) => {
-  await emailQueue.add('send-email', { queryId, to, subject, htmlContent, cc, from }, {
+const enqueueEmailJob = async (queryId, to, subject, htmlContent, cc = null, from = null, recipientId = null, campaignId = null) => {
+  await emailQueue.add('send-email', { queryId, to, subject, htmlContent, cc, from, recipientId, campaignId }, {
     attempts: 3,
     backoff: { type: 'exponential', delay: 5000 },
   });
@@ -53,8 +53,8 @@ const enqueueEmailJob = async (queryId, to, subject, htmlContent, cc = null, fro
 /**
  * WhatsApp Notification Queue
  */
-const enqueueWhatsappJob = async (queryId, phone, templateName, components) => {
-  await whatsappQueue.add('send-whatsapp', { queryId, phone, templateName, components }, {
+const enqueueWhatsappJob = async (queryId, phone, templateName, components, recipientId = null, campaignId = null) => {
+  await whatsappQueue.add('send-whatsapp', { queryId, phone, templateName, components, recipientId, campaignId }, {
     attempts: 3,
     backoff: { type: 'exponential', delay: 3000 },
   });
