@@ -77,75 +77,389 @@ const TEMPLATE_PRESETS = [
   {
     id: 'festive_exclusive_offer',
     name: '🪔 Diwali / Festive Grand Offer',
-    description: 'Festive promotion offering holiday packages discount + attached catalog',
+    description: 'Bespoke Festive Retreats across Sikkim, Darjeeling, Kerala & Andaman (Save up to ₹5,000)',
     category: 'MARKETING',
-    defaultOffer: 'Special Festive Discount: Up to ₹15,000 OFF on all domestic & international tours!',
+    defaultOffer: 'Festive Packages starting from ₹10,499 (Save ₹3,000 to ₹5,000 per guest across Sikkim, Darjeeling, Kerala & Andaman!)',
     promoCode: 'DIWALI2026',
-    emailSubject: '🪔 Celebrate Diwali with Imagica Holidays — Exclusive Vacation Deals Inside!',
-    emailContent: `<h2>Happy Diwali & Festive Greetings! ✨</h2>
-<p>Dear Valued Traveler,</p>
-<p>As the festival of lights approaches, we are delighted to bring you exclusive festive holiday packages with early-bird privileges and unmissable savings.</p>
-<h3>🌟 Special Festive Highlights:</h3>
-<ul>
-  <li><strong>Kashmir Autumn Paradise:</strong> Houseboat stay, Shikara ride & Snow valleys</li>
-  <li><strong>Dubai Shopping Extravaganza:</strong> 5-Star luxury, Desert Safari & Burj Khalifa</li>
-  <li><strong>Tropical Bali Retreat:</strong> Private pool villas & cultural island tour</li>
-</ul>
-<p>📄 Please check the attached festive catalog for full itineraries and inclusions.</p>
-<p><strong>Exclusive Festive Coupon:</strong> Use code <strong>DIWALI2026</strong> for instant discounts up to ₹15,000/-</p>
-<hr />
-<p style="margin: 18px 0;">
-  <a href="https://api.whatsapp.com/send/?phone=918910759374&text=Hi%21+I%27d+like+to+plan+a+trip+with+Imagica+Holidays.&type=phone_number&app_absent=0" style="display:inline-block;background-color:#25D366;color:#ffffff;padding:12px 20px;border-radius:6px;text-decoration:none;font-weight:bold;font-size:14px;">
-    💬 Chat with Travel Concierge (+91 89107 59374)
-  </a>
-</p>
-<p>Warm regards,<br /><strong>Imagica Holidays Concierge Team</strong><br />📞 +91 89107 59374 | 🌐 imagicaholidays.com</p>`
+    emailSubject: '🪔 Celebrate Diwali in Pure Luxury — Exclusive Holiday Privileges from Imagica Holidays',
+    emailContent: `<div style="background-color: #f1f5f9; padding: 24px 12px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #1e293b; line-height: 1.6;">
+  <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 620px; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.08); border: 1px solid #e2e8f0; margin: 0 auto;">
+    
+    <!-- Top Luxury Header Banner -->
+    <tr>
+      <td style="background: linear-gradient(135deg, #091e2f 0%, #0f2b48 100%); padding: 34px 24px 26px; text-align: center; border-bottom: 3px solid #d4af37;">
+        <img src="https://imagicaholidays.com/logo_new.png" alt="Imagica Holidays" style="max-height: 52px; width: auto; margin-bottom: 8px; display: inline-block;" />
+        <p style="margin: 0; color: #d4af37; font-size: 11px; font-weight: 700; letter-spacing: 3px; text-transform: uppercase;">Bespoke Journeys & Luxury Retreats</p>
+      </td>
+    </tr>
+
+    <!-- Festive Greeting Hero -->
+    <tr>
+      <td style="padding: 34px 30px 22px; background-color: #fffbf2; text-align: center; border-bottom: 1px solid #fef3c7;">
+        <span style="display: inline-block; background-color: #fef08a; color: #854d0e; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; padding: 4px 12px; border-radius: 20px; margin-bottom: 12px;">🪔 Festive & Winter Special 2026</span>
+        <h1 style="margin: 0 0 10px; font-family: Georgia, 'Playfair Display', serif; font-size: 24px; line-height: 1.3; color: #0f172a; font-weight: bold;">
+          Celebrate The Festive Season In Pure Comfort & Luxury
+        </h1>
+        <p style="margin: 0 auto; font-size: 14px; color: #64748b; line-height: 1.6; max-width: 490px;">
+          Dear <strong>{{name}}</strong>, as the festival of lights approaches, we are delighted to unlock exclusive festive privileges on our signature handcrafted Indian retreats.
+        </p>
+      </td>
+    </tr>
+
+    <!-- Destination Highlights -->
+    <tr>
+      <td style="padding: 28px 24px 14px;">
+        <h2 style="margin: 0 0 18px; font-family: Georgia, serif; font-size: 17px; color: #0f172a; text-align: center; letter-spacing: 0.5px;">
+          Featured Destinations & Exclusive Festive Privileges
+        </h2>
+
+        <!-- Destination 1: Gangtok & North Sikkim -->
+        <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom: 14px; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; background: #ffffff;">
+          <tr>
+            <td width="38%" style="vertical-align: middle; background-color: #0f172a;">
+              <img src="https://images.unsplash.com/photo-1589308078059-be1415eab4c3?q=80&w=600" alt="Gangtok Sikkim" style="width: 100%; height: 135px; object-fit: cover; display: block;" />
+            </td>
+            <td width="62%" style="padding: 14px 16px; vertical-align: top;">
+              <span style="font-size: 10px; font-weight: 700; color: #0284c7; text-transform: uppercase; letter-spacing: 1px;">Himalayan Sanctuary</span>
+              <h3 style="margin: 3px 0 5px; font-size: 15px; color: #0f172a; font-weight: 700;">Gangtok & North Sikkim Retreat</h3>
+              <p style="margin: 0 0 8px; font-size: 12px; color: #64748b; line-height: 1.4;">Tsomgo Lake, Yumthang Valley, alpine peaks, 4-Star boutique stays & private chauffeur.</p>
+              <div style="font-size: 13px;">
+                <span style="font-size: 11px; color: #94a3b8; text-decoration: line-through;">₹14,999</span>
+                <strong style="color: #0f172a; font-size: 15px; margin-left: 6px;">₹11,999/-</strong>
+                <span style="display: inline-block; background-color: #dcfce7; color: #15803d; font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 4px; margin-left: 6px;">You Save ₹3,000</span>
+              </div>
+            </td>
+          </tr>
+        </table>
+
+        <!-- Destination 2: Darjeeling & Pelling -->
+        <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom: 14px; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; background: #ffffff;">
+          <tr>
+            <td width="38%" style="vertical-align: middle; background-color: #0f172a;">
+              <img src="https://media.imagicaholidays.com/destinations/667316a3-b64a-4c68-9ba8-c5a1b257df77-aman-upadhyay-5nPDGyAmZ10-unsplash.webp" alt="Darjeeling Pelling" style="width: 100%; height: 135px; object-fit: cover; display: block;" />
+            </td>
+            <td width="62%" style="padding: 14px 16px; vertical-align: top;">
+              <span style="font-size: 10px; font-weight: 700; color: #b45309; text-transform: uppercase; letter-spacing: 1px;">Colonial Hills & Skywalk</span>
+              <h3 style="margin: 3px 0 5px; font-size: 15px; color: #0f172a; font-weight: 700;">Darjeeling & Pelling Hideaway</h3>
+              <p style="margin: 0 0 8px; font-size: 12px; color: #64748b; line-height: 1.4;">Kanchenjunga sunrise view, heritage tea estates, Pelling skywalk & private tour.</p>
+              <div style="font-size: 13px;">
+                <span style="font-size: 11px; color: #94a3b8; text-decoration: line-through;">₹13,499</span>
+                <strong style="color: #0f172a; font-size: 15px; margin-left: 6px;">₹10,499/-</strong>
+                <span style="display: inline-block; background-color: #dcfce7; color: #15803d; font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 4px; margin-left: 6px;">You Save ₹3,000</span>
+              </div>
+            </td>
+          </tr>
+        </table>
+
+        <!-- Destination 3: Kerala Backwaters & Munnar -->
+        <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom: 14px; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; background: #ffffff;">
+          <tr>
+            <td width="38%" style="vertical-align: middle; background-color: #0f172a;">
+              <img src="https://images.unsplash.com/photo-1593693397690-362cb9666fc2?q=80&w=600" alt="Kerala Backwaters" style="width: 100%; height: 135px; object-fit: cover; display: block;" />
+            </td>
+            <td width="62%" style="padding: 14px 16px; vertical-align: top;">
+              <span style="font-size: 10px; font-weight: 700; color: #059669; text-transform: uppercase; letter-spacing: 1px;">God's Own Country</span>
+              <h3 style="margin: 3px 0 5px; font-size: 15px; color: #0f172a; font-weight: 700;">Kerala Houseboat & Munnar Hills</h3>
+              <p style="margin: 0 0 8px; font-size: 12px; color: #64748b; line-height: 1.4;">Alleppey luxury houseboat cruise, velvet tea plantations & spice hill sanctuary.</p>
+              <div style="font-size: 13px;">
+                <span style="font-size: 11px; color: #94a3b8; text-decoration: line-through;">₹16,999</span>
+                <strong style="color: #0f172a; font-size: 15px; margin-left: 6px;">₹12,999/-</strong>
+                <span style="display: inline-block; background-color: #dcfce7; color: #15803d; font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 4px; margin-left: 6px;">You Save ₹4,000</span>
+              </div>
+            </td>
+          </tr>
+        </table>
+
+        <!-- Destination 4: Andaman & Nicobar Islands -->
+        <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom: 14px; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; background: #ffffff;">
+          <tr>
+            <td width="38%" style="vertical-align: middle; background-color: #0f172a;">
+              <img src="https://images.unsplash.com/photo-1589182373726-e4f658ab50f0?q=80&w=600" alt="Andaman Islands" style="width: 100%; height: 135px; object-fit: cover; display: block;" />
+            </td>
+            <td width="62%" style="padding: 14px 16px; vertical-align: top;">
+              <span style="font-size: 10px; font-weight: 700; color: #0891b2; text-transform: uppercase; letter-spacing: 1px;">Tropical Island Haven</span>
+              <h3 style="margin: 3px 0 5px; font-size: 15px; color: #0f172a; font-weight: 700;">Andaman & Havelock Escape</h3>
+              <p style="margin: 0 0 8px; font-size: 12px; color: #64748b; line-height: 1.4;">Radhanagar beach sunset, luxury ferry transfers, snorkeling & private beach resort.</p>
+              <div style="font-size: 13px;">
+                <span style="font-size: 11px; color: #94a3b8; text-decoration: line-through;">₹21,999</span>
+                <strong style="color: #0f172a; font-size: 15px; margin-left: 6px;">₹16,999/-</strong>
+                <span style="display: inline-block; background-color: #dcfce7; color: #15803d; font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 4px; margin-left: 6px;">You Save ₹5,000</span>
+              </div>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+
+    <!-- Luxury Inclusions & Voucher Box -->
+    <tr>
+      <td style="padding: 0 24px 22px;">
+        <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #fffef5; border: 2px dashed #ca8a04; border-radius: 12px; padding: 18px;">
+          <tr>
+            <td style="text-align: center;">
+              <span style="font-size: 11px; font-weight: 800; color: #854d0e; text-transform: uppercase; letter-spacing: 1.5px;">✨ The Imagica Luxury Guarantee</span>
+              <p style="margin: 8px 0 14px; font-size: 12px; color: #475569; line-height: 1.6;">
+                ✔ Handpicked 4-Star & Premium Stays &nbsp;|&nbsp; 
+                ✔ Private Chauffeur Vehicle &nbsp;|&nbsp; 
+                ✔ Daily Gourmet Breakfast &nbsp;|&nbsp; 
+                ✔ 24/7 Dedicated Concierge
+              </p>
+              <div style="display: inline-block; background: #0f172a; color: #fde047; padding: 8px 22px; border-radius: 8px; font-family: monospace; font-size: 15px; font-weight: bold; letter-spacing: 2px;">
+                FESTIVE CODE: DIWALI2026
+              </div>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+
+    <!-- WhatsApp CTA Button -->
+    <tr>
+      <td style="padding: 6px 24px 34px; text-align: center;">
+        <p style="margin: 0 0 16px; font-size: 14px; color: #475569;">
+          Ready to plan your bespoke journey? Connect directly with our lead concierge:
+        </p>
+        <a href="https://api.whatsapp.com/send/?phone=918910759374&text=Hi%21+I%27d+like+to+plan+a+trip+with+Imagica+Holidays.&type=phone_number&app_absent=0" style="display: inline-block; background: linear-gradient(135deg, #25D366 0%, #128C7E 100%); color: #ffffff; padding: 14px 32px; border-radius: 30px; text-decoration: none; font-weight: bold; font-size: 15px; box-shadow: 0 6px 20px rgba(37,211,102,0.35);">
+          💬 Chat with Travel Concierge (+91 89107 59374)
+        </a>
+        <p style="margin: 12px 0 0; font-size: 12px; color: #94a3b8;">
+          Or call our concierge desk: <strong style="color: #0f172a;">+91 89107 59374</strong>
+        </p>
+      </td>
+    </tr>
+
+    <!-- Luxury Footer -->
+    <tr>
+      <td style="background-color: #0f172a; padding: 26px 20px; text-align: center; border-top: 1px solid #1e293b; color: #94a3b8; font-size: 12px; line-height: 1.6;">
+        <strong style="color: #ffffff; font-size: 13px;">IMAGICA HOLIDAYS</strong><br />
+        Crafting Handcrafted India Holidays with Unmatched Care & Luxury<br />
+        🌐 <a href="https://imagicaholidays.com" style="color: #d4af37; text-decoration: none;">imagicaholidays.com</a> &nbsp;|&nbsp; 📞 +91 89107 59374
+        <hr style="border: none; border-top: 1px solid #334155; margin: 16px 0;" />
+        <span style="font-size: 11px; color: #64748b;">
+          You received this email because you made an inquiry with Imagica Holidays. If you no longer wish to receive seasonal promotions, reply with STOP.
+        </span>
+      </td>
+    </tr>
+
+  </table>
+</div>`
   },
   {
     id: 'winback_discount_deal',
     name: '✈️ Lost Lead Win-Back Voucher',
-    description: 'Target leads who inquired earlier with a special re-booking discount',
+    description: 'Welcome back past inquiries with up to ₹5,000 festive savings on India tours',
     category: 'MARKETING',
-    defaultOffer: 'Special Re-activation Offer: Additional 10% OFF + Complimentary Sightseeing Tour!',
-    promoCode: 'COMEBACK10',
-    emailSubject: 'We Miss You! Here is an Exclusive Travel Gift from Imagica Holidays ✈️',
-    emailContent: `<h2>Planning your next dream vacation? 🌴</h2>
-<p>Dear {{name}},</p>
-<p>We noticed you reached out to us earlier regarding your holiday plans. We would love the opportunity to plan your perfect journey with our signature personalized care.</p>
-<p>To welcome you back, we have unlocked a special <strong>10% instant rebate + complimentary local sightseeing tour</strong> on any booking confirmed this month!</p>
-<p>📄 Check out our curated catalog attached to see what makes an Imagica Holidays experience unforgettable.</p>
-<p>Promo code: <strong>COMEBACK10</strong></p>
-<p style="margin: 18px 0;">
-  <a href="https://api.whatsapp.com/send/?phone=918910759374&text=Hi%21+I%27d+like+to+plan+a+trip+with+Imagica+Holidays.&type=phone_number&app_absent=0" style="display:inline-block;background-color:#25D366;color:#ffffff;padding:12px 20px;border-radius:6px;text-decoration:none;font-weight:bold;font-size:14px;">
-    💬 Chat with Travel Concierge (+91 89107 59374)
-  </a>
-</p>
-<p>Best regards,<br /><strong>The Imagica Holidays Team</strong></p>`
+    defaultOffer: 'Special Welcome Back Privilege: Save ₹3,000 to ₹5,000 on Gangtok, Pelling, Kerala & Andaman!',
+    promoCode: 'COMEBACK3000',
+    emailSubject: '✨ Exclusive Welcome Back Privilege: Up to ₹5,000 Savings on Your India Vacation',
+    emailContent: `<div style="background-color: #f1f5f9; padding: 24px 12px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #1e293b; line-height: 1.6;">
+  <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 620px; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.08); border: 1px solid #e2e8f0; margin: 0 auto;">
+    
+    <!-- Top Luxury Header Banner -->
+    <tr>
+      <td style="background: linear-gradient(135deg, #091e2f 0%, #0f2b48 100%); padding: 34px 24px 26px; text-align: center; border-bottom: 3px solid #d4af37;">
+        <img src="https://imagicaholidays.com/logo_new.png" alt="Imagica Holidays" style="max-height: 52px; width: auto; margin-bottom: 8px; display: inline-block;" />
+        <p style="margin: 0; color: #d4af37; font-size: 11px; font-weight: 700; letter-spacing: 3px; text-transform: uppercase;">Bespoke Journeys & Luxury Retreats</p>
+      </td>
+    </tr>
+
+    <!-- Welcome Back Hero -->
+    <tr>
+      <td style="padding: 34px 30px 22px; background-color: #f8fafc; text-align: center; border-bottom: 1px solid #e2e8f0;">
+        <span style="display: inline-block; background-color: #e0f2fe; color: #0369a1; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; padding: 4px 12px; border-radius: 20px; margin-bottom: 12px;">🌟 Exclusive Re-Engagement Privilege</span>
+        <h1 style="margin: 0 0 10px; font-family: Georgia, serif; font-size: 24px; line-height: 1.3; color: #0f172a; font-weight: bold;">
+          We Would Love to Plan Your Next Journey
+        </h1>
+        <p style="margin: 0 auto; font-size: 14px; color: #64748b; line-height: 1.6; max-width: 490px;">
+          Dear <strong>{{name}}</strong>, you previously connected with us for your holiday. We would love the opportunity to curate your dream getaway across India with exclusive returning-guest privileges.
+        </p>
+      </td>
+    </tr>
+
+    <!-- Destination Highlights -->
+    <tr>
+      <td style="padding: 28px 24px 14px;">
+        <!-- Destination 1: Gangtok & North Sikkim -->
+        <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom: 14px; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; background: #ffffff;">
+          <tr>
+            <td width="38%" style="vertical-align: middle; background-color: #0f172a;">
+              <img src="https://images.unsplash.com/photo-1589308078059-be1415eab4c3?q=80&w=600" alt="Gangtok Sikkim" style="width: 100%; height: 135px; object-fit: cover; display: block;" />
+            </td>
+            <td width="62%" style="padding: 14px 16px; vertical-align: top;">
+              <span style="font-size: 10px; font-weight: 700; color: #0284c7; text-transform: uppercase; letter-spacing: 1px;">Himalayan Heights</span>
+              <h3 style="margin: 3px 0 5px; font-size: 15px; color: #0f172a; font-weight: 700;">Gangtok, Lachung & Yumthang</h3>
+              <p style="margin: 0 0 8px; font-size: 12px; color: #64748b; line-height: 1.4;">Snow valleys, alpine lakes, boutique hotel stays & private sanitized vehicle.</p>
+              <div style="font-size: 13px;">
+                <span style="font-size: 11px; color: #94a3b8; text-decoration: line-through;">₹14,999</span>
+                <strong style="color: #0f172a; font-size: 15px; margin-left: 6px;">₹11,999/-</strong>
+                <span style="display: inline-block; background-color: #dcfce7; color: #15803d; font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 4px; margin-left: 6px;">Save ₹3,000</span>
+              </div>
+            </td>
+          </tr>
+        </table>
+
+        <!-- Destination 2: Darjeeling & Pelling -->
+        <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom: 14px; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; background: #ffffff;">
+          <tr>
+            <td width="38%" style="vertical-align: middle; background-color: #0f172a;">
+              <img src="https://media.imagicaholidays.com/destinations/667316a3-b64a-4c68-9ba8-c5a1b257df77-aman-upadhyay-5nPDGyAmZ10-unsplash.webp" alt="Darjeeling Pelling" style="width: 100%; height: 135px; object-fit: cover; display: block;" />
+            </td>
+            <td width="62%" style="padding: 14px 16px; vertical-align: top;">
+              <span style="font-size: 10px; font-weight: 700; color: #b45309; text-transform: uppercase; letter-spacing: 1px;">Queen of Hills</span>
+              <h3 style="margin: 3px 0 5px; font-size: 15px; color: #0f172a; font-weight: 700;">Darjeeling Heritage & Pelling Skywalk</h3>
+              <p style="margin: 0 0 8px; font-size: 12px; color: #64748b; line-height: 1.4;">Tiger Hill sunrise, tea estate walks, glass skywalk & scenic valley drives.</p>
+              <div style="font-size: 13px;">
+                <span style="font-size: 11px; color: #94a3b8; text-decoration: line-through;">₹13,499</span>
+                <strong style="color: #0f172a; font-size: 15px; margin-left: 6px;">₹10,499/-</strong>
+                <span style="display: inline-block; background-color: #dcfce7; color: #15803d; font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 4px; margin-left: 6px;">Save ₹3,000</span>
+              </div>
+            </td>
+          </tr>
+        </table>
+
+        <!-- Destination 3: Kerala & Andaman -->
+        <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom: 14px; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; background: #ffffff;">
+          <tr>
+            <td width="38%" style="vertical-align: middle; background-color: #0f172a;">
+              <img src="https://images.unsplash.com/photo-1593693397690-362cb9666fc2?q=80&w=600" alt="Kerala Andaman" style="width: 100%; height: 135px; object-fit: cover; display: block;" />
+            </td>
+            <td width="62%" style="padding: 14px 16px; vertical-align: top;">
+              <span style="font-size: 10px; font-weight: 700; color: #059669; text-transform: uppercase; letter-spacing: 1px;">Tropical Bliss</span>
+              <h3 style="margin: 3px 0 5px; font-size: 15px; color: #0f172a; font-weight: 700;">Kerala Backwaters & Andaman Islands</h3>
+              <p style="margin: 0 0 8px; font-size: 12px; color: #64748b; line-height: 1.4;">Private houseboat cruise in Alleppey, Radhanagar beach resorts & scuba reefs.</p>
+              <div style="font-size: 13px;">
+                <span style="font-size: 11px; color: #94a3b8; text-decoration: line-through;">₹16,999</span>
+                <strong style="color: #0f172a; font-size: 15px; margin-left: 6px;">₹12,999/-</strong>
+                <span style="display: inline-block; background-color: #dcfce7; color: #15803d; font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 4px; margin-left: 6px;">Save up to ₹4,000</span>
+              </div>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+
+    <!-- Voucher Code -->
+    <tr>
+      <td style="padding: 0 24px 22px;">
+        <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f0fdf4; border: 2px dashed #16a34a; border-radius: 12px; padding: 18px;">
+          <tr>
+            <td style="text-align: center;">
+              <span style="font-size: 11px; font-weight: 800; color: #166534; text-transform: uppercase; letter-spacing: 1.5px;">🎁 Returning Guest Welcome Voucher</span>
+              <p style="margin: 8px 0 14px; font-size: 12px; color: #475569;">
+                Additional ₹3,000 instant reduction on any domestic booking confirmed this month.
+              </p>
+              <div style="display: inline-block; background: #0f172a; color: #4ade80; padding: 8px 22px; border-radius: 8px; font-family: monospace; font-size: 15px; font-weight: bold; letter-spacing: 2px;">
+                CODE: COMEBACK3000
+              </div>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+
+    <!-- WhatsApp CTA Button -->
+    <tr>
+      <td style="padding: 6px 24px 34px; text-align: center;">
+        <p style="margin: 0 0 16px; font-size: 14px; color: #475569;">
+          Ready to customize your itinerary? Ping our lead concierge directly:
+        </p>
+        <a href="https://api.whatsapp.com/send/?phone=918910759374&text=Hi%21+I%27d+like+to+plan+a+trip+with+Imagica+Holidays.&type=phone_number&app_absent=0" style="display: inline-block; background: linear-gradient(135deg, #25D366 0%, #128C7E 100%); color: #ffffff; padding: 14px 32px; border-radius: 30px; text-decoration: none; font-weight: bold; font-size: 15px; box-shadow: 0 6px 20px rgba(37,211,102,0.35);">
+          💬 Chat with Travel Concierge (+91 89107 59374)
+        </a>
+      </td>
+    </tr>
+
+    <!-- Footer -->
+    <tr>
+      <td style="background-color: #0f172a; padding: 26px 20px; text-align: center; border-top: 1px solid #1e293b; color: #94a3b8; font-size: 12px; line-height: 1.6;">
+        <strong style="color: #ffffff; font-size: 13px;">IMAGICA HOLIDAYS</strong><br />
+        🌐 <a href="https://imagicaholidays.com" style="color: #d4af37; text-decoration: none;">imagicaholidays.com</a> &nbsp;|&nbsp; 📞 +91 89107 59374
+      </td>
+    </tr>
+
+  </table>
+</div>`
   },
   {
     id: 'completed_loyalty_referral',
     name: '🏆 Past Traveler Loyalty & Referral Reward',
-    description: 'Exclusive perks for past customers who completed tours with us',
+    description: 'Exclusive loyalty travel credits & referral rewards for completed travelers',
     category: 'MARKETING',
-    defaultOffer: 'VIP Loyalty Benefit: ₹5,000 Travel Credit for You + ₹2,500 Referral Bonus for Friends!',
+    defaultOffer: 'VIP Traveler Privilege: Up to ₹5,000 Repeat Travel Credit + ₹2,500 Referral Bonus on Kerala, Andaman & Sikkim!',
     promoCode: 'VIPLOYALTY',
-    emailSubject: 'Exclusive VIP Reward for our Valued Traveler 🌟',
-    emailContent: `<h2>Thank you for traveling with Imagica Holidays! 🌟</h2>
-<p>Dear {{name}},</p>
-<p>It was our absolute privilege to host your journey. As one of our cherished travelers, you have earned exclusive VIP tier privileges for your next adventure!</p>
-<h3>Your VIP Privileges:</h3>
-<ul>
-  <li><strong>₹5,000 Instant Travel Credit:</strong> Applicable on any upcoming domestic or international package.</li>
-  <li><strong>Refer & Earn:</strong> Refer friends or family and they receive ₹2,500 OFF, while you receive an additional bonus voucher!</li>
-  <li><strong>Complimentary Room Upgrade:</strong> Subject to availability at our partner luxury hotels.</li>
-</ul>
-<p>Use code: <strong>VIPLOYALTY</strong> whenever you plan your next getaway.</p>
-<p style="margin: 18px 0;">
-  <a href="https://api.whatsapp.com/send/?phone=918910759374&text=Hi%21+I%27d+like+to+plan+a+trip+with+Imagica+Holidays.&type=phone_number&app_absent=0" style="display:inline-block;background-color:#25D366;color:#ffffff;padding:12px 20px;border-radius:6px;text-decoration:none;font-weight:bold;font-size:14px;">
-    💬 Chat with Travel Concierge (+91 89107 59374)
-  </a>
-</p>
-<p>Warmest regards,<br /><strong>Imagica Holidays Executive Concierge</strong></p>`
+    emailSubject: '🌟 An Exclusive Festive Privilege for Our Valued Traveler',
+    emailContent: `<div style="background-color: #f1f5f9; padding: 24px 12px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #1e293b; line-height: 1.6;">
+  <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 620px; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.08); border: 1px solid #e2e8f0; margin: 0 auto;">
+    
+    <!-- Top Luxury Header Banner -->
+    <tr>
+      <td style="background: linear-gradient(135deg, #091e2f 0%, #0f2b48 100%); padding: 34px 24px 26px; text-align: center; border-bottom: 3px solid #d4af37;">
+        <img src="https://imagicaholidays.com/logo_new.png" alt="Imagica Holidays" style="max-height: 52px; width: auto; margin-bottom: 8px; display: inline-block;" />
+        <p style="margin: 0; color: #d4af37; font-size: 11px; font-weight: 700; letter-spacing: 3px; text-transform: uppercase;">Bespoke Journeys & Luxury Retreats</p>
+      </td>
+    </tr>
+
+    <!-- VIP Hero -->
+    <tr>
+      <td style="padding: 34px 30px 22px; background-color: #fffbf2; text-align: center; border-bottom: 1px solid #fef3c7;">
+        <span style="display: inline-block; background-color: #fef08a; color: #854d0e; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; padding: 4px 12px; border-radius: 20px; margin-bottom: 12px;">🏆 VIP Guest Privileges</span>
+        <h1 style="margin: 0 0 10px; font-family: Georgia, serif; font-size: 24px; line-height: 1.3; color: #0f172a; font-weight: bold;">
+          Thank You For Journeying With Us
+        </h1>
+        <p style="margin: 0 auto; font-size: 14px; color: #64748b; line-height: 1.6; max-width: 490px;">
+          Dear <strong>{{name}}</strong>, it was our absolute honor to host your recent trip. As a distinguished Imagica traveler, you hold lifetime VIP privileges for all your upcoming travels.
+        </p>
+      </td>
+    </tr>
+
+    <!-- VIP Benefits Box -->
+    <tr>
+      <td style="padding: 24px;">
+        <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px; margin-bottom: 16px;">
+          <tr>
+            <td>
+              <h3 style="margin: 0 0 10px; font-size: 15px; color: #0f172a;">Your Exclusive Tier Privileges:</h3>
+              <ul style="margin: 0; padding-left: 18px; font-size: 13px; color: #475569; line-height: 1.8;">
+                <li><strong>₹5,000 Instant Travel Credit</strong> on your next booking across Sikkim, Darjeeling, Kerala, or Andaman.</li>
+                <li><strong>Referral Bonus:</strong> Friends or family you refer receive an instant ₹2,500 privilege!</li>
+                <li><strong>Complimentary Room Upgrade</strong> to luxury boutique suites upon availability.</li>
+              </ul>
+            </td>
+          </tr>
+        </table>
+
+        <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #fefce8; border: 2px dashed #ca8a04; border-radius: 12px; padding: 18px; text-align: center;">
+          <tr>
+            <td>
+              <div style="font-size: 12px; font-weight: bold; color: #854d0e; margin-bottom: 8px;">YOUR VIP CODE</div>
+              <div style="display: inline-block; background: #0f172a; color: #fde047; padding: 8px 22px; border-radius: 8px; font-family: monospace; font-size: 15px; font-weight: bold; letter-spacing: 2px;">
+                CODE: VIPLOYALTY
+              </div>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+
+    <!-- WhatsApp CTA Button -->
+    <tr>
+      <td style="padding: 6px 24px 34px; text-align: center;">
+        <a href="https://api.whatsapp.com/send/?phone=918910759374&text=Hi%21+I%27d+like+to+plan+a+trip+with+Imagica+Holidays.&type=phone_number&app_absent=0" style="display: inline-block; background: linear-gradient(135deg, #25D366 0%, #128C7E 100%); color: #ffffff; padding: 14px 32px; border-radius: 30px; text-decoration: none; font-weight: bold; font-size: 15px; box-shadow: 0 6px 20px rgba(37,211,102,0.35);">
+          💬 Connect with VIP Concierge (+91 89107 59374)
+        </a>
+      </td>
+    </tr>
+
+    <!-- Footer -->
+    <tr>
+      <td style="background-color: #0f172a; padding: 26px 20px; text-align: center; border-top: 1px solid #1e293b; color: #94a3b8; font-size: 12px; line-height: 1.6;">
+        <strong style="color: #ffffff; font-size: 13px;">IMAGICA HOLIDAYS</strong><br />
+        🌐 <a href="https://imagicaholidays.com" style="color: #d4af37; text-decoration: none;">imagicaholidays.com</a> &nbsp;|&nbsp; 📞 +91 89107 59374
+      </td>
+    </tr>
+
+  </table>
+</div>`
   }
 ];
 
