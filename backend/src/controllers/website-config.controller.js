@@ -18,6 +18,18 @@ const getWebsiteConfig = async (req, res, next) => {
       include: { destination: { select: { id: true, name: true } } },
     });
 
+    // Also fetch branding / company logo from OrgSettings for public website
+    const orgSettings = await prisma.orgSetting.findMany({
+      where: {
+        key: { in: ['companyLogoUrl', 'companyName', 'companySlogan', 'companyPhone', 'companyEmail'] }
+      }
+    });
+    const branding = orgSettings.reduce((acc, curr) => {
+      acc[curr.key] = curr.value;
+      return acc;
+    }, {});
+    configMap['branding'] = branding;
+
     res.json({
       success: true,
       data: {
