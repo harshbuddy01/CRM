@@ -323,11 +323,54 @@ const handleMetaWhatsappWebhook = async (req, res, next) => {
 
     // 2. Incoming Messages & Status Updates (POST)
     const body = req.body;
+    logger.info(`[Webhook] Incoming Meta payload: ${JSON.stringify(body).slice(0, 300)}`);
+
     if (body?.object === 'whatsapp_business_account') {
       const entry = body.entry?.[0];
       const changes = entry?.changes?.[0];
       const value = changes?.value;
 
+      // Handle Status Updates (sent, delivered, read, failed)
+      if (value?.statuses && value.statuses.length > 0) {
+        for (const st of value.statuses) {
+          const wamid = st.id;
+          const status = st.status; // 'sent', 'delivered', 'read', 'failed'
+          const recipientId = st.recipient_id;
+          const errors = st.errors;
+
+          logger.info(`[Webhook] WhatsApp status update: ${wamid} -> ${status} for ${recipientId}`, errors ? JSON.stringify(errors) : '');
+
+          if (recipientId) {
+            const cleanPhone = recipientId.replace(/\D/g, '');
+            const errorMsg = errors && errors.length > 0 
+              ? `${errors[0].code}: ${errors[0].title || ''} - ${errors[0].message || errors[0].error_data?.details || ''}`.trim()
+              : null;
+
+            const mappedStatus = status === 'failed' ? 'failed' : (status === 'delivered' || status === 'read') ? 'delivered' : 'sent';
+
+            await prisma.broadcastRecipient.updateMany({
+              where: {
+                phone: { contains: cleanPhone.slice(-10) }
+              },
+              data: {
+                status: mappedStatus,
+                ...(errorMsg ? { errorMessage: errorMsg } : {})
+              }
+            }).catch(e => logger.warn('[Webhook] broadcastRecipient update error:', e.message));
+
+            await prisma.whatsappMessage.updateMany({
+              where: {
+                phone: { contains: cleanPhone.slice(-10) }
+              },
+              data: {
+                status: status.toUpperCase()
+              }
+            }).catch(() => {});
+          }
+        }
+      }
+
+      // Handle Inbound Messages from Users
       if (value?.messages && value.messages.length > 0) {
         const msg = value.messages[0];
         const contact = value.contacts?.[0];
