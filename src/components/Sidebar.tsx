@@ -29,7 +29,6 @@ import {
   Image as ImageIcon,
   Compass,
   Activity,
-  Mail,
   MessageSquare,
   Megaphone
 } from 'lucide-react';
@@ -69,6 +68,7 @@ export function Sidebar({ open, setOpen }: SidebarProps) {
     { href: '/tours/field', label: 'Field Agent', icon: Navigation, show: user?.permissions['tour.view_assigned'] },
     { href: '/proposals', label: 'Proposals', icon: FileText, show: true },
     { href: '/whatsapp', label: 'WhatsApp Inbox', icon: MessageSquare, show: true },
+    { href: '/marketing/broadcast', label: 'Broadcast', icon: Megaphone, show: user?.role === 'admin' },
     { href: '/itineraries', label: 'Itineraries', icon: CalendarRange, show: true },
     { href: '/payments', label: 'Payment Ledger', icon: CreditCard, show: user?.role === 'admin' || user?.permissions['payment.view_all'] || user?.permissions['payment.view_assigned'] },
     { href: '/reports/lead-funnel', label: 'Reports', icon: BarChart3, show: user?.permissions['query.view_all'] },
@@ -80,8 +80,6 @@ export function Sidebar({ open, setOpen }: SidebarProps) {
     { href: '/cms/website-content', label: 'Website Content', icon: Compass, show: user?.role === 'admin' || user?.permissions['master.manage_destinations'], isSetting: true },
     { href: '/cms/pages', label: 'Website CMS', icon: Globe, show: user?.role === 'admin' || user?.permissions['master.manage_destinations'], isSetting: true },
     { href: '/finance/expenses', label: 'Finance', icon: DollarSign, show: user?.role === 'admin' || user?.permissions['payment.view_all'], isSetting: true },
-    { href: '/marketing/email-campaign', label: 'Email Campaign', icon: Mail, show: user?.role === 'admin', isSetting: true },
-    { href: '/marketing/broadcast', label: 'Broadcast', icon: Megaphone, show: user?.role === 'admin', isSetting: true },
     { href: '/branches', label: 'Branches', icon: Building2, show: user?.permissions['users.manage'], isSetting: true },
     { href: '/integrations/sheets', label: 'Integrations (Coming Soon)', icon: Sheet, show: user?.permissions['users.manage'], isSetting: true },
     { href: '/users', label: 'Team', icon: Users, show: user?.permissions['users.manage'], isSetting: true },
