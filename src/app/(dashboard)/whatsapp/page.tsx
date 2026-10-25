@@ -233,6 +233,14 @@ export default function WhatsAppChatPage() {
       const res = await api.get(`/whatsapp-chat/conversations/${phone}`);
       if (res.data?.success) {
         setMessages(res.data.messages || []);
+        if (res.data.isWindowOpen !== undefined) {
+          setActiveConversation(prev => prev ? ({
+            ...prev,
+            isWindowOpen: res.data.isWindowOpen,
+            windowExpiresAt: res.data.windowExpiresAt,
+            remainingMinutes: res.data.remainingMinutes
+          }) : null);
+        }
         if (forceScroll || !isScrolledUpRef.current) {
           setTimeout(() => scrollToBottom('auto'), 50);
         }
@@ -285,7 +293,7 @@ export default function WhatsAppChatPage() {
     }
   };
 
-  // Polling setup
+  // Polling setup: conversations list every 4s, active chat history every 3s
   useEffect(() => {
     fetchConversations();
     fetchLeads();
@@ -293,7 +301,7 @@ export default function WhatsAppChatPage() {
       if (!document.hidden) {
         fetchConversations();
       }
-    }, 8000);
+    }, 4000);
     return () => clearInterval(interval);
   }, []);
 
@@ -310,7 +318,7 @@ export default function WhatsAppChatPage() {
         if (!document.hidden && selectedPhoneRef.current) {
           fetchChatHistory(selectedPhoneRef.current, false);
         }
-      }, 5000);
+      }, 3000);
       return () => clearInterval(interval);
     }
   }, [selectedPhone]);

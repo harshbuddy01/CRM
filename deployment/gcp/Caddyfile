@@ -8,7 +8,18 @@
 
 # --- CRM Frontend (Next.js) ---
 crm.imagicaholidays.com {
-    reverse_proxy frontend:3000
+    handle /webhook/* {
+        reverse_proxy backend:3001
+    }
+    handle /v1/webhook/* {
+        reverse_proxy backend:3001
+    }
+    handle /api/v1/webhook/* {
+        reverse_proxy backend:3001
+    }
+    handle {
+        reverse_proxy frontend:3000
+    }
 }
 
 # --- CRM Backend API ---

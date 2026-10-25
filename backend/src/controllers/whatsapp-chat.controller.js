@@ -332,7 +332,32 @@ const getChatHistory = async (req, res, next) => {
       data: { status: 'READ' }
     });
 
-    res.json({ success: true, phone: cleanPhone, messages });
+    // Calculate real-time 24-hour customer service window
+    const now = Date.now();
+    const twentyFourHoursMs = 24 * 60 * 60 * 1000;
+    const lastInbound = messages.filter(m => m.direction === 'INBOUND').pop();
+    let isWindowOpen = false;
+    let windowExpiresAt = null;
+    let remainingMinutes = 0;
+    if (lastInbound) {
+      const inboundTime = new Date(lastInbound.createdAt).getTime();
+      const diff = now - inboundTime;
+      if (diff < twentyFourHoursMs) {
+        isWindowOpen = true;
+        const expiresAt = new Date(inboundTime + twentyFourHoursMs);
+        windowExpiresAt = expiresAt.toISOString();
+        remainingMinutes = Math.max(0, Math.floor((expiresAt.getTime() - now) / 60000));
+      }
+    }
+
+    res.json({
+      success: true,
+      phone: cleanPhone,
+      messages,
+      isWindowOpen,
+      windowExpiresAt,
+      remainingMinutes
+    });
   } catch (error) {
     next(error);
   }
