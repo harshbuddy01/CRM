@@ -346,7 +346,7 @@ const handleMetaWhatsappWebhook = async (req, res, next) => {
               ? `${errors[0].code}: ${errors[0].title || ''} - ${errors[0].message || errors[0].error_data?.details || ''}`.trim()
               : null;
 
-            const mappedStatus = status === 'failed' ? 'failed' : (status === 'delivered' || status === 'read') ? 'delivered' : 'sent';
+            const mappedStatus = status === 'failed' ? 'failed' : status === 'read' ? 'read' : status === 'delivered' ? 'delivered' : 'sent';
 
             await prisma.broadcastRecipient.updateMany({
               where: {
@@ -358,14 +358,23 @@ const handleMetaWhatsappWebhook = async (req, res, next) => {
               }
             }).catch(e => logger.warn('[Webhook] broadcastRecipient update error:', e.message));
 
-            await prisma.whatsappMessage.updateMany({
+            // Update the most recent outbound message for this phone to reflect accurate delivery/read status
+            const latestOutbound = await prisma.whatsappMessage.findFirst({
               where: {
-                phone: { contains: cleanPhone.slice(-10) }
+                phone: { contains: cleanPhone.slice(-10) },
+                direction: 'OUTBOUND'
               },
-              data: {
-                status: status.toUpperCase()
-              }
-            }).catch(() => {});
+              orderBy: { createdAt: 'desc' }
+            });
+
+            if (latestOutbound) {
+              await prisma.whatsappMessage.update({
+                where: { id: latestOutbound.id },
+                data: {
+                  status: status.toUpperCase()
+                }
+              }).catch(() => {});
+            }
           }
         }
       }
@@ -376,7 +385,13 @@ const handleMetaWhatsappWebhook = async (req, res, next) => {
         const contact = value.contacts?.[0];
         const senderPhone = msg.from; // e.g. "918235337180"
         const senderName = contact?.profile?.name || 'WhatsApp Contact';
-        const msgText = msg.text?.body || msg.button?.text || '[Media/Interactive Message]';
+        const msgText = 
+          msg.text?.body || 
+          msg.interactive?.button_reply?.title || 
+          msg.interactive?.list_reply?.title || 
+          msg.button?.text || 
+          msg.caption || 
+          (msg.type === 'image' ? '[Photo received]' : msg.type === 'document' ? '[Document received]' : '[Customer Message]');
 
         logger.info(`[Webhook] Incoming WhatsApp from ${senderName} (${senderPhone}): ${msgText}`);
 

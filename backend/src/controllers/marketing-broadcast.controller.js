@@ -99,7 +99,71 @@ const getAudience = async (req, res, next) => {
         createdAt: q.createdAt,
         hasPhone: !!q.phone,
         hasEmail: !!q.email,
+        hasReplied: false,
+        lastReply: null,
+        lastReplyAt: null,
+        isWindowOpen: false,
+        remainingMinutes: 0,
+        lastOutboundStatus: null,
       });
+    }
+
+    // Cross-reference with WhatsApp messages for reply detection & 24h window calculation
+    const phoneKeys = Array.from(seenPhones.keys()).map(p => p.slice(-10)).filter(Boolean);
+    if (phoneKeys.length > 0) {
+      const recentMessages = await prisma.whatsappMessage.findMany({
+        where: {
+          OR: phoneKeys.map(k => ({ phone: { contains: k } }))
+        },
+        orderBy: { createdAt: 'desc' },
+        take: 600
+      });
+
+      const replyMap = {};
+      const outboundMap = {};
+      const now = Date.now();
+      const twentyFourHoursMs = 24 * 60 * 60 * 1000;
+
+      for (const m of recentMessages) {
+        const k = m.phone.replace(/\D/g, '').slice(-10);
+        if (!k) continue;
+
+        if (m.direction === 'INBOUND' && !replyMap[k]) {
+          const inboundTime = new Date(m.createdAt).getTime();
+          const diff = now - inboundTime;
+          const isWindowOpen = diff < twentyFourHoursMs;
+          const remainingMinutes = isWindowOpen ? Math.max(0, Math.floor((inboundTime + twentyFourHoursMs - now) / 60000)) : 0;
+
+          replyMap[k] = {
+            hasReplied: true,
+            lastReply: m.message,
+            lastReplyAt: m.createdAt,
+            isWindowOpen,
+            remainingMinutes
+          };
+        }
+
+        if (m.direction === 'OUTBOUND' && !outboundMap[k]) {
+          outboundMap[k] = {
+            status: m.status,
+            sentAt: m.createdAt
+          };
+        }
+      }
+
+      for (const item of deduplicated) {
+        const k = (item.phone || '').replace(/\D/g, '').slice(-10);
+        if (replyMap[k]) {
+          item.hasReplied = replyMap[k].hasReplied;
+          item.lastReply = replyMap[k].lastReply;
+          item.lastReplyAt = replyMap[k].lastReplyAt;
+          item.isWindowOpen = replyMap[k].isWindowOpen;
+          item.remainingMinutes = replyMap[k].remainingMinutes;
+        }
+        if (outboundMap[k]) {
+          item.lastOutboundStatus = outboundMap[k].status;
+        }
+      }
     }
 
     // Optional search filter
@@ -121,6 +185,8 @@ const getAudience = async (req, res, next) => {
         total: results.length,
         withPhone: results.filter(r => r.hasPhone).length,
         withEmail: results.filter(r => r.hasEmail).length,
+        withWindowOpen: results.filter(r => r.isWindowOpen).length,
+        withReplied: results.filter(r => r.hasReplied).length,
         segment,
       },
     });

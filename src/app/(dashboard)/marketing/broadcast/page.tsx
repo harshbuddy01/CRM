@@ -57,6 +57,12 @@ interface RecipientItem {
   createdAt: string;
   hasPhone: boolean;
   hasEmail: boolean;
+  hasReplied?: boolean;
+  lastReply?: string | null;
+  lastReplyAt?: string | null;
+  isWindowOpen?: boolean;
+  remainingMinutes?: number;
+  lastOutboundStatus?: string | null;
 }
 
 interface CampaignHistoryItem {
@@ -76,6 +82,60 @@ interface CampaignHistoryItem {
 }
 
 const TEMPLATE_PRESETS = [
+  {
+    id: 'travel_inquiry_update',
+    name: '🌴 Travel Inquiry Update (Utility Door-Opener)',
+    description: 'Guaranteed 100% utility delivery with "I am interested" & "Need assistance" 1-click buttons',
+    category: 'UTILITY',
+    defaultOffer: 'Hi {{name}}, this is an update regarding your travel inquiry with Imagica Holidays. Are you currently planning this trip? Please confirm below so we can share your itinerary.',
+    promoCode: 'INQUIRY2026',
+    emailSubject: '🌴 Update Regarding Your Travel Inquiry | Imagica Holidays Concierge',
+    emailContent: `<div style="background-color: #f5f4f0; padding: 44px 12px; font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #1e293b; line-height: 1.6;">
+  <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 580px; background-color: #ffffff; border-radius: 4px; overflow: hidden; box-shadow: 0 16px 45px rgba(0,0,0,0.04); border: 1px solid #e7e2d8; margin: 0 auto;">
+    <tr>
+      <td style="background-color: #ffffff; padding: 46px 24px 28px; text-align: center;">
+        <a href="https://imagicaholidays.com" target="_blank" style="text-decoration: none; display: inline-block;">
+          <img src="https://media.imagicaholidays.com/campaigns/imagica-crm-logo-dark-trans.png" alt="Imagica Holidays" height="38" style="height: 38px; max-height: 38px; width: auto; margin: 0 auto; display: block; border: 0;" />
+        </a>
+      </td>
+    </tr>
+    <tr>
+      <td style="padding: 14px 44px 22px; text-align: center; background-color: #ffffff;">
+        <h2 style="font-size: 20px; font-weight: 700; color: #0f172a; margin: 0 0 12px;">Update Regarding Your Travel Inquiry 🌴</h2>
+        <p style="font-size: 14px; color: #64748b; line-height: 1.6;">Dear <strong>{{name}}</strong>, we are following up regarding your holiday inquiry. Our travel concierge is ready to assist you with customized itineraries and exclusive seasonal rates.</p>
+        <a href="https://imagicaholidays.com" style="display: inline-block; background-color: #0f172a; color: #ffffff; padding: 12px 28px; border-radius: 4px; text-decoration: none; font-size: 13px; font-weight: 600; margin-top: 16px;">Connect with Concierge</a>
+      </td>
+    </tr>
+  </table>
+</div>`
+  },
+  {
+    id: 'reservation_inquiry_update',
+    name: '✈️ Reservation Check-in (Utility Door-Opener)',
+    description: 'Guaranteed 100% utility delivery with "Yes proceed" & "Speak to team" 1-click buttons',
+    category: 'UTILITY',
+    defaultOffer: 'Dear {{name}}, this is an update regarding your travel inquiry with Imagica Holidays. Please confirm if you are planning to proceed with this holiday.',
+    promoCode: 'RESERVE2026',
+    emailSubject: '✈️ Reservation Status Check-in | Imagica Holidays Concierge',
+    emailContent: `<div style="background-color: #f5f4f0; padding: 44px 12px; font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #1e293b; line-height: 1.6;">
+  <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 580px; background-color: #ffffff; border-radius: 4px; overflow: hidden; box-shadow: 0 16px 45px rgba(0,0,0,0.04); border: 1px solid #e7e2d8; margin: 0 auto;">
+    <tr>
+      <td style="background-color: #ffffff; padding: 46px 24px 28px; text-align: center;">
+        <a href="https://imagicaholidays.com" target="_blank" style="text-decoration: none; display: inline-block;">
+          <img src="https://media.imagicaholidays.com/campaigns/imagica-crm-logo-dark-trans.png" alt="Imagica Holidays" height="38" style="height: 38px; max-height: 38px; width: auto; margin: 0 auto; display: block; border: 0;" />
+        </a>
+      </td>
+    </tr>
+    <tr>
+      <td style="padding: 14px 44px 22px; text-align: center; background-color: #ffffff;">
+        <h2 style="font-size: 20px; font-weight: 700; color: #0f172a; margin: 0 0 12px;">Planning to proceed with your holiday? ✈️</h2>
+        <p style="font-size: 14px; color: #64748b; line-height: 1.6;">Dear <strong>{{name}}</strong>, we would be delighted to finalize your customized holiday itinerary with verified 5-star properties and private chauffeured transfers.</p>
+        <a href="https://imagicaholidays.com" style="display: inline-block; background-color: #0f172a; color: #ffffff; padding: 12px 28px; border-radius: 4px; text-decoration: none; font-size: 13px; font-weight: 600; margin-top: 16px;">View Packages</a>
+      </td>
+    </tr>
+  </table>
+</div>`
+  },
   {
     id: 'holiday_trip_inquiry',
     name: '🌴 Holiday Trip Inquiry (1-Click Reply)',
@@ -458,6 +518,7 @@ export default function MarketingBroadcastPage() {
   const [loadingAudience, setLoadingAudience] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [audienceFilter, setAudienceFilter] = useState<'all' | 'window_active' | 'needs_utility' | 'with_email'>('all');
 
   // Campaign Form
   const [campaignName, setCampaignName] = useState('');
@@ -554,11 +615,21 @@ export default function MarketingBroadcastPage() {
     toast.success(`Applied template: ${preset.name}`);
   };
 
-  // Filtered audience
+  // Filtered audience based on Search Query and Engagement Sub-Filter
   const filteredAudience = useMemo(() => {
-    if (!searchQuery.trim()) return audience;
+    let list = audience;
+
+    if (audienceFilter === 'window_active') {
+      list = list.filter(item => item.isWindowOpen);
+    } else if (audienceFilter === 'needs_utility') {
+      list = list.filter(item => !item.isWindowOpen && item.hasPhone);
+    } else if (audienceFilter === 'with_email') {
+      list = list.filter(item => item.hasEmail);
+    }
+
+    if (!searchQuery.trim()) return list;
     const q = searchQuery.toLowerCase();
-    return audience.filter(
+    return list.filter(
       item =>
         item.name.toLowerCase().includes(q) ||
         (item.phone && item.phone.includes(q)) ||
@@ -566,9 +637,17 @@ export default function MarketingBroadcastPage() {
         (item.destination && item.destination.toLowerCase().includes(q)) ||
         item.queryCode.toLowerCase().includes(q)
     );
-  }, [audience, searchQuery]);
+  }, [audience, searchQuery, audienceFilter]);
 
   // Selection handlers
+  const handleSelectWindowActiveOnly = () => {
+    const activeIds = new Set(
+      filteredAudience.filter(item => item.isWindowOpen).map(item => item.queryId)
+    );
+    setSelectedIds(activeIds);
+    toast.success(`Selected ${activeIds.size} contacts with active 24h WhatsApp window`);
+  };
+
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
       const allIds = new Set(filteredAudience.map(item => item.queryId));
@@ -889,6 +968,61 @@ export default function MarketingBroadcastPage() {
             </CardHeader>
 
             <CardContent className="space-y-4">
+              {/* Audience Funnel Sub-Filter Pills */}
+              <div className="flex items-center gap-1.5 p-1.5 bg-muted/50 rounded-lg border text-xs overflow-x-auto">
+                <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider px-2">Funnel Filter:</span>
+                <button
+                  type="button"
+                  onClick={() => setAudienceFilter('all')}
+                  className={cn(
+                    "px-3 py-1 rounded-md transition-all font-medium whitespace-nowrap cursor-pointer",
+                    audienceFilter === 'all' 
+                      ? "bg-background text-foreground shadow-sm font-semibold border" 
+                      : "text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  All ({audience.length})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setAudienceFilter('window_active')}
+                  className={cn(
+                    "px-3 py-1 rounded-md transition-all font-medium whitespace-nowrap flex items-center gap-1.5 cursor-pointer",
+                    audienceFilter === 'window_active' 
+                      ? "bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 font-bold border border-emerald-500/30 shadow-sm" 
+                      : "text-muted-foreground hover:text-emerald-600"
+                  )}
+                >
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                  <span>🔥 24h Window Active ({audience.filter(a => a.isWindowOpen).length})</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setAudienceFilter('needs_utility')}
+                  className={cn(
+                    "px-3 py-1 rounded-md transition-all font-medium whitespace-nowrap flex items-center gap-1.5 cursor-pointer",
+                    audienceFilter === 'needs_utility' 
+                      ? "bg-amber-500/15 text-amber-800 dark:text-amber-300 font-bold border border-amber-500/30 shadow-sm" 
+                      : "text-muted-foreground hover:text-amber-600"
+                  )}
+                >
+                  <span>🔒 Needs Utility Door-Opener ({audience.filter(a => !a.isWindowOpen && a.hasPhone).length})</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setAudienceFilter('with_email')}
+                  className={cn(
+                    "px-3 py-1 rounded-md transition-all font-medium whitespace-nowrap flex items-center gap-1.5 cursor-pointer",
+                    audienceFilter === 'with_email' 
+                      ? "bg-blue-500/15 text-blue-800 dark:text-blue-300 font-bold border border-blue-500/30 shadow-sm" 
+                      : "text-muted-foreground hover:text-blue-600"
+                  )}
+                >
+                  <Mail className="h-3 w-3 text-blue-500" />
+                  <span>With Email ({audience.filter(a => a.hasEmail).length})</span>
+                </button>
+              </div>
+
               {/* Audience Table Filters & Quick Action Bar */}
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 bg-muted/30 p-3 rounded-lg border">
                 <div className="relative flex-1 max-w-sm">
@@ -908,7 +1042,7 @@ export default function MarketingBroadcastPage() {
                     variant="outline" 
                     size="sm" 
                     onClick={() => handleSelectAll(true)}
-                    className="h-8 text-xs"
+                    className="h-8 text-xs cursor-pointer"
                   >
                     Select All ({filteredAudience.length})
                   </Button>
@@ -916,8 +1050,18 @@ export default function MarketingBroadcastPage() {
                     type="button" 
                     variant="outline" 
                     size="sm" 
+                    onClick={handleSelectWindowActiveOnly}
+                    className="h-8 text-xs text-emerald-700 dark:text-emerald-400 border-emerald-500/40 hover:bg-emerald-500/10 font-bold cursor-pointer"
+                  >
+                    <Sparkles className="h-3 w-3 mr-1 text-emerald-500" />
+                    Select 24h Active ({audience.filter(a => a.isWindowOpen).length})
+                  </Button>
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    size="sm" 
                     onClick={handleSelectWhatsAppOnly}
-                    className="h-8 text-xs text-emerald-700 dark:text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/10"
+                    className="h-8 text-xs text-emerald-700 dark:text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/10 cursor-pointer"
                   >
                     <Phone className="h-3 w-3 mr-1" />
                     With WhatsApp
@@ -927,7 +1071,7 @@ export default function MarketingBroadcastPage() {
                     variant="outline" 
                     size="sm" 
                     onClick={handleSelectEmailOnly}
-                    className="h-8 text-xs text-blue-700 dark:text-blue-400 border-blue-500/30 hover:bg-blue-500/10"
+                    className="h-8 text-xs text-blue-700 dark:text-blue-400 border-blue-500/30 hover:bg-blue-500/10 cursor-pointer"
                   >
                     <Mail className="h-3 w-3 mr-1" />
                     With Email
@@ -938,7 +1082,7 @@ export default function MarketingBroadcastPage() {
                       variant="ghost" 
                       size="sm" 
                       onClick={() => setSelectedIds(new Set())}
-                      className="h-8 text-xs text-rose-500 hover:text-rose-600 hover:bg-rose-500/10"
+                      className="h-8 text-xs text-rose-500 hover:text-rose-600 hover:bg-rose-500/10 cursor-pointer"
                     >
                       Clear Selection
                     </Button>
@@ -947,7 +1091,7 @@ export default function MarketingBroadcastPage() {
               </div>
 
               {/* Interactive Recipient Grid */}
-              <div className="border rounded-lg overflow-hidden max-h-[340px] overflow-y-auto">
+              <div className="border rounded-lg overflow-hidden max-h-[360px] overflow-y-auto">
                 {loadingAudience ? (
                   <div className="py-12 flex flex-col items-center justify-center text-muted-foreground">
                     <Loader2 className="h-6 w-6 animate-spin mb-2 text-primary" />
@@ -955,7 +1099,7 @@ export default function MarketingBroadcastPage() {
                   </div>
                 ) : filteredAudience.length === 0 ? (
                   <div className="py-12 text-center text-muted-foreground text-xs">
-                    No contacts found in this segment matching your search.
+                    No contacts found in this segment matching your search or funnel filter.
                   </div>
                 ) : (
                   <table className="w-full text-left border-collapse text-xs">
@@ -971,6 +1115,7 @@ export default function MarketingBroadcastPage() {
                         </th>
                         <th className="p-3">Customer / Query</th>
                         <th className="p-3">Contact Details</th>
+                        <th className="p-3">WhatsApp 24h Session</th>
                         <th className="p-3">Destination</th>
                         <th className="p-3">Status</th>
                         <th className="p-3 text-right">Eligible Channels</th>
@@ -979,6 +1124,7 @@ export default function MarketingBroadcastPage() {
                     <tbody className="divide-y divide-border">
                       {filteredAudience.map(item => {
                         const isSelected = selectedIds.has(item.queryId);
+                        const cleanPhone = (item.phone || '').replace(/\D/g, '');
                         return (
                           <tr
                             key={item.queryId}
@@ -1011,6 +1157,32 @@ export default function MarketingBroadcastPage() {
                               </div>
                             </td>
                             <td className="p-3">
+                              {item.isWindowOpen ? (
+                                <div className="flex flex-col gap-0.5">
+                                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-300 w-fit">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                                    24h Active ({Math.floor((item.remainingMinutes || 0) / 60)}h {(item.remainingMinutes || 0) % 60}m)
+                                  </span>
+                                  {item.hasReplied && item.lastReply && (
+                                    <span className="text-[10px] text-emerald-700 dark:text-emerald-400 font-medium truncate max-w-[170px]" title={item.lastReply}>
+                                      💬 "{item.lastReply}"
+                                    </span>
+                                  )}
+                                </div>
+                              ) : item.hasPhone ? (
+                                <div className="flex flex-col gap-0.5">
+                                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 border border-slate-200 w-fit">
+                                    🔒 Window Closed
+                                  </span>
+                                  <span className="text-[9.5px] text-amber-600 dark:text-amber-400 font-semibold">
+                                    Send Utility 1-Click
+                                  </span>
+                                </div>
+                              ) : (
+                                <span className="text-[10px] text-slate-400">—</span>
+                              )}
+                            </td>
+                            <td className="p-3">
                               <span className="font-medium text-foreground">{item.destination || 'General Inquiry'}</span>
                             </td>
                             <td className="p-3">
@@ -1031,12 +1203,10 @@ export default function MarketingBroadcastPage() {
                               <div className="flex items-center justify-end gap-1.5">
                                 {item.hasPhone && (
                                   <a
-                                    href={`https://api.whatsapp.com/send/?phone=${item.phone?.replace(/\D/g, '').length === 10 ? '91' + item.phone?.replace(/\D/g, '') : item.phone?.replace(/\D/g, '')}&text=${encodeURIComponent(`Hi ${item.name}, greetings from Imagica Holidays!`)}&type=phone_number&app_absent=0`}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
+                                    href={`/whatsapp?phone=${cleanPhone}`}
                                     onClick={e => e.stopPropagation()}
                                     className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-100 hover:bg-emerald-200 text-emerald-800 dark:bg-emerald-950 dark:hover:bg-emerald-900 dark:text-emerald-300 transition-colors"
-                                    title={`Open WhatsApp Web chat with ${item.name}`}
+                                    title={`Open Live Desk chat with ${item.name}`}
                                   >
                                     <MessageSquare className="h-2.5 w-2.5" />
                                     WA Chat
