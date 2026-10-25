@@ -129,10 +129,11 @@ const getConversations = async (req, res, next) => {
  * GET /v1/whatsapp-chat/leads
  * Returns recent active leads from Query table (new, quoted, negotiation, in_progress)
  * deduplicated by phone number, ready to start or continue a WhatsApp chat.
+ * Also checks if the customer has replied with an inbound message.
  */
 const getLeads = async (req, res, next) => {
   try {
-    const { search, limit = 50 } = req.query;
+    const { search, limit = 100 } = req.query;
     const where = {
       deletedAt: null,
       phone: { not: '' }
@@ -158,6 +159,7 @@ const getLeads = async (req, res, next) => {
         email: true,
         destination: true,
         status: true,
+        budget: true,
         createdAt: true,
         updatedAt: true
       },
@@ -187,11 +189,119 @@ const getLeads = async (req, res, next) => {
         email: q.email,
         destination: q.destination,
         status: q.status,
-        createdAt: q.createdAt
+        budget: q.budget,
+        createdAt: q.createdAt,
+        hasReplied: false,
+        lastReply: null,
+        lastReplyAt: null,
+        isWindowOpen: false,
+        remainingMinutes: 0
       });
     }
 
+    // Match with inbound WhatsApp messages to detect replies
+    if (leads.length > 0) {
+      const phoneKeys = Array.from(seen);
+      const inboundMsgs = await prisma.whatsappMessage.findMany({
+        where: {
+          direction: 'INBOUND',
+          OR: phoneKeys.map(k => ({ phone: { contains: k } }))
+        },
+        orderBy: { createdAt: 'desc' },
+        take: 300
+      });
+
+      const replyMap = {};
+      const now = Date.now();
+      const twentyFourHoursMs = 24 * 60 * 60 * 1000;
+
+      for (const m of inboundMsgs) {
+        const k = m.phone.replace(/\D/g, '').slice(-10);
+        if (!replyMap[k]) {
+          const inboundTime = new Date(m.createdAt).getTime();
+          const diff = now - inboundTime;
+          const isWindowOpen = diff < twentyFourHoursMs;
+          const remainingMinutes = isWindowOpen ? Math.max(0, Math.floor((inboundTime + twentyFourHoursMs - now) / 60000)) : 0;
+
+          replyMap[k] = {
+            lastReply: m.message,
+            lastReplyAt: m.createdAt,
+            hasReplied: true,
+            isWindowOpen,
+            remainingMinutes
+          };
+        }
+      }
+
+      for (const lead of leads) {
+        const k = lead.phone.slice(-10);
+        if (replyMap[k]) {
+          lead.hasReplied = true;
+          lead.lastReply = replyMap[k].lastReply;
+          lead.lastReplyAt = replyMap[k].lastReplyAt;
+          lead.isWindowOpen = replyMap[k].isWindowOpen;
+          lead.remainingMinutes = replyMap[k].remainingMinutes;
+        }
+      }
+    }
+
     res.json({ success: true, leads });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * POST /v1/whatsapp-chat/bulk-send-template
+ * Send an approved Meta template to multiple selected leads in one action.
+ */
+const bulkSendTemplate = async (req, res, next) => {
+  try {
+    const { recipients, templateName } = req.body;
+    if (!recipients || !Array.isArray(recipients) || recipients.length === 0) {
+      return res.status(400).json({ success: false, message: 'Recipients array is required.' });
+    }
+    if (!templateName) {
+      return res.status(400).json({ success: false, message: 'templateName is required.' });
+    }
+
+    let successCount = 0;
+    let failCount = 0;
+    const errors = [];
+
+    for (const r of recipients) {
+      const cleanPhone = (r.phone || '').replace(/\D/g, '');
+      if (!cleanPhone) continue;
+
+      const recipientName = r.name || 'Valued Traveler';
+      const components = buildTemplateComponents(templateName, recipientName, r);
+
+      const result = await whatsappService.sendTemplateMessage(cleanPhone, templateName, components);
+      if (result.success) {
+        successCount++;
+        await prisma.whatsappMessage.create({
+          data: {
+            phone: cleanPhone,
+            direction: 'OUTBOUND',
+            message: `[Template: ${templateName}] (Bulk sent to ${recipientName})`,
+            status: 'SENT'
+          }
+        }).catch(() => {});
+      } else {
+        failCount++;
+        errors.push({ phone: cleanPhone, error: result.error });
+      }
+    }
+
+    res.json({
+      success: true,
+      data: {
+        total: recipients.length,
+        successCount,
+        failCount,
+        errors
+      }
+    });
   } catch (error) {
     next(error);
   }
@@ -407,6 +517,7 @@ const sendMessage = async (req, res, next) => {
 module.exports = {
   getConversations,
   getLeads,
+  bulkSendTemplate,
   getChatHistory,
   sendMessage
 };

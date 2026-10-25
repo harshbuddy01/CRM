@@ -12,6 +12,9 @@ router.get('/conversations', chatController.getConversations);
 // GET /v1/whatsapp-chat/leads — List CRM leads ready for WhatsApp messaging
 router.get('/leads', chatController.getLeads);
 
+// POST /v1/whatsapp-chat/bulk-send-template — Send approved Meta template to multiple selected leads
+router.post('/bulk-send-template', chatController.bulkSendTemplate);
+
 // GET /v1/whatsapp-chat/conversations/:phone — Fetch chat history for phone number
 router.get('/conversations/:phone', chatController.getChatHistory);
 
