@@ -28,201 +28,220 @@ crm.imagicaholidays.com {
   <title>Under Maintenance — Imagica Holidays CRM</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background-color: #090d16;
+      font-family: 'Plus Jakarta Sans', -apple-system, sans-serif;
+      background-color: #07090e;
       color: #f8fafc;
       min-height: 100vh;
       display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 24px;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 36px 24px;
       overflow-x: hidden;
       position: relative;
     }
-    body::before {
-      content: '';
+    .bg-layer {
       position: absolute;
-      width: 600px;
-      height: 600px;
-      background: radial-gradient(circle, rgba(245, 158, 11, 0.08) 0%, rgba(15, 23, 42, 0) 70%);
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      pointer-events: none;
+      inset: 0;
+      background-image: url('https://images.unsplash.com/photo-1506744038136-46273834b3fb?q=80&w=2000&auto=format&fit=crop');
+      background-size: cover;
+      background-position: center;
+      filter: brightness(0.24) contrast(1.15) saturate(0.85);
       z-index: 0;
     }
-    .card {
-      position: relative;
+    .vignette {
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at center, rgba(7, 9, 14, 0.6) 0%, rgba(7, 9, 14, 0.95) 80%);
       z-index: 1;
-      max-width: 580px;
-      width: 100%;
-      background: rgba(15, 23, 42, 0.85);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      border-radius: 24px;
-      padding: 44px 36px;
-      text-align: center;
-      box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.04);
     }
-    .brand {
+    .container {
+      position: relative;
+      z-index: 2;
+      max-width: 640px;
+      width: 100%;
+      margin: auto;
+      text-align: center;
+      padding: 20px;
+    }
+    .brand-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 6px 16px;
+      background: rgba(197, 168, 128, 0.08);
+      border: 1px solid rgba(197, 168, 128, 0.3);
+      border-radius: 9999px;
+      margin-bottom: 28px;
+    }
+    .pulse-dot {
+      width: 6px;
+      height: 6px;
+      background: #c5a880;
+      border-radius: 50%;
+      box-shadow: 0 0 10px #c5a880;
+      animation: pulse 2.2s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 0.6; transform: scale(0.9); }
+      50% { opacity: 1; transform: scale(1.3); }
+    }
+    .brand-title {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: #e5c9a3;
+    }
+    h1 {
+      font-family: 'Cormorant Garamond', Georgia, serif;
+      font-size: 44px;
+      font-weight: 500;
+      line-height: 1.15;
+      color: #fdfbf7;
+      letter-spacing: -0.01em;
+      margin-bottom: 8px;
+    }
+    .subtitle {
+      font-family: 'Cormorant Garamond', Georgia, serif;
+      font-size: 22px;
+      font-style: italic;
+      color: #c5a880;
+      margin-bottom: 24px;
+    }
+    .divider {
+      width: 48px;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, #c5a880, transparent);
+      margin: 0 auto 28px;
+    }
+    .notice-card {
+      background: rgba(15, 23, 42, 0.65);
+      border: 1px solid rgba(239, 68, 68, 0.35);
+      border-radius: 14px;
+      padding: 16px 22px;
+      margin-bottom: 24px;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      box-shadow: 0 15px 35px -10px rgba(0, 0, 0, 0.5);
+    }
+    .notice-text {
+      color: #fca5a5;
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+    }
+    p.description {
+      color: #94a3b8;
+      font-size: 14px;
+      line-height: 1.7;
+      margin-bottom: 32px;
+      font-weight: 300;
+      max-width: 520px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      justify-content: center;
+    }
+    .btn-gold {
       display: inline-flex;
       align-items: center;
       gap: 8px;
-      padding: 6px 14px;
-      background: rgba(245, 158, 11, 0.1);
-      border: 1px solid rgba(245, 158, 11, 0.25);
+      padding: 12px 26px;
       border-radius: 9999px;
-      font-size: 11px;
+      background: linear-gradient(135deg, #c5a880 0%, #b39369 100%);
+      color: #07090e;
+      font-size: 11.5px;
       font-weight: 700;
       letter-spacing: 0.1em;
       text-transform: uppercase;
-      color: #fbbf24;
-      margin-bottom: 24px;
+      text-decoration: none;
+      transition: all 0.3s ease;
+      box-shadow: 0 10px 25px -8px rgba(197, 168, 128, 0.4);
     }
-    .pulse-dot {
-      width: 7px;
-      height: 7px;
-      background: #f59e0b;
-      border-radius: 50%;
-      box-shadow: 0 0 10px #f59e0b;
-      animation: pulse 2s infinite;
+    .btn-gold:hover {
+      background: linear-gradient(135deg, #d4b78f 0%, #c5a880 100%);
+      transform: translateY(-1px);
     }
-    @keyframes pulse {
-      0% { transform: scale(0.95); opacity: 0.8; }
-      50% { transform: scale(1.3); opacity: 1; }
-      100% { transform: scale(0.95); opacity: 0.8; }
-    }
-    .icon-container {
-      width: 76px;
-      height: 76px;
-      margin: 0 auto 24px;
-      border-radius: 20px;
-      background: linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(245, 158, 11, 0.15) 100%);
-      border: 1px solid rgba(245, 158, 11, 0.25);
-      display: flex;
+    .btn-glass {
+      display: inline-flex;
       align-items: center;
-      justify-content: center;
+      gap: 8px;
+      padding: 12px 22px;
+      border-radius: 9999px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: #cbd5e1;
+      font-size: 12px;
+      text-decoration: none;
+      backdrop-filter: blur(12px);
+      transition: all 0.3s ease;
     }
-    .icon-container svg {
-      width: 38px;
-      height: 38px;
-      color: #fbbf24;
+    .btn-glass:hover {
+      background: rgba(255, 255, 255, 0.08);
+      border-color: rgba(255, 255, 255, 0.25);
+      color: #fff;
     }
-    h1 {
-      font-size: 26px;
-      font-weight: 800;
-      color: #ffffff;
-      letter-spacing: -0.02em;
-      margin-bottom: 12px;
-      line-height: 1.25;
-    }
-    .warning-box {
-      background: rgba(239, 68, 68, 0.12);
-      border: 1px solid rgba(239, 68, 68, 0.35);
-      border-radius: 12px;
-      padding: 14px 18px;
-      margin: 20px 0 24px;
-      color: #fca5a5;
-      font-size: 14.5px;
-      font-weight: 700;
-      letter-spacing: -0.01em;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-    }
-    p.desc {
-      color: #94a3b8;
-      font-size: 13.5px;
-      line-height: 1.65;
-      margin-bottom: 24px;
-      font-weight: 400;
-    }
-    .info-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-      padding: 16px;
-      background: rgba(2, 6, 23, 0.6);
-      border: 1px solid rgba(255, 255, 255, 0.05);
-      border-radius: 14px;
-      margin-bottom: 24px;
-      text-align: left;
-    }
-    .info-item {
+    footer {
+      position: relative;
+      z-index: 2;
+      text-align: center;
       font-size: 11px;
-    }
-    .info-label {
-      color: #64748b;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      margin-bottom: 3px;
-    }
-    .info-val {
-      color: #e2e8f0;
-      font-weight: 600;
-    }
-    .footer {
-      font-size: 11.5px;
       color: #475569;
-      border-top: 1px solid rgba(255, 255, 255, 0.06);
-      padding-top: 20px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
     }
   </style>
 </head>
 <body>
-  <div class="card">
-    <div class="brand">
+  <div class="bg-layer"></div>
+  <div class="vignette"></div>
+
+  <div></div>
+
+  <div class="container">
+    <div class="brand-pill">
       <span class="pulse-dot"></span>
-      <span>Imagica Holidays • Internal CRM</span>
-    </div>
-    
-    <div class="icon-container">
-      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M11.42 15.17L17.25 21A2.652 2.652 0 0021 17.25l-5.877-5.877M11.42 15.17l2.496-3.03c.317-.384.74-.626 1.208-.766M11.42 15.17l-4.655 5.653a2.548 2.548 0 11-3.586-3.586l6.837-5.63m5.108-.233c.55-.164 1.163-.188 1.743-.14a4.5 4.5 0 004.486-6.32l-3.276 3.277a3.004 3.004 0 01-2.25-2.25l3.276-3.276a4.5 4.5 0 00-6.32 4.486c.049.58.025 1.193-.14 1.743" />
-      </svg>
+      <span class="brand-title">Imagica Holidays • Internal Operations</span>
     </div>
 
     <h1>System Under Maintenance</h1>
-    
-    <div class="warning-box">
-      <span>⛔</span>
-      <span>This is under maintenance. Don't try to open this.</span>
+    <div class="subtitle">Private Operations Temporarily Paused</div>
+
+    <div class="divider"></div>
+
+    <div class="notice-card">
+      <span style="font-size: 16px;">⛔</span>
+      <span class="notice-text">This is under maintenance. Don't try to open this.</span>
     </div>
 
-    <p class="desc">
-      Our engineering team is currently performing scheduled system updates and database maintenance. Access for all team members and administrators is temporarily suspended for the next 24 to 48 hours.
+    <p class="description">
+      Our engineering team is currently performing scheduled infrastructure and database maintenance. Access is temporarily suspended for all team members and administrators for the next 24 to 48 hours.
     </p>
 
-    <div class="info-grid">
-      <div class="info-item">
-        <div class="info-label">Current Status</div>
-        <div class="info-val" style="color: #fbbf24;">Maintenance Active</div>
-      </div>
-      <div class="info-item">
-        <div class="info-label">Expected Duration</div>
-        <div class="info-val">24 – 48 Hours</div>
-      </div>
-      <div class="info-item">
-        <div class="info-label">Authorized Access</div>
-        <div class="info-val" style="color: #f87171;">Strictly Locked</div>
-      </div>
-      <div class="info-item">
-        <div class="info-label">Concierge Desk</div>
-        <div class="info-val">+91 62914 26647</div>
-      </div>
-    </div>
-
-    <div class="footer">
-      Imagica Holidays Travel Portal • Controlled by System Administrator
+    <div class="actions">
+      <a href="https://wa.me/916291426647" target="_blank" rel="noopener noreferrer" class="btn-gold">
+        Emergency Concierge (+91 62914 26647)
+      </a>
+      <a href="mailto:support@imagicaholidays.com" class="btn-glass">
+        support@imagicaholidays.com
+      </a>
     </div>
   </div>
+
+  <footer>
+    Imagica Holidays Travel Portal • Controlled by System Administrator
+  </footer>
 </body>
 </html>` 503
     }
