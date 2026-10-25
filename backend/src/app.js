@@ -244,6 +244,15 @@ app.get('/api/v1/share/:slug',                    itineraryCtrl.exportHtmlByShar
 app.get('/v1/itineraries/share/:slug',            itineraryCtrl.getByShareSlug);
 app.get('/api/v1/itineraries/share/:slug',        itineraryCtrl.getByShareSlug);
 
+// Meta WhatsApp Webhook endpoints (supporting all common URL variations)
+const webhookCtrl = require('./controllers/webhook.controller');
+app.get('/webhook/whatsapp/meta',                 webhookCtrl.handleMetaWhatsappWebhook);
+app.post('/webhook/whatsapp/meta',                webhookCtrl.handleMetaWhatsappWebhook);
+app.get('/v1/webhook/whatsapp/meta',             webhookCtrl.handleMetaWhatsappWebhook);
+app.post('/v1/webhook/whatsapp/meta',            webhookCtrl.handleMetaWhatsappWebhook);
+app.get('/api/v1/webhook/whatsapp/meta',         webhookCtrl.handleMetaWhatsappWebhook);
+app.post('/api/v1/webhook/whatsapp/meta',        webhookCtrl.handleMetaWhatsappWebhook);
+
 // ── Portal APIs (Guest, Driver, Hotel) ──
 const portalRoutes = require('./routes/public-portal.routes');
 app.use('/public', portalRoutes);

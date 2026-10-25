@@ -473,7 +473,7 @@ const sendMessage = async (req, res, next) => {
       const recipientName = query?.name || client?.name || 'Valued Traveler';
       
       // If components is not complete for the template, build the exact schema
-      const finalComponents = (components && components.length > 0 && !['client_invoice_ready', 'proposal_ready'].includes(templateName))
+      const finalComponents = (components && components.length > 0 && !['client_invoice_ready', 'proposal_ready', 'guest_voucher_ready'].includes(templateName))
         ? components
         : buildTemplateComponents(templateName, recipientName, query);
 
@@ -487,6 +487,8 @@ const sendMessage = async (req, res, next) => {
         messageContent = `[📄 Itinerary Proposal sent to ${recipientName}]`;
       } else if (templateName === 'client_invoice_ready') {
         messageContent = `[🧾 Travel Invoice sent to ${recipientName}]`;
+      } else if (templateName === 'guest_voucher_ready') {
+        messageContent = `[🎟️ Travel Voucher sent to ${recipientName}]`;
       } else {
         messageContent = `[Template: ${templateName}]`;
       }
