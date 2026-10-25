@@ -229,6 +229,111 @@ const getChatHistory = async (req, res, next) => {
 };
 
 /**
+ * Helper: Build exact Meta parameter structure for approved templates
+ */
+const buildTemplateComponents = (templateName, recipientName, query) => {
+  const name = recipientName || 'Valued Traveler';
+  const queryCode = query?.queryCode || 'QRY-2026';
+  const destination = query?.destination || 'Bespoke Package';
+  const budget = query?.budget ? `₹${Number(query.budget).toLocaleString('en-IN')}` : '₹45,000';
+
+  if (templateName === 'diwali_festive_poster') {
+    return [
+      {
+        type: 'header',
+        parameters: [{ type: 'image', image: { link: 'https://media.imagicaholidays.com/campaigns/diwali-festive-poster-2026.jpg' } }]
+      },
+      {
+        type: 'body',
+        parameters: [{ type: 'text', text: name }]
+      }
+    ];
+  }
+
+  if (templateName === 'festive_exclusive_offer') {
+    return [
+      {
+        type: 'body',
+        parameters: [{ type: 'text', text: name }]
+      }
+    ];
+  }
+
+  if (templateName === 'proposal_ready') {
+    return [
+      {
+        type: 'header',
+        parameters: [{
+          type: 'document',
+          document: {
+            link: 'https://media.imagicaholidays.com/campaigns/Imagica_Holidays_Luxury_Brochure.pdf',
+            filename: `${queryCode}-Itinerary-Proposal.pdf`
+          }
+        }]
+      },
+      {
+        type: 'body',
+        parameters: [{ type: 'text', text: name }]
+      },
+      {
+        type: 'button',
+        sub_type: 'url',
+        index: '0',
+        parameters: [{ type: 'text', text: 'destinations' }]
+      }
+    ];
+  }
+
+  if (templateName === 'client_invoice_ready') {
+    return [
+      {
+        type: 'header',
+        parameters: [{
+          type: 'document',
+          document: {
+            link: 'https://media.imagicaholidays.com/campaigns/Imagica_Holidays_Luxury_Brochure.pdf',
+            filename: `${queryCode}-Invoice.pdf`
+          }
+        }]
+      },
+      {
+        type: 'body',
+        parameters: [
+          { type: 'text', text: name },
+          { type: 'text', text: queryCode },
+          { type: 'text', text: budget }
+        ]
+      }
+    ];
+  }
+
+  if (templateName === 'guest_voucher_ready') {
+    return [
+      {
+        type: 'header',
+        parameters: [{
+          type: 'document',
+          document: {
+            link: 'https://media.imagicaholidays.com/campaigns/Imagica_Holidays_Luxury_Brochure.pdf',
+            filename: `${queryCode}-Booking-Voucher.pdf`
+          }
+        }]
+      },
+      {
+        type: 'body',
+        parameters: [
+          { type: 'text', text: name },
+          { type: 'text', text: queryCode },
+          { type: 'text', text: destination }
+        ]
+      }
+    ];
+  }
+
+  return [{ type: 'body', parameters: [{ type: 'text', text: name }] }];
+};
+
+/**
  * POST /v1/whatsapp/conversations/:phone/send
  * Send an outbound reply message to a phone number.
  */
@@ -245,8 +350,36 @@ const sendMessage = async (req, res, next) => {
     let messageContent = message;
 
     if (templateName) {
-      result = await whatsappService.sendTemplateMessage(cleanPhone, templateName, components || []);
-      messageContent = `[Template: ${templateName}]`;
+      // Find query or client details for accurate personalization
+      const last10 = cleanPhone.slice(-10);
+      const query = await prisma.query.findFirst({
+        where: { phone: { contains: last10 }, deletedAt: null },
+        orderBy: { createdAt: 'desc' }
+      });
+      const client = !query ? await prisma.client.findFirst({
+        where: { phone: { contains: last10 } }
+      }) : null;
+
+      const recipientName = query?.name || client?.name || 'Valued Traveler';
+      
+      // If components is not complete for the template, build the exact schema
+      const finalComponents = (components && components.length > 0 && !['client_invoice_ready', 'proposal_ready'].includes(templateName))
+        ? components
+        : buildTemplateComponents(templateName, recipientName, query);
+
+      result = await whatsappService.sendTemplateMessage(cleanPhone, templateName, finalComponents);
+      
+      if (templateName === 'diwali_festive_poster') {
+        messageContent = `[🪔 Diwali Festive Offer Poster sent to ${recipientName}]`;
+      } else if (templateName === 'festive_exclusive_offer') {
+        messageContent = `[✨ Festive Exclusive Offer sent to ${recipientName}]`;
+      } else if (templateName === 'proposal_ready') {
+        messageContent = `[📄 Itinerary Proposal sent to ${recipientName}]`;
+      } else if (templateName === 'client_invoice_ready') {
+        messageContent = `[🧾 Travel Invoice sent to ${recipientName}]`;
+      } else {
+        messageContent = `[Template: ${templateName}]`;
+      }
     } else {
       result = await whatsappService.sendTextMessage(cleanPhone, message);
     }

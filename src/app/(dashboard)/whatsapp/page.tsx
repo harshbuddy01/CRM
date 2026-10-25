@@ -21,6 +21,7 @@ import {
   Check
 } from 'lucide-react';
 import { api } from '@/lib/api';
+import { toast } from 'sonner';
 
 interface Conversation {
   phone: string;
@@ -274,11 +275,12 @@ export default function WhatsAppChatPage() {
       console.error('Failed to send message', err);
       const msg = err.response?.data?.error || err.message || '';
       if (msg.includes('131047') || msg.toLowerCase().includes('24 hours') || msg.toLowerCase().includes('re-engagement')) {
-        alert(
-          '⚠️ 24-Hour Window Closed: Meta requires an approved template or direct WhatsApp Web message to initiate contact with this customer. Please click "Send Template" or "Open in WhatsApp Web".'
+        toast.warning(
+          '24-Hour Window Closed: Meta requires an approved template or WhatsApp Web message outside the 24-hour window.',
+          { duration: 6000 }
         );
       } else {
-        alert('Failed to send WhatsApp message: ' + msg);
+        toast.error('Failed to send WhatsApp message: ' + msg);
       }
     } finally {
       setSending(false);
@@ -293,12 +295,9 @@ export default function WhatsAppChatPage() {
 
     try {
       const recipientName = activeConversation?.clientName || 'Valued Traveler';
-      let components: any[] = [
-        {
-          type: 'body',
-          parameters: [{ type: 'text', text: recipientName }],
-        },
-      ];
+      const queryCode = activeConversation?.queryCode || 'QRY-2026';
+
+      let components: any[] = [];
 
       if (templateId === 'diwali_festive_poster') {
         components = [
@@ -316,6 +315,61 @@ export default function WhatsAppChatPage() {
             parameters: [{ type: 'text', text: recipientName }],
           },
         ];
+      } else if (templateId === 'festive_exclusive_offer') {
+        components = [
+          {
+            type: 'body',
+            parameters: [{ type: 'text', text: recipientName }],
+          },
+        ];
+      } else if (templateId === 'proposal_ready') {
+        components = [
+          {
+            type: 'header',
+            parameters: [
+              {
+                type: 'document',
+                document: {
+                  link: 'https://media.imagicaholidays.com/campaigns/Imagica_Holidays_Luxury_Brochure.pdf',
+                  filename: `${queryCode}-Itinerary-Proposal.pdf`,
+                },
+              },
+            ],
+          },
+          {
+            type: 'body',
+            parameters: [{ type: 'text', text: recipientName }],
+          },
+          {
+            type: 'button',
+            sub_type: 'url',
+            index: '0',
+            parameters: [{ type: 'text', text: 'destinations' }],
+          },
+        ];
+      } else if (templateId === 'client_invoice_ready') {
+        components = [
+          {
+            type: 'header',
+            parameters: [
+              {
+                type: 'document',
+                document: {
+                  link: 'https://media.imagicaholidays.com/campaigns/Imagica_Holidays_Luxury_Brochure.pdf',
+                  filename: `${queryCode}-Invoice.pdf`,
+                },
+              },
+            ],
+          },
+          {
+            type: 'body',
+            parameters: [
+              { type: 'text', text: recipientName },
+              { type: 'text', text: queryCode },
+              { type: 'text', text: '₹45,000' },
+            ],
+          },
+        ];
       }
 
       const res = await api.post(`/whatsapp-chat/conversations/${selectedPhone}/send`, {
@@ -324,12 +378,13 @@ export default function WhatsAppChatPage() {
       });
 
       if (res.data?.success) {
+        toast.success(`Template "${templateId}" sent successfully!`);
         fetchChatHistory(selectedPhone);
         fetchConversations();
       }
     } catch (err: any) {
       console.error('Failed to dispatch template', err);
-      alert('Failed to dispatch template: ' + (err.response?.data?.error || err.message));
+      toast.error('Failed to dispatch template: ' + (err.response?.data?.error || err.message));
     } finally {
       setSendingTemplate(null);
     }
