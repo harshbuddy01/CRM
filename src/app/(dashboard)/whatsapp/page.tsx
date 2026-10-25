@@ -1057,8 +1057,9 @@ export default function WhatsAppChatPage() {
                   </div>
                 </div>
               ) : (
-                messages.map((msg) => {
+                messages.map((msg, msgIndex) => {
                   const isOutbound = msg.direction === 'OUTBOUND';
+                  const isRead = msg.status === 'READ' || messages.slice(msgIndex + 1).some(m => m.direction === 'INBOUND');
                   const text = msg.message || '';
                   
                   const hasDoc = text.includes('📄') || text.toLowerCase().includes('.pdf');
@@ -1121,8 +1122,8 @@ export default function WhatsAppChatPage() {
                           <div className="flex items-center justify-end gap-1 mt-1 text-[10px] text-slate-400">
                             <span>{new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                             {isOutbound && (
-                              msg.status === 'READ' ? (
-                                <CheckCheck className="w-3.5 h-3.5 text-emerald-500" title="Read by customer" />
+                              isRead ? (
+                                <CheckCheck className="w-3.5 h-3.5 text-sky-500" title="Read by customer (Blue tick)" />
                               ) : msg.status === 'DELIVERED' ? (
                                 <CheckCheck className="w-3.5 h-3.5 text-slate-400" title="Delivered to phone" />
                               ) : msg.status === 'FAILED' ? (
