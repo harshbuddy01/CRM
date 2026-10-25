@@ -9,6 +9,9 @@ router.use(authenticate);
 // GET /v1/whatsapp-chat/conversations — List active chats
 router.get('/conversations', chatController.getConversations);
 
+// GET /v1/whatsapp-chat/leads — List CRM leads ready for WhatsApp messaging
+router.get('/leads', chatController.getLeads);
+
 // GET /v1/whatsapp-chat/conversations/:phone — Fetch chat history for phone number
 router.get('/conversations/:phone', chatController.getChatHistory);
 

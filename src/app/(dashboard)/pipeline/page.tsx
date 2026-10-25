@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { api } from '@/lib/api';
-import { Loader2, Calendar } from 'lucide-react';
+import { Loader2, Calendar, MessageSquare } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { useRouter } from 'next/navigation';
@@ -228,8 +228,22 @@ export default function PipelinePage() {
                                 <Calendar className="w-3 h-3 mr-1" />
                                 {format(new Date(query.createdAt), 'MMM d')}
                               </div>
-                              <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-[10px] font-bold text-primary">
-                                {query.name.charAt(0).toUpperCase()}
+                              <div className="flex items-center gap-1.5">
+                                {query.phone && (
+                                  <a
+                                    href={`https://api.whatsapp.com/send/?phone=${query.phone.replace(/\D/g, '').length === 10 ? '91' + query.phone.replace(/\D/g, '') : query.phone.replace(/\D/g, '')}&text=${encodeURIComponent(`Hi ${query.name}, greetings from Imagica Holidays!`)}&type=phone_number&app_absent=0`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    onClick={(e) => e.stopPropagation()}
+                                    className="w-6 h-6 rounded-full bg-emerald-500/10 hover:bg-emerald-500/25 text-emerald-600 flex items-center justify-center transition-colors shadow-xs"
+                                    title={`Direct WhatsApp Chat with ${query.name}`}
+                                  >
+                                    <MessageSquare className="w-3.5 h-3.5" />
+                                  </a>
+                                )}
+                                <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-[10px] font-bold text-primary">
+                                  {query.name.charAt(0).toUpperCase()}
+                                </div>
                               </div>
                             </div>
                           </div>

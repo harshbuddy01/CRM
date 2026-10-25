@@ -24,6 +24,8 @@ import {
   AlertTriangle,
   Gift,
   Flame,
+  Briefcase,
+  MessageSquare,
   ArrowRight,
   ShieldCheck,
   Info,
@@ -421,7 +423,7 @@ const TEMPLATE_PRESETS = [
 export default function MarketingBroadcastPage() {
   const { user } = useAuthStore();
   const [activeTab, setActiveTab] = useState<'create' | 'history'>('create');
-  const [segment, setSegment] = useState<'lost' | 'completed'>('lost');
+  const [segment, setSegment] = useState<'new' | 'active' | 'lost' | 'completed'>('new');
   const [channel, setChannel] = useState<'whatsapp' | 'email' | 'both'>('both');
 
   // Audience Data
@@ -620,7 +622,11 @@ export default function MarketingBroadcastPage() {
       return;
     }
 
-    const defaultName = campaignName.trim() || `${segment === 'lost' ? 'Lost Inquiries Win-Back' : 'Past Travelers Reward'} - ${new Date().toLocaleDateString('en-IN')}`;
+    const defaultName = campaignName.trim() || `${
+      segment === 'new' ? 'New Inquiries Outreach' :
+      segment === 'active' ? 'Active Pipeline Follow-up' :
+      segment === 'lost' ? 'Lost Inquiries Win-Back' : 'Past Travelers Reward'
+    } - ${new Date().toLocaleDateString('en-IN')}`;
 
     // Get selected recipient details
     const selectedRecipients = audience
@@ -798,14 +804,40 @@ export default function MarketingBroadcastPage() {
                 </div>
 
                 {/* Segment Pill Switcher */}
-                <div className="flex items-center p-1 bg-muted rounded-lg border">
+                <div className="flex items-center p-1 bg-muted rounded-lg border flex-wrap gap-1">
+                  <button
+                    type="button"
+                    onClick={() => setSegment('new')}
+                    className={cn(
+                      "flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md transition-all cursor-pointer",
+                      segment === 'new' 
+                        ? "bg-background text-foreground shadow-sm font-semibold border" 
+                        : "text-muted-foreground hover:text-foreground"
+                    )}
+                  >
+                    <Sparkles className="h-3.5 w-3.5 text-amber-500" />
+                    <span>New Inquiries ({segment === 'new' ? audience.length : '...'})</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSegment('active')}
+                    className={cn(
+                      "flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md transition-all cursor-pointer",
+                      segment === 'active' 
+                        ? "bg-background text-foreground shadow-sm font-semibold border" 
+                        : "text-muted-foreground hover:text-foreground"
+                    )}
+                  >
+                    <Briefcase className="h-3.5 w-3.5 text-blue-500" />
+                    <span>Active Pipeline ({segment === 'active' ? audience.length : '...'})</span>
+                  </button>
                   <button
                     type="button"
                     onClick={() => setSegment('lost')}
                     className={cn(
-                      "flex items-center gap-2 px-3 py-1.5 text-xs font-medium rounded-md transition-all",
+                      "flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md transition-all cursor-pointer",
                       segment === 'lost' 
-                        ? "bg-background text-foreground shadow-sm font-semibold" 
+                        ? "bg-background text-foreground shadow-sm font-semibold border" 
                         : "text-muted-foreground hover:text-foreground"
                     )}
                   >
@@ -816,9 +848,9 @@ export default function MarketingBroadcastPage() {
                     type="button"
                     onClick={() => setSegment('completed')}
                     className={cn(
-                      "flex items-center gap-2 px-3 py-1.5 text-xs font-medium rounded-md transition-all",
+                      "flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md transition-all cursor-pointer",
                       segment === 'completed' 
-                        ? "bg-background text-foreground shadow-sm font-semibold" 
+                        ? "bg-background text-foreground shadow-sm font-semibold border" 
                         : "text-muted-foreground hover:text-foreground"
                     )}
                   >
@@ -961,18 +993,27 @@ export default function MarketingBroadcastPage() {
                                   "text-[10px] uppercase font-semibold capitalize",
                                   item.status === 'lost' ? "border-rose-300 bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300" :
                                   item.status === 'completed' ? "border-emerald-300 bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300" :
-                                  "border-amber-300 bg-amber-50 text-amber-700"
+                                  item.status === 'new' ? "border-amber-400 bg-amber-50 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300 font-bold" :
+                                  "border-blue-300 bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300"
                                 )}
                               >
                                 {item.status}
                               </Badge>
                             </td>
                             <td className="p-3 text-right">
-                              <div className="flex items-center justify-end gap-1">
+                              <div className="flex items-center justify-end gap-1.5">
                                 {item.hasPhone && (
-                                  <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
-                                    WA
-                                  </span>
+                                  <a
+                                    href={`https://api.whatsapp.com/send/?phone=${item.phone?.replace(/\D/g, '').length === 10 ? '91' + item.phone?.replace(/\D/g, '') : item.phone?.replace(/\D/g, '')}&text=${encodeURIComponent(`Hi ${item.name}, greetings from Imagica Holidays!`)}&type=phone_number&app_absent=0`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    onClick={e => e.stopPropagation()}
+                                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-100 hover:bg-emerald-200 text-emerald-800 dark:bg-emerald-950 dark:hover:bg-emerald-900 dark:text-emerald-300 transition-colors"
+                                    title={`Open WhatsApp Web chat with ${item.name}`}
+                                  >
+                                    <MessageSquare className="h-2.5 w-2.5" />
+                                    WA Chat
+                                  </a>
                                 )}
                                 {item.hasEmail && (
                                   <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300">

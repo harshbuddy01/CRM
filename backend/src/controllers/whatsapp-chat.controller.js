@@ -11,7 +11,7 @@ const getConversations = async (req, res, next) => {
     // 1. Fetch recent messages
     const recentMessages = await prisma.whatsappMessage.findMany({
       orderBy: { createdAt: 'desc' },
-      take: 200
+      take: 300
     });
 
     // 2. Group by normalized clean phone number (E.164 with 91 default)
@@ -29,15 +29,43 @@ const getConversations = async (req, res, next) => {
           direction: msg.direction,
           status: msg.status,
           clientName: msg.clientName || null,
-          unreadCount: 0
+          unreadCount: 0,
+          lastInboundAt: null,
+          isWindowOpen: false,
+          windowExpiresAt: null,
+          remainingMinutes: 0,
+          queryCode: null,
+          destination: null,
+          queryStatus: null,
+          queryId: null
         };
+      }
+      if (msg.direction === 'INBOUND' && !conversationsMap[cleanPhone].lastInboundAt) {
+        conversationsMap[cleanPhone].lastInboundAt = msg.createdAt;
       }
       if (msg.direction === 'INBOUND' && msg.status === 'DELIVERED') {
         conversationsMap[cleanPhone].unreadCount += 1;
       }
     }
 
-    // 3. Match with Client & Query records for client names
+    // Calculate 24-hour window status for each conversation
+    const now = Date.now();
+    const twentyFourHoursMs = 24 * 60 * 60 * 1000;
+    for (const phone in conversationsMap) {
+      const conv = conversationsMap[phone];
+      if (conv.lastInboundAt) {
+        const inboundTime = new Date(conv.lastInboundAt).getTime();
+        const diff = now - inboundTime;
+        if (diff < twentyFourHoursMs) {
+          conv.isWindowOpen = true;
+          const expiresAt = new Date(inboundTime + twentyFourHoursMs);
+          conv.windowExpiresAt = expiresAt.toISOString();
+          conv.remainingMinutes = Math.max(0, Math.floor((expiresAt.getTime() - now) / 60000));
+        }
+      }
+    }
+
+    // 3. Match with Client & Query records for client names & query details
     const phoneList = Object.keys(conversationsMap);
     if (phoneList.length > 0) {
       const searchPatterns = phoneList.map(p => p.slice(-10));
@@ -53,24 +81,36 @@ const getConversations = async (req, res, next) => {
             OR: searchPatterns.map(sp => ({ phone: { contains: sp } })),
             deletedAt: null
           },
-          select: { phone: true, name: true }
+          select: { id: true, phone: true, name: true, queryCode: true, destination: true, status: true },
+          orderBy: { createdAt: 'desc' }
         })
       ]);
 
       const nameMap = {};
+      const queryMap = {};
       for (const q of queries) {
         const last10 = q.phone.replace(/\D/g, '').slice(-10);
+        if (last10 && !queryMap[last10]) {
+          queryMap[last10] = q;
+        }
         if (last10 && q.name) nameMap[last10] = q.name;
       }
       for (const c of clients) {
         const last10 = c.phone.replace(/\D/g, '').slice(-10);
-        if (last10 && c.name) nameMap[last10] = c.name;
+        if (last10 && c.name && !nameMap[last10]) nameMap[last10] = c.name;
       }
 
       for (const phone of phoneList) {
         const last10 = phone.slice(-10);
         if (nameMap[last10] && !conversationsMap[phone].clientName) {
           conversationsMap[phone].clientName = nameMap[last10];
+        }
+        if (queryMap[last10]) {
+          const q = queryMap[last10];
+          conversationsMap[phone].queryId = q.id;
+          conversationsMap[phone].queryCode = q.queryCode;
+          conversationsMap[phone].destination = q.destination;
+          conversationsMap[phone].queryStatus = q.status;
         }
       }
     }
@@ -80,6 +120,78 @@ const getConversations = async (req, res, next) => {
     );
 
     res.json({ success: true, conversations });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * GET /v1/whatsapp-chat/leads
+ * Returns recent active leads from Query table (new, quoted, negotiation, in_progress)
+ * deduplicated by phone number, ready to start or continue a WhatsApp chat.
+ */
+const getLeads = async (req, res, next) => {
+  try {
+    const { search, limit = 50 } = req.query;
+    const where = {
+      deletedAt: null,
+      phone: { not: '' }
+    };
+
+    if (search) {
+      const s = String(search).trim();
+      where.OR = [
+        { name: { contains: s, mode: 'insensitive' } },
+        { phone: { contains: s } },
+        { queryCode: { contains: s, mode: 'insensitive' } },
+        { destination: { contains: s, mode: 'insensitive' } }
+      ];
+    }
+
+    const queries = await prisma.query.findMany({
+      where,
+      select: {
+        id: true,
+        queryCode: true,
+        name: true,
+        phone: true,
+        email: true,
+        destination: true,
+        status: true,
+        createdAt: true,
+        updatedAt: true
+      },
+      orderBy: { createdAt: 'desc' },
+      take: Number(limit)
+    });
+
+    // Deduplicate by clean phone
+    const seen = new Set();
+    const leads = [];
+    for (const q of queries) {
+      const clean = q.phone?.replace(/\D/g, '') || '';
+      if (!clean) continue;
+      const key = clean.slice(-10);
+      if (seen.has(key)) continue;
+      seen.add(key);
+
+      let fullPhone = clean;
+      if (fullPhone.length === 10) fullPhone = `91${fullPhone}`;
+
+      leads.push({
+        id: q.id,
+        queryCode: q.queryCode,
+        name: q.name,
+        phone: fullPhone,
+        rawPhone: q.phone,
+        email: q.email,
+        destination: q.destination,
+        status: q.status,
+        createdAt: q.createdAt
+      });
+    }
+
+    res.json({ success: true, leads });
   } catch (error) {
     next(error);
   }
@@ -161,6 +273,7 @@ const sendMessage = async (req, res, next) => {
 
 module.exports = {
   getConversations,
+  getLeads,
   getChatHistory,
   sendMessage
 };

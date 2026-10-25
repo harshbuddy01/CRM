@@ -32,20 +32,26 @@ const uploadCampaignAsset = async (req, res, next) => {
 };
 
 /**
- * GET /broadcasts/audience?segment=lost|completed
+ * GET /broadcasts/audience?segment=new|active|lost|completed|all
  * Returns deduplicated audience list with phone/email availability.
  */
 const getAudience = async (req, res, next) => {
   try {
-    const { segment = 'lost', search } = req.query;
+    const { segment = 'new', search } = req.query;
 
     let statusFilter = {};
-    if (segment === 'lost') {
+    if (segment === 'new') {
+      statusFilter = { status: 'new' };
+    } else if (segment === 'active') {
+      statusFilter = { status: { in: ['new', 'quoted', 'negotiation', 'in_progress'] } };
+    } else if (segment === 'lost') {
       statusFilter = { status: { in: ['lost', 'invalid'] } };
     } else if (segment === 'completed') {
       statusFilter = { status: 'completed' };
+    } else if (segment === 'all') {
+      statusFilter = { status: { notIn: ['invalid'] } };
     } else {
-      return res.status(400).json({ success: false, message: 'Invalid segment. Use "lost" or "completed".' });
+      return res.status(400).json({ success: false, message: 'Invalid segment. Use "new", "active", "lost", "completed", or "all".' });
     }
 
     const queries = await prisma.query.findMany({
