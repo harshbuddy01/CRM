@@ -16,6 +16,7 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const { user, accessToken, logout } = useAuthStore();
+  const { sidebarCollapsed } = useUiStore();
   const [isMounted, setIsMounted] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const router = useRouter();
@@ -38,8 +39,6 @@ export default function DashboardLayout({
 
   // If user is not in Zustand store, render nothing (the useEffect above will redirect them)
   if (!user || !accessToken) return null;
-
-  const { sidebarCollapsed } = useUiStore();
 
   return (
     <div className="flex min-h-screen bg-background text-foreground">
