@@ -77,6 +77,33 @@ interface CampaignHistoryItem {
 
 const TEMPLATE_PRESETS = [
   {
+    id: 'holiday_trip_inquiry',
+    name: '🌴 Holiday Trip Inquiry (1-Click Reply)',
+    description: 'Direct conversational text with "I am interested" & "Plan my trip" buttons',
+    category: 'MARKETING',
+    defaultOffer: 'Are you planning your next holiday trip? We would love to help you design a bespoke vacation with exclusive deals and 5-star concierge service.',
+    promoCode: 'HOLIDAY2026',
+    emailSubject: '🌴 Plan Your Next Holiday Getaway | Imagica Holidays Concierge',
+    emailContent: `<div style="background-color: #f5f4f0; padding: 44px 12px; font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #1e293b; line-height: 1.6;">
+  <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 580px; background-color: #ffffff; border-radius: 4px; overflow: hidden; box-shadow: 0 16px 45px rgba(0,0,0,0.04); border: 1px solid #e7e2d8; margin: 0 auto;">
+    <tr>
+      <td style="background-color: #ffffff; padding: 46px 24px 28px; text-align: center;">
+        <a href="https://imagicaholidays.com" target="_blank" style="text-decoration: none; display: inline-block;">
+          <img src="https://media.imagicaholidays.com/campaigns/imagica-crm-logo-dark-trans.png" alt="Imagica Holidays" height="38" style="height: 38px; max-height: 38px; width: auto; margin: 0 auto; display: block; border: 0;" />
+        </a>
+      </td>
+    </tr>
+    <tr>
+      <td style="padding: 14px 44px 22px; text-align: center; background-color: #ffffff;">
+        <h2 style="font-size: 20px; font-weight: 700; color: #0f172a; margin: 0 0 12px;">Are you planning your next getaway? 🌴</h2>
+        <p style="font-size: 14px; color: #64748b; line-height: 1.6;">Our luxury concierge team is at your service to craft bespoke itineraries with private transfers, curated luxury stays, and 24/7 coordination.</p>
+        <a href="https://imagicaholidays.com" style="display: inline-block; background-color: #0f172a; color: #ffffff; padding: 12px 28px; border-radius: 4px; text-decoration: none; font-size: 13px; font-weight: 600; margin-top: 16px;">Explore Packages</a>
+      </td>
+    </tr>
+  </table>
+</div>`
+  },
+  {
     id: 'diwali_festive_poster',
     name: '🪔 Diwali / Festive Grand Offer',
     description: 'Bespoke Festive Retreats across Sikkim, Darjeeling, Kerala & Andaman (Flat ₹3,000 OFF)',

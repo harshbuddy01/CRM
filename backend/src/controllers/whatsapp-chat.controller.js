@@ -360,7 +360,7 @@ const buildTemplateComponents = (templateName, recipientName, query) => {
     ];
   }
 
-  if (templateName === 'festive_exclusive_offer') {
+  if (['festive_exclusive_offer', 'holiday_trip_inquiry', 'travel_connect_checkin'].includes(templateName)) {
     return [
       {
         type: 'body',
@@ -479,7 +479,11 @@ const sendMessage = async (req, res, next) => {
 
       result = await whatsappService.sendTemplateMessage(cleanPhone, templateName, finalComponents);
       
-      if (templateName === 'diwali_festive_poster') {
+      if (templateName === 'holiday_trip_inquiry') {
+        messageContent = `[🌴 Holiday Trip Inquiry (Quick Reply) sent to ${recipientName}]`;
+      } else if (templateName === 'travel_connect_checkin') {
+        messageContent = `[✈️ Concierge Check-in (Quick Reply) sent to ${recipientName}]`;
+      } else if (templateName === 'diwali_festive_poster') {
         messageContent = `[🪔 Diwali Festive Offer Poster sent to ${recipientName}]`;
       } else if (templateName === 'festive_exclusive_offer') {
         messageContent = `[✨ Festive Exclusive Offer sent to ${recipientName}]`;

@@ -73,6 +73,18 @@ interface ChatMessage {
 
 const APPROVED_TEMPLATES = [
   {
+    id: 'holiday_trip_inquiry',
+    name: '🌴 Holiday Trip Inquiry (1-Click Reply)',
+    category: 'MARKETING',
+    description: 'Short & simple message with "I am interested" & "Plan my trip" buttons',
+  },
+  {
+    id: 'travel_connect_checkin',
+    name: '✈️ Concierge Check-in (Quick Reply)',
+    category: 'MARKETING',
+    description: 'Friendly trip follow-up with 1-click reply buttons',
+  },
+  {
     id: 'diwali_festive_poster',
     name: 'Diwali Festive Poster (Flyer + Offer)',
     category: 'MARKETING',
@@ -335,7 +347,14 @@ export default function WhatsAppChatPage() {
 
       let components: any[] = [];
 
-      if (templateId === 'diwali_festive_poster') {
+      if (templateId === 'holiday_trip_inquiry' || templateId === 'travel_connect_checkin' || templateId === 'festive_exclusive_offer') {
+        components = [
+          {
+            type: 'body',
+            parameters: [{ type: 'text', text: recipientName }],
+          },
+        ];
+      } else if (templateId === 'diwali_festive_poster') {
         components = [
           {
             type: 'header',
@@ -346,13 +365,6 @@ export default function WhatsAppChatPage() {
               },
             ],
           },
-          {
-            type: 'body',
-            parameters: [{ type: 'text', text: recipientName }],
-          },
-        ];
-      } else if (templateId === 'festive_exclusive_offer') {
-        components = [
           {
             type: 'body',
             parameters: [{ type: 'text', text: recipientName }],
