@@ -22,10 +22,19 @@ import {
   ArrowRight,
   Check,
   Briefcase,
-  AlertCircle
+  AlertCircle,
+  Maximize2,
+  Minimize2,
+  PanelLeftClose,
+  PanelLeftOpen,
+  Layers,
+  ChevronRight,
+  ChevronLeft
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
+import { useUiStore } from '@/lib/ui-store';
 
 interface Conversation {
   phone: string;
@@ -141,8 +150,13 @@ export default function WhatsAppChatPage() {
   // Sidebar Tabs & Filters
   const [sidebarTab, setSidebarTab] = useState<'chats' | 'leads'>('chats');
   const [filterMode, setFilterMode] = useState<'all' | 'replied' | 'awaiting'>('all');
+  const [pipelineStatusFilter, setPipelineStatusFilter] = useState<string>('all');
   const [leads, setLeads] = useState<LeadItem[]>([]);
   const [loadingLeads, setLoadingLeads] = useState(false);
+
+  // Big Screen & Panel Minimization
+  const { sidebarCollapsed, toggleSidebarCollapsed } = useUiStore();
+  const [isPanelCollapsed, setIsPanelCollapsed] = useState(false);
 
   // Bulk Selection Mode for Leads
   const [isBulkMode, setIsBulkMode] = useState(false);
@@ -518,7 +532,48 @@ export default function WhatsAppChatPage() {
     });
   };
 
-  // Filtered lists with "Replied" intelligence
+  // Status Normalizer for robust pipeline matching
+  const normalizeStatus = (s?: string) => {
+    if (!s) return '';
+    const clean = s.toLowerCase().trim().replace(/[-\s]+/g, '_');
+    if (clean === 'inprogress' || clean === 'inprocess' || clean === 'in_process') return 'in_progress';
+    return clean;
+  };
+
+  // Dynamic Pipeline Stages
+  const PIPELINE_STAGES = [
+    { id: 'all', label: 'All Stages', dot: 'bg-slate-400' },
+    { id: 'new', label: 'New', dot: 'bg-amber-400' },
+    { id: 'quoted', label: 'Quoted', dot: 'bg-blue-500' },
+    { id: 'negotiation', label: 'Negotiation', dot: 'bg-purple-500' },
+    { id: 'in_progress', label: 'In Process', dot: 'bg-emerald-500' },
+    { id: 'completed', label: 'Completed', dot: 'bg-teal-500' },
+    { id: 'lost', label: 'Lost', dot: 'bg-rose-500' },
+  ];
+
+  // Stage counts for badges
+  const stageCounts = useMemo(() => {
+    const list = sidebarTab === 'chats' ? conversations : leads;
+    const counts: Record<string, number> = {
+      all: list.length,
+      new: 0,
+      quoted: 0,
+      negotiation: 0,
+      in_progress: 0,
+      completed: 0,
+      lost: 0
+    };
+    for (const item of list) {
+      const rawStatus = sidebarTab === 'chats' ? (item as Conversation).queryStatus : (item as LeadItem).status;
+      const key = normalizeStatus(rawStatus);
+      if (key && counts[key] !== undefined) {
+        counts[key] = (counts[key] || 0) + 1;
+      }
+    }
+    return counts;
+  }, [sidebarTab, conversations, leads]);
+
+  // Filtered lists with "Replied" intelligence & Pipeline Status
   const filteredConversations = useMemo(() => {
     return conversations.filter(c => {
       const matchSearch = 
@@ -530,11 +585,17 @@ export default function WhatsAppChatPage() {
       if (!matchSearch) return false;
 
       const hasReplied = !!c.lastInboundAt;
-      if (filterMode === 'replied') return hasReplied;
-      if (filterMode === 'awaiting') return !hasReplied;
+      if (filterMode === 'replied' && !hasReplied) return false;
+      if (filterMode === 'awaiting' && hasReplied) return false;
+
+      if (pipelineStatusFilter !== 'all') {
+        const statusKey = normalizeStatus(c.queryStatus);
+        if (statusKey !== pipelineStatusFilter) return false;
+      }
+
       return true;
     });
-  }, [conversations, searchQuery, filterMode]);
+  }, [conversations, searchQuery, filterMode, pipelineStatusFilter]);
 
   const filteredLeads = useMemo(() => {
     return leads.filter(l => {
@@ -546,11 +607,17 @@ export default function WhatsAppChatPage() {
       
       if (!matchSearch) return false;
 
-      if (filterMode === 'replied') return !!l.hasReplied;
-      if (filterMode === 'awaiting') return !l.hasReplied;
+      if (filterMode === 'replied' && !l.hasReplied) return false;
+      if (filterMode === 'awaiting' && l.hasReplied) return false;
+
+      if (pipelineStatusFilter !== 'all') {
+        const statusKey = normalizeStatus(l.status);
+        if (statusKey !== pipelineStatusFilter) return false;
+      }
+
       return true;
     });
-  }, [leads, searchQuery, filterMode]);
+  }, [leads, searchQuery, filterMode, pipelineStatusFilter]);
 
   const repliedConversationsCount = useMemo(() => {
     return conversations.filter(c => !!c.lastInboundAt).length;
@@ -591,6 +658,31 @@ export default function WhatsAppChatPage() {
         </div>
 
         <div className="flex items-center gap-2">
+          {/* Big Screen Mode Button */}
+          <button 
+            type="button"
+            onClick={toggleSidebarCollapsed}
+            className={cn(
+              "px-3 py-1.5 rounded-lg border text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs",
+              sidebarCollapsed 
+                ? "bg-slate-900 text-white border-slate-900 ring-2 ring-slate-900/10" 
+                : "bg-white border-slate-200 hover:bg-slate-50 text-slate-700"
+            )}
+            title={sidebarCollapsed ? "Exit Big Screen (Show Full Navigation)" : "Big Screen Mode (Collapse CRM sidebar for maximum chat width)"}
+          >
+            {sidebarCollapsed ? (
+              <>
+                <Minimize2 className="w-3.5 h-3.5 text-amber-400" />
+                <span>Exit Big Screen</span>
+              </>
+            ) : (
+              <>
+                <Maximize2 className="w-3.5 h-3.5 text-slate-600" />
+                <span>Big Screen</span>
+              </>
+            )}
+          </button>
+
           <button 
             type="button"
             onClick={() => {
@@ -612,138 +704,269 @@ export default function WhatsAppChatPage() {
       <div className="flex-1 flex overflow-hidden">
         
         {/* LEFT COLUMN: CONVERSATIONS & LEADS */}
-        <div className="w-80 md:w-96 bg-white border-r border-slate-200 flex flex-col shrink-0">
-          
-          {/* Top Switcher Tabs */}
-          <div className="p-2.5 bg-slate-50/70 border-b border-slate-200/70 flex items-center gap-1.5">
+        {isPanelCollapsed ? (
+          <div className="w-14 bg-white border-r border-slate-200 flex flex-col items-center py-3 shrink-0 transition-all select-none">
+            {/* Expand Button */}
+            <button
+              type="button"
+              onClick={() => setIsPanelCollapsed(false)}
+              className="p-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 hover:text-slate-900 transition-colors shadow-2xs mb-3 cursor-pointer"
+              title="Expand Contacts Panel"
+            >
+              <PanelLeftOpen className="w-4 h-4" />
+            </button>
+
+            {/* Quick Switch to Active Chats */}
             <button
               type="button"
               onClick={() => {
                 setSidebarTab('chats');
-                setIsBulkMode(false);
+                setIsPanelCollapsed(false);
               }}
-              className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-                sidebarTab === 'chats'
-                  ? 'bg-white text-slate-900 shadow-2xs border border-slate-200'
-                  : 'text-slate-500 hover:text-slate-900 hover:bg-white/60'
-              }`}
+              className={cn(
+                "p-2 rounded-lg mb-2 relative transition-colors cursor-pointer",
+                sidebarTab === 'chats' ? "bg-slate-900 text-white" : "text-slate-500 hover:bg-slate-100"
+              )}
+              title={`Active Chats (${conversations.length})`}
             >
-              <MessageSquare className="w-3.5 h-3.5 text-slate-700" />
-              <span>Active Chats</span>
-              <span className="text-[10px] bg-slate-100 text-slate-600 font-bold px-1.5 py-0.2 rounded-full">
-                {conversations.length}
-              </span>
+              <MessageSquare className="w-4 h-4" />
+              {conversations.length > 0 && (
+                <span className="absolute -top-1 -right-1 w-4 h-4 bg-emerald-600 text-white text-[9px] font-bold rounded-full flex items-center justify-center">
+                  {conversations.length > 9 ? '9+' : conversations.length}
+                </span>
+              )}
             </button>
 
+            {/* Quick Switch to Pipeline Leads */}
             <button
               type="button"
-              onClick={() => setSidebarTab('leads')}
-              className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-                sidebarTab === 'leads'
-                  ? 'bg-white text-slate-900 shadow-2xs border border-slate-200'
-                  : 'text-slate-500 hover:text-slate-900 hover:bg-white/60'
-              }`}
+              onClick={() => {
+                setSidebarTab('leads');
+                setIsPanelCollapsed(false);
+              }}
+              className={cn(
+                "p-2 rounded-lg mb-3 relative transition-colors cursor-pointer",
+                sidebarTab === 'leads' ? "bg-slate-900 text-white" : "text-slate-500 hover:bg-slate-100"
+              )}
+              title={`Pipeline Leads (${leads.length})`}
             >
-              <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-              <span>Pipeline Leads</span>
-              <span className="text-[10px] bg-amber-50 text-amber-800 border border-amber-200/60 font-bold px-1.5 py-0.2 rounded-full">
-                {leads.length}
-              </span>
+              <Sparkles className="w-4 h-4 text-amber-400" />
+              {leads.length > 0 && (
+                <span className="absolute -top-1 -right-1 w-4 h-4 bg-amber-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center">
+                  {leads.length > 9 ? '9+' : leads.length}
+                </span>
+              )}
             </button>
-          </div>
 
-          {/* Search Bar & Multi-Select Action */}
-          <div className="p-2.5 bg-white border-b border-slate-200/70 flex items-center gap-2">
-            <div className="relative flex-1">
-              <Search className="w-3.5 h-3.5 absolute left-2.5 top-2 text-slate-400" />
-              <input
-                type="text"
-                placeholder={sidebarTab === 'chats' ? "Search chats or query code..." : "Search leads by name, phone..."}
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-200/80 rounded-lg pl-8 pr-3 py-1 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-slate-400 focus:bg-white transition-all"
-              />
+            <div className="w-8 h-[1px] bg-slate-200 my-1" />
+
+            {/* Compact Mini Avatars list */}
+            <div className="flex-1 overflow-y-auto w-full flex flex-col items-center gap-2 py-2 no-scrollbar">
+              {(sidebarTab === 'chats' ? filteredConversations : filteredLeads).slice(0, 20).map((item) => {
+                const phone = 'phone' in item ? item.phone : '';
+                const name = ('clientName' in item ? item.clientName : item.name) || phone;
+                const isSelected = selectedPhone && phone.includes(selectedPhone.slice(-10));
+                return (
+                  <button
+                    key={item.id || phone}
+                    type="button"
+                    onClick={() => {
+                      if (sidebarTab === 'chats') {
+                        handleSelectConversation(item as Conversation);
+                      } else {
+                        handleSelectLead(item as LeadItem);
+                      }
+                    }}
+                    className={cn(
+                      "w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all relative cursor-pointer",
+                      isSelected 
+                        ? "bg-slate-900 text-white ring-2 ring-slate-900 ring-offset-2" 
+                        : "bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200"
+                    )}
+                    title={`${name} (+${phone})`}
+                  >
+                    {name[0]?.toUpperCase() || 'U'}
+                    {('lastInboundAt' in item && item.lastInboundAt) || ('hasReplied' in item && item.hasReplied) ? (
+                      <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-500 border-2 border-white" />
+                    ) : null}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        ) : (
+          <div className="w-80 md:w-96 bg-white border-r border-slate-200 flex flex-col shrink-0">
+            {/* Top Switcher Tabs */}
+            <div className="p-2.5 bg-slate-50/70 border-b border-slate-200/70 flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => {
+                  setSidebarTab('chats');
+                  setIsBulkMode(false);
+                }}
+                className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                  sidebarTab === 'chats'
+                    ? 'bg-white text-slate-900 shadow-2xs border border-slate-200'
+                    : 'text-slate-500 hover:text-slate-900 hover:bg-white/60'
+                }`}
+              >
+                <MessageSquare className="w-3.5 h-3.5 text-slate-700" />
+                <span>Active Chats</span>
+                <span className="text-[10px] bg-slate-100 text-slate-600 font-bold px-1.5 py-0.2 rounded-full">
+                  {conversations.length}
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setSidebarTab('leads')}
+                className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                  sidebarTab === 'leads'
+                    ? 'bg-white text-slate-900 shadow-2xs border border-slate-200'
+                    : 'text-slate-500 hover:text-slate-900 hover:bg-white/60'
+                }`}
+              >
+                <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                <span>Pipeline Leads</span>
+                <span className="text-[10px] bg-amber-50 text-amber-800 border border-amber-200/60 font-bold px-1.5 py-0.2 rounded-full">
+                  {leads.length}
+                </span>
+              </button>
+
+              {/* Minimize Contacts Panel Button */}
+              <button
+                type="button"
+                onClick={() => setIsPanelCollapsed(true)}
+                className="p-1.5 rounded-lg border border-transparent hover:border-slate-200 hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition-colors cursor-pointer"
+                title="Minimize Contacts Panel (More Space for Chat)"
+                aria-label="Minimize contacts panel"
+              >
+                <PanelLeftClose className="w-4 h-4" />
+              </button>
             </div>
 
-            {/* In Leads Tab: Multi-Select Toggle Button */}
-            {sidebarTab === 'leads' && (
+            {/* Search Bar & Multi-Select Action */}
+            <div className="p-2.5 bg-white border-b border-slate-200/70 flex items-center gap-2">
+              <div className="relative flex-1">
+                <Search className="w-3.5 h-3.5 absolute left-2.5 top-2 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder={sidebarTab === 'chats' ? "Search chats or query code..." : "Search leads by name, phone..."}
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-200/80 rounded-lg pl-8 pr-3 py-1 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-slate-400 focus:bg-white transition-all"
+                />
+              </div>
+
+              {/* In Leads Tab: Multi-Select Toggle Button */}
+              {sidebarTab === 'leads' && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsBulkMode(!isBulkMode);
+                    if (isBulkMode) setSelectedLeadIds(new Set());
+                  }}
+                  className={`px-2 py-1 rounded-lg text-[11px] font-semibold flex items-center gap-1 border transition-all cursor-pointer shadow-2xs ${
+                    isBulkMode 
+                      ? 'bg-slate-900 text-white border-slate-900' 
+                      : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
+                  }`}
+                  title="Select multiple leads to send broadcast template"
+                >
+                  {isBulkMode ? <CheckSquare className="w-3 h-3 text-emerald-400" /> : <Square className="w-3 h-3 text-slate-400" />}
+                  <span>Select</span>
+                </button>
+              )}
+            </div>
+
+            {/* PIPELINE STAGE FILTER PILLS (New, Quoted, Negotiation, In Process, Completed, Lost) */}
+            <div className="px-2.5 py-1.5 bg-slate-50/90 border-b border-slate-200/70 flex items-center gap-1.5 overflow-x-auto no-scrollbar scroll-smooth">
+              {PIPELINE_STAGES.map((stage) => {
+                const isSelected = pipelineStatusFilter === stage.id;
+                const count = stageCounts[stage.id] ?? 0;
+                return (
+                  <button
+                    key={stage.id}
+                    type="button"
+                    onClick={() => setPipelineStatusFilter(stage.id)}
+                    className={cn(
+                      "px-2 py-1 rounded-md text-[11px] font-medium shrink-0 flex items-center gap-1.5 transition-all cursor-pointer border whitespace-nowrap",
+                      isSelected
+                        ? "bg-slate-900 text-white border-slate-900 shadow-2xs font-semibold"
+                        : "bg-white text-slate-600 border-slate-200 hover:bg-slate-100 hover:text-slate-900"
+                    )}
+                  >
+                    <span className={cn("w-1.5 h-1.5 rounded-full shrink-0", stage.dot)} />
+                    <span>{stage.label}</span>
+                    <span className={cn(
+                      "text-[10px] px-1.5 py-0.2 rounded-full font-bold",
+                      isSelected ? "bg-slate-800 text-slate-200" : "bg-slate-100 text-slate-600"
+                    )}>
+                      {count}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* FILTER PILLS: ALL vs REPLIED vs AWAITING */}
+            <div className="px-3 py-1.5 bg-white border-b border-slate-100 flex items-center gap-1 text-[11px]">
+              <span className="text-slate-400 text-[10px] font-medium mr-1 uppercase tracking-wider">State:</span>
+              
               <button
                 type="button"
-                onClick={() => {
-                  setIsBulkMode(!isBulkMode);
-                  if (isBulkMode) setSelectedLeadIds(new Set());
-                }}
-                className={`px-2 py-1 rounded-lg text-[11px] font-semibold flex items-center gap-1 border transition-all cursor-pointer shadow-2xs ${
-                  isBulkMode 
-                    ? 'bg-slate-900 text-white border-slate-900' 
-                    : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
+                onClick={() => setFilterMode('all')}
+                className={`px-2 py-0.5 rounded text-[11px] font-medium transition-colors cursor-pointer ${
+                  filterMode === 'all' 
+                    ? 'bg-slate-900 text-white font-semibold shadow-2xs' 
+                    : 'text-slate-600 hover:bg-slate-200/60'
                 }`}
-                title="Select multiple leads to send broadcast template"
               >
-                {isBulkMode ? <CheckSquare className="w-3 h-3 text-emerald-400" /> : <Square className="w-3 h-3 text-slate-400" />}
-                <span>Select</span>
+                All
               </button>
-            )}
-          </div>
 
-          {/* FILTER PILLS: ALL vs REPLIED vs AWAITING */}
-          <div className="px-3 py-1.5 bg-slate-50/50 border-b border-slate-100 flex items-center gap-1 text-[11px]">
-            <span className="text-slate-400 text-[10px] font-medium mr-1 uppercase tracking-wider">Filter:</span>
-            
-            <button
-              type="button"
-              onClick={() => setFilterMode('all')}
-              className={`px-2 py-0.5 rounded text-[11px] font-medium transition-colors cursor-pointer ${
-                filterMode === 'all' 
-                  ? 'bg-slate-900 text-white font-semibold shadow-2xs' 
-                  : 'text-slate-600 hover:bg-slate-200/60'
-              }`}
-            >
-              All
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setFilterMode('replied')}
-              className={`px-2 py-0.5 rounded text-[11px] font-medium flex items-center gap-1 transition-colors cursor-pointer ${
-                filterMode === 'replied' 
-                  ? 'bg-emerald-700 text-white font-semibold shadow-2xs' 
-                  : 'text-emerald-700 bg-emerald-50 hover:bg-emerald-100/70 border border-emerald-200/50'
-              }`}
-            >
-              <Flame className="w-3 h-3" />
-              <span>Replied ({sidebarTab === 'chats' ? repliedConversationsCount : repliedLeadsCount})</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setFilterMode('awaiting')}
-              className={`px-2 py-0.5 rounded text-[11px] font-medium transition-colors cursor-pointer ${
-                filterMode === 'awaiting' 
-                  ? 'bg-slate-900 text-white font-semibold shadow-2xs' 
-                  : 'text-slate-500 hover:bg-slate-200/60'
-              }`}
-            >
-              Awaiting
-            </button>
-
-            {/* Quick Select All in Bulk Mode */}
-            {sidebarTab === 'leads' && isBulkMode && (
               <button
                 type="button"
-                onClick={() => {
-                  if (selectedLeadIds.size === filteredLeads.length) {
-                    setSelectedLeadIds(new Set());
-                  } else {
-                    setSelectedLeadIds(new Set(filteredLeads.map(l => l.id)));
-                  }
-                }}
-                className="ml-auto text-[10px] font-bold text-slate-700 hover:text-slate-900 underline cursor-pointer"
+                onClick={() => setFilterMode('replied')}
+                className={`px-2 py-0.5 rounded text-[11px] font-medium flex items-center gap-1 transition-colors cursor-pointer ${
+                  filterMode === 'replied' 
+                    ? 'bg-emerald-700 text-white font-semibold shadow-2xs' 
+                    : 'text-emerald-700 bg-emerald-50 hover:bg-emerald-100/70 border border-emerald-200/50'
+                }`}
               >
-                {selectedLeadIds.size === filteredLeads.length ? 'Deselect All' : `Select All (${filteredLeads.length})`}
+                <Flame className="w-3 h-3" />
+                <span>Replied ({sidebarTab === 'chats' ? repliedConversationsCount : repliedLeadsCount})</span>
               </button>
-            )}
-          </div>
+
+              <button
+                type="button"
+                onClick={() => setFilterMode('awaiting')}
+                className={`px-2 py-0.5 rounded text-[11px] font-medium transition-colors cursor-pointer ${
+                  filterMode === 'awaiting' 
+                    ? 'bg-slate-900 text-white font-semibold shadow-2xs' 
+                    : 'text-slate-500 hover:bg-slate-200/60'
+                }`}
+              >
+                Awaiting
+              </button>
+
+              {/* Quick Select All in Bulk Mode */}
+              {sidebarTab === 'leads' && isBulkMode && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (selectedLeadIds.size === filteredLeads.length) {
+                      setSelectedLeadIds(new Set());
+                    } else {
+                      setSelectedLeadIds(new Set(filteredLeads.map(l => l.id)));
+                    }
+                  }}
+                  className="ml-auto text-[10px] font-bold text-slate-700 hover:text-slate-900 underline cursor-pointer"
+                >
+                  {selectedLeadIds.size === filteredLeads.length ? 'Deselect All' : `Select All (${filteredLeads.length})`}
+                </button>
+              )}
+            </div>
 
           {/* LIST ITEMS */}
           <div className="flex-1 overflow-y-auto divide-y divide-slate-100">
@@ -791,6 +1014,26 @@ export default function WhatsAppChatPage() {
                           {conv.queryCode && (
                             <span className="text-[9px] font-mono font-bold px-1.5 py-0.2 rounded bg-slate-100 text-slate-700 border border-slate-200/60">
                               {conv.queryCode}
+                            </span>
+                          )}
+
+                          {conv.queryStatus && (
+                            <span className={`text-[9px] uppercase font-bold px-1.5 py-0.2 rounded border ${
+                              conv.queryStatus === 'new' 
+                                ? 'bg-amber-50 text-amber-800 border-amber-200' 
+                                : conv.queryStatus === 'quoted' 
+                                ? 'bg-blue-50 text-blue-800 border-blue-200' 
+                                : conv.queryStatus === 'negotiation'
+                                ? 'bg-purple-50 text-purple-800 border-purple-200'
+                                : conv.queryStatus === 'in_progress'
+                                ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                                : conv.queryStatus === 'completed'
+                                ? 'bg-teal-50 text-teal-800 border-teal-200'
+                                : conv.queryStatus === 'lost'
+                                ? 'bg-rose-50 text-rose-800 border-rose-200'
+                                : 'bg-slate-100 text-slate-700 border-slate-200'
+                            }`}>
+                              {conv.queryStatus.replace('_', ' ')}
                             </span>
                           )}
                           
@@ -884,9 +1127,17 @@ export default function WhatsAppChatPage() {
                               ? 'bg-amber-50 text-amber-800 border-amber-200' 
                               : lead.status === 'quoted' 
                               ? 'bg-blue-50 text-blue-800 border-blue-200' 
+                              : lead.status === 'negotiation'
+                              ? 'bg-purple-50 text-purple-800 border-purple-200'
+                              : lead.status === 'in_progress'
+                              ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                              : lead.status === 'completed'
+                              ? 'bg-teal-50 text-teal-800 border-teal-200'
+                              : lead.status === 'lost'
+                              ? 'bg-rose-50 text-rose-800 border-rose-200'
                               : 'bg-slate-100 text-slate-700 border-slate-200'
                           }`}>
-                            {lead.status}
+                            {lead.status?.replace('_', ' ')}
                           </span>
                         </div>
 
@@ -964,6 +1215,7 @@ export default function WhatsAppChatPage() {
             </div>
           )}
         </div>
+      )}
 
         {/* RIGHT COLUMN: ACTIVE CHAT DESK */}
         {selectedPhone ? (
@@ -972,6 +1224,22 @@ export default function WhatsAppChatPage() {
             {/* Minimalist Chat Header */}
             <div className="px-5 py-2.5 bg-white border-b border-slate-200/80 flex items-center justify-between gap-2 flex-wrap">
               <div className="flex items-center gap-3">
+                {/* Expand Contacts Panel Button when minimized */}
+                {isPanelCollapsed && (
+                  <button
+                    type="button"
+                    onClick={() => setIsPanelCollapsed(false)}
+                    className="p-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold flex items-center gap-1.5 shadow-2xs transition-colors cursor-pointer"
+                    title="Show Contacts List"
+                  >
+                    <PanelLeftOpen className="w-3.5 h-3.5 text-slate-600" />
+                    <span className="hidden sm:inline">Contacts</span>
+                    <span className="text-[10px] bg-slate-100 text-slate-700 px-1.5 py-0.2 rounded-full font-bold">
+                      {sidebarTab === 'chats' ? filteredConversations.length : filteredLeads.length}
+                    </span>
+                  </button>
+                )}
+
                 <div className="w-9 h-9 rounded-full bg-slate-900 text-white font-bold flex items-center justify-center text-xs shadow-2xs">
                   {activeConversation?.clientName ? activeConversation.clientName[0].toUpperCase() : <Phone className="w-4 h-4" />}
                 </div>
@@ -991,6 +1259,25 @@ export default function WhatsAppChatPage() {
                         {activeConversation.queryCode}
                         <ExternalLink className="w-2.5 h-2.5 text-slate-400" />
                       </a>
+                    )}
+                    {activeConversation?.queryStatus && (
+                      <span className={`text-[9px] uppercase font-bold px-1.5 py-0.2 rounded border ${
+                        activeConversation.queryStatus === 'new' 
+                          ? 'bg-amber-50 text-amber-800 border-amber-200' 
+                          : activeConversation.queryStatus === 'quoted' 
+                          ? 'bg-blue-50 text-blue-800 border-blue-200' 
+                          : activeConversation.queryStatus === 'negotiation'
+                          ? 'bg-purple-50 text-purple-800 border-purple-200'
+                          : activeConversation.queryStatus === 'in_progress'
+                          ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                          : activeConversation.queryStatus === 'completed'
+                          ? 'bg-teal-50 text-teal-800 border-teal-200'
+                          : activeConversation.queryStatus === 'lost'
+                          ? 'bg-rose-50 text-rose-800 border-rose-200'
+                          : 'bg-slate-100 text-slate-700 border-slate-200'
+                      }`}>
+                        {activeConversation.queryStatus.replace('_', ' ')}
+                      </span>
                     )}
                   </div>
                   <p className="text-[11px] text-slate-500 flex items-center gap-1.5">

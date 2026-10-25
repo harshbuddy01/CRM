@@ -30,9 +30,14 @@ import {
   Compass,
   Activity,
   MessageSquare,
-  Megaphone
+  Megaphone,
+  ChevronLeft,
+  ChevronRight,
+  PanelLeftClose,
+  PanelLeftOpen
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useUiStore } from '@/lib/ui-store';
 import { X } from 'lucide-react';
 
 interface SidebarProps {
@@ -49,6 +54,7 @@ const IMMORTAL_EMAILS = [
 export function Sidebar({ open, setOpen }: SidebarProps) {
   const pathname = usePathname();
   const { user } = useAuthStore();
+  const { sidebarCollapsed, toggleSidebarCollapsed } = useUiStore();
   
   useEffect(() => {
     if (!open) return;
@@ -95,13 +101,16 @@ export function Sidebar({ open, setOpen }: SidebarProps) {
         key={link.href} 
         href={link.href} 
         data-tour-target={link.href}
+        title={sidebarCollapsed ? link.label : undefined}
         onClick={() => setOpen?.(false)}
         className={cn(
-          "flex items-center gap-3 px-3 py-2 rounded-md transition-colors text-sm font-medium relative", 
+          "flex items-center gap-3 px-3 py-2 rounded-md transition-all text-sm font-medium relative group", 
+          sidebarCollapsed ? "md:justify-center md:px-2" : "",
           isActive ? "bg-primary text-primary-foreground shadow-sm" : "hover:bg-muted text-muted-foreground hover:text-foreground"
         )}
       >
-        <link.icon className="w-4 h-4" />{link.label}
+        <link.icon className="w-4 h-4 shrink-0" />
+        <span className={cn(sidebarCollapsed ? "md:hidden" : "")}>{link.label}</span>
       </Link>
     );
   };
@@ -118,15 +127,42 @@ export function Sidebar({ open, setOpen }: SidebarProps) {
 
       <aside 
         className={cn(
-          "fixed inset-y-0 left-0 w-64 border-r bg-white z-[70] transform transition-transform duration-300 ease-in-out md:translate-x-0 flex flex-col h-screen",
+          "fixed inset-y-0 left-0 border-r bg-white z-[70] transform transition-all duration-300 ease-in-out md:translate-x-0 flex flex-col h-screen",
+          sidebarCollapsed ? "w-64 md:w-16" : "w-64",
           open ? "translate-x-0 shadow-2xl" : "-translate-x-full"
         )}
         role={open ? "dialog" : undefined}
         aria-modal={open ? "true" : undefined}
         aria-label="Navigation Sidebar"
       >
-        <div className="h-14 flex items-center justify-between border-b px-6 font-bold text-lg bg-slate-50">
-          <span>TravelCRM ✈️</span>
+        <div className={cn(
+          "h-14 flex items-center border-b px-4 font-bold text-lg bg-slate-50 transition-all",
+          sidebarCollapsed ? "md:justify-center md:px-2" : "justify-between px-6"
+        )}>
+          {sidebarCollapsed ? (
+            <button
+              onClick={toggleSidebarCollapsed}
+              className="hidden md:flex p-2 hover:bg-slate-200/70 rounded-lg text-slate-700 transition-colors cursor-pointer"
+              title="Expand Sidebar"
+              aria-label="Expand sidebar"
+            >
+              <PanelLeftOpen className="w-5 h-5 text-slate-700" />
+            </button>
+          ) : (
+            <>
+              <span>TravelCRM ✈️</span>
+              <button
+                onClick={toggleSidebarCollapsed}
+                className="hidden md:flex p-1.5 hover:bg-slate-200/70 rounded-lg text-slate-500 hover:text-slate-800 transition-colors cursor-pointer"
+                title="Collapse Sidebar (Big Screen)"
+                aria-label="Collapse sidebar"
+              >
+                <PanelLeftClose className="w-4 h-4" />
+              </button>
+            </>
+          )}
+          <span className="md:hidden">TravelCRM ✈️</span>
+
           <button 
             onClick={() => setOpen?.(false)} 
             className="md:hidden p-1 hover:bg-slate-200 rounded-lg transition-colors"
@@ -135,30 +171,42 @@ export function Sidebar({ open, setOpen }: SidebarProps) {
             <X className="w-5 h-5 text-slate-500" />
           </button>
         </div>
-        <nav className="flex-1 overflow-y-auto px-4 py-6 space-y-1 scrollbar-thin scrollbar-thumb-slate-200">
+
+        <nav className={cn(
+          "flex-1 overflow-y-auto py-6 space-y-1 scrollbar-thin scrollbar-thumb-slate-200 transition-all",
+          sidebarCollapsed ? "px-2" : "px-4"
+        )}>
           {links.filter(l => !l.isSetting).map(renderLink)}
           
           {links.some(l => l.isSetting && l.show !== false) && (
-            <div className="pt-6 pb-2">
-              <p className="px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Administration</p>
+            <div className={cn("pt-6 pb-2", sidebarCollapsed ? "md:pt-3 md:pb-1 text-center" : "")}>
+              {sidebarCollapsed ? (
+                <div className="hidden md:block w-6 h-[1px] bg-slate-200 mx-auto" />
+              ) : (
+                <p className="px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Administration</p>
+              )}
+              <p className="md:hidden px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Administration</p>
             </div>
           )}
           
           {links.filter(l => l.isSetting).map(renderLink)}
         </nav>
-        <div className="p-4 border-t bg-slate-50/50">
+
+        <div className={cn("p-4 border-t bg-slate-50/50 transition-all", sidebarCollapsed ? "md:p-2" : "")}>
           <Link
             href="/profile"
             onClick={() => setOpen?.(false)}
+            title={user?.name || 'Profile'}
             className={cn(
               "flex items-center gap-3 px-3 py-2 rounded-md transition-colors text-sm font-medium",
+              sidebarCollapsed ? "md:justify-center md:px-0" : "",
               pathname === '/profile'
                 ? "bg-primary text-primary-foreground shadow-sm"
                 : "hover:bg-muted text-muted-foreground hover:text-foreground"
             )}
           >
-            <User className="w-4 h-4" />
-            <div className="flex flex-col">
+            <User className="w-4 h-4 shrink-0" />
+            <div className={cn("flex flex-col", sidebarCollapsed ? "md:hidden" : "")}>
               <span className="text-xs font-semibold truncate w-32">{user?.name || 'Profile'}</span>
               <span className={cn(
                 "text-[10px] font-bold uppercase tracking-tight",
@@ -175,10 +223,14 @@ export function Sidebar({ open, setOpen }: SidebarProps) {
               useAuthStore.getState().logout();
               window.location.href = '/login';
             }}
-            className="flex items-center gap-3 px-3 py-2 rounded-md transition-colors text-sm font-medium mt-1 w-full text-red-500 hover:bg-red-50"
+            title="Logout"
+            className={cn(
+              "flex items-center gap-3 px-3 py-2 rounded-md transition-colors text-sm font-medium mt-1 w-full text-red-500 hover:bg-red-50",
+              sidebarCollapsed ? "md:justify-center md:px-0" : ""
+            )}
           >
-            <LogOut className="w-4 h-4" />
-            <span>Logout</span>
+            <LogOut className="w-4 h-4 shrink-0" />
+            <span className={cn(sidebarCollapsed ? "md:hidden" : "")}>Logout</span>
           </button>
         </div>
       </aside>

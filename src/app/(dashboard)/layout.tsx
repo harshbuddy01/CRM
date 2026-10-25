@@ -1,6 +1,7 @@
 'use client';
 
 import { useAuthStore } from '@/lib/auth-store';
+import { useUiStore } from '@/lib/ui-store';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Sidebar } from '@/components/Sidebar';
@@ -38,10 +39,15 @@ export default function DashboardLayout({
   // If user is not in Zustand store, render nothing (the useEffect above will redirect them)
   if (!user || !accessToken) return null;
 
+  const { sidebarCollapsed } = useUiStore();
+
   return (
     <div className="flex min-h-screen bg-background text-foreground">
       <Sidebar open={sidebarOpen} setOpen={setSidebarOpen} />
-      <div className={cn("flex-1 flex flex-col md:ml-64 transition-all pb-24 md:pb-0")}>
+      <div className={cn(
+        "flex-1 flex flex-col transition-all duration-300 pb-24 md:pb-0",
+        sidebarCollapsed ? "md:ml-16" : "md:ml-64"
+      )}>
         <Topbar onMenuClick={() => setSidebarOpen(true)} />
         <main className="flex-1 p-4 md:p-6">
           {children}

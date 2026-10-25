@@ -1,11 +1,12 @@
 'use client';
 
 import { useAuthStore } from '@/lib/auth-store';
+import { useUiStore } from '@/lib/ui-store';
 import { api } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { LogOut, User, Bell, Check, Loader2, Menu } from 'lucide-react';
+import { LogOut, User, Bell, Check, Loader2, Menu, PanelLeft } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import {
   DropdownMenu,
@@ -34,6 +35,7 @@ const IMMORTAL_EMAILS = [
 
 export function Topbar({ onMenuClick }: { onMenuClick?: () => void }) {
   const { user, logout } = useAuthStore();
+  const { sidebarCollapsed, toggleSidebarCollapsed } = useUiStore();
   const router = useRouter();
   const queryClient = useQueryClient();
 
@@ -81,6 +83,16 @@ export function Topbar({ onMenuClick }: { onMenuClick?: () => void }) {
           aria-label="Open navigation menu"
         >
           <Menu className="w-5 h-5 text-slate-600" />
+        </Button>
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          className="hidden md:flex rounded-lg hover:bg-slate-100 text-slate-500" 
+          onClick={toggleSidebarCollapsed}
+          title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar (Big Screen mode)"}
+          aria-label="Toggle sidebar"
+        >
+          <PanelLeft className="w-4 h-4" />
         </Button>
         <div className="font-bold md:hidden text-lg tracking-tight text-primary">
           TravelCRM ✈️

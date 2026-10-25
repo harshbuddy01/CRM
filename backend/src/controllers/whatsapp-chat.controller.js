@@ -133,11 +133,15 @@ const getConversations = async (req, res, next) => {
  */
 const getLeads = async (req, res, next) => {
   try {
-    const { search, limit = 100 } = req.query;
+    const { search, status, limit = 500 } = req.query;
     const where = {
       deletedAt: null,
       phone: { not: '' }
     };
+
+    if (status && status !== 'all') {
+      where.status = status;
+    }
 
     if (search) {
       const s = String(search).trim();
