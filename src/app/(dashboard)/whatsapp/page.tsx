@@ -21,7 +21,8 @@ import {
   Filter,
   ArrowRight,
   Check,
-  Briefcase
+  Briefcase,
+  AlertCircle
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { toast } from 'sonner';
@@ -72,6 +73,18 @@ interface ChatMessage {
 }
 
 const APPROVED_TEMPLATES = [
+  {
+    id: 'travel_inquiry_update',
+    name: '🌴 Travel Inquiry Update (Utility 1-Click)',
+    category: 'UTILITY',
+    description: '100% Guaranteed delivery with "I am interested" & "Need assistance" buttons',
+  },
+  {
+    id: 'reservation_inquiry_update',
+    name: '✈️ Reservation Check-in (Utility 1-Click)',
+    category: 'UTILITY',
+    description: '100% Guaranteed delivery with "Yes proceed" & "Speak to team" buttons',
+  },
   {
     id: 'holiday_trip_inquiry',
     name: '🌴 Holiday Trip Inquiry (1-Click Reply)',
@@ -347,7 +360,17 @@ export default function WhatsAppChatPage() {
 
       let components: any[] = [];
 
-      if (templateId === 'holiday_trip_inquiry' || templateId === 'travel_connect_checkin' || templateId === 'festive_exclusive_offer') {
+      if (templateId === 'travel_inquiry_update' || templateId === 'reservation_inquiry_update') {
+        components = [
+          {
+            type: 'body',
+            parameters: [
+              { type: 'text', text: recipientName },
+              { type: 'text', text: queryCode },
+            ],
+          },
+        ];
+      } else if (templateId === 'holiday_trip_inquiry' || templateId === 'travel_connect_checkin' || templateId === 'festive_exclusive_offer') {
         components = [
           {
             type: 'body',
@@ -1097,7 +1120,17 @@ export default function WhatsAppChatPage() {
                           {/* Timestamp & Read Status */}
                           <div className="flex items-center justify-end gap-1 mt-1 text-[10px] text-slate-400">
                             <span>{new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                            {isOutbound && <CheckCheck className="w-3.5 h-3.5 text-emerald-600" />}
+                            {isOutbound && (
+                              msg.status === 'READ' ? (
+                                <CheckCheck className="w-3.5 h-3.5 text-emerald-500" title="Read by customer" />
+                              ) : msg.status === 'DELIVERED' ? (
+                                <CheckCheck className="w-3.5 h-3.5 text-slate-400" title="Delivered to phone" />
+                              ) : msg.status === 'FAILED' ? (
+                                <AlertCircle className="w-3.5 h-3.5 text-rose-500" title="Delivery failed" />
+                              ) : (
+                                <Check className="w-3.5 h-3.5 text-slate-400" title="Sent from CRM" />
+                              )
+                            )}
                           </div>
                         </div>
                       </div>

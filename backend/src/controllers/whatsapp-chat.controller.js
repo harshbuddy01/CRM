@@ -369,6 +369,18 @@ const buildTemplateComponents = (templateName, recipientName, query) => {
     ];
   }
 
+  if (['travel_inquiry_update', 'reservation_inquiry_update'].includes(templateName)) {
+    return [
+      {
+        type: 'body',
+        parameters: [
+          { type: 'text', text: name },
+          { type: 'text', text: queryCode }
+        ]
+      }
+    ];
+  }
+
   if (templateName === 'proposal_ready') {
     return [
       {
@@ -479,7 +491,11 @@ const sendMessage = async (req, res, next) => {
 
       result = await whatsappService.sendTemplateMessage(cleanPhone, templateName, finalComponents);
       
-      if (templateName === 'holiday_trip_inquiry') {
+      if (templateName === 'travel_inquiry_update') {
+        messageContent = `[🌴 Travel Inquiry Update (Utility) sent to ${recipientName}]`;
+      } else if (templateName === 'reservation_inquiry_update') {
+        messageContent = `[✈️ Reservation Check-in (Utility) sent to ${recipientName}]`;
+      } else if (templateName === 'holiday_trip_inquiry') {
         messageContent = `[🌴 Holiday Trip Inquiry (Quick Reply) sent to ${recipientName}]`;
       } else if (templateName === 'travel_connect_checkin') {
         messageContent = `[✈️ Concierge Check-in (Quick Reply) sent to ${recipientName}]`;
