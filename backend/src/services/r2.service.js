@@ -62,7 +62,7 @@ const compressVideoMp4 = (inputPath, outputPath) => {
   execSync(
     `ffmpeg -y -i "${inputPath}" ` +
     `-vf "scale='min(1920,iw)':-2" ` +         // max 1920px wide, keep aspect
-    `-c:v libx264 -crf 28 -preset fast ` +     // quality/size balance
+    `-c:v libx264 -pix_fmt yuv420p -crf 28 -preset fast ` +     // quality/size balance & universal device support
     `-profile:v main -level 4.0 ` +
     `-c:a aac -b:a 128k ` +
     `-movflags +faststart ` +                  // critical: stream before full download
@@ -139,6 +139,20 @@ const transcodeAndUploadHls = async (file, section) => {
       if (filename === playlistName) {
         playlistUrl = `${PUBLIC_URL}/${fileKey}`;
       }
+    }
+
+    // Also upload the compressed MP4 as video.mp4 in the same folder for direct MP4 faststream fallback
+    try {
+      const mp4Buffer = fs.readFileSync(compressedPath);
+      await r2Client.send(new PutObjectCommand({
+        Bucket: BUCKET_NAME,
+        Key: `${r2Folder}/video.mp4`,
+        Body: mp4Buffer,
+        ContentType: 'video/mp4',
+      }));
+      console.log(`📦 [HLS] Parallel faststream MP4 uploaded: ${PUBLIC_URL}/${r2Folder}/video.mp4`);
+    } catch (mp4Err) {
+      console.warn('⚠️ [HLS] Failed to upload parallel MP4 fallback:', mp4Err.message);
     }
     
     console.log(`✅ [HLS] Video transcoded and uploaded to R2 successfully: ${playlistUrl}`);

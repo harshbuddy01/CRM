@@ -862,89 +862,458 @@ interface InsidePagesEditorProps {
 }
 function InsidePagesEditor({ destinationsList, destinationsCms, onSave, saving }: InsidePagesEditorProps) {
   const [selectedDestId, setSelectedDestId] = useState('');
+  const [mediaTab, setMediaTab] = useState<'image' | 'video'>('image');
   const [pageForm, setPageForm] = useState({
-    aboutHtml: '', heroImage: '', seoTitle: '', seoDesc: '', isPublished: true,
-    pageContent: { heroImage: '', attractions: [] as Array<{ name: string; tag: string; image: string; short: string }> }
+    aboutHtml: '',
+    heroImage: '',
+    seoTitle: '',
+    seoDesc: '',
+    isPublished: true,
+    pageContent: {
+      mediaType: 'image' as 'image' | 'video',
+      heroImage: '',
+      heroVideo: '',
+      attractions: [] as Array<{ name: string; tag: string; image: string; short: string }>
+    }
   });
+
+  const isVideoUrl = (url: string) => {
+    if (!url) return false;
+    return url.endsWith('.mp4') || url.endsWith('.webm') || url.endsWith('.mov') || url.endsWith('.m3u8') || url.includes('/hls/');
+  };
+
+  const getPreviewVideoSrc = (url: string) => {
+    if (!url) return '';
+    if (url.includes('.m3u8')) {
+      return url.replace('playlist.m3u8', 'video.mp4');
+    }
+    return url;
+  };
 
   useEffect(() => {
     if (!selectedDestId) return;
     const cms = destinationsCms.find((d: any) => d.destinationId === selectedDestId);
     if (cms) {
-      setPageForm({ aboutHtml: cms.aboutHtml || '', heroImage: cms.heroImage || '', seoTitle: cms.seoTitle || '', seoDesc: cms.seoDesc || '', isPublished: cms.isPublished ?? true, pageContent: cms.pageContent || { heroImage: '', attractions: [] } });
+      const pc = cms.pageContent || {};
+      const hasVideo = !!(pc.heroVideo || isVideoUrl(pc.heroImage || '') || isVideoUrl(cms.heroImage || ''));
+      const activeType: 'image' | 'video' = pc.mediaType === 'video' || (hasVideo && pc.mediaType !== 'image') ? 'video' : 'image';
+      
+      const vUrl = pc.heroVideo || (isVideoUrl(pc.heroImage || '') ? pc.heroImage : (isVideoUrl(cms.heroImage || '') ? cms.heroImage : ''));
+      const iUrl = (!isVideoUrl(pc.heroImage || '') ? pc.heroImage : '') || (!isVideoUrl(cms.heroImage || '') ? cms.heroImage : '');
+
+      setMediaTab(activeType);
+      setPageForm({
+        aboutHtml: cms.aboutHtml || '',
+        heroImage: cms.heroImage || pc.heroImage || '',
+        seoTitle: cms.seoTitle || '',
+        seoDesc: cms.seoDesc || '',
+        isPublished: cms.isPublished ?? true,
+        pageContent: {
+          mediaType: activeType,
+          heroImage: iUrl,
+          heroVideo: vUrl,
+          attractions: pc.attractions || []
+        }
+      });
     } else {
-      setPageForm({ aboutHtml: '', heroImage: '', seoTitle: '', seoDesc: '', isPublished: true, pageContent: { heroImage: '', attractions: [] } });
+      setMediaTab('image');
+      setPageForm({
+        aboutHtml: '',
+        heroImage: '',
+        seoTitle: '',
+        seoDesc: '',
+        isPublished: true,
+        pageContent: {
+          mediaType: 'image',
+          heroImage: '',
+          heroVideo: '',
+          attractions: []
+        }
+      });
     }
   }, [selectedDestId]);
 
-  const addAttraction = () => setPageForm((f: any) => ({ ...f, pageContent: { ...f.pageContent, attractions: [...(f.pageContent.attractions || []), { name: '', tag: 'Nature', image: '', short: '' }] } }));
-  const removeAttraction = (idx: number) => setPageForm((f: any) => ({ ...f, pageContent: { ...f.pageContent, attractions: f.pageContent.attractions.filter((_: any, i: number) => i !== idx) } }));
-  const updateAttraction = (idx: number, key: string, val: any) => setPageForm((f: any) => { const list = [...f.pageContent.attractions]; list[idx] = { ...list[idx], [key]: val }; return { ...f, pageContent: { ...f.pageContent, attractions: list } }; });
+  const addAttraction = () => setPageForm((f: any) => ({
+    ...f,
+    pageContent: {
+      ...f.pageContent,
+      attractions: [...(f.pageContent.attractions || []), { name: '', tag: 'Nature', image: '', short: '' }]
+    }
+  }));
+
+  const removeAttraction = (idx: number) => setPageForm((f: any) => ({
+    ...f,
+    pageContent: {
+      ...f.pageContent,
+      attractions: f.pageContent.attractions.filter((_: any, i: number) => i !== idx)
+    }
+  }));
+
+  const updateAttraction = (idx: number, key: string, val: any) => setPageForm((f: any) => {
+    const list = [...f.pageContent.attractions];
+    list[idx] = { ...list[idx], [key]: val };
+    return { ...f, pageContent: { ...f.pageContent, attractions: list } };
+  });
+
+  const handleSave = () => {
+    const isVideo = mediaTab === 'video';
+    const effectiveHero = isVideo
+      ? (pageForm.pageContent.heroVideo || pageForm.pageContent.heroImage || pageForm.heroImage)
+      : (pageForm.pageContent.heroImage || pageForm.heroImage);
+
+    const payload = {
+      ...pageForm,
+      heroImage: effectiveHero,
+      pageContent: {
+        ...pageForm.pageContent,
+        mediaType: mediaTab,
+        heroImage: pageForm.pageContent.heroImage || (!isVideo ? effectiveHero : ''),
+        heroVideo: pageForm.pageContent.heroVideo || (isVideo ? effectiveHero : ''),
+      }
+    };
+    onSave(selectedDestId, payload);
+  };
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between border-b pb-4">
         <div>
           <h3 className="font-bold text-lg text-slate-800">Destination Inside Page Editor</h3>
-          <p className="text-xs text-muted-foreground">Select a destination to customize its cover photo and tourist attraction details.</p>
+          <p className="text-xs text-muted-foreground">Select a destination to customize its cover photo, video background loop, and tourist attraction details.</p>
         </div>
         {selectedDestId && (
-          <Button onClick={() => onSave(selectedDestId, pageForm)} disabled={saving} size="sm">
+          <Button onClick={handleSave} disabled={saving} size="sm">
             {saving ? <Loader2 className="w-4 h-4 animate-spin mr-1.5" /> : <Check className="w-4 h-4 mr-1.5" />}Save Page Settings
           </Button>
         )}
       </div>
+
       <div className="space-y-1.5 max-w-sm">
         <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">Select Destination</Label>
-        <select className="w-full px-3 py-2 border rounded-md text-sm bg-background" value={selectedDestId} onChange={e => setSelectedDestId(e.target.value)}>
+        <select
+          className="w-full px-3 py-2 border rounded-md text-sm bg-background font-medium"
+          value={selectedDestId}
+          onChange={e => setSelectedDestId(e.target.value)}
+        >
           <option value="">-- Choose a Destination --</option>
-          {destinationsList.map((dest: any) => <option key={dest.id} value={dest.id}>{dest.name}</option>)}
+          {destinationsList.map((dest: any) => (
+            <option key={dest.id} value={dest.id}>{dest.name}</option>
+          ))}
         </select>
       </div>
+
       {selectedDestId ? (
         <div className="space-y-6 border-t pt-4">
-          <div className="bg-slate-50/50 rounded-xl border p-5 grid md:grid-cols-[1.5fr_3fr] gap-6 items-center">
-            <div className="space-y-2">
-              <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">Destination Page Cover Photo</Label>
-              <div className="relative w-full h-32 bg-slate-100 rounded-lg overflow-hidden border">
-                {pageForm.pageContent.heroImage || pageForm.heroImage ? <img src={pageForm.pageContent.heroImage || pageForm.heroImage} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-slate-400"><ImageIcon className="w-8 h-8" /></div>}
+          {/* ── TOP SECTION: HERO MEDIA & SEO ── */}
+          <div className="bg-slate-50/70 rounded-xl border p-5 grid lg:grid-cols-[1.8fr_2.2fr] gap-6 items-start">
+            {/* LEFT: HERO MEDIA (PHOTO / VIDEO TABS) */}
+            <div className="space-y-3 bg-white p-4 rounded-xl border shadow-sm">
+              <div className="flex items-center justify-between">
+                <Label className="text-xs font-bold uppercase tracking-wider text-slate-600">Hero Media</Label>
+                {/* Media Switcher Tabs */}
+                <div className="inline-flex p-0.5 bg-slate-100 rounded-lg border text-xs font-semibold">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMediaTab('image');
+                      setPageForm((f: any) => ({ ...f, pageContent: { ...f.pageContent, mediaType: 'image' } }));
+                    }}
+                    className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md transition-all ${
+                      mediaTab === 'image'
+                        ? 'bg-white text-slate-900 shadow-xs font-bold'
+                        : 'text-slate-500 hover:text-slate-800'
+                    }`}
+                  >
+                    <ImageIcon className="w-3.5 h-3.5" />
+                    Cover Photo
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMediaTab('video');
+                      setPageForm((f: any) => ({ ...f, pageContent: { ...f.pageContent, mediaType: 'video' } }));
+                    }}
+                    className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md transition-all ${
+                      mediaTab === 'video'
+                        ? 'bg-white text-indigo-600 shadow-xs font-bold'
+                        : 'text-slate-500 hover:text-slate-800'
+                    }`}
+                  >
+                    <Video className="w-3.5 h-3.5" />
+                    Video Loop
+                    <span className="text-[9px] bg-emerald-100 text-emerald-700 px-1 py-0.2 rounded font-bold uppercase">HQ</span>
+                  </button>
+                </div>
               </div>
-              <div className="flex gap-1.5 items-center">
-                <Input value={pageForm.pageContent.heroImage || pageForm.heroImage || ''} onChange={e => setPageForm((f: any) => ({ ...f, heroImage: e.target.value, pageContent: { ...f.pageContent, heroImage: e.target.value } }))} placeholder="Cover Image Path/URL" className="flex-1 text-xs h-9" />
-                <R2UploadButton label="Upload" section="destinations" onUploaded={url => setPageForm((f: any) => ({ ...f, heroImage: url, pageContent: { ...f.pageContent, heroImage: url } }))} />
-              </div>
+
+              {/* VIDEO MODE */}
+              {mediaTab === 'video' ? (
+                <div className="space-y-3">
+                  <div className="p-2.5 bg-indigo-50/70 border border-indigo-100 rounded-lg text-[11px] text-indigo-900 leading-relaxed">
+                    ✨ <strong>Auto-Compression & Fast-Start:</strong> Upload any MP4/MOV video. The server automatically optimizes it to 1080p web-stream format with adaptive streaming so it loads instantly on mobile and desktop without buffering.
+                  </div>
+
+                  {/* Video Live Preview */}
+                  <div className="relative w-full h-44 bg-slate-950 rounded-lg overflow-hidden border shadow-inner flex items-center justify-center">
+                    {pageForm.pageContent.heroVideo ? (
+                      <video
+                        key={pageForm.pageContent.heroVideo}
+                        src={getPreviewVideoSrc(pageForm.pageContent.heroVideo)}
+                        autoPlay
+                        muted
+                        loop
+                        playsInline
+                        controls
+                        poster={pageForm.pageContent.heroImage}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="text-center text-slate-400 p-4">
+                        <Video className="w-8 h-8 mx-auto mb-1.5 opacity-50 text-indigo-400" />
+                        <p className="text-xs font-medium">No video uploaded yet</p>
+                        <p className="text-[10px] text-slate-500 mt-0.5">Upload a video below to preview</p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Video Upload Field */}
+                  <div className="space-y-1">
+                    <Label className="text-[11px] font-semibold text-slate-600">Video File (MP4, MOV, WebM)</Label>
+                    <div className="flex gap-1.5 items-center">
+                      <Input
+                        value={pageForm.pageContent.heroVideo || ''}
+                        onChange={e => setPageForm((f: any) => ({
+                          ...f,
+                          pageContent: { ...f.pageContent, heroVideo: e.target.value, mediaType: 'video' }
+                        }))}
+                        placeholder="Video stream URL (e.g. https://.../video.mp4 or .m3u8)"
+                        className="flex-1 text-xs h-9 font-mono"
+                      />
+                      <R2UploadButton
+                        label="Upload Video"
+                        accept="video/*"
+                        section="destinations"
+                        onUploaded={url => {
+                          setPageForm((f: any) => ({
+                            ...f,
+                            pageContent: { ...f.pageContent, heroVideo: url, mediaType: 'video' }
+                          }));
+                          toast.success('Destination video uploaded & compressed successfully!');
+                        }}
+                      />
+                      {pageForm.pageContent.heroVideo && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => setPageForm((f: any) => ({ ...f, pageContent: { ...f.pageContent, heroVideo: '' } }))}
+                          className="h-9 w-9 text-slate-400 hover:text-red-500 hover:bg-red-50"
+                          title="Remove video"
+                        >
+                          <X className="w-4 h-4" />
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Poster Image (Instant Load Fallback) */}
+                  <div className="space-y-1 pt-2 border-t">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-[11px] font-semibold text-slate-600">Poster / Mobile Fallback Photo</Label>
+                      <span className="text-[10px] text-muted-foreground">Loads at 0ms while video streams</span>
+                    </div>
+                    <div className="flex gap-2 items-center">
+                      {pageForm.pageContent.heroImage && (
+                        <div className="w-10 h-9 rounded overflow-hidden border shrink-0">
+                          <img src={pageForm.pageContent.heroImage} className="w-full h-full object-cover" alt="Poster" />
+                        </div>
+                      )}
+                      <Input
+                        value={pageForm.pageContent.heroImage || ''}
+                        onChange={e => setPageForm((f: any) => ({
+                          ...f,
+                          heroImage: e.target.value,
+                          pageContent: { ...f.pageContent, heroImage: e.target.value }
+                        }))}
+                        placeholder="Poster image URL (JPG, PNG, WebP)"
+                        className="flex-1 text-xs h-9 font-mono"
+                      />
+                      <R2UploadButton
+                        label="Upload Poster"
+                        accept="image/*"
+                        section="destinations"
+                        onUploaded={url => setPageForm((f: any) => ({
+                          ...f,
+                          heroImage: url,
+                          pageContent: { ...f.pageContent, heroImage: url }
+                        }))}
+                      />
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                /* PHOTO MODE */
+                <div className="space-y-3">
+                  <div className="relative w-full h-44 bg-slate-100 rounded-lg overflow-hidden border shadow-inner">
+                    {pageForm.pageContent.heroImage || pageForm.heroImage ? (
+                      <img
+                        src={pageForm.pageContent.heroImage || pageForm.heroImage}
+                        className="w-full h-full object-cover"
+                        alt="Cover Photo"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex flex-col items-center justify-center text-slate-400">
+                        <ImageIcon className="w-8 h-8 mb-1 opacity-50" />
+                        <span className="text-xs">No cover image uploaded</span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-[11px] font-semibold text-slate-600">Cover Image URL</Label>
+                    <div className="flex gap-1.5 items-center">
+                      <Input
+                        value={pageForm.pageContent.heroImage || pageForm.heroImage || ''}
+                        onChange={e => {
+                          const val = e.target.value;
+                          setPageForm((f: any) => ({
+                            ...f,
+                            heroImage: val,
+                            pageContent: { ...f.pageContent, heroImage: val }
+                          }));
+                          if (isVideoUrl(val)) {
+                            setMediaTab('video');
+                          }
+                        }}
+                        placeholder="Cover Image Path or URL"
+                        className="flex-1 text-xs h-9 font-mono"
+                      />
+                      <R2UploadButton
+                        label="Upload Photo"
+                        accept="image/*"
+                        section="destinations"
+                        onUploaded={url => setPageForm((f: any) => ({
+                          ...f,
+                          heroImage: url,
+                          pageContent: { ...f.pageContent, heroImage: url, mediaType: 'image' }
+                        }))}
+                      />
+                      {(pageForm.pageContent.heroImage || pageForm.heroImage) && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => setPageForm((f: any) => ({
+                            ...f,
+                            heroImage: '',
+                            pageContent: { ...f.pageContent, heroImage: '' }
+                          }))}
+                          className="h-9 w-9 text-slate-400 hover:text-red-500 hover:bg-red-50"
+                          title="Clear photo"
+                        >
+                          <X className="w-4 h-4" />
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
-            <div className="space-y-3">
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5"><Label className="text-xs text-muted-foreground">SEO Title</Label><Input value={pageForm.seoTitle} onChange={e => setPageForm((f: any) => ({ ...f, seoTitle: e.target.value }))} placeholder="Title for browser search tab" /></div>
-                <div className="space-y-1.5"><Label className="text-xs text-muted-foreground">SEO Meta Description</Label><Input value={pageForm.seoDesc} onChange={e => setPageForm((f: any) => ({ ...f, seoDesc: e.target.value }))} placeholder="Brief summary for Google search" /></div>
+
+            {/* RIGHT: SEO & ABOUT HTML */}
+            <div className="space-y-3 bg-white p-4 rounded-xl border shadow-sm">
+              <Label className="text-xs font-bold uppercase tracking-wider text-slate-600">Page Content & Meta</Label>
+              <div className="grid sm:grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label className="text-xs text-muted-foreground">SEO Title</Label>
+                  <Input
+                    value={pageForm.seoTitle}
+                    onChange={e => setPageForm((f: any) => ({ ...f, seoTitle: e.target.value }))}
+                    placeholder="e.g. Darjeeling Tour Packages | Imagica"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs text-muted-foreground">SEO Meta Description</Label>
+                  <Input
+                    value={pageForm.seoDesc}
+                    onChange={e => setPageForm((f: any) => ({ ...f, seoDesc: e.target.value }))}
+                    placeholder="Brief summary for Google search results"
+                  />
+                </div>
               </div>
-              <div className="space-y-1.5"><Label className="text-xs text-muted-foreground">About Description HTML</Label>
-                <textarea className="w-full px-3 py-2 border rounded-md text-sm bg-background resize-y min-h-[60px]" value={pageForm.aboutHtml} onChange={e => setPageForm((f: any) => ({ ...f, aboutHtml: e.target.value }))} placeholder="Detailed text about this holiday destination..." />
+              <div className="space-y-1.5 pt-1">
+                <Label className="text-xs text-muted-foreground">About Description HTML</Label>
+                <textarea
+                  className="w-full px-3 py-2 border rounded-md text-sm bg-background resize-y min-h-[120px]"
+                  value={pageForm.aboutHtml}
+                  onChange={e => setPageForm((f: any) => ({ ...f, aboutHtml: e.target.value }))}
+                  placeholder="Detailed editorial copy about this holiday destination..."
+                />
               </div>
             </div>
           </div>
+
+          {/* ── BOTTOM SECTION: ATTRACTIONS LIST ── */}
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">Tourist Attractions List</Label>
-              <Button variant="outline" size="sm" onClick={addAttraction}><Plus className="w-3.5 h-3.5 mr-1" /> Add Attraction</Button>
+              <div>
+                <Label className="text-xs font-bold uppercase tracking-wider text-slate-600">Tourist Attractions List</Label>
+                <p className="text-xs text-muted-foreground">Manage the key experiences and landmarks shown on the destination detail page.</p>
+              </div>
+              <Button variant="outline" size="sm" onClick={addAttraction}>
+                <Plus className="w-3.5 h-3.5 mr-1" /> Add Attraction
+              </Button>
             </div>
             <div className="grid gap-4 md:grid-cols-2">
               {pageForm.pageContent.attractions?.map((attr: any, idx: number) => (
-                <Card key={idx} className="p-4 bg-white border border-slate-200 flex flex-col gap-3 relative">
-                  <Button variant="ghost" size="icon" className="absolute top-2 right-2 text-red-500 h-8 w-8" onClick={() => removeAttraction(idx)}><Trash2 className="w-4 h-4" /></Button>
+                <Card key={idx} className="p-4 bg-white border border-slate-200 flex flex-col gap-3 relative shadow-xs">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="absolute top-2 right-2 text-slate-400 hover:text-red-500 hover:bg-red-50 h-8 w-8"
+                    onClick={() => removeAttraction(idx)}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
                   <div className="relative w-full h-32 bg-slate-100 rounded-lg overflow-hidden border">
-                    {attr.image ? <img src={attr.image} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-slate-400"><ImageIcon className="w-6 h-6" /></div>}
+                    {attr.image ? (
+                      <img src={attr.image} className="w-full h-full object-cover" alt={attr.name || 'Attraction'} />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-slate-400">
+                        <ImageIcon className="w-6 h-6" />
+                      </div>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <div className="grid grid-cols-2 gap-2">
-                      <Input value={attr.name} onChange={e => updateAttraction(idx, 'name', e.target.value)} placeholder="Attraction Name" />
-                      <Input value={attr.tag} onChange={e => updateAttraction(idx, 'tag', e.target.value)} placeholder="Category Tag (e.g. Nature)" />
+                      <Input
+                        value={attr.name}
+                        onChange={e => updateAttraction(idx, 'name', e.target.value)}
+                        placeholder="Attraction Name (e.g. Tiger Hill)"
+                      />
+                      <Input
+                        value={attr.tag}
+                        onChange={e => updateAttraction(idx, 'tag', e.target.value)}
+                        placeholder="Category Tag (e.g. Nature)"
+                      />
                     </div>
-                    <textarea className="w-full px-3 py-2 border rounded-md text-sm bg-background resize-y min-h-[50px] text-xs" value={attr.short} onChange={e => updateAttraction(idx, 'short', e.target.value)} placeholder="Short description..." />
+                    <textarea
+                      className="w-full px-3 py-2 border rounded-md text-sm bg-background resize-y min-h-[50px] text-xs"
+                      value={attr.short}
+                      onChange={e => updateAttraction(idx, 'short', e.target.value)}
+                      placeholder="Short description..."
+                    />
                     <div className="flex gap-2 items-center">
-                      <Input value={attr.image} onChange={e => updateAttraction(idx, 'image', e.target.value)} placeholder="Photo URL" className="flex-1 text-xs" />
-                      <R2UploadButton label="Upload Photo" section="destinations" onUploaded={url => updateAttraction(idx, 'image', url)} />
+                      <Input
+                        value={attr.image}
+                        onChange={e => updateAttraction(idx, 'image', e.target.value)}
+                        placeholder="Photo URL"
+                        className="flex-1 text-xs"
+                      />
+                      <R2UploadButton
+                        label="Upload Photo"
+                        section="destinations"
+                        onUploaded={url => updateAttraction(idx, 'image', url)}
+                      />
                     </div>
                   </div>
                 </Card>
@@ -955,7 +1324,7 @@ function InsidePagesEditor({ destinationsList, destinationsCms, onSave, saving }
       ) : (
         <div className="border-2 border-dashed rounded-xl py-12 text-center text-slate-400 font-medium bg-slate-50/20">
           <Compass className="w-8 h-8 mx-auto mb-2 opacity-50" />
-          Please select a destination above to open its cover photo and attractions list editor.
+          Please select a destination above to open its cover photo, video background loop, and attractions list editor.
         </div>
       )}
     </div>
