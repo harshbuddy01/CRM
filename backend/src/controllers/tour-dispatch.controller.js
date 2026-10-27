@@ -58,7 +58,13 @@ const getDispatch = async (req, res, next) => {
         dayNumber: dayNum,
         date: date.toISOString().split('T')[0],
         itineraryTitle: itinDay?.title || `Day ${dayNum}`,
-        driver: driver ? { id: driver.driverId, name: driver.driver.name, vehicleName: driver.driver.vehicleName, vehicleNo: driver.driver.vehicleNo } : null,
+        driver: driver ? { 
+          id: driver.driverId, 
+          name: driver.driver.name, 
+          phone: driver.driver.phone,
+          vehicleName: driver.driver.vehicleName, 
+          vehicleNo: driver.driver.vehicleNo 
+        } : null,
         hotel: hotel ? { id: hotel.id, name: hotel.serviceName, checkIn: hotel.checkIn, checkOut: hotel.checkOut } : null,
       };
     });
@@ -91,12 +97,7 @@ const assignDriver = async (req, res, next) => {
     const { id } = req.params;
     const { driverId, days, allDays } = req.body;
 
-    if (!driverId) throw new BusinessError('driverId is required');
-
     const tour = await loadTour(id);
-    const driver = await prisma.driver.findUnique({ where: { id: driverId } });
-    if (!driver || driver.deletedAt) throw new NotFoundError('Driver');
-
     const totalDays = tour.proposal?.itinerary?.days?.length
       ?? Math.ceil((new Date(tour.endDate) - new Date(tour.startDate)) / 86400000) + 1;
 
@@ -105,6 +106,20 @@ const assignDriver = async (req, res, next) => {
       : (days || []);
 
     if (!targetDays.length) throw new BusinessError('Provide days array or allDays:true');
+
+    // Support Unassigning / Removing Driver
+    if (!driverId || driverId === 'unassigned' || driverId === 'none' || driverId === 'remove') {
+      await prisma.tourDriver.deleteMany({
+        where: {
+          tourId: id,
+          dayNumber: { in: targetDays }
+        }
+      });
+      return res.json({ success: true, message: `Driver removed from ${targetDays.length} day(s)` });
+    }
+
+    const driver = await prisma.driver.findUnique({ where: { id: driverId } });
+    if (!driver || driver.deletedAt) throw new NotFoundError('Driver');
 
     // Upsert TourDriver for each day
     await prisma.$transaction(
@@ -130,18 +145,30 @@ const assignHotel = async (req, res, next) => {
     const { id } = req.params;
     const { dayNumber, hotelName, checkIn, checkOut } = req.body;
 
-    if (!dayNumber || !hotelName) throw new BusinessError('dayNumber and hotelName are required');
+    if (!dayNumber) throw new BusinessError('dayNumber is required');
 
     const tour = await loadTour(id);
 
+    // Support Clearing / Removing Hotel
+    if (!hotelName || hotelName.trim() === '' || hotelName === 'clear' || hotelName === 'none') {
+      await prisma.bookingService.deleteMany({
+        where: {
+          tourId: id,
+          dayNumber: Number(dayNumber),
+          serviceType: 'hotel'
+        }
+      });
+      return res.json({ success: true, message: `Hotel removed for Day ${dayNumber}` });
+    }
+
     // Find existing hotel BookingService for this day, or create one
-    const existing = tour.bookingServices.find(b => b.dayNumber === dayNumber);
+    const existing = tour.bookingServices.find(b => b.dayNumber === Number(dayNumber));
 
     if (existing) {
       await prisma.bookingService.update({
         where: { id: existing.id },
         data: {
-          serviceName: hotelName,
+          serviceName: hotelName.trim(),
           ...(checkIn && { checkIn: new Date(checkIn) }),
           ...(checkOut && { checkOut: new Date(checkOut) }),
         }
@@ -152,8 +179,8 @@ const assignHotel = async (req, res, next) => {
           queryId: tour.queryId,
           tourId: id,
           serviceType: 'hotel',
-          serviceName: hotelName,
-          dayNumber,
+          serviceName: hotelName.trim(),
+          dayNumber: Number(dayNumber),
           checkIn: checkIn ? new Date(checkIn) : null,
           checkOut: checkOut ? new Date(checkOut) : null,
           totalCost: 0,

@@ -43,10 +43,29 @@ const recordManualPayment = async (data, userId) => {
     throw new BusinessError('Payment must be associated with a Query or Tour');
   }
 
+  let queryId = data.queryId || null;
+  let tourId = data.tourId || null;
+
+  // Bidirectional Auto-link: If tourId provided but queryId missing, fetch queryId from tour
+  if (tourId && !queryId) {
+    const tour = await prisma.tour.findUnique({ where: { id: tourId }, select: { queryId: true } });
+    if (tour?.queryId) queryId = tour.queryId;
+  }
+
+  // Bidirectional Auto-link: If queryId provided but tourId missing, fetch active tour from query
+  if (queryId && !tourId) {
+    const tour = await prisma.tour.findFirst({
+      where: { queryId, deletedAt: null },
+      orderBy: { createdAt: 'desc' },
+      select: { id: true }
+    });
+    if (tour?.id) tourId = tour.id;
+  }
+
   const payment = await prisma.payment.create({
     data: {
-      queryId: data.queryId || null,
-      tourId: data.tourId || null,
+      queryId,
+      tourId,
       amount: data.amount,
       mode: data.mode, // 'upi','neft','card','cash','cheque'
       referenceUtr: data.referenceUtr,

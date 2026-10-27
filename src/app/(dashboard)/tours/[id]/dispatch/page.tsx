@@ -20,7 +20,7 @@ import { cn } from '@/lib/utils';
 interface Driver { id: string; name: string; vehicleName: string; vehicleNo: string; phone: string; }
 interface DayPlan {
   dayNumber: number; date: string; itineraryTitle: string;
-  driver: { id: string; name: string; vehicleName: string; vehicleNo: string } | null;
+  driver: { id: string; name: string; vehicleName: string; vehicleNo: string; phone?: string } | null;
   hotel: { id: string; name: string } | null;
 }
 
@@ -90,10 +90,20 @@ function HotelAssignModal({
             </div>
           )}
         </div>
-        <div className="flex gap-3 pt-2">
+        <div className="flex gap-2 pt-2">
+          {currentHotelName && (
+            <Button 
+              variant="destructive" 
+              className="rounded-2xl font-bold h-11 text-xs px-3 bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200"
+              disabled={isPending}
+              onClick={() => onAssign('')}
+            >
+              Remove Hotel
+            </Button>
+          )}
           <Button variant="outline" className="flex-1 rounded-2xl font-bold h-11" onClick={onClose}>Cancel</Button>
           <Button 
-            className="flex-1 rounded-2xl font-bold h-11 bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-100" 
+            className="flex-1 rounded-2xl font-bold h-11 bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-100 text-white" 
             disabled={isPending || !hotelName.trim()} 
             onClick={() => onAssign(hotelName.trim())}
           >
@@ -115,30 +125,59 @@ function DriverSelect({
   const [open, setOpen] = useState(false);
   return (
     <div className="relative">
-      <button
-        onClick={() => setOpen(o => !o)}
-        className={`w-full flex items-center justify-between gap-2 px-3 py-2.5 rounded-xl border text-sm font-medium transition-colors ${
-          currentDriver
-            ? 'bg-blue-50 border-blue-200 text-blue-800'
-            : 'bg-gray-50 border-gray-200 text-gray-500 hover:bg-gray-100'
-        }`}
-      >
-        <span className="flex items-center gap-2">
-          <Car className="w-4 h-4 shrink-0" />
-          {currentDriver ? `${currentDriver.name} • ${currentDriver.vehicleNo}` : 'Assign Driver'}
-        </span>
-        <ChevronDown className="w-4 h-4 shrink-0" />
-      </button>
+      <div className="flex items-center gap-1.5">
+        <button
+          onClick={() => setOpen(o => !o)}
+          className={`flex-1 flex items-center justify-between gap-2 px-3 py-2.5 rounded-xl border text-sm font-medium transition-colors ${
+            currentDriver
+              ? 'bg-blue-50 border-blue-200 text-blue-800'
+              : 'bg-gray-50 border-gray-200 text-gray-500 hover:bg-gray-100'
+          }`}
+        >
+          <span className="flex items-center gap-2 truncate">
+            <Car className="w-4 h-4 shrink-0 text-blue-600" />
+            <span className="truncate">
+              {currentDriver ? `${currentDriver.name} • ${currentDriver.vehicleNo}` : 'Assign Driver'}
+            </span>
+          </span>
+          <ChevronDown className="w-4 h-4 shrink-0 text-slate-400" />
+        </button>
+
+        {currentDriver && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onAssign('unassigned', [dayNumber]);
+            }}
+            title="Unassign Driver from this day"
+            className="h-10 w-10 flex items-center justify-center rounded-xl border border-rose-200 bg-rose-50 text-rose-600 hover:bg-rose-100 transition-colors shrink-0"
+          >
+            ✕
+          </button>
+        )}
+      </div>
+
       {open && (
         <div className="absolute z-30 top-full mt-1 left-0 right-0 bg-white border border-gray-200 rounded-xl shadow-xl overflow-hidden animate-in fade-in slide-in-from-top-1 duration-200">
-          <div className="p-1 max-h-52 overflow-y-auto">
+          <div className="p-1 max-h-56 overflow-y-auto">
+            {currentDriver && (
+              <button
+                onClick={() => { onAssign('unassigned', [dayNumber]); setOpen(false); }}
+                className="w-full text-left px-3 py-2 rounded-lg bg-rose-50 hover:bg-rose-100 text-xs font-bold text-rose-700 flex items-center gap-2 transition-colors mb-1"
+              >
+                ✕ Unassign Driver (No Driver for Day {dayNumber})
+              </button>
+            )}
             {drivers.map(d => (
               <button
                 key={d.id}
                 onClick={() => { onAssign(d.id, [dayNumber]); setOpen(false); }}
                 className="w-full text-left px-3 py-2.5 rounded-lg hover:bg-blue-50 text-sm flex justify-between items-center transition-colors"
               >
-                <span className="font-semibold text-gray-900">{d.name}</span>
+                <div>
+                  <span className="font-semibold text-gray-900 block">{d.name}</span>
+                  {d.phone && <span className="text-[11px] text-slate-500 font-mono">{d.phone}</span>}
+                </div>
                 <span className="text-xs text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md font-bold">{d.vehicleName} • {d.vehicleNo}</span>
               </button>
             ))}
@@ -422,22 +461,29 @@ export default function TourDispatchPage() {
 
       {/* ── Day-by-Day Dispatch Grid ── */}
       <div>
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-lg font-bold text-gray-900">Day-by-Day Operations</h2>
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-4">
+          <div>
+            <h2 className="text-lg font-bold text-gray-900">Day-by-Day Operations</h2>
+            <p className="text-xs text-slate-500">Assign chauffeurs and hotel stays per day. Unassign or edit anytime.</p>
+          </div>
           {dispatch.days?.length > 0 && drivers.length > 0 && (
             <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground">Same driver for all days:</span>
+              <span className="text-xs font-bold text-slate-500">Bulk Driver:</span>
               <select
-                className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm font-medium bg-white shadow-sm"
+                className="border border-gray-200 rounded-xl px-3 py-1.5 text-xs font-bold bg-white shadow-sm focus:border-blue-400 outline-none cursor-pointer"
                 defaultValue=""
                 onChange={(e) => {
-                  if (e.target.value) {
+                  if (e.target.value === 'unassign_all') {
+                    assignDriverMut.mutate({ driverId: 'unassigned', allDays: true });
+                    e.target.value = '';
+                  } else if (e.target.value) {
                     assignDriverMut.mutate({ driverId: e.target.value, allDays: true });
                     e.target.value = '';
                   }
                 }}
               >
-                <option value="">Select & Apply All</option>
+                <option value="">Select & Apply All Days</option>
+                <option value="unassign_all" className="text-rose-600 font-bold">✕ Unassign from All Days</option>
                 {drivers.map(d => <option key={d.id} value={d.id}>{d.name} • {d.vehicleNo}</option>)}
               </select>
             </div>
@@ -467,7 +513,17 @@ export default function TourDispatchPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {/* Driver Assignment */}
                 <div>
-                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Driver</p>
+                  <div className="flex justify-between items-center mb-1.5">
+                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Driver</p>
+                    {day.driver?.phone && (
+                      <a 
+                        href={`tel:${day.driver.phone}`} 
+                        className="text-[10px] font-bold text-blue-600 hover:underline flex items-center gap-1"
+                      >
+                        📞 Call {day.driver.phone}
+                      </a>
+                    )}
+                  </div>
                   <DriverSelect
                     dayNumber={day.dayNumber}
                     currentDriver={day.driver}
@@ -479,18 +535,44 @@ export default function TourDispatchPage() {
 
                 {/* Hotel Assignment */}
                 <div>
-                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Hotel</p>
-                  <button
-                    onClick={() => setHotelEditingDay({ dayNumber: day.dayNumber, currentHotelName: day.hotel?.name || '' })}
-                    className={`w-full flex items-center gap-2 px-3 py-2.5 rounded-xl border text-sm font-medium transition-colors text-left ${
-                      day.hotel
-                        ? 'bg-orange-50 border-orange-200 text-orange-800'
-                        : 'bg-gray-50 border-gray-200 text-gray-500 hover:bg-gray-100'
-                    }`}
-                  >
-                    <Building2 className="w-4 h-4 shrink-0" />
-                    {day.hotel?.name || 'Assign Hotel'}
-                  </button>
+                  <div className="flex justify-between items-center mb-1.5">
+                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Hotel</p>
+                    {day.hotel && (
+                      <span className="text-[10px] font-bold text-emerald-600">Assigned</span>
+                    )}
+                  </div>
+                  {day.hotel ? (
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        onClick={() => setHotelEditingDay({ dayNumber: day.dayNumber, currentHotelName: day.hotel?.name || '' })}
+                        className="flex-1 flex items-center justify-between gap-2 px-3 py-2.5 rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-800 text-sm font-semibold hover:bg-emerald-100/70 transition-colors"
+                      >
+                        <span className="flex items-center gap-2 truncate">
+                          <Building2 className="w-4 h-4 shrink-0 text-emerald-600" />
+                          <span className="truncate">{day.hotel.name}</span>
+                        </span>
+                        <span className="text-xs text-emerald-700 underline shrink-0 font-bold">Edit</span>
+                      </button>
+                      <button
+                        onClick={() => assignHotelMut.mutate({ dayNumber: day.dayNumber, hotelName: '' })}
+                        title="Remove Hotel from this day"
+                        className="h-10 w-10 flex items-center justify-center rounded-xl border border-rose-200 bg-rose-50 text-rose-600 hover:bg-rose-100 transition-colors shrink-0 font-bold"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => setHotelEditingDay({ dayNumber: day.dayNumber, currentHotelName: '' })}
+                      className="w-full flex items-center justify-between gap-2 px-3 py-2.5 rounded-xl border border-dashed border-gray-300 text-gray-500 hover:border-blue-400 hover:text-blue-600 hover:bg-blue-50/50 text-sm font-medium transition-all"
+                    >
+                      <span className="flex items-center gap-2">
+                        <Building2 className="w-4 h-4" />
+                        Assign Hotel
+                      </span>
+                      <span className="text-xs font-bold text-blue-600">+ Add</span>
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
