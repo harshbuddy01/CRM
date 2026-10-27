@@ -104,7 +104,7 @@ const getClientById = async (id) => {
         name: p.user.name,
         email: p.user.email,
         mobile: p.user.mobile,
-        role: p.user.role
+        role: typeof p.user.role === 'object' ? (p.user.role?.label || p.user.role?.name || 'Staff') : (p.user.role || 'Staff')
       } : null
     }))
   };

@@ -208,11 +208,15 @@ export default function ClientDetailPage() {
                           <span className="text-slate-400 text-[10px] uppercase font-bold block">Collected By</span>
                           <p className="font-bold text-slate-800 mt-0.5 flex items-center gap-1">
                             <span>{p.collector?.name || p.user?.name || 'Operations Staff'}</span>
-                            {(p.collector?.role || p.user?.role) && (
-                              <span className="text-[9px] uppercase px-1 py-0.2 rounded bg-slate-200 text-slate-700 font-mono">
-                                {p.collector?.role?.replace('_', ' ') || p.user?.role?.replace('_', ' ')}
-                              </span>
-                            )}
+                            {(() => {
+                              const rawRole = p.collector?.role ?? p.user?.role;
+                              const roleStr = typeof rawRole === 'object' ? (rawRole?.label || rawRole?.name || '') : (rawRole || '');
+                              return roleStr ? (
+                                <span className="text-[9px] uppercase px-1 py-0.2 rounded bg-slate-200 text-slate-700 font-mono">
+                                  {String(roleStr).replace('_', ' ')}
+                                </span>
+                              ) : null;
+                            })()}
                           </p>
                         </div>
                       </div>

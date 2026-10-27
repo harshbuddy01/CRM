@@ -458,11 +458,15 @@ export default function TourDetailPage() {
                           <div className="flex items-center gap-1 text-[10px] text-slate-600 pt-1 border-t border-slate-200/60 mt-1">
                             <span className="text-slate-400">Collected by:</span>
                             <span className="font-bold text-slate-800">{p.collector?.name || p.user?.name}</span>
-                            {(p.collector?.role || p.user?.role) && (
-                              <span className="text-[9px] text-slate-400 uppercase font-mono">
-                                ({p.collector?.role?.replace('_', ' ') || p.user?.role?.replace('_', ' ')})
-                              </span>
-                            )}
+                            {(() => {
+                              const rawRole = p.collector?.role ?? p.user?.role;
+                              const roleStr = typeof rawRole === 'object' ? (rawRole?.label || rawRole?.name || '') : (rawRole || '');
+                              return roleStr ? (
+                                <span className="text-[9px] text-slate-400 uppercase font-mono">
+                                  ({String(roleStr).replace('_', ' ')})
+                                </span>
+                              ) : null;
+                            })()}
                           </div>
                         )}
 
