@@ -123,7 +123,7 @@ const createQuery = async (data, creatorId = null) => {
 };
 
 const listQueries = async ({ 
-  page = 1, limit = 20, status, search, assignedTo, dateFrom, dateTo, userId, canViewAll 
+  page = 1, limit = 20, status, search, assignedTo, dateFrom, dateTo, leadSource, userId, canViewAll 
 }) => {
   const where = { deletedAt: null };
 
@@ -131,18 +131,22 @@ const listQueries = async ({
   if (!canViewAll) {
     // Agent can only see their own assigned queries
     where.assignedTo = userId;
-  } else if (assignedTo) {
+  } else if (assignedTo && assignedTo !== 'all') {
     // Admin filtering by specific agent
     where.assignedTo = assignedTo;
   }
 
   // Filters
-  if (status) where.status = status;
+  if (status && status !== 'all') where.status = status;
+  if (leadSource && leadSource !== 'all') where.leadSource = leadSource;
+
   if (search) {
     where.OR = [
       { name: { contains: search, mode: 'insensitive' } },
       { phone: { contains: search } },
       { queryCode: { contains: search, mode: 'insensitive' } },
+      { destination: { contains: search, mode: 'insensitive' } },
+      { email: { contains: search, mode: 'insensitive' } },
     ];
   }
 
@@ -153,21 +157,58 @@ const listQueries = async ({
     if (dateTo) where.createdAt.lte = new Date(dateTo);
   }
 
+  // Construct base where for status counts across all stages (independent of current status tab)
+  const countWhere = { deletedAt: null };
+  if (!canViewAll) {
+    countWhere.assignedTo = userId;
+  } else if (assignedTo && assignedTo !== 'all') {
+    countWhere.assignedTo = assignedTo;
+  }
+  if (leadSource && leadSource !== 'all') {
+    countWhere.leadSource = leadSource;
+  }
+  if (where.OR) {
+    countWhere.OR = where.OR;
+  }
+  if (where.createdAt) {
+    countWhere.createdAt = where.createdAt;
+  }
+
   const offset = (page - 1) * limit;
-  const [queries, total] = await Promise.all([
+  const [queries, total, statusGroups] = await Promise.all([
     prisma.query.findMany({
       where,
       skip: offset,
       take: parseInt(limit, 10),
       orderBy: { createdAt: 'desc' },
       include: {
-        assignedUser: { select: { name: true } },
+        assignedUser: { select: { id: true, name: true } },
+        _count: { select: { proposals: true } },
       },
     }),
     prisma.query.count({ where }),
+    prisma.query.groupBy({
+      by: ['status'],
+      where: countWhere,
+      _count: { status: true },
+    }),
   ]);
 
-  return { queries, total, page, totalPages: Math.ceil(total / limit) };
+  const statusCounts = {};
+  let totalAll = 0;
+  statusGroups.forEach((g) => {
+    statusCounts[g.status] = g._count.status;
+    totalAll += g._count.status;
+  });
+  statusCounts['all'] = totalAll;
+
+  return { 
+    queries, 
+    total, 
+    statusCounts, 
+    page, 
+    totalPages: Math.ceil(total / limit) 
+  };
 };
 
 const getQueryById = async (id, userId, canViewAll) => {
