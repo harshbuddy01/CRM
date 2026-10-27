@@ -113,17 +113,7 @@ const listTours = async ({ status, filterType, page = 1, limit = 50, opsUserId }
 
   const where = { ...baseWhere };
 
-  if (filterType === 'ops') {
-    // Ops view shows all running or upcoming
-    where.status = { in: ['upcoming', 'running'] };
-    where.query = { status: { notIn: ['lost', 'invalid'] } };
-  } else if (filterType === 'field') {
-    // Field Agent only sees running tours for today
-    where.status = { in: ['running', 'upcoming'] };
-    where.startDate = { lte: new Date() };
-    where.endDate = { gte: new Date() };
-    where.query = { status: { notIn: ['lost', 'invalid'] } };
-  } else if (status && status !== 'all') {
+  if (status && status !== 'all') {
     if (status === 'cancelled') {
       where.OR = [
         { status: 'cancelled' },
@@ -133,6 +123,16 @@ const listTours = async ({ status, filterType, page = 1, limit = 50, opsUserId }
       where.status = status;
       where.query = { status: { notIn: ['lost', 'invalid'] } };
     }
+  } else if (filterType === 'ops') {
+    // Ops view shows all running or upcoming
+    where.status = { in: ['upcoming', 'running'] };
+    where.query = { status: { notIn: ['lost', 'invalid'] } };
+  } else if (filterType === 'field') {
+    // Field Agent only sees running tours for today
+    where.status = { in: ['running', 'upcoming'] };
+    where.startDate = { lte: new Date() };
+    where.endDate = { gte: new Date() };
+    where.query = { status: { notIn: ['lost', 'invalid'] } };
   } else {
     // If 'all', default to non-cancelled tours to keep active pipeline clean
     where.status = { in: ['running', 'upcoming', 'completed'] };
@@ -173,7 +173,7 @@ const listTours = async ({ status, filterType, page = 1, limit = 50, opsUserId }
           status: true,
         }
       },
-      assignedOpsUser: { select: { id: true, name: true, phone: true } },
+      assignedOpsUser: { select: { id: true, name: true, mobile: true } },
       proposal: {
         select: {
           id: true,
@@ -183,7 +183,7 @@ const listTours = async ({ status, filterType, page = 1, limit = 50, opsUserId }
       },
       tourDrivers: {
         include: {
-          driver: { select: { id: true, name: true, phone: true, vehicleType: true, vehicleNumber: true } }
+          driver: { select: { id: true, name: true, phone: true, vehicleName: true, vehicleNo: true } }
         }
       },
       payments: {
@@ -204,7 +204,12 @@ const listTours = async ({ status, filterType, page = 1, limit = 50, opsUserId }
       destination: t.query?.destination || 'Destination TBD',
       sellingPrice: t.proposal?.sellingPrice ? Number(t.proposal.sellingPrice) : null,
       totalPaid: verifiedPaid,
-      driver: t.tourDrivers?.[0]?.driver || null
+      driver: t.tourDrivers?.[0]?.driver ? {
+        name: t.tourDrivers[0].driver.name,
+        phone: t.tourDrivers[0].driver.phone,
+        vehicleName: t.tourDrivers[0].driver.vehicleName,
+        vehicleNo: t.tourDrivers[0].driver.vehicleNo
+      } : null
     };
   });
 

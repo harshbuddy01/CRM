@@ -482,7 +482,7 @@ export default function ToursListPage() {
                             Chauffeur
                           </span>
                           <span className="font-bold text-slate-800 truncate max-w-[140px]">
-                            {tour.driver.name} {tour.driver.vehicleNumber ? `(${tour.driver.vehicleNumber})` : ''}
+                            {tour.driver.name} {tour.driver.vehicleNo ? `(${tour.driver.vehicleNo})` : tour.driver.vehicleName ? `(${tour.driver.vehicleName})` : ''}
                           </span>
                         </div>
                       )}
