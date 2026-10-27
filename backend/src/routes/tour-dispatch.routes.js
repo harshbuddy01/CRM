@@ -16,6 +16,9 @@ router.post('/tours/:id/dispatch/driver', authenticate, dispatchController.assig
 // Assign/update hotel for one or more days (updates BookingService)
 router.post('/tours/:id/dispatch/hotel', authenticate, dispatchController.assignHotel);
 
+// Auto-fill all hotels directly from client's itinerary
+router.post('/tours/:id/dispatch/auto-hotels', authenticate, dispatchController.autoFillHotelsFromItinerary);
+
 // Generate guest credentials (username + PIN) — idempotent
 router.post('/tours/:id/guest-credentials', authenticate, dispatchController.generateGuestCredentials);
 router.post('/tours/:id/send-email', authenticate, dispatchController.sendGuestCredentialsEmail);

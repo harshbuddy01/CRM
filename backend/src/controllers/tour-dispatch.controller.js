@@ -45,6 +45,27 @@ const getDispatch = async (req, res, next) => {
     const totalDays = tour.proposal?.itinerary?.days?.length
       ?? Math.ceil((new Date(tour.endDate) - new Date(tour.startDate)) / 86400000) + 1;
 
+    // Pre-calculate proposed hotels from itinerary & proposal days
+    let lastProposedHotel = null;
+    const proposedHotels = {};
+
+    for (let i = 0; i < totalDays; i++) {
+      const dayNum = i + 1;
+      const itinDay = tour.proposal?.itinerary?.days?.[i];
+      const proposedDay = tour.proposal?.days?.find(d => d.dayNumber === dayNum);
+
+      const directHotel = proposedDay?.hotel?.name 
+        || itinDay?.events?.find(e => e.type === 'accommodation')?.title
+        || null;
+
+      if (directHotel) lastProposedHotel = directHotel;
+
+      const isDepartureDay = (i === totalDays - 1) && 
+        (itinDay?.title?.toLowerCase().includes('drop') || itinDay?.title?.toLowerCase().includes('departure'));
+
+      proposedHotels[dayNum] = isDepartureDay ? null : (directHotel || lastProposedHotel);
+    }
+
     const days = Array.from({ length: totalDays }, (_, i) => {
       const dayNum = i + 1;
       const date = new Date(tour.startDate);
@@ -66,6 +87,7 @@ const getDispatch = async (req, res, next) => {
           vehicleNo: driver.driver.vehicleNo 
         } : null,
         hotel: hotel ? { id: hotel.id, name: hotel.serviceName, checkIn: hotel.checkIn, checkOut: hotel.checkOut } : null,
+        proposedHotel: proposedHotels[dayNum] || null,
       };
     });
 
@@ -263,4 +285,82 @@ const sendGuestCredentialsEmail = async (req, res, next) => {
   }
 };
 
-module.exports = { getDispatch, assignDriver, assignHotel, generateGuestCredentials, sendGuestCredentialsEmail };
+// ─── POST /tours/:id/dispatch/auto-hotels ────────────────────
+// Auto-populates all days' hotels from client's itinerary
+const autoFillHotelsFromItinerary = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const tour = await loadTour(id);
+    const totalDays = tour.proposal?.itinerary?.days?.length
+      ?? Math.ceil((new Date(tour.endDate) - new Date(tour.startDate)) / 86400000) + 1;
+
+    let lastProposedHotel = null;
+    const hotelAssignments = [];
+
+    for (let i = 0; i < totalDays; i++) {
+      const dayNum = i + 1;
+      const itinDay = tour.proposal?.itinerary?.days?.[i];
+      const proposedDay = tour.proposal?.days?.find(d => d.dayNumber === dayNum);
+
+      const directHotel = proposedDay?.hotel?.name 
+        || itinDay?.events?.find(e => e.type === 'accommodation')?.title
+        || null;
+
+      if (directHotel) lastProposedHotel = directHotel;
+
+      const isDepartureDay = (i === totalDays - 1) && 
+        (itinDay?.title?.toLowerCase().includes('drop') || itinDay?.title?.toLowerCase().includes('departure'));
+
+      const hotelName = isDepartureDay ? null : (directHotel || lastProposedHotel);
+
+      if (hotelName) {
+        hotelAssignments.push({ dayNumber: dayNum, hotelName });
+      }
+    }
+
+    if (!hotelAssignments.length) {
+      throw new BusinessError('No proposed accommodation found in this client’s itinerary');
+    }
+
+    for (const { dayNumber, hotelName } of hotelAssignments) {
+      const existing = tour.bookingServices.find(b => b.dayNumber === dayNumber && b.serviceType === 'hotel');
+      if (existing) {
+        await prisma.bookingService.update({
+          where: { id: existing.id },
+          data: { serviceName: hotelName }
+        });
+      } else {
+        await prisma.bookingService.create({
+          data: {
+            queryId: tour.queryId,
+            tourId: id,
+            serviceType: 'hotel',
+            serviceName: hotelName,
+            dayNumber,
+            totalCost: 0,
+            units: tour.totalPax || 1,
+            createdBy: req.user.id,
+            mailStatus: 'not_sent',
+            paymentStatus: 'pending',
+          }
+        });
+      }
+    }
+
+    res.json({ 
+      success: true, 
+      message: `Successfully populated hotels for ${hotelAssignments.length} days from itinerary.` 
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+module.exports = { 
+  getDispatch, 
+  assignDriver, 
+  assignHotel, 
+  generateGuestCredentials, 
+  sendGuestCredentialsEmail,
+  autoFillHotelsFromItinerary 
+};
