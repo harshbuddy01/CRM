@@ -59,13 +59,16 @@ export default function ToursListPage() {
     cancelled: 0
   };
 
-  // Filter by search query
-  let filteredTours = toursList.filter((t: any) => 
-    t.tourCode?.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    t.query?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    t.query?.destination?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    t.query?.queryCode?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Filter by search query and exclude cancelled/lost
+  let filteredTours = toursList.filter((t: any) => {
+    if (t.status === 'cancelled') return false;
+    return (
+      t.tourCode?.toLowerCase().includes(searchTerm.toLowerCase()) || 
+      t.query?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      t.query?.destination?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      t.query?.queryCode?.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  });
 
   // If in 'completed' tab, apply structured sub-filter
   if (statusFilter === 'completed') {
@@ -119,87 +122,68 @@ export default function ToursListPage() {
   return (
     <div className="space-y-6 p-4 md:p-6 pb-24 md:pb-12 max-w-7xl mx-auto">
       {/* Page Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b pb-5">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b pb-4">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-2xl md:text-3xl font-black tracking-tight text-slate-900 leading-tight">Tours Management</h1>
-            <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-slate-900 text-white">
+            <h1 className="text-2xl font-bold tracking-tight text-slate-900">Tours & Operations</h1>
+            <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-slate-100 text-slate-700 border border-slate-200">
               Operations Hub
             </span>
           </div>
-          <p className="text-slate-500 mt-1 text-xs md:text-sm font-medium">
-            Monitor real-time guest journeys, active chauffeurs, and post-tour service reviews.
+          <p className="text-slate-500 mt-0.5 text-xs font-medium">
+            Monitor real-time guest journeys, chauffeurs, and post-tour reviews.
           </p>
         </div>
       </div>
 
-      {/* Top Operational Metrics */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+      {/* Top Operational Metrics (Minimal 3 Cards) */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4">
         <div 
-          onClick={() => setStatusFilter('running')}
-          className={`p-4 rounded-2xl border transition-all cursor-pointer ${
+          onClick={() => setStatusFilter(statusFilter === 'running' ? 'all' : 'running')}
+          className={`p-4 rounded-xl border transition-all cursor-pointer ${
             statusFilter === 'running' 
-              ? 'bg-emerald-50/80 border-emerald-300 ring-2 ring-emerald-500/20 shadow-md' 
-              : 'bg-white hover:bg-slate-50 border-slate-200/80 shadow-sm'
+              ? 'bg-emerald-50/70 border-emerald-300 ring-1 ring-emerald-400' 
+              : 'bg-white hover:bg-slate-50 border-slate-200'
           }`}
         >
           <div className="flex items-center justify-between">
-            <p className="text-[10px] font-black uppercase tracking-wider text-emerald-700">Active On Tour</p>
-            <span className="relative flex h-2.5 w-2.5">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
-            </span>
+            <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-800">Active On Tour</p>
+            <span className="w-2 h-2 rounded-full bg-emerald-500" />
           </div>
-          <p className="text-2xl md:text-3xl font-black text-slate-900 mt-2">{statusCounts.running}</p>
-          <p className="text-[11px] text-slate-500 font-medium mt-0.5">Trips live on the road</p>
+          <p className="text-2xl font-black text-slate-900 mt-2">{statusCounts.running}</p>
+          <p className="text-[11px] text-slate-400 mt-0.5">Trips currently in progress</p>
         </div>
 
         <div 
-          onClick={() => setStatusFilter('upcoming')}
-          className={`p-4 rounded-2xl border transition-all cursor-pointer ${
+          onClick={() => setStatusFilter(statusFilter === 'upcoming' ? 'all' : 'upcoming')}
+          className={`p-4 rounded-xl border transition-all cursor-pointer ${
             statusFilter === 'upcoming' 
-              ? 'bg-amber-50/80 border-amber-300 ring-2 ring-amber-500/20 shadow-md' 
-              : 'bg-white hover:bg-slate-50 border-slate-200/80 shadow-sm'
+              ? 'bg-blue-50/70 border-blue-300 ring-1 ring-blue-400' 
+              : 'bg-white hover:bg-slate-50 border-slate-200'
           }`}
         >
           <div className="flex items-center justify-between">
-            <p className="text-[10px] font-black uppercase tracking-wider text-amber-700">Upcoming Departures</p>
-            <Clock className="w-4 h-4 text-amber-500" />
+            <p className="text-[10px] font-bold uppercase tracking-wider text-blue-800">Upcoming Departures</p>
+            <Clock className="w-3.5 h-3.5 text-blue-500" />
           </div>
-          <p className="text-2xl md:text-3xl font-black text-slate-900 mt-2">{statusCounts.upcoming}</p>
-          <p className="text-[11px] text-slate-500 font-medium mt-0.5">Starting next</p>
+          <p className="text-2xl font-black text-slate-900 mt-2">{statusCounts.upcoming}</p>
+          <p className="text-[11px] text-slate-400 mt-0.5">Departing soon</p>
         </div>
 
         <div 
-          onClick={() => setStatusFilter('completed')}
-          className={`p-4 rounded-2xl border transition-all cursor-pointer ${
+          onClick={() => setStatusFilter(statusFilter === 'completed' ? 'all' : 'completed')}
+          className={`p-4 rounded-xl border transition-all cursor-pointer ${
             statusFilter === 'completed' 
-              ? 'bg-blue-50/80 border-blue-300 ring-2 ring-blue-500/20 shadow-md' 
-              : 'bg-white hover:bg-slate-50 border-slate-200/80 shadow-sm'
+              ? 'bg-slate-100 border-slate-300 ring-1 ring-slate-400' 
+              : 'bg-white hover:bg-slate-50 border-slate-200'
           }`}
         >
           <div className="flex items-center justify-between">
-            <p className="text-[10px] font-black uppercase tracking-wider text-blue-700">Completed Tours</p>
-            <CheckCircle2 className="w-4 h-4 text-blue-500" />
+            <p className="text-[10px] font-bold uppercase tracking-wider text-slate-700">Completed Tours</p>
+            <CheckCircle2 className="w-3.5 h-3.5 text-slate-500" />
           </div>
-          <p className="text-2xl md:text-3xl font-black text-slate-900 mt-2">{statusCounts.completed}</p>
-          <p className="text-[11px] text-slate-500 font-medium mt-0.5">Delivered journeys</p>
-        </div>
-
-        <div 
-          onClick={() => setStatusFilter('cancelled')}
-          className={`p-4 rounded-2xl border transition-all cursor-pointer ${
-            statusFilter === 'cancelled' 
-              ? 'bg-rose-50/80 border-rose-300 ring-2 ring-rose-500/20 shadow-md' 
-              : 'bg-white hover:bg-slate-50 border-slate-200/80 shadow-sm'
-          }`}
-        >
-          <div className="flex items-center justify-between">
-            <p className="text-[10px] font-black uppercase tracking-wider text-rose-700">Cancelled / Lost</p>
-            <Ban className="w-4 h-4 text-rose-400" />
-          </div>
-          <p className="text-2xl md:text-3xl font-black text-slate-900 mt-2">{statusCounts.cancelled}</p>
-          <p className="text-[11px] text-slate-500 font-medium mt-0.5">Voided bookings</p>
+          <p className="text-2xl font-black text-slate-900 mt-2">{statusCounts.completed}</p>
+          <p className="text-[11px] text-slate-400 mt-0.5">Successfully concluded</p>
         </div>
       </div>
 
@@ -207,23 +191,22 @@ export default function ToursListPage() {
       <div className="space-y-3">
         <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between">
           <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3.5 top-3 h-4 w-4 text-slate-400" />
+            <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
             <Input
               placeholder="Search by tour code, guest name, destination..."
-              className="pl-9 h-10 rounded-xl border-slate-200 bg-white shadow-sm"
+              className="pl-9 h-9 rounded-lg border-slate-200 bg-white text-xs"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
 
-          {/* Status Tabs with Live Count Badges */}
-          <div className="flex bg-slate-100 p-1 rounded-xl overflow-x-auto no-scrollbar scrollbar-none gap-1">
+          {/* Status Tabs without Cancelled */}
+          <div className="flex bg-slate-100 p-1 rounded-xl overflow-x-auto gap-1">
             {[
-              { id: 'all', label: 'All Active', count: statusCounts.all },
+              { id: 'all', label: 'All Active', count: statusCounts.running + statusCounts.upcoming + statusCounts.completed },
               { id: 'running', label: 'Ongoing', count: statusCounts.running, isLive: true },
               { id: 'upcoming', label: 'Upcoming', count: statusCounts.upcoming },
               { id: 'completed', label: 'Completed', count: statusCounts.completed },
-              { id: 'cancelled', label: 'Cancelled', count: statusCounts.cancelled },
             ].map((tab) => (
               <button
                 key={tab.id}
@@ -231,20 +214,17 @@ export default function ToursListPage() {
                   setStatusFilter(tab.id);
                   setCompletedSubFilter('all');
                 }}
-                className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all flex items-center gap-1.5 flex-shrink-0 ${
+                className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all flex items-center gap-1.5 flex-shrink-0 cursor-pointer ${
                   statusFilter === tab.id 
                   ? 'bg-white shadow-sm text-slate-900' 
                   : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
                 {tab.isLive && (
-                  <span className="relative flex h-2 w-2">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-                  </span>
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
                 )}
                 <span>{tab.label}</span>
-                <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-black ${
+                <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
                   statusFilter === tab.id ? 'bg-slate-100 text-slate-900' : 'bg-slate-200/70 text-slate-600'
                 }`}>
                   {tab.count}
@@ -254,24 +234,24 @@ export default function ToursListPage() {
           </div>
         </div>
 
-        {/* Structured Sub-Filters for Completed Tours */}
+        {/* Sub-Filters for Completed Tours */}
         {statusFilter === 'completed' && (
           <div className="flex items-center gap-2 pt-1 overflow-x-auto pb-1">
-            <span className="text-[11px] font-black uppercase tracking-wider text-slate-400 flex items-center gap-1 pl-1">
-              Filter By Outcome:
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+              Review Status:
             </span>
             {[
-              { id: 'all', label: 'All Concluded' },
+              { id: 'all', label: 'All' },
               { id: '5star', label: '⭐ 5★ Google Reviews' },
-              { id: 'feedback', label: '⚠️ Reported Issues / Feedback' },
+              { id: 'feedback', label: '⚠️ Reported Feedback' },
               { id: 'pending', label: '⏳ Review Pending' }
             ].map((sub) => (
               <button
                 key={sub.id}
                 onClick={() => setCompletedSubFilter(sub.id)}
-                className={`px-3 py-1 text-xs font-bold rounded-full transition-all border ${
+                className={`px-2.5 py-1 text-xs font-medium rounded-lg transition-all border cursor-pointer ${
                   completedSubFilter === sub.id
-                    ? 'bg-slate-900 text-white border-slate-900 shadow-sm'
+                    ? 'bg-slate-900 text-white border-slate-900'
                     : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300'
                 }`}
               >
@@ -284,236 +264,142 @@ export default function ToursListPage() {
 
       {/* Main Tours Grid */}
       {isLoading ? (
-        <div className="flex h-56 items-center justify-center bg-white rounded-2xl border border-slate-100 shadow-sm">
-          <Loader2 className="w-8 h-8 animate-spin text-slate-400" />
+        <div className="flex h-56 items-center justify-center bg-white rounded-xl border border-slate-200">
+          <Loader2 className="w-6 h-6 animate-spin text-slate-400" />
         </div>
       ) : !filteredTours || filteredTours.length === 0 ? (
-        <div className="text-center py-20 border rounded-2xl bg-white shadow-sm">
-          <Luggage className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-          <h3 className="text-base font-bold text-slate-800">No tours match your criteria</h3>
-          <p className="text-slate-500 mt-1 max-w-sm mx-auto text-xs">
-            {searchTerm ? 'Try adjusting your search terms.' : `There are currently no ${statusFilter !== 'all' ? statusFilter : ''} tours.`}
+        <div className="text-center py-16 border rounded-xl bg-white">
+          <Luggage className="w-10 h-10 text-slate-300 mx-auto mb-2" />
+          <h3 className="text-sm font-bold text-slate-800">No active tours found</h3>
+          <p className="text-slate-400 mt-0.5 text-xs">
+            {searchTerm ? 'Try adjusting your search terms.' : 'There are currently no active tours in this view.'}
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredTours.map((tour: any) => {
             const isRunning = tour.status === 'running';
             const isCompleted = tour.status === 'completed';
-            const isCancelled = tour.status === 'cancelled';
             const isUpcoming = tour.status === 'upcoming';
             const progress = isRunning ? getTourProgress(tour.startDate, tour.endDate) : null;
 
             return (
               <Card 
                 key={tour.id} 
-                className={`transition-all duration-200 group overflow-hidden rounded-2xl flex flex-col justify-between ${
-                  isRunning 
-                    ? 'border-emerald-300 bg-gradient-to-b from-emerald-50/30 to-white shadow-md hover:shadow-xl ring-1 ring-emerald-400/20' 
-                    : isCompleted 
-                    ? 'border-slate-200 bg-white hover:border-slate-300 shadow-sm hover:shadow-md'
-                    : isCancelled
-                    ? 'border-rose-100 bg-rose-50/20 opacity-80'
-                    : 'border-slate-200 bg-white hover:shadow-md'
-                }`}
+                className="bg-white border border-slate-200 hover:border-slate-300 rounded-xl transition-all shadow-none hover:shadow-sm flex flex-col justify-between"
               >
                 <div>
-                  {/* Card Header Banner */}
                   <CardHeader className="p-4 pb-3">
                     <div className="flex justify-between items-start gap-2">
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-2">
-                          <span className="text-[11px] font-black uppercase text-slate-500 tracking-wider">
-                            {tour.tourCode}
-                          </span>
+                      <div>
+                        <div className="flex items-center gap-1.5 text-xs text-slate-400 font-mono">
+                          <span className="font-bold text-slate-600">{tour.tourCode}</span>
                           {tour.query?.queryCode && (
-                            <Link 
-                              href={`/queries/${tour.query.id}`}
-                              className="text-[10px] font-bold text-slate-400 hover:text-primary transition-colors flex items-center gap-0.5"
-                            >
+                            <Link href={`/queries/${tour.query.id}`} className="hover:text-blue-600">
                               ({tour.query.queryCode})
                             </Link>
                           )}
                         </div>
-                        <CardTitle className="text-base font-black text-slate-900 leading-tight">
-                          {tour.query?.name ?? 'Valued Guest'}
+                        <CardTitle className="text-base font-bold text-slate-900 mt-0.5">
+                          {tour.query?.name ?? 'Guest'}
                         </CardTitle>
                       </div>
 
-                      {/* Status Badges */}
                       {isRunning ? (
-                        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500 text-white text-[10px] font-black tracking-wider uppercase shadow-sm shadow-emerald-500/20">
-                          <span className="relative flex h-2 w-2">
-                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
-                            <span className="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
-                          </span>
-                          <span>Day {progress?.elapsedDays} of {progress?.totalDays}</span>
-                        </div>
+                        <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                          Day {progress?.elapsedDays}/{progress?.totalDays}
+                        </span>
                       ) : isCompleted ? (
-                        <span className="px-2.5 py-1 rounded-full text-[10px] font-black tracking-wider uppercase bg-blue-50 text-blue-700 border border-blue-200">
+                        <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-200">
                           Completed
                         </span>
-                      ) : isUpcoming ? (
-                        <span className="px-2.5 py-1 rounded-full text-[10px] font-black tracking-wider uppercase bg-amber-50 text-amber-700 border border-amber-200">
-                          Upcoming
-                        </span>
                       ) : (
-                        <span className="px-2.5 py-1 rounded-full text-[10px] font-black tracking-wider uppercase bg-rose-50 text-rose-700 border border-rose-200">
-                          Cancelled
+                        <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200">
+                          Upcoming
                         </span>
                       )}
                     </div>
 
-                    {/* Running Trip Live Progress Bar */}
-                    {isRunning && progress && (
-                      <div className="mt-3 space-y-1">
-                        <div className="flex justify-between items-center text-[10px] font-bold text-emerald-800">
-                          <span className="flex items-center gap-1">
-                            <Compass className="w-3 h-3 text-emerald-600 animate-spin" style={{ animationDuration: '8s' }} />
-                            On Tour Currently
-                          </span>
-                          <span>{progress.percent}% Completed</span>
-                        </div>
-                        <div className="w-full h-1.5 bg-emerald-100 rounded-full overflow-hidden">
-                          <div 
-                            className="h-full bg-emerald-500 rounded-full transition-all duration-500" 
-                            style={{ width: `${progress.percent}%` }}
-                          />
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Completed Tour: Post-Journey Review Outcome Banner */}
+                    {/* Review Outcome for Completed Tours */}
                     {isCompleted && (
-                      <div className="mt-2.5">
+                      <div className="mt-2">
                         {tour.reviewRating === 5 || tour.reviewAction === 'google_review_redirect' ? (
-                          <div className="flex items-center justify-between p-2 rounded-xl bg-gradient-to-r from-amber-50 to-amber-100/50 border border-amber-200 text-amber-900">
-                            <div className="flex items-center gap-1.5">
-                              <Star className="w-4 h-4 fill-amber-400 text-amber-500" />
-                              <span className="text-xs font-black">5.0 ★ Google Review</span>
-                            </div>
-                            <span className="text-[10px] font-bold text-amber-700 bg-amber-200/60 px-2 py-0.5 rounded-full">
-                              Verified
-                            </span>
+                          <div className="flex items-center gap-1.5 text-xs text-amber-800 bg-amber-50 border border-amber-200 px-2 py-1 rounded-lg">
+                            <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-500" />
+                            <span className="font-semibold">5.0 ★ Google Review</span>
                           </div>
                         ) : tour.reviewRating && tour.reviewRating < 5 ? (
                           <div 
                             onClick={() => setSelectedReviewModal(tour)}
-                            className="p-2 rounded-xl bg-rose-50 border border-rose-200 text-rose-900 cursor-pointer hover:bg-rose-100/70 transition-all"
+                            className="flex items-center justify-between text-xs text-rose-800 bg-rose-50 border border-rose-200 px-2.5 py-1 rounded-lg cursor-pointer hover:bg-rose-100/60"
                           >
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-1.5">
-                                <AlertTriangle className="w-3.5 h-3.5 text-rose-600" />
-                                <span className="text-xs font-black">{tour.reviewRating}.0★ Guest Feedback</span>
-                              </div>
-                              <span className="text-[10px] font-bold text-rose-700 underline">View Notes</span>
-                            </div>
-                            {tour.reviewDisappointments && Array.isArray(tour.reviewDisappointments) && tour.reviewDisappointments.length > 0 && (
-                              <div className="flex flex-wrap gap-1 mt-1.5">
-                                {tour.reviewDisappointments.map((tag: string, i: number) => (
-                                  <span key={i} className="text-[9px] bg-white border border-rose-200 text-rose-800 px-1.5 py-0.5 rounded font-bold">
-                                    {tag}
-                                  </span>
-                                ))}
-                              </div>
-                            )}
+                            <span className="font-semibold flex items-center gap-1">
+                              <AlertTriangle className="w-3.5 h-3.5 text-rose-600" />
+                              {tour.reviewRating}.0★ Feedback
+                            </span>
+                            <span className="text-[10px] underline font-bold">View</span>
                           </div>
-                        ) : tour.reviewStatus === 'SENT' ? (
-                          <div className="flex items-center justify-between p-2 rounded-xl bg-blue-50 border border-blue-200 text-blue-900">
-                            <div className="flex items-center gap-1.5">
-                              <Clock className="w-3.5 h-3.5 text-blue-600" />
-                              <span className="text-xs font-bold">Review Invite Sent ({tour.reviewFollowupCount || 1}/3)</span>
-                            </div>
-                            <span className="text-[10px] font-bold text-blue-700">Awaiting</span>
-                          </div>
-                        ) : (
-                          <div className="flex items-center justify-between p-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-600">
-                            <div className="flex items-center gap-1.5">
-                              <CheckCircle2 className="w-3.5 h-3.5 text-slate-400" />
-                              <span className="text-xs font-medium">Concluded {getDaysAgo(tour.endDate)}</span>
-                            </div>
-                            <span className="text-[10px] font-bold text-slate-500">Archived</span>
-                          </div>
-                        )}
+                        ) : null}
                       </div>
                     )}
                   </CardHeader>
 
-                  {/* Card Content & Structured Logistics */}
-                  <CardContent className="p-4 pt-1 space-y-3">
-                    {/* Destination & Pax Box */}
-                    <div className="grid grid-cols-2 gap-2 p-2.5 bg-slate-50/80 rounded-xl border border-slate-100 text-xs">
-                      <div>
-                        <p className="text-[9px] text-slate-400 font-black uppercase tracking-wider">Destination</p>
-                        <p className="font-bold text-slate-800 truncate mt-0.5">{tour.destination}</p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-[9px] text-slate-400 font-black uppercase tracking-wider">Travelers</p>
-                        <p className="font-bold text-slate-800 mt-0.5">{tour.passengerCount} Guests</p>
-                      </div>
+                  <CardContent className="p-4 pt-1 space-y-2.5">
+                    {/* Destination & Travelers */}
+                    <div className="flex justify-between items-center py-1.5 px-2.5 bg-slate-50 rounded-lg text-xs border border-slate-100">
+                      <span className="font-medium text-slate-700 truncate max-w-[170px]">{tour.destination}</span>
+                      <span className="font-bold text-slate-900 shrink-0">{tour.passengerCount} Pax</span>
                     </div>
 
-                    {/* Timeline & Operations */}
-                    <div className="space-y-1.5 text-xs text-slate-600">
-                      <div className="flex items-center justify-between font-medium">
-                        <span className="flex items-center text-slate-500">
-                          <CalendarIcon className="w-3.5 h-3.5 mr-1.5 text-slate-400" />
-                          Travel Dates
+                    {/* Key Details Table */}
+                    <div className="space-y-1 text-xs text-slate-600">
+                      <div className="flex justify-between items-center">
+                        <span className="text-slate-400 flex items-center gap-1">
+                          <CalendarIcon className="w-3.5 h-3.5" /> Dates
                         </span>
-                        <span className="font-bold text-slate-800">
+                        <span className="font-semibold text-slate-800">
                           {formatDateSafe(tour.startDate, 'MMM d')} – {formatDateSafe(tour.endDate, 'MMM d, yyyy')}
                         </span>
                       </div>
 
                       {tour.assignedOpsUser && (
-                        <div className="flex items-center justify-between font-medium">
-                          <span className="flex items-center text-slate-500">
-                            <Users className="w-3.5 h-3.5 mr-1.5 text-slate-400" />
-                            Ops Lead
+                        <div className="flex justify-between items-center">
+                          <span className="text-slate-400 flex items-center gap-1">
+                            <Users className="w-3.5 h-3.5" /> Ops Lead
                           </span>
-                          <span className="font-bold text-slate-800">{tour.assignedOpsUser.name}</span>
+                          <span className="font-semibold text-slate-800">{tour.assignedOpsUser.name}</span>
                         </div>
                       )}
 
                       {tour.driver && (
-                        <div className="flex items-center justify-between font-medium">
-                          <span className="flex items-center text-slate-500">
-                            <Car className="w-3.5 h-3.5 mr-1.5 text-slate-400" />
-                            Chauffeur
+                        <div className="flex justify-between items-center">
+                          <span className="text-slate-400 flex items-center gap-1">
+                            <Car className="w-3.5 h-3.5" /> Driver
                           </span>
-                          <span className="font-bold text-slate-800 truncate max-w-[140px]">
-                            {tour.driver.name} {tour.driver.vehicleNo ? `(${tour.driver.vehicleNo})` : tour.driver.vehicleName ? `(${tour.driver.vehicleName})` : ''}
+                          <span className="font-semibold text-slate-800 truncate max-w-[150px]">
+                            {tour.driver.name} {tour.driver.vehicleNo ? `(${tour.driver.vehicleNo})` : ''}
                           </span>
                         </div>
                       )}
 
                       {tour.sellingPrice && (
-                        <div className="flex items-center justify-between font-medium">
-                          <span className="flex items-center text-slate-500">
-                            <IndianRupee className="w-3.5 h-3.5 mr-1.5 text-slate-400" />
-                            Package Value
-                          </span>
-                          <span className="font-bold text-slate-900">
-                            ₹{tour.sellingPrice.toLocaleString('en-IN')}
-                          </span>
+                        <div className="flex justify-between items-center pt-1 border-t border-slate-100">
+                          <span className="text-slate-400">Package Value</span>
+                          <span className="font-bold text-slate-900">₹{tour.sellingPrice.toLocaleString('en-IN')}</span>
                         </div>
                       )}
                     </div>
                   </CardContent>
                 </div>
 
-                {/* Card Action Footer */}
                 <div className="p-4 pt-0">
                   <Link href={`/tours/${tour.id}`} className="block">
                     <Button 
-                      className={`w-full h-10 rounded-xl font-bold transition-all text-xs ${
-                        isRunning 
-                          ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-md shadow-emerald-600/20' 
-                          : 'bg-slate-900 hover:bg-slate-800 text-white shadow-sm'
-                      }`}
+                      className="w-full h-9 rounded-lg font-bold text-xs bg-slate-900 text-white hover:bg-slate-800 border-slate-900 transition-all flex items-center justify-center gap-1.5"
                     >
                       <span>View Tour Operations</span>
-                      <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
+                      <ArrowRight className="w-3.5 h-3.5" />
                     </Button>
                   </Link>
                 </div>
