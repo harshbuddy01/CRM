@@ -219,6 +219,12 @@ const startCronJobs = () => {
 
   // ── Post-Journey Review Sender & Reminder Loop (Daily at 10:00 AM IST) ──
   cron.schedule('0 10 * * *', async () => {
+    // Strict Safety Guard: Keep automated client messaging disabled until explicitly tested and enabled
+    if (process.env.ENABLE_AUTOMATED_CLIENT_DISPATCH !== 'true') {
+      console.log('[CRON] Automated client review dispatch is currently paused for safety (testing mode).');
+      return;
+    }
+
     console.log('[CRON] Starting 10:00 AM post-tour review dispatch...');
 
     try {
