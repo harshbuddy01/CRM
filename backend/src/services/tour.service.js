@@ -53,6 +53,25 @@ const reconcileTourStatuses = async () => {
         status: 'completed'
       }
     });
+
+    // 4. Auto-link any payments where queryId has an active tour and tourId is null
+    const unlinkedPayments = await prisma.payment.findMany({
+      where: { tourId: null, queryId: { not: null }, deletedAt: null },
+      select: { id: true, queryId: true }
+    });
+    for (const p of unlinkedPayments) {
+      const tour = await prisma.tour.findFirst({
+        where: { queryId: p.queryId, deletedAt: null },
+        orderBy: { createdAt: 'desc' },
+        select: { id: true }
+      });
+      if (tour) {
+        await prisma.payment.update({
+          where: { id: p.id },
+          data: { tourId: tour.id }
+        });
+      }
+    }
   } catch (err) {
     console.error('[Tour Reconciliation Error]:', err.message);
   }
@@ -171,6 +190,10 @@ const listTours = async ({ status, filterType, page = 1, limit = 50, opsUserId }
           adults: true,
           children: true,
           status: true,
+          payments: {
+            where: { deletedAt: null },
+            select: { id: true, amount: true, status: true }
+          }
         }
       },
       assignedOpsUser: { select: { id: true, name: true, mobile: true } },
@@ -194,7 +217,12 @@ const listTours = async ({ status, filterType, page = 1, limit = 50, opsUserId }
   });
 
   const tours = rawTours.map(t => {
-    const verifiedPaid = (t.payments || [])
+    const paymentMap = new Map();
+    (t.payments || []).forEach(p => paymentMap.set(p.id, p));
+    (t.query?.payments || []).forEach(p => paymentMap.set(p.id, p));
+    const allUniquePayments = Array.from(paymentMap.values());
+
+    const verifiedPaid = allUniquePayments
       .filter(p => p.status === 'verified')
       .reduce((sum, p) => sum + Number(p.amount || 0), 0);
 
@@ -264,6 +292,45 @@ const getTourDetails = async (id) => {
     throw new NotFoundError('Tour');
   }
 
+  // Fetch all payments associated with this tour or its query, including collector details
+  const payments = await prisma.payment.findMany({
+    where: {
+      deletedAt: null,
+      OR: [
+        { tourId: id },
+        ...(tour.queryId ? [{ queryId: tour.queryId }] : [])
+      ]
+    },
+    orderBy: { paymentDate: 'desc' },
+    include: {
+      user: { select: { id: true, name: true, email: true, mobile: true, role: true } }
+    }
+  });
+
+  // Self-heal: ensure tourId is populated in DB for any query payments that lacked tourId
+  const missingTourPayments = payments.filter(p => !p.tourId);
+  if (missingTourPayments.length > 0) {
+    await prisma.payment.updateMany({
+      where: { id: { in: missingTourPayments.map(p => p.id) } },
+      data: { tourId: id }
+    });
+  }
+
+  // De-duplicate unique payments by ID
+  const paymentMap = new Map();
+  payments.forEach(p => paymentMap.set(p.id, p));
+  const finalPayments = Array.from(paymentMap.values()).map(p => ({
+    ...p,
+    amount: Number(p.amount),
+    collector: p.user ? {
+      id: p.user.id,
+      name: p.user.name,
+      email: p.user.email,
+      mobile: p.user.mobile,
+      role: p.user.role
+    } : null
+  }));
+
   const passengerCount = tour.totalPax || (tour.query ? ((tour.query.adults || 0) + (tour.query.children || 0)) : 1);
 
   // Normalize proposal days: if proposal.days is empty, extract from linked itinerary.days
@@ -286,7 +353,8 @@ const getTourDetails = async (id) => {
     proposal: tour.proposal ? {
       ...tour.proposal,
       days
-    } : null
+    } : null,
+    payments: finalPayments
   };
 };
 

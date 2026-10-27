@@ -48,6 +48,9 @@ export function PaymentEntryModal({ isOpen, onClose, queryId, tourId, defaultAmo
       queryClient.invalidateQueries({ queryKey: ['query', queryId] });
       if (tourId) queryClient.invalidateQueries({ queryKey: ['tour', tourId] });
       queryClient.invalidateQueries({ queryKey: ['payments'] });
+      queryClient.invalidateQueries({ queryKey: ['client'] });
+      queryClient.invalidateQueries({ queryKey: ['clients'] });
+      queryClient.invalidateQueries({ queryKey: ['tours'] });
       // Reset form
       setFormData({
         amount: defaultAmount?.toString() || '',

@@ -38,15 +38,76 @@ const getAllClients = async (queryFilters = {}) => {
 };
 
 const getClientById = async (id) => {
-  return await prisma.client.findUnique({
+  const client = await prisma.client.findUnique({
     where: { id },
     include: {
       queries: {
+        where: { deletedAt: null },
         orderBy: { createdAt: 'desc' },
-        take: 5
+        include: {
+          tours: {
+            where: { deletedAt: null },
+            select: { id: true, tourCode: true, status: true, startDate: true, endDate: true }
+          },
+          proposals: {
+            where: { deletedAt: null },
+            orderBy: { version: 'desc' },
+            take: 1,
+            select: { sellingPrice: true, totalCost: true }
+          }
+        }
       }
     }
   });
+
+  if (!client) return null;
+
+  const queryIds = client.queries.map(q => q.id);
+
+  // Fetch all payments for this client's queries or tours
+  const payments = await prisma.payment.findMany({
+    where: {
+      deletedAt: null,
+      queryId: { in: queryIds }
+    },
+    orderBy: { paymentDate: 'desc' },
+    include: {
+      user: { select: { id: true, name: true, email: true, mobile: true, role: true } },
+      query: { select: { id: true, queryCode: true, destination: true } },
+      tour: { select: { id: true, tourCode: true, status: true } }
+    }
+  });
+
+  const totalBookingsValue = client.queries.reduce((sum, q) => {
+    const val = q.proposals?.[0]?.sellingPrice || q.budget || 0;
+    return sum + Number(val);
+  }, 0);
+
+  const totalPaid = payments
+    .filter(p => p.status === 'verified')
+    .reduce((sum, p) => sum + Number(p.amount), 0);
+
+  const balanceDue = totalBookingsValue - totalPaid;
+
+  return {
+    ...client,
+    financialSummary: {
+      totalBookingsValue,
+      totalPaid,
+      balanceDue
+    },
+    payments: payments.map(p => ({
+      ...p,
+      amount: Number(p.amount),
+      collector: p.user ? {
+        id: p.user.id,
+        name: p.user.name,
+        email: p.user.email,
+        mobile: p.user.mobile,
+        role: p.user.role
+      } : null
+    }))
+  };
 };
 
 const createClient = async (data) => {

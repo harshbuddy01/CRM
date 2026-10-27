@@ -502,7 +502,7 @@ const changeQueryStatus = async (id, status, userId, canViewAll, canEditAll) => 
         orderBy: { version: 'desc' }
       });
 
-      await prisma.tour.create({
+      const createdTour = await prisma.tour.create({
         data: {
           queryId: id,
           proposalId: proposal ? proposal.id : null,
@@ -512,6 +512,12 @@ const changeQueryStatus = async (id, status, userId, canViewAll, canEditAll) => 
           endDate: existing.travelDateTo || existing.travelDateFrom,
           totalPax: existing.adults + existing.children,
         }
+      });
+
+      // Auto-link any payments recorded for this query to the new tour
+      await prisma.payment.updateMany({
+        where: { queryId: id, tourId: null },
+        data: { tourId: createdTour.id }
       });
     } else {
       // Find latest proposal
@@ -529,6 +535,12 @@ const changeQueryStatus = async (id, status, userId, canViewAll, canEditAll) => 
           endDate: existing.travelDateTo || existing.travelDateFrom,
           totalPax: existing.adults + existing.children,
         }
+      });
+
+      // Auto-link any payments recorded for this query to the existing tour
+      await prisma.payment.updateMany({
+        where: { queryId: id, tourId: null },
+        data: { tourId: existingTour.id }
       });
     }
   }

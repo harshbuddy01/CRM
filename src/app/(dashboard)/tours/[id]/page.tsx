@@ -423,20 +423,54 @@ export default function TourDetailPage() {
 
               {tour.payments && tour.payments.length > 0 && (
                 <div className="pt-3 border-t mt-3 space-y-2">
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Transaction History</p>
-                  <div className="space-y-2 max-h-[180px] overflow-y-auto pr-1">
+                  <div className="flex justify-between items-center">
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Transaction History</p>
+                    <span className="text-[10px] font-bold text-slate-400">{tour.payments.length} Records</span>
+                  </div>
+                  <div className="space-y-2.5 max-h-[240px] overflow-y-auto pr-1">
                     {tour.payments.map((p: any) => (
-                      <div key={p.id} className="text-xs border-b pb-2 last:border-0 last:pb-0">
-                        <div className="flex justify-between font-bold text-slate-800">
-                          <span className="capitalize">{p.mode?.replace('_', ' ')}</span>
-                          <span>₹{Number(p.amount).toLocaleString('en-IN')}</span>
-                        </div>
-                        <div className="flex justify-between text-[11px] text-slate-400 mt-0.5">
-                          <span>{format(new Date(p.paymentDate), 'MMM d, yyyy')}</span>
-                          <span className={`font-bold ${p.status === 'verified' ? 'text-emerald-600' : 'text-amber-600'}`}>
-                            {p.status?.toUpperCase()}
+                      <div key={p.id} className="text-xs bg-slate-50/90 border border-slate-100 rounded-xl p-2.5 space-y-1">
+                        <div className="flex justify-between items-center font-bold text-slate-800">
+                          <span className="inline-flex items-center gap-1.5 capitalize font-black text-slate-900">
+                            <span className="px-1.5 py-0.5 rounded text-[10px] font-black uppercase bg-blue-100 text-blue-800 border border-blue-200">
+                              {p.mode}
+                            </span>
+                            ₹{Number(p.amount).toLocaleString('en-IN')}
+                          </span>
+                          <span className={`text-[10px] font-black px-1.5 py-0.5 rounded ${
+                            p.status === 'verified' ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' : 'bg-amber-100 text-amber-800'
+                          }`}>
+                            {p.status === 'verified' ? '✓ VERIFIED' : p.status?.toUpperCase()}
                           </span>
                         </div>
+                        
+                        <div className="flex justify-between items-center text-[10px] text-slate-500 pt-0.5">
+                          <span>{format(new Date(p.paymentDate), 'MMM d, yyyy')}</span>
+                          {p.referenceUtr && (
+                            <span className="font-mono text-slate-600 truncate max-w-[150px]" title={p.referenceUtr}>
+                              Ref: {p.referenceUtr}
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Collector / Staff Details */}
+                        {(p.collector?.name || p.user?.name) && (
+                          <div className="flex items-center gap-1 text-[10px] text-slate-600 pt-1 border-t border-slate-200/60 mt-1">
+                            <span className="text-slate-400">Collected by:</span>
+                            <span className="font-bold text-slate-800">{p.collector?.name || p.user?.name}</span>
+                            {(p.collector?.role || p.user?.role) && (
+                              <span className="text-[9px] text-slate-400 uppercase font-mono">
+                                ({p.collector?.role?.replace('_', ' ') || p.user?.role?.replace('_', ' ')})
+                              </span>
+                            )}
+                          </div>
+                        )}
+
+                        {p.notes && (
+                          <p className="text-[10px] italic text-slate-500 bg-white/80 px-2 py-0.5 rounded border border-slate-100">
+                            Note: {p.notes}
+                          </p>
+                        )}
                       </div>
                     ))}
                   </div>
