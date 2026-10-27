@@ -221,11 +221,33 @@ const getTourDetails = async (id) => {
   const tour = await prisma.tour.findUnique({
     where: { id },
     include: {
-      query: { select: { id: true, name: true, phone: true, email: true, destination: true } },
-      proposal: {
-        include: { days: { include: { destination: true, hotel: true } } }
+      query: {
+        select: {
+          id: true,
+          queryCode: true,
+          name: true,
+          phone: true,
+          email: true,
+          destination: true,
+          adults: true,
+          children: true,
+          status: true
+        }
       },
-      assignedOpsUser: { select: { id: true, name: true } },
+      proposal: {
+        include: {
+          days: { include: { destination: true, hotel: true } },
+          itinerary: {
+            include: {
+              days: {
+                include: { destination: true, events: true },
+                orderBy: { dayNumber: 'asc' }
+              }
+            }
+          }
+        }
+      },
+      assignedOpsUser: { select: { id: true, name: true, mobile: true } },
       payments: {
         where: { deletedAt: null },
         orderBy: { paymentDate: 'desc' }
@@ -242,7 +264,30 @@ const getTourDetails = async (id) => {
     throw new NotFoundError('Tour');
   }
 
-  return tour;
+  const passengerCount = tour.totalPax || (tour.query ? ((tour.query.adults || 0) + (tour.query.children || 0)) : 1);
+
+  // Normalize proposal days: if proposal.days is empty, extract from linked itinerary.days
+  let days = tour.proposal?.days || [];
+  if ((!days || days.length === 0) && tour.proposal?.itinerary?.days) {
+    days = tour.proposal.itinerary.days.map(d => ({
+      id: d.id,
+      dayNumber: d.dayNumber,
+      title: d.title,
+      description: d.description,
+      activities: d.events?.map(e => e.title || e.name).join(', ') || null,
+      destination: d.destination,
+      hotel: null
+    }));
+  }
+
+  return {
+    ...tour,
+    passengerCount,
+    proposal: tour.proposal ? {
+      ...tour.proposal,
+      days
+    } : null
+  };
 };
 
 const updateTourOps = async (id, data) => {
