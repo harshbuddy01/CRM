@@ -1104,6 +1104,134 @@ const updateDriverRideStatus = async (req, res, next) => {
   }
 };
 
+/**
+ * Public Review: Fetch tour & guest metadata by tourCode
+ * Route: GET /api/v1/public/review/:tourCode
+ */
+const getReviewTourInfo = async (req, res, next) => {
+  try {
+    const { tourCode } = req.params;
+    const tour = await prisma.tour.findFirst({
+      where: {
+        OR: [
+          { tourCode: tourCode },
+          { id: tourCode }
+        ],
+        deletedAt: null
+      },
+      include: {
+        query: {
+          select: {
+            id: true,
+            name: true,
+            destination: true,
+            travelDateFrom: true,
+            travelDateTo: true
+          }
+        }
+      }
+    });
+
+    if (!tour) {
+      return res.status(404).json({ success: false, message: 'Expedition not found' });
+    }
+
+    res.json({
+      success: true,
+      data: {
+        tourCode: tour.tourCode,
+        guestName: tour.query?.name || 'Distinguished Traveler',
+        destination: tour.query?.destination || 'Himalayan Expedition',
+        startDate: tour.startDate,
+        endDate: tour.endDate,
+        status: tour.status,
+        reviewStatus: tour.reviewStatus,
+        reviewRating: tour.reviewRating
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Public Review: Record guest review action (Google review opened or private feedback submitted)
+ * Route: POST /api/v1/public/review/:tourCode
+ */
+const submitReview = async (req, res, next) => {
+  try {
+    const { tourCode } = req.params;
+    const { rating, action, disappointments, notes, selectedTags, feedbackText } = req.body;
+
+    const tour = await prisma.tour.findFirst({
+      where: {
+        OR: [
+          { tourCode: tourCode },
+          { id: tourCode }
+        ],
+        deletedAt: null
+      },
+      include: {
+        query: true
+      }
+    });
+
+    if (!tour) {
+      return res.status(404).json({ success: false, message: 'Expedition not found' });
+    }
+
+    const effectiveRating = rating ? parseInt(rating, 10) : 5;
+    const effectiveDisappointments = disappointments || selectedTags || [];
+    const effectiveNotes = notes || feedbackText || null;
+    const effectiveAction = action || (effectiveRating >= 4 ? 'opened_google_review' : 'private_feedback_submitted');
+
+    // Update the tour review record
+    const updatedTour = await prisma.tour.update({
+      where: { id: tour.id },
+      data: {
+        reviewStatus: 'COMPLETED',
+        reviewRating: effectiveRating,
+        reviewAction: effectiveAction,
+        reviewDisappointments: effectiveDisappointments,
+        reviewNotes: effectiveNotes,
+        reviewCompletedAt: new Date()
+      }
+    });
+
+    // Also log an entry in Query Activity Log / Notes so CRM team immediately sees it
+    try {
+      const summaryText = effectiveRating >= 4
+        ? `⭐ Guest submitted a ${effectiveRating}★ Google Review via public portal.`
+        : `⚠️ Guest submitted ${effectiveRating}★ private feedback. Issues: ${effectiveDisappointments.join(', ') || 'General'}. Note: "${effectiveNotes || 'No notes'}"`;
+
+      if (tour.query?.assignedTo) {
+        await prisma.queryNote.create({
+          data: {
+            queryId: tour.queryId,
+            userId: tour.query.assignedTo,
+            note: summaryText,
+            noteType: 'note'
+          }
+        }).catch(e => console.error('[Review QueryNote Create Error]', e));
+      }
+    } catch (e) {
+      console.error('[Review QueryNote Logging Error]', e);
+    }
+
+    res.json({
+      success: true,
+      message: 'Review successfully recorded. Thank you!',
+      data: {
+        tourCode: updatedTour.tourCode,
+        reviewStatus: updatedTour.reviewStatus,
+        reviewRating: updatedTour.reviewRating
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = { 
   guestLogin, 
   getGuestTrip, 
@@ -1121,6 +1249,8 @@ module.exports = {
   getHotelRequests,
   updateHotelRequestStatus,
   updateGuestTransitDetails,
-  updateDriverRideStatus
+  updateDriverRideStatus,
+  getReviewTourInfo,
+  submitReview
 };
 

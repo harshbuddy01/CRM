@@ -157,7 +157,7 @@ export default function TourDetailPage() {
           </div>
         </div>
         
-        {tour.status !== 'cancelled' && tour.status !== 'completed' && user?.role === 'admin' && (
+        {tour.status !== 'cancelled' && tour.status !== 'completed' && (user?.role === 'admin' || user?.role === 'system_owner' || user?.role === 'ops') && (
           <div className="flex items-center gap-3">
             <Link href={`/tours/${tourId}/dispatch`}>
               <Button variant="outline" className="border-violet-200 text-violet-700 hover:bg-violet-50">
@@ -438,7 +438,7 @@ export default function TourDetailPage() {
             <div className="p-4 bg-muted/30">
               <div className="flex justify-between items-center mb-3">
                 <p className="text-sm font-semibold">Operations Handover Notes</p>
-                {user?.role === 'admin' || user?.role === 'ops' ? (
+                {user?.role === 'admin' || user?.role === 'ops' || user?.role === 'system_owner' ? (
                   !isEditingOps ? (
                     <Button variant="ghost" size="sm" onClick={handleEditOpsClick} className="h-6 px-2 text-xs">Edit</Button>
                   ) : null
@@ -465,7 +465,7 @@ export default function TourDetailPage() {
                 </div>
               )}
             </div>
-            {tour.status !== 'completed' && tour.status !== 'cancelled' && (user?.role === 'ops' || user?.role === 'admin') && (
+            {tour.status !== 'completed' && tour.status !== 'cancelled' && (user?.role === 'ops' || user?.role === 'admin' || user?.role === 'system_owner') && (
               <div className="p-4 border-t bg-emerald-50/50">
                   <p className="text-xs text-center text-muted-foreground">Field Updates are restricted to Field Agents during the running status of the tour.</p>
               </div>

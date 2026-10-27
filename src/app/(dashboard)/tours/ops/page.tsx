@@ -61,7 +61,33 @@ export default function OpsToursPage() {
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {filteredTours.map((tour: any) => {
-            const daysToStart = differenceInDays(new Date(tour.startDate), new Date());
+            const now = new Date();
+            const start = new Date(tour.startDate);
+            const end = new Date(tour.endDate);
+            const isEnded = end < now;
+            const isRunning = tour.status === 'running' || tour.status === 'in_progress' || (start <= now && now <= end);
+            const daysToStart = differenceInDays(start, now);
+
+            let statusBadgeText = `Starts in ${daysToStart} Days`;
+            let statusBadgeClass = 'bg-amber-100 text-amber-800';
+
+            if (isEnded || tour.status === 'completed') {
+              statusBadgeText = 'Tour Completed';
+              statusBadgeClass = 'bg-slate-100 text-slate-700 border border-slate-300';
+            } else if (isRunning) {
+              statusBadgeText = 'Active Now (Running)';
+              statusBadgeClass = 'bg-emerald-100 text-emerald-800 border border-emerald-300 animate-pulse';
+            } else if (daysToStart === 0) {
+              statusBadgeText = 'Starts Today';
+              statusBadgeClass = 'bg-blue-100 text-blue-800 border border-blue-300';
+            } else if (daysToStart < 0) {
+              statusBadgeText = 'Ongoing Tour';
+              statusBadgeClass = 'bg-emerald-100 text-emerald-800 border border-emerald-300';
+            }
+
+            const paxCount = tour.totalPax || tour.passengerCount || (tour.query ? ((tour.query.adults || 0) + (tour.query.children || 0)) : 1);
+            const destName = tour.destination || tour.query?.destination || 'Bespoke Tour Package';
+
             return (
               <Card key={tour.id} className="hover:border-primary/50 transition-colors flex flex-col">
                 <CardHeader className="pb-3 border-b bg-muted/20">
@@ -69,14 +95,12 @@ export default function OpsToursPage() {
                     <div>
                       <CardTitle className="text-lg flex items-center gap-2">
                         {tour.tourCode}
-                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase ${
-                          tour.status === 'running' ? 'bg-blue-100 text-blue-700 animate-pulse' : 'bg-amber-100 text-amber-700'
-                        }`}>
-                          {tour.status === 'running' ? 'Active Now' : `Starts in ${daysToStart} Days`}
+                        <span className={`px-2.5 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase ${statusBadgeClass}`}>
+                          {statusBadgeText}
                         </span>
                       </CardTitle>
-                      <CardDescription className="text-foreground font-medium mt-1 uppercase tracking-wider text-xs">
-                        {tour.query?.destination || 'DESTINATION TBD'}
+                      <CardDescription className="text-foreground font-semibold mt-1 uppercase tracking-wider text-xs text-primary">
+                        {destName}
                       </CardDescription>
                     </div>
                   </div>
@@ -90,7 +114,7 @@ export default function OpsToursPage() {
                       </div>
                       <div>
                         <p className="text-xs text-muted-foreground mb-1">Pax Size</p>
-                        <p className="font-semibold">{tour.passengerCount} Travelers</p>
+                        <p className="font-semibold">{paxCount} {paxCount === 1 ? 'Traveler' : 'Travelers'}</p>
                       </div>
                     </div>
 

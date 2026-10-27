@@ -133,27 +133,121 @@ const startCronJobs = () => {
       console.error('[CRON Error] Session cleanup failed:', error);
     }
 
-    // ── Task 2: Purge Activity Logs older than 7 days ──
-    // This keeps the DB lean — only the last 7 days of team activity
-    // are retained. Older logs are permanently deleted every night.
+    // ── Task 3: Auto-transition Completed Tours & Leads ──
     try {
-      const sevenDaysAgo = new Date();
-      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
 
-      const purgeResult = await prisma.activityLog.deleteMany({
-        where: { createdAt: { lt: sevenDaysAgo } }
+      const endedTours = await prisma.tour.findMany({
+        where: {
+          endDate: { lt: today },
+          status: { in: ['upcoming', 'running', 'in_progress'] },
+          deletedAt: null
+        },
+        include: { query: true }
       });
 
-      console.log(`[CRON] 🧹 Purged ${purgeResult.count} activity log entries older than 7 days.`);
+      for (const tour of endedTours) {
+        await prisma.tour.update({
+          where: { id: tour.id },
+          data: {
+            status: 'completed',
+            reviewStatus: tour.reviewStatus || 'PENDING'
+          }
+        });
+
+        if (tour.query && tour.query.status !== 'completed') {
+          await prisma.query.update({
+            where: { id: tour.query.id },
+            data: { status: 'completed' }
+          });
+        }
+      }
+
+      if (endedTours.length > 0) {
+        console.log(`[CRON] 🏁 Auto-completed ${endedTours.length} ended tours & inquiries.`);
+      }
     } catch (error) {
-      console.error('[CRON Error] Activity log purge failed:', error);
+      console.error('[CRON Error] Auto-complete tours failed:', error);
     }
 
   }, {
     timezone: "Asia/Kolkata"
   });
 
-  console.log('⏰ Midnight Cron scheduler active (sessions + 7-day activity log purge).');
+  // ── Post-Journey Review Sender & Reminder Loop (Daily at 10:00 AM IST) ──
+  cron.schedule('0 10 * * *', async () => {
+    console.log('[CRON] Starting 10:00 AM post-tour review dispatch...');
+
+    try {
+      const oneDayAgo = new Date();
+      oneDayAgo.setDate(oneDayAgo.getDate() - 1);
+      oneDayAgo.setHours(23, 59, 59, 999);
+
+      // Find completed tours whose journey ended at least 1 day ago, awaiting review
+      const eligibleTours = await prisma.tour.findMany({
+        where: {
+          status: 'completed',
+          endDate: { lte: oneDayAgo },
+          reviewStatus: { in: ['PENDING', 'SENT'] },
+          reviewFollowupCount: { lt: 3 },
+          deletedAt: null
+        },
+        include: {
+          query: true
+        }
+      });
+
+      console.log(`[CRON] Found ${eligibleTours.length} tours eligible for review invitation.`);
+
+      for (const tour of eligibleTours) {
+        const guestPhone = tour.query?.phone;
+        const guestName = tour.query?.name || 'Valued Guest';
+        const reviewUrl = `https://imagicaholidays.com/review/${tour.tourCode}`;
+        const isFirstTime = tour.reviewStatus === 'PENDING' || tour.reviewFollowupCount === 0;
+        const nextAttempt = (tour.reviewFollowupCount || 0) + 1;
+
+        // Dispatch WhatsApp invitation
+        if (guestPhone) {
+          try {
+            const queueService = require('./services/queue.service');
+            await queueService.enqueueWhatsappJob(
+              tour.id,
+              guestPhone,
+              'customer_review_invite',
+              [
+                { type: 'body', parameters: [
+                  { type: 'text', text: guestName },
+                  { type: 'text', text: reviewUrl }
+                ]}
+              ]
+            ).catch(() => {});
+          } catch (e) {
+            console.error(`[CRON] WhatsApp review dispatch error for ${tour.tourCode}:`, e);
+          }
+        }
+
+        // Update tracking
+        await prisma.tour.update({
+          where: { id: tour.id },
+          data: {
+            reviewStatus: 'SENT',
+            reviewSentAt: new Date(),
+            reviewFollowupCount: nextAttempt
+          }
+        });
+
+        console.log(`[CRON] Sent review invite to ${guestName} (${tour.tourCode}) — Attempt ${nextAttempt}/3`);
+      }
+    } catch (err) {
+      console.error('[CRON Error] Review dispatch loop failed:', err);
+    }
+  }, {
+    timezone: "Asia/Kolkata"
+  });
+
+  console.log('⏰ Midnight Cron scheduler active (sessions + 7-day activity log purge + auto-complete).');
+  console.log('⏰ 10:00 AM Cron scheduler active (post-tour WhatsApp/Email review invitations).');
 
   // Run every 10 minutes to clean up expired demo sessions
   cron.schedule('*/10 * * * *', async () => {

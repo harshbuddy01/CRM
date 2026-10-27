@@ -75,7 +75,7 @@ export default function FieldToursPage() {
                     </p>
                   </div>
                   <div className="bg-primary/10 text-primary px-3 py-1 rounded-full text-xs font-bold">
-                    {tour.passengerCount} Pax
+                    {tour.passengerCount || tour.totalPax || (tour.query ? ((tour.query.adults || 0) + (tour.query.children || 0)) : 1)} Pax
                   </div>
                 </div>
 

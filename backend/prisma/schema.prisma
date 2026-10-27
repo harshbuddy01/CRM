@@ -370,6 +370,16 @@ model Tour {
   arrivalPickupLat      Float?    @map("arrival_pickup_lat")
   arrivalPickupLng      Float?    @map("arrival_pickup_lng")
 
+  // Post-Journey Review System
+  reviewStatus          String?   @default("PENDING") @map("review_status") /// 'PENDING', 'SENT', 'OPENED', 'COMPLETED', 'EXCLUDED'
+  reviewRating          Int?      @map("review_rating")
+  reviewDisappointments Json?     @map("review_disappointments")
+  reviewNotes           String?   @db.Text @map("review_notes")
+  reviewAction          String?   @map("review_action")
+  reviewSentAt          DateTime? @map("review_sent_at")
+  reviewCompletedAt     DateTime? @map("review_completed_at")
+  reviewFollowupCount   Int       @default(0) @map("review_followup_count")
+
   query           Query             @relation(fields: [queryId], references: [id])
   proposal        Proposal?         @relation(fields: [proposalId], references: [id])
   assignedOpsUser User?             @relation("TourAssignedOps", fields: [assignedOps], references: [id])

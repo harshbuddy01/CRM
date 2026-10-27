@@ -180,6 +180,23 @@ const getQueryById = async (id, userId, canViewAll) => {
         orderBy: { createdAt: 'desc' }, 
         include: { user: { select: { name: true } } } 
       },
+      tours: {
+        where: { deletedAt: null },
+        select: {
+          id: true,
+          tourCode: true,
+          status: true,
+          startDate: true,
+          endDate: true,
+          reviewStatus: true,
+          reviewRating: true,
+          reviewAction: true,
+          reviewDisappointments: true,
+          reviewNotes: true,
+          reviewCompletedAt: true,
+          reviewSentAt: true
+        }
+      }
     },
   });
 

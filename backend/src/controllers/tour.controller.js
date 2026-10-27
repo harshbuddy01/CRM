@@ -7,11 +7,12 @@ const { BusinessError } = require('../utils/AppError');
 
 const list = async (req, res, next) => {
   try {
-    const filterType = req.query.filterType || req.query.view || 'all';
+    const filterType = req.query.filterType || (req.query.fieldOnly === 'true' || req.query.fieldOnly === true ? 'field' : (req.query.view || 'all'));
+    const isOwnerOrAdmin = ['admin', 'system_owner'].includes(req.user?.role);
     const result = await tourService.listTours({
       ...req.query,
       filterType, // 'ops', 'field', 'all'
-      opsUserId: filterType === 'field' ? req.user.id : req.query.opsUserId,
+      opsUserId: (filterType === 'field' && !isOwnerOrAdmin) ? req.user.id : req.query.opsUserId,
     });
     res.json({ success: true, data: result });
   } catch (error) {

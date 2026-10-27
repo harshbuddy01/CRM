@@ -283,6 +283,129 @@ export default function QueryDetailPage() {
                   </span>
                 );
               })()}
+
+              {/* Review Status Pill (Zero Bulk · Interactive Popover) */}
+              {(() => {
+                const tour = query.tours?.[0];
+                if (!tour || !tour.reviewStatus || tour.reviewStatus === 'EXCLUDED') return null;
+
+                const is5Star = (tour.reviewRating && tour.reviewRating >= 4) || tour.reviewAction === 'opened_google_review';
+                const isDisappointed = tour.reviewRating && tour.reviewRating <= 3;
+                const isPending = tour.reviewStatus === 'SENT' || tour.reviewStatus === 'PENDING';
+
+                if (is5Star) {
+                  return (
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <button
+                          type="button"
+                          className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[9px] md:text-[11px] font-black uppercase tracking-wider text-amber-950 bg-gradient-to-r from-amber-200 via-yellow-300 to-amber-400 border border-amber-400/80 shadow-sm hover:scale-105 transition-all cursor-pointer"
+                        >
+                          <span>⭐</span>
+                          <span>{tour.reviewRating || 5}★ Google Review</span>
+                        </button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-72 p-4 text-slate-800 shadow-xl border-amber-200 bg-amber-50/95 backdrop-blur z-50">
+                        <div className="flex items-center gap-2 mb-2 pb-2 border-b border-amber-200">
+                          <span className="text-xl">🎉</span>
+                          <div>
+                            <p className="font-bold text-xs text-amber-900">Google Review Portal Opened</p>
+                            <p className="text-[10px] text-amber-700">Client initiated public Google Maps review</p>
+                          </div>
+                        </div>
+                        <div className="text-xs space-y-1.5">
+                          <div className="flex justify-between">
+                            <span className="text-slate-500 font-medium">Rating:</span>
+                            <span className="font-bold text-amber-800">{"★".repeat(tour.reviewRating || 5)} ({tour.reviewRating || 5}/5)</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-slate-500 font-medium">Recorded:</span>
+                            <span className="font-medium text-slate-700">
+                              {tour.reviewCompletedAt ? format(new Date(tour.reviewCompletedAt), 'MMM d, h:mm a') : 'Recently'}
+                            </span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-slate-500 font-medium">Tour Code:</span>
+                            <span className="font-mono text-slate-700">{tour.tourCode}</span>
+                          </div>
+                        </div>
+                      </PopoverContent>
+                    </Popover>
+                  );
+                }
+
+                if (isDisappointed) {
+                  const issues = Array.isArray(tour.reviewDisappointments) ? tour.reviewDisappointments : [];
+                  return (
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <button
+                          type="button"
+                          className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[9px] md:text-[11px] font-black uppercase tracking-wider text-rose-900 bg-gradient-to-r from-rose-100 to-rose-200 border border-rose-300 shadow-sm hover:scale-105 transition-all cursor-pointer"
+                        >
+                          <span>⚠️</span>
+                          <span>{tour.reviewRating}★ Guest Feedback</span>
+                        </button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-80 p-4 text-slate-800 shadow-xl border-rose-200 bg-rose-50/95 backdrop-blur z-50">
+                        <div className="flex items-center gap-2 mb-2 pb-2 border-b border-rose-200">
+                          <span className="text-xl">⚠️</span>
+                          <div>
+                            <p className="font-bold text-xs text-rose-950">Guest Disappointment Report</p>
+                            <p className="text-[10px] text-rose-700">Confidential executive redress note</p>
+                          </div>
+                        </div>
+                        <div className="text-xs space-y-2.5">
+                          <div className="flex justify-between items-center">
+                            <span className="text-slate-500 font-medium">Rating:</span>
+                            <span className="font-bold text-rose-700">{"★".repeat(tour.reviewRating)} ({tour.reviewRating}/5)</span>
+                          </div>
+
+                          {issues.length > 0 && (
+                            <div>
+                              <span className="text-[10px] uppercase font-bold text-slate-500 block mb-1">Reported Concerns:</span>
+                              <div className="flex flex-wrap gap-1">
+                                {issues.map((iss: string, idx: number) => (
+                                  <span key={idx} className="px-2 py-0.5 rounded bg-rose-200/80 border border-rose-300 text-[10px] font-semibold text-rose-900">
+                                    {iss}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {tour.reviewNotes && (
+                            <div>
+                              <span className="text-[10px] uppercase font-bold text-slate-500 block mb-1">Guest Notes:</span>
+                              <p className="text-xs bg-white/90 p-2.5 rounded-lg border border-rose-200 text-slate-700 italic">
+                                &ldquo;{tour.reviewNotes}&rdquo;
+                              </p>
+                            </div>
+                          )}
+
+                          <div className="flex justify-between text-[10px] text-slate-500 pt-1 border-t border-rose-200">
+                            <span>Logged: {tour.reviewCompletedAt ? format(new Date(tour.reviewCompletedAt), 'MMM d, h:mm a') : 'Recently'}</span>
+                            <span className="font-mono">{tour.tourCode}</span>
+                          </div>
+                        </div>
+                      </PopoverContent>
+                    </Popover>
+                  );
+                }
+
+                if (isPending) {
+                  return (
+                    <span 
+                      className="px-2.5 py-0.5 rounded-full text-[9px] md:text-[11px] font-semibold text-slate-600 bg-slate-100 border border-slate-200"
+                      title={tour.reviewSentAt ? `Sent on ${format(new Date(tour.reviewSentAt), 'MMM d')}` : 'Review pending'}
+                    >
+                      ⏳ Review Pending
+                    </span>
+                  );
+                }
+
+                return null;
+              })()}
               <span className="text-slate-400 text-xs font-bold tracking-tighter uppercase">{query.queryCode}</span>
             </div>
             <p className="text-muted-foreground mt-0.5 text-[10px] md:text-sm font-medium">

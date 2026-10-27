@@ -26,17 +26,23 @@ const listTours = async ({ status, filterType, page = 1, limit = 50, opsUserId }
   }
 
   const offset = (page - 1) * limit;
-  const tours = await prisma.tour.findMany({
+  const rawTours = await prisma.tour.findMany({
     where,
     skip: offset,
     take: parseInt(limit, 10),
     orderBy: { startDate: 'asc' }, // Logistics care about what happens soonest
     include: {
-      query: { select: { id: true, name: true, phone: true } },
+      query: { select: { id: true, name: true, phone: true, email: true, destination: true, adults: true, children: true } },
       assignedOpsUser: { select: { name: true } },
       // Specifically omit heavy financials for lists if ops/field, handled in controller mapping 
     },
   });
+
+  const tours = rawTours.map(t => ({
+    ...t,
+    passengerCount: t.totalPax || (t.query ? ((t.query.adults || 0) + (t.query.children || 0)) : 1),
+    destination: t.query?.destination || 'Destination TBD'
+  }));
 
   const total = await prisma.tour.count({ where });
   return { tours, total, page, totalPages: Math.ceil(total / limit) };

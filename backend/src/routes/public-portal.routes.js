@@ -40,6 +40,10 @@ router.get('/hotel/:hotelName/guests', ctrl.getHotelGuests);
 router.get('/hotel/:hotelId/requests', ctrl.getHotelRequests);
 router.patch('/hotel/:hotelId/requests/:requestId', ctrl.updateHotelRequestStatus);
 
+// ── Public Review System ───────────────────────────────────
+router.get('/review/:tourCode', ctrl.getReviewTourInfo);
+router.post('/review/:tourCode', ctrl.submitReview);
+
 // ── Voucher Public Download ───────────────────────────────
 router.get('/vouchers/:id/download-pdf', downloadPdfPublic);
 
