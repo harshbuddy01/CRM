@@ -11,7 +11,6 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -34,20 +33,17 @@ import {
   Loader2, 
   Search, 
   Columns3, 
+  ListFilter,
   Phone, 
-  Mail, 
   MapPin, 
   Users, 
   Calendar, 
-  Sparkles, 
-  Clock, 
-  CheckCircle2, 
   X, 
   ChevronDown, 
-  ArrowUpRight, 
   MessageCircle,
   RotateCcw,
-  IndianRupee
+  IndianRupee,
+  LayoutGrid
 } from 'lucide-react';
 import { useAuthStore } from '@/lib/auth-store';
 import Link from 'next/link';
@@ -75,16 +71,16 @@ type QueryData = {
   createdAt: string;
 };
 
-// Logical sales sequence stages
-const SALES_SEQUENCE = [
-  { id: 'all', label: 'All Inquiries', icon: '📋' },
-  { id: 'new', label: '1. New Leads', icon: '🆕' },
-  { id: 'quoted', label: '2. Quoted', icon: '📝' },
-  { id: 'negotiation', label: '3. Negotiation', icon: '💬' },
-  { id: 'confirmed', label: '4. Confirmed', icon: '✅' },
-  { id: 'in_progress', label: '5. In Progress', icon: '🚀' },
-  { id: 'completed', label: '6. Completed', icon: '🏁' },
-  { id: 'lost', label: 'Lost / Dropped', icon: '❌' },
+// Logical sales sequence tabs — clean, minimal, without tacky emojis
+const SEQUENCE_STAGES = [
+  { id: 'all', label: 'All' },
+  { id: 'new', label: 'New' },
+  { id: 'quoted', label: 'Quoted' },
+  { id: 'negotiation', label: 'Negotiation' },
+  { id: 'confirmed', label: 'Confirmed' },
+  { id: 'in_progress', label: 'In Progress' },
+  { id: 'completed', label: 'Completed' },
+  { id: 'lost', label: 'Lost' },
 ];
 
 export default function QueriesPage() {
@@ -149,7 +145,7 @@ export default function QueriesPage() {
     },
     onSuccess: (_, variables) => {
       const formatted = variables.newStatus.replace('_', ' ').toUpperCase();
-      toast.success(`Lead status updated to ${formatted}`);
+      toast.success(`Lead moved to ${formatted}`);
       queryClient.invalidateQueries({ queryKey: ['queries'] });
     },
     onError: (err: any) => {
@@ -162,13 +158,6 @@ export default function QueriesPage() {
   const totalCount = data?.data?.total || 0;
   const statusCounts = data?.data?.statusCounts || {};
 
-  // KPI Calculations
-  const totalLeads = statusCounts.all || totalCount || 0;
-  const newLeads = statusCounts.new || 0;
-  const activePipeline = (statusCounts.quoted || 0) + (statusCounts.negotiation || 0);
-  const confirmedLeads = statusCounts.confirmed || 0;
-
-  // Has active filter applied
   const hasActiveFilters = Boolean(
     search.trim() || 
     status !== 'all' || 
@@ -185,11 +174,12 @@ export default function QueriesPage() {
   };
 
   // Helper: Open WhatsApp with customer greeting
-  const handleWhatsApp = (phone: string, customerName: string, destination?: string | null) => {
+  const handleWhatsApp = (e: React.MouseEvent, phone: string, customerName: string, destination?: string | null) => {
+    e.stopPropagation();
     const cleanPhone = phone.replace(/[^0-9]/g, '');
     const fullPhone = cleanPhone.length === 10 ? `91${cleanPhone}` : cleanPhone;
     const destText = destination ? ` regarding your trip to ${destination}` : '';
-    const message = `Hello ${customerName}, greetings from Imagica Holidays! We received your travel inquiry${destText}. How can we assist you with your itinerary today?`;
+    const message = `Hello ${customerName}, greetings from Imagica Holidays! We received your inquiry${destText}. How can we assist you with your itinerary today?`;
     window.open(`https://wa.me/${fullPhone}?text=${encodeURIComponent(message)}`, '_blank');
   };
 
@@ -198,7 +188,6 @@ export default function QueriesPage() {
     const s = statusSettings?.find((st: any) => st.code === code);
     if (s) return { label: s.label, color: s.colorHex };
     
-    // Fallbacks
     switch (code) {
       case 'new': return { label: 'New', color: '#2563eb' };
       case 'quoted': return { label: 'Quoted', color: '#7c3aed' };
@@ -212,39 +201,50 @@ export default function QueriesPage() {
     }
   };
 
+  // Helper: Get user initials
+  const getInitials = (name?: string | null) => {
+    if (!name) return '—';
+    return name
+      .split(' ')
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((part) => part[0]?.toUpperCase())
+      .join('');
+  };
+
   return (
-    <div className="space-y-6 p-4 md:p-6 pb-24 md:pb-12 max-w-7xl mx-auto">
-      {/* 1. Header Section */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-slate-200">
-        <div>
-          <div className="flex items-center gap-3">
-            <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight text-slate-900">
-              Leads Directory
-            </h1>
-            <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200">
-              {totalLeads} Total
-            </span>
-          </div>
-          <p className="text-slate-500 mt-1 text-xs md:text-sm">
-            Track, prioritize, and advance incoming customer inquiries through your sales sequence.
-          </p>
+    <div className="space-y-4 p-4 md:p-6 pb-24 md:pb-12 max-w-7xl mx-auto">
+      {/* 1. Sleek Top Bar (Title, View Switcher & Action) */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <h1 className="text-xl md:text-2xl font-bold tracking-tight text-slate-900">
+            Leads
+          </h1>
+          <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200">
+            {statusCounts.all || totalCount}
+          </span>
         </div>
 
-        <div className="flex items-center gap-2.5">
-          <Link href="/pipeline">
-            <Button 
-              variant="outline" 
-              className="h-10 px-4 rounded-xl border-slate-200 text-slate-700 font-semibold hover:bg-slate-100 hover:text-slate-900 transition-all text-xs"
+        <div className="flex items-center gap-2">
+          {/* View Switcher: List / Board */}
+          <div className="flex items-center bg-slate-100 p-0.5 rounded-lg border border-slate-200 text-xs font-medium">
+            <span className="px-2.5 py-1 rounded-md bg-white text-slate-900 font-semibold shadow-xs flex items-center gap-1.5">
+              <ListFilter className="w-3.5 h-3.5 text-slate-700" />
+              List
+            </span>
+            <Link 
+              href="/pipeline" 
+              className="px-2.5 py-1 rounded-md text-slate-500 hover:text-slate-900 transition-colors flex items-center gap-1.5"
             >
-              <Columns3 className="w-4 h-4 mr-2 text-slate-500" />
-              Pipeline View
-            </Button>
-          </Link>
+              <Columns3 className="w-3.5 h-3.5" />
+              Board
+            </Link>
+          </div>
 
           {user?.permissions['query.create'] && (
             <Link href="/queries/new">
-              <Button className="h-10 px-5 rounded-xl font-bold bg-slate-900 hover:bg-slate-800 text-white shadow-sm transition-all active:scale-95 text-xs">
-                <PlusCircle className="w-4 h-4 mr-2" />
+              <Button className="h-9 px-3.5 rounded-lg font-semibold bg-slate-900 hover:bg-slate-800 text-white shadow-xs text-xs">
+                <PlusCircle className="w-3.5 h-3.5 mr-1.5" />
                 New Lead
               </Button>
             </Link>
@@ -252,93 +252,50 @@ export default function QueriesPage() {
         </div>
       </div>
 
-      {/* 2. Executive Sales Sequence Pulse (Minimal Luxury Cards) */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
-        {/* Metric 1: Total Leads */}
-        <Card className="p-4 bg-white border border-slate-200 rounded-2xl shadow-sm hover:border-slate-300 transition-all">
-          <div className="flex items-center justify-between text-slate-500 mb-2">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Total Leads</span>
-            <Users className="w-4 h-4 text-slate-400" />
-          </div>
-          <div className="text-2xl font-black text-slate-900 tracking-tight">{totalLeads}</div>
-          <p className="text-[11px] text-slate-500 mt-1">In active inquiries</p>
-        </Card>
-
-        {/* Metric 2: New / Fresh */}
-        <Card className="p-4 bg-white border border-slate-200 rounded-2xl shadow-sm hover:border-blue-200 transition-all">
-          <div className="flex items-center justify-between text-slate-500 mb-2">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-blue-700">1. New Inquiries</span>
-            <Sparkles className="w-4 h-4 text-blue-600" />
-          </div>
-          <div className="text-2xl font-black text-blue-900 tracking-tight">{newLeads}</div>
-          <p className="text-[11px] text-blue-600 font-medium mt-1">Awaiting first contact</p>
-        </Card>
-
-        {/* Metric 3: Active Pipeline (Quoted + Negotiation) */}
-        <Card className="p-4 bg-white border border-slate-200 rounded-2xl shadow-sm hover:border-amber-200 transition-all">
-          <div className="flex items-center justify-between text-slate-500 mb-2">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-amber-700">2-3. Active Pipeline</span>
-            <Clock className="w-4 h-4 text-amber-600" />
-          </div>
-          <div className="text-2xl font-black text-amber-900 tracking-tight">{activePipeline}</div>
-          <p className="text-[11px] text-amber-600 font-medium mt-1">Quoted & in discussion</p>
-        </Card>
-
-        {/* Metric 4: Confirmed Bookings */}
-        <Card className="p-4 bg-white border border-slate-200 rounded-2xl shadow-sm hover:border-emerald-200 transition-all">
-          <div className="flex items-center justify-between text-slate-500 mb-2">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-700">4. Confirmed</span>
-            <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-          </div>
-          <div className="text-2xl font-black text-emerald-900 tracking-tight">{confirmedLeads}</div>
-          <p className="text-[11px] text-emerald-600 font-medium mt-1">Won bookings closed</p>
-        </Card>
-      </div>
-
-      {/* 3. Sales Sequence Stage Navigation Tabs */}
-      <div className="flex items-center gap-1.5 overflow-x-auto pb-2 scrollbar-none border-b border-slate-200">
-        {SALES_SEQUENCE.map((st) => {
-          const isActive = status === st.id;
-          const count = statusCounts[st.id] ?? 0;
-          return (
-            <button
-              key={st.id}
-              onClick={() => {
-                setStatus(st.id);
-                setPage(1);
-              }}
-              className={`flex items-center gap-2 px-3.5 py-2 text-xs font-bold rounded-xl transition-all whitespace-nowrap border ${
-                isActive
-                  ? 'bg-slate-900 text-white border-slate-900 shadow-sm'
-                  : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50 hover:text-slate-900'
-              }`}
-            >
-              <span>{st.icon}</span>
-              <span>{st.label}</span>
-              <span
-                className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${
+      {/* 2. Unified Sequence & Filter Toolbar */}
+      <div className="space-y-3 pt-1">
+        {/* Sales Sequence Pill Tabs */}
+        <div className="flex items-center gap-1 overflow-x-auto pb-1 scrollbar-none border-b border-slate-200/80">
+          {SEQUENCE_STAGES.map((st) => {
+            const isActive = status === st.id;
+            const count = statusCounts[st.id] ?? 0;
+            return (
+              <button
+                key={st.id}
+                onClick={() => {
+                  setStatus(st.id);
+                  setPage(1);
+                }}
+                className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg transition-all whitespace-nowrap ${
                   isActive
-                    ? 'bg-white/20 text-white'
-                    : 'bg-slate-100 text-slate-600'
+                    ? 'bg-slate-900 text-white font-semibold shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
                 }`}
               >
-                {count}
-              </span>
-            </button>
-          );
-        })}
-      </div>
+                <span>{st.label}</span>
+                <span
+                  className={`text-[10px] px-1.5 py-0.2 rounded-full font-semibold ${
+                    isActive
+                      ? 'bg-white/20 text-white'
+                      : 'bg-slate-200/70 text-slate-600'
+                  }`}
+                >
+                  {count}
+                </span>
+              </button>
+            );
+          })}
+        </div>
 
-      {/* 4. Smart Search & Filters Bar */}
-      <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-3">
-        <div className="flex flex-col md:flex-row gap-3 items-center justify-between">
-          {/* Search Box */}
-          <div className="relative w-full md:max-w-md">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+        {/* Compact Filters Row */}
+        <div className="flex flex-col sm:flex-row gap-2.5 items-center justify-between">
+          {/* Instant Search Box */}
+          <div className="relative w-full sm:max-w-xs">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
             <Input
               type="text"
-              placeholder="Search by customer, phone, ID, destination, or email..."
-              className="pl-10 pr-9 h-10 rounded-xl border-slate-200 text-xs focus:ring-slate-900/10"
+              placeholder="Search leads, phone, destination..."
+              className="pl-8 pr-7 h-8.5 text-xs rounded-lg border-slate-200 focus-visible:ring-slate-400"
               value={search}
               onChange={(e) => {
                 setSearch(e.target.value);
@@ -351,16 +308,16 @@ export default function QueriesPage() {
                   setSearch('');
                   setPage(1);
                 }} 
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
               >
-                <X className="w-4 h-4" />
+                <X className="w-3.5 h-3.5" />
               </button>
             )}
           </div>
 
-          {/* Secondary Filters */}
-          <div className="flex items-center gap-2 w-full md:w-auto flex-wrap">
-            {/* Lead Source Filter */}
+          {/* Source & Agent Selectors */}
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            {/* Source */}
             <Select 
               value={leadSource} 
               onValueChange={(val) => {
@@ -368,20 +325,20 @@ export default function QueriesPage() {
                 setPage(1);
               }}
             >
-              <SelectTrigger className="w-full sm:w-[160px] h-10 rounded-xl border-slate-200 text-xs font-semibold">
+              <SelectTrigger className="h-8.5 text-xs w-[130px] rounded-lg border-slate-200 font-medium">
                 <SelectValue placeholder="Source: All" />
               </SelectTrigger>
-              <SelectContent className="rounded-xl">
-                <SelectItem value="all" className="text-xs font-medium">All Sources</SelectItem>
+              <SelectContent className="rounded-lg">
+                <SelectItem value="all" className="text-xs">All Sources</SelectItem>
                 {LEAD_SOURCES.map((s) => (
-                  <SelectItem key={s.value} value={s.value} className="text-xs font-medium">
+                  <SelectItem key={s.value} value={s.value} className="text-xs">
                     {s.label}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
 
-            {/* Assigned Agent Filter (For Admins / Managers) */}
+            {/* Agent (Admins/Managers) */}
             {user?.permissions['query.view_all'] && agentsData && agentsData.length > 0 && (
               <Select 
                 value={assignedTo} 
@@ -390,13 +347,13 @@ export default function QueriesPage() {
                   setPage(1);
                 }}
               >
-                <SelectTrigger className="w-full sm:w-[170px] h-10 rounded-xl border-slate-200 text-xs font-semibold">
+                <SelectTrigger className="h-8.5 text-xs w-[140px] rounded-lg border-slate-200 font-medium">
                   <SelectValue placeholder="Agent: All" />
                 </SelectTrigger>
-                <SelectContent className="rounded-xl">
-                  <SelectItem value="all" className="text-xs font-medium">All Agents</SelectItem>
+                <SelectContent className="rounded-lg">
+                  <SelectItem value="all" className="text-xs">All Agents</SelectItem>
                   {agentsData.map((ag: any) => (
-                    <SelectItem key={ag.id} value={ag.id} className="text-xs font-medium">
+                    <SelectItem key={ag.id} value={ag.id} className="text-xs">
                       {ag.name}
                     </SelectItem>
                   ))}
@@ -404,34 +361,15 @@ export default function QueriesPage() {
               </Select>
             )}
 
-            {/* Page Size Selector */}
-            <Select 
-              value={limit} 
-              onValueChange={(val) => {
-                setLimit(val);
-                setPage(1);
-              }}
-            >
-              <SelectTrigger className="w-[110px] h-10 rounded-xl border-slate-200 text-xs font-semibold">
-                <SelectValue placeholder="15 / page" />
-              </SelectTrigger>
-              <SelectContent className="rounded-xl">
-                <SelectItem value="10" className="text-xs font-medium">10 / page</SelectItem>
-                <SelectItem value="15" className="text-xs font-medium">15 / page</SelectItem>
-                <SelectItem value="25" className="text-xs font-medium">25 / page</SelectItem>
-                <SelectItem value="50" className="text-xs font-medium">50 / page</SelectItem>
-              </SelectContent>
-            </Select>
-
-            {/* Clear Filters Button */}
+            {/* Clear Button */}
             {hasActiveFilters && (
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={resetFilters}
-                className="h-10 px-3 text-xs text-slate-500 hover:text-slate-900 rounded-xl"
+                className="h-8.5 px-2.5 text-xs text-slate-500 hover:text-slate-900 rounded-lg"
               >
-                <RotateCcw className="w-3.5 h-3.5 mr-1" />
+                <RotateCcw className="w-3 h-3 mr-1" />
                 Reset
               </Button>
             )}
@@ -439,30 +377,26 @@ export default function QueriesPage() {
         </div>
       </div>
 
-      {/* 5. Leads Data Presentation */}
-      <div className="space-y-4">
+      {/* 3. Modern, Sleek Leads Table */}
+      <div className="space-y-3">
         {isLoading && !queries.length ? (
-          <div className="p-16 flex flex-col items-center justify-center bg-white rounded-2xl border border-slate-200 shadow-sm">
-            <Loader2 className="w-8 h-8 animate-spin text-slate-400 mb-2" />
-            <p className="text-xs font-medium text-slate-500">Loading leads sequence...</p>
+          <div className="p-16 flex flex-col items-center justify-center bg-white rounded-xl border border-slate-200/80">
+            <Loader2 className="w-6 h-6 animate-spin text-slate-400 mb-2" />
+            <p className="text-xs text-slate-500">Loading leads...</p>
           </div>
         ) : isError ? (
-          <div className="p-12 text-center text-red-600 bg-red-50/50 rounded-2xl border border-red-200 shadow-sm text-sm">
+          <div className="p-10 text-center text-red-600 bg-red-50/50 rounded-xl border border-red-200 text-xs">
             {error instanceof Error ? error.message : 'Failed to load inquiries'}
           </div>
         ) : queries.length === 0 ? (
-          <div className="p-16 text-center text-slate-400 bg-white rounded-2xl border border-slate-200 shadow-sm flex flex-col items-center justify-center space-y-3">
-            <div className="w-12 h-12 rounded-full bg-slate-50 border border-slate-200 flex items-center justify-center">
-              <Search className="w-5 h-5 text-slate-400" />
-            </div>
-            <div>
-              <p className="font-semibold text-slate-800 text-sm">No inquiries found</p>
-              <p className="text-xs text-slate-500 mt-0.5">
-                {hasActiveFilters ? 'Try adjusting your filters or search terms.' : 'No leads currently in this stage.'}
-              </p>
-            </div>
+          <div className="p-16 text-center text-slate-400 bg-white rounded-xl border border-slate-200/80 flex flex-col items-center justify-center space-y-2">
+            <Search className="w-6 h-6 text-slate-300 mb-1" />
+            <p className="text-sm font-semibold text-slate-700">No leads found</p>
+            <p className="text-xs text-slate-400">
+              {hasActiveFilters ? 'Try changing your search or filters' : 'No leads in this stage.'}
+            </p>
             {hasActiveFilters && (
-              <Button variant="outline" size="sm" onClick={resetFilters} className="rounded-xl text-xs font-semibold">
+              <Button variant="outline" size="sm" onClick={resetFilters} className="mt-2 text-xs rounded-lg">
                 Clear Filters
               </Button>
             )}
@@ -470,35 +404,30 @@ export default function QueriesPage() {
         ) : (
           <>
             {/* Desktop Table View */}
-            <Card className="hidden md:block rounded-2xl border border-slate-200 shadow-sm overflow-hidden bg-white">
+            <div className="hidden md:block rounded-xl border border-slate-200/90 bg-white shadow-xs overflow-hidden">
               <Table>
                 <TableHeader>
-                  <TableRow className="bg-slate-50/80 hover:bg-slate-50/80 border-b border-slate-200">
-                    <TableHead className="font-bold text-[11px] uppercase tracking-wider text-slate-600 py-3.5 pl-6">
-                      Lead ID & Source
+                  <TableRow className="bg-slate-50/60 hover:bg-slate-50/60 border-b border-slate-200/80">
+                    <TableHead className="font-semibold text-[11px] text-slate-500 uppercase tracking-wider py-3 pl-4">
+                      Client
                     </TableHead>
-                    <TableHead className="font-bold text-[11px] uppercase tracking-wider text-slate-600">
-                      Customer & Pax
+                    <TableHead className="font-semibold text-[11px] text-slate-500 uppercase tracking-wider">
+                      Destination & Pax
                     </TableHead>
-                    <TableHead className="font-bold text-[11px] uppercase tracking-wider text-slate-600">
-                      Destination & Dates
+                    <TableHead className="font-semibold text-[11px] text-slate-500 uppercase tracking-wider">
+                      Travel Dates
                     </TableHead>
-                    <TableHead className="font-bold text-[11px] uppercase tracking-wider text-slate-600">
-                      Budget & Proposal
+                    <TableHead className="font-semibold text-[11px] text-slate-500 uppercase tracking-wider">
+                      Budget
                     </TableHead>
-                    <TableHead className="font-bold text-[11px] uppercase tracking-wider text-slate-600">
-                      Stage & Sequence
+                    <TableHead className="font-semibold text-[11px] text-slate-500 uppercase tracking-wider">
+                      Stage
                     </TableHead>
-                    <TableHead className="font-bold text-[11px] uppercase tracking-wider text-slate-600">
-                      Fast Contact
+                    <TableHead className="font-semibold text-[11px] text-slate-500 uppercase tracking-wider">
+                      Owner
                     </TableHead>
-                    {user?.permissions['query.view_all'] && (
-                      <TableHead className="font-bold text-[11px] uppercase tracking-wider text-slate-600">
-                        Assigned To
-                      </TableHead>
-                    )}
-                    <TableHead className="font-bold text-[11px] uppercase tracking-wider text-slate-600 text-right pr-6">
-                      Action
+                    <TableHead className="font-semibold text-[11px] text-slate-500 uppercase tracking-wider text-right pr-4">
+                      Contact
                     </TableHead>
                   </TableRow>
                 </TableHeader>
@@ -511,119 +440,110 @@ export default function QueriesPage() {
                     return (
                       <TableRow 
                         key={q.id} 
-                        className="hover:bg-slate-50/70 transition-colors border-b border-slate-100 group"
+                        onClick={() => router.push(`/queries/${q.id}`)}
+                        className="hover:bg-slate-50/90 transition-colors border-b border-slate-100 cursor-pointer group"
                       >
-                        {/* 1. Lead ID & Source */}
-                        <TableCell className="py-4 pl-6">
-                          <div className="space-y-1">
-                            <Link 
-                              href={`/queries/${q.id}`} 
-                              className="font-bold text-xs text-slate-900 group-hover:text-blue-600 transition-colors flex items-center gap-1"
-                            >
-                              <span>{q.queryCode}</span>
-                              <ArrowUpRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
-                            </Link>
+                        {/* 1. Client & Lead Code */}
+                        <TableCell className="py-3.5 pl-4">
+                          <div className="space-y-0.5">
                             <div className="flex items-center gap-2">
+                              <span className="font-semibold text-slate-900 text-xs group-hover:text-blue-600 transition-colors">
+                                {q.name}
+                              </span>
+                              <span className="font-mono text-[10px] text-slate-400 bg-slate-100 px-1.5 py-0.2 rounded">
+                                {q.queryCode}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2 text-[11px] text-slate-400">
+                              <span>{q.phone}</span>
                               {q.leadSource && (
-                                <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-slate-100 text-slate-600 border border-slate-200 capitalize">
-                                  {q.leadSource}
-                                </span>
+                                <>
+                                  <span>·</span>
+                                  <span className="capitalize">{q.leadSource}</span>
+                                </>
                               )}
-                              <span className="text-[10px] text-slate-400">
-                                {new Date(q.createdAt).toLocaleDateString(undefined, {
-                                  month: 'short',
-                                  day: 'numeric',
-                                })}
-                              </span>
                             </div>
                           </div>
                         </TableCell>
 
-                        {/* 2. Customer & Pax */}
+                        {/* 2. Destination & Pax */}
                         <TableCell>
-                          <div className="space-y-1">
-                            <div className="font-bold text-slate-900 text-sm">{q.name}</div>
-                            <div className="flex items-center gap-1.5 text-xs text-slate-500">
-                              <Users className="w-3 h-3 text-slate-400" />
-                              <span>
-                                {q.adults || 1} Adult{(q.adults || 1) > 1 ? 's' : ''}
-                                {q.children ? `, ${q.children} Child` : ''}
-                              </span>
+                          <div className="space-y-0.5">
+                            <div className="font-medium text-xs text-slate-800 flex items-center gap-1">
+                              <MapPin className="w-3 h-3 text-slate-400 shrink-0" />
+                              <span className="truncate max-w-[150px]">{q.destination || 'Open / Unset'}</span>
+                            </div>
+                            <div className="text-[11px] text-slate-400">
+                              {q.adults || 1} Adult{(q.adults || 1) > 1 ? 's' : ''}
+                              {q.children ? `, ${q.children} Child` : ''}
                             </div>
                           </div>
                         </TableCell>
 
-                        {/* 3. Destination & Dates */}
+                        {/* 3. Travel Dates */}
                         <TableCell>
-                          <div className="space-y-1">
-                            <div className="flex items-center gap-1 text-xs font-semibold text-slate-800">
-                              <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                              <span className="truncate max-w-[160px]">{q.destination || 'Not specified'}</span>
-                            </div>
-                            {q.travelDateFrom && (
-                              <div className="text-[11px] text-slate-400 flex items-center gap-1">
-                                <Calendar className="w-3 h-3 text-slate-400" />
-                                <span>
+                          <div className="text-xs text-slate-700">
+                            {q.travelDateFrom ? (
+                              <div className="space-y-0.5">
+                                <div>
                                   {new Date(q.travelDateFrom).toLocaleDateString(undefined, {
                                     month: 'short',
                                     day: 'numeric',
                                   })}
-                                  {q.travelDateTo && ` - ${new Date(q.travelDateTo).toLocaleDateString(undefined, {
+                                  {q.travelDateTo && ` – ${new Date(q.travelDateTo).toLocaleDateString(undefined, {
                                     month: 'short',
                                     day: 'numeric',
                                   })}`}
-                                </span>
+                                </div>
+                                <div className="text-[10px] text-slate-400">
+                                  {new Date(q.travelDateFrom).getFullYear()}
+                                </div>
                               </div>
+                            ) : (
+                              <span className="text-slate-400 text-[11px]">Flexible / Not set</span>
                             )}
                           </div>
                         </TableCell>
 
                         {/* 4. Budget & Proposal */}
                         <TableCell>
-                          <div className="space-y-1">
-                            <div className="font-bold text-xs text-slate-900 flex items-center">
-                              {q.budget ? (
-                                <>
-                                  <IndianRupee className="w-3 h-3 text-slate-400 mr-0.5" />
-                                  <span>{Number(q.budget).toLocaleString('en-IN')}</span>
-                                </>
-                              ) : (
-                                <span className="text-slate-400 font-normal text-[11px]">Budget not set</span>
-                              )}
+                          <div className="space-y-0.5">
+                            <div className="font-semibold text-xs text-slate-800">
+                              {q.budget ? `₹${Number(q.budget).toLocaleString('en-IN')}` : '—'}
                             </div>
-                            <div>
-                              {proposalCount > 0 ? (
-                                <span className="text-[10px] font-semibold text-purple-700 bg-purple-50 px-2 py-0.5 rounded border border-purple-200">
-                                  {proposalCount} Proposal{proposalCount > 1 ? 's' : ''}
-                                </span>
-                              ) : (
-                                <span className="text-[10px] text-slate-400">No proposals yet</span>
-                              )}
-                            </div>
+                            {proposalCount > 0 && (
+                              <span className="text-[10px] font-medium text-purple-600">
+                                {proposalCount} Proposal{proposalCount > 1 ? 's' : ''}
+                              </span>
+                            )}
                           </div>
                         </TableCell>
 
-                        {/* 5. Stage & Sequence (Quick Status Changer) */}
-                        <TableCell>
+                        {/* 5. Stage & Sequence (Quick Status Dropdown) */}
+                        <TableCell onClick={(e) => e.stopPropagation()}>
                           {allowedTransitions.length > 0 && user?.permissions['query.status_change'] ? (
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
                                 <button
-                                  className="inline-flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-1 rounded-lg border shadow-xs hover:opacity-80 transition-all cursor-pointer"
+                                  className="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2 py-0.5 rounded-full border transition-all hover:ring-2 hover:ring-slate-200"
                                   style={{
-                                    backgroundColor: `${statusMeta.color}15`,
+                                    backgroundColor: `${statusMeta.color}12`,
                                     color: statusMeta.color,
-                                    borderColor: `${statusMeta.color}35`,
+                                    borderColor: `${statusMeta.color}30`,
                                   }}
-                                  title="Click to advance sales stage"
+                                  title="Change lead stage"
                                 >
+                                  <div 
+                                    className="w-1.5 h-1.5 rounded-full" 
+                                    style={{ backgroundColor: statusMeta.color }} 
+                                  />
                                   <span>{statusMeta.label}</span>
-                                  <ChevronDown className="w-3 h-3 opacity-60" />
+                                  <ChevronDown className="w-2.5 h-2.5 opacity-50" />
                                 </button>
                               </DropdownMenuTrigger>
-                              <DropdownMenuContent align="start" className="w-48 rounded-xl p-1.5">
+                              <DropdownMenuContent align="start" className="w-44 rounded-xl p-1">
                                 <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-slate-400 font-bold px-2 py-1">
-                                  Move to Next Stage:
+                                  Change Stage
                                 </DropdownMenuLabel>
                                 <DropdownMenuSeparator />
                                 {allowedTransitions.map((targetCode) => {
@@ -632,7 +552,7 @@ export default function QueriesPage() {
                                     <DropdownMenuItem
                                       key={targetCode}
                                       onClick={() => updateStatusMutation.mutate({ id: q.id, newStatus: targetCode })}
-                                      className="text-xs font-semibold cursor-pointer rounded-lg px-2.5 py-1.5 flex items-center gap-2 hover:bg-slate-50"
+                                      className="text-xs font-medium cursor-pointer rounded-lg px-2.5 py-1.5 flex items-center gap-2"
                                     >
                                       <div 
                                         className="w-2 h-2 rounded-full" 
@@ -646,181 +566,130 @@ export default function QueriesPage() {
                             </DropdownMenu>
                           ) : (
                             <span
-                              className="inline-flex items-center text-[11px] font-bold px-2.5 py-1 rounded-lg border shadow-xs"
+                              className="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2 py-0.5 rounded-full border"
                               style={{
-                                backgroundColor: `${statusMeta.color}15`,
+                                backgroundColor: `${statusMeta.color}12`,
                                 color: statusMeta.color,
-                                borderColor: `${statusMeta.color}35`,
+                                borderColor: `${statusMeta.color}30`,
                               }}
                             >
-                              {statusMeta.label}
+                              <div 
+                                className="w-1.5 h-1.5 rounded-full" 
+                                style={{ backgroundColor: statusMeta.color }} 
+                              />
+                              <span>{statusMeta.label}</span>
                             </span>
                           )}
                         </TableCell>
 
-                        {/* 6. Fast Contact (WhatsApp, Call, Mail) */}
+                        {/* 6. Owner / Agent */}
                         <TableCell>
-                          <div className="flex items-center gap-1.5">
+                          {q.assignedUser?.name ? (
+                            <div className="flex items-center gap-2">
+                              <div className="w-5 h-5 rounded-full bg-slate-100 border border-slate-200 text-[10px] font-bold text-slate-600 flex items-center justify-center">
+                                {getInitials(q.assignedUser.name)}
+                              </div>
+                              <span className="text-xs text-slate-700 truncate max-w-[110px]">
+                                {q.assignedUser.name}
+                              </span>
+                            </div>
+                          ) : (
+                            <span className="text-[11px] text-slate-400">Unassigned</span>
+                          )}
+                        </TableCell>
+
+                        {/* 7. Fast Contact Actions */}
+                        <TableCell className="text-right pr-4" onClick={(e) => e.stopPropagation()}>
+                          <div className="flex items-center justify-end gap-1">
                             {/* WhatsApp Button */}
                             <button
-                              onClick={() => handleWhatsApp(q.phone, q.name, q.destination)}
-                              className="p-1.5 rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 hover:text-emerald-800 transition-colors shadow-xs"
+                              onClick={(e) => handleWhatsApp(e, q.phone, q.name, q.destination)}
+                              className="p-1 rounded-md text-emerald-600 hover:bg-emerald-50 transition-colors"
                               title={`Chat with ${q.name} on WhatsApp`}
                             >
-                              <MessageCircle className="w-3.5 h-3.5" />
+                              <MessageCircle className="w-4 h-4" />
                             </button>
 
                             {/* Call Button */}
                             <a
                               href={`tel:${q.phone}`}
-                              className="p-1.5 rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-100 transition-colors shadow-xs"
+                              className="p-1 rounded-md text-slate-500 hover:bg-slate-100 transition-colors"
                               title={`Call ${q.phone}`}
                             >
                               <Phone className="w-3.5 h-3.5" />
                             </a>
-
-                            {/* Email Button */}
-                            {q.email && (
-                              <a
-                                href={`mailto:${q.email}`}
-                                className="p-1.5 rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-100 transition-colors shadow-xs"
-                                title={`Email ${q.email}`}
-                              >
-                                <Mail className="w-3.5 h-3.5" />
-                              </a>
-                            )}
                           </div>
-                        </TableCell>
-
-                        {/* 7. Assigned Agent */}
-                        {user?.permissions['query.view_all'] && (
-                          <TableCell className="text-xs">
-                            {q.assignedUser?.name ? (
-                              <div className="flex items-center gap-1.5 font-semibold text-slate-700">
-                                <div className="w-2 h-2 rounded-full bg-emerald-500" />
-                                <span className="truncate max-w-[120px]">{q.assignedUser.name}</span>
-                              </div>
-                            ) : (
-                              <span className="text-[11px] font-medium text-slate-400 bg-slate-50 px-2 py-0.5 rounded border border-slate-200">
-                                Unassigned
-                              </span>
-                            )}
-                          </TableCell>
-                        )}
-
-                        {/* 8. Action */}
-                        <TableCell className="text-right pr-6">
-                          <Link href={`/queries/${q.id}`}>
-                            <Button 
-                              variant="outline" 
-                              size="sm" 
-                              className="h-8 px-3 rounded-lg border-slate-200 text-xs font-bold hover:bg-slate-900 hover:text-white transition-all shadow-xs"
-                            >
-                              Open Lead →
-                            </Button>
-                          </Link>
                         </TableCell>
                       </TableRow>
                     );
                   })}
                 </TableBody>
               </Table>
-            </Card>
+            </div>
 
             {/* Mobile Card View */}
-            <div className="md:hidden space-y-3">
+            <div className="md:hidden space-y-2.5">
               {queries.map((q) => {
                 const statusMeta = getStatusMeta(q.status);
 
                 return (
-                  <Card
+                  <div
                     key={q.id}
-                    className="p-4 bg-white border border-slate-200 rounded-2xl shadow-sm hover:border-slate-300 transition-all space-y-3"
+                    onClick={() => router.push(`/queries/${q.id}`)}
+                    className="p-3.5 bg-white border border-slate-200/90 rounded-xl shadow-2xs space-y-2.5 active:bg-slate-50 transition-colors"
                   >
-                    {/* Top Row: Lead Code, Source, Status */}
+                    {/* Top: Name, Lead Code, Status */}
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <Link 
-                          href={`/queries/${q.id}`} 
-                          className="font-black text-xs text-slate-900 tracking-tight hover:underline"
-                        >
-                          {q.queryCode}
-                        </Link>
-                        {q.leadSource && (
-                          <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 capitalize">
-                            {q.leadSource}
-                          </span>
-                        )}
+                      <div>
+                        <div className="font-semibold text-sm text-slate-900">{q.name}</div>
+                        <div className="text-[11px] text-slate-400">{q.queryCode} · {q.phone}</div>
                       </div>
                       <span
-                        className="text-[10px] font-bold px-2 py-0.5 rounded-lg border shadow-xs"
+                        className="text-[10px] font-semibold px-2 py-0.5 rounded-full border"
                         style={{
-                          backgroundColor: `${statusMeta.color}15`,
+                          backgroundColor: `${statusMeta.color}12`,
                           color: statusMeta.color,
-                          borderColor: `${statusMeta.color}35`,
+                          borderColor: `${statusMeta.color}30`,
                         }}
                       >
                         {statusMeta.label}
                       </span>
                     </div>
 
-                    {/* Customer Info & Destination */}
-                    <div className="space-y-1">
-                      <div className="font-extrabold text-base text-slate-900 leading-snug">
-                        {q.name}
+                    {/* Middle: Destination & Budget */}
+                    <div className="flex items-center justify-between text-xs text-slate-600 pt-1 border-t border-slate-100">
+                      <div className="flex items-center gap-1 font-medium">
+                        <MapPin className="w-3 h-3 text-slate-400" />
+                        <span>{q.destination || 'No destination'}</span>
                       </div>
-                      <div className="flex items-center gap-3 text-xs text-slate-500">
-                        <span className="flex items-center gap-1 font-medium text-slate-700">
-                          <MapPin className="w-3 h-3 text-slate-400" />
-                          {q.destination || 'No destination'}
-                        </span>
-                        <span>•</span>
-                        <span>{q.adults || 1} Adult{(q.adults || 1) > 1 ? 's' : ''}</span>
+                      <div className="font-semibold text-slate-800">
+                        {q.budget ? `₹${Number(q.budget).toLocaleString('en-IN')}` : '—'}
                       </div>
                     </div>
 
-                    {/* Budget & Fast Contact Row */}
-                    <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
-                      <div>
-                        <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Budget</div>
-                        <div className="font-bold text-xs text-slate-800">
-                          {q.budget ? `₹${Number(q.budget).toLocaleString('en-IN')}` : 'Not set'}
-                        </div>
+                    {/* Bottom: Fast WhatsApp and Call */}
+                    <div className="flex items-center justify-between pt-2 border-t border-slate-100" onClick={(e) => e.stopPropagation()}>
+                      <div className="text-[11px] text-slate-400">
+                        {q.assignedUser?.name || 'Unassigned'}
                       </div>
-
-                      {/* Fast Contact Buttons */}
                       <div className="flex items-center gap-2">
                         <button
-                          onClick={() => handleWhatsApp(q.phone, q.name, q.destination)}
-                          className="h-9 px-3 rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-700 font-bold text-xs flex items-center gap-1.5 shadow-xs"
+                          onClick={(e) => handleWhatsApp(e, q.phone, q.name, q.destination)}
+                          className="h-7 px-2.5 rounded-md bg-emerald-50 text-emerald-700 font-semibold text-xs flex items-center gap-1"
                         >
                           <MessageCircle className="w-3.5 h-3.5" />
                           <span>WhatsApp</span>
                         </button>
                         <a
                           href={`tel:${q.phone}`}
-                          className="h-9 px-3 rounded-xl border border-slate-200 bg-white text-slate-700 font-bold text-xs flex items-center gap-1.5 shadow-xs"
+                          className="h-7 px-2.5 rounded-md bg-slate-100 text-slate-700 font-semibold text-xs flex items-center gap-1"
                         >
-                          <Phone className="w-3.5 h-3.5" />
+                          <Phone className="w-3 h-3" />
                           <span>Call</span>
                         </a>
                       </div>
                     </div>
-
-                    {/* Footer Row */}
-                    <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
-                      <div className="text-slate-400 text-[11px]">
-                        {q.assignedUser?.name ? `Assigned: ${q.assignedUser.name}` : 'Unassigned'}
-                      </div>
-                      <Link 
-                        href={`/queries/${q.id}`} 
-                        className="font-bold text-slate-900 hover:text-blue-600 flex items-center gap-1"
-                      >
-                        <span>Details</span>
-                        <ArrowUpRight className="w-3.5 h-3.5" />
-                      </Link>
-                    </div>
-                  </Card>
+                  </div>
                 );
               })}
             </div>
@@ -828,36 +697,33 @@ export default function QueriesPage() {
         )}
       </div>
 
-      {/* 6. Pagination Bar */}
+      {/* 4. Minimal Pagination Bar */}
       {!isError && queries.length > 0 && (
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-slate-200">
-          <p className="text-xs text-slate-500">
-            Showing <span className="font-semibold text-slate-800">{(page - 1) * Number(limit) + 1}</span> to{' '}
-            <span className="font-semibold text-slate-800">
-              {Math.min(page * Number(limit), totalCount)}
-            </span>{' '}
-            of <span className="font-semibold text-slate-800">{totalCount}</span> inquiries
-          </p>
+        <div className="flex items-center justify-between pt-2 text-xs text-slate-500">
+          <div>
+            Showing <span className="font-medium text-slate-800">{(page - 1) * Number(limit) + 1}–{Math.min(page * Number(limit), totalCount)}</span> of{' '}
+            <span className="font-medium text-slate-800">{totalCount}</span>
+          </div>
 
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-1.5">
             <Button
               variant="outline"
               size="sm"
               onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={page === 1}
-              className="h-9 px-4 rounded-xl text-xs font-semibold border-slate-200"
+              className="h-8 px-3 rounded-lg text-xs font-medium border-slate-200"
             >
               Previous
             </Button>
-            <div className="text-xs font-bold text-slate-700 px-2">
-              Page {page} of {totalPages}
-            </div>
+            <span className="px-2 text-slate-700 font-semibold">
+              {page} / {totalPages}
+            </span>
             <Button
               variant="outline"
               size="sm"
               onClick={() => setPage((p) => p + 1)}
               disabled={page >= totalPages || isPlaceholderData}
-              className="h-9 px-4 rounded-xl text-xs font-semibold border-slate-200"
+              className="h-8 px-3 rounded-lg text-xs font-medium border-slate-200"
             >
               Next
             </Button>
