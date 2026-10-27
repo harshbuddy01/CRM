@@ -217,11 +217,15 @@ const getQueryById = async (id, userId, canViewAll) => {
 
   query.activityLogs = activityLogs;
 
-  // Auto-repair legacy state: if lead is lost or invalid, make sure confirmed proposals are cleaned up
+  // Auto-repair legacy state: if lead is lost or invalid, make sure confirmed proposals and tours are cleaned up
   if (['lost', 'invalid'].includes(query.status)) {
     await prisma.proposal.updateMany({
       where: { queryId: id, status: 'confirmed' },
       data: { status: 'rejected' }
+    }).catch(() => {});
+    await prisma.tour.updateMany({
+      where: { queryId: id, status: { not: 'cancelled' }, deletedAt: null },
+      data: { status: 'cancelled', reviewStatus: 'EXCLUDED' }
     }).catch(() => {});
   }
 
@@ -246,6 +250,19 @@ const updateQuery = async (id, data, userId, canViewAll, canEditAll) => {
     where: { id },
     data,
   });
+
+  // Cascade status to linked proposals and tours if status was updated
+  if (data.status && ['lost', 'invalid'].includes(data.status)) {
+    await prisma.proposal.updateMany({
+      where: { queryId: id, status: 'confirmed' },
+      data: { status: 'rejected' }
+    }).catch(() => {});
+
+    await prisma.tour.updateMany({
+      where: { queryId: id, deletedAt: null },
+      data: { status: 'cancelled', reviewStatus: 'EXCLUDED' }
+    }).catch(() => {});
+  }
 
   // Log activity
   try {
@@ -529,10 +546,10 @@ const changeQueryStatus = async (id, status, userId, canViewAll, canEditAll) => 
       data: { status: 'rejected' }
     });
 
-    // 2. Cancel any upcoming/running operational tours
+    // 2. Cancel all operational tours linked to this lead
     await prisma.tour.updateMany({
-      where: { queryId: id, status: { in: ['upcoming', 'running'] }, deletedAt: null },
-      data: { status: 'cancelled' }
+      where: { queryId: id, deletedAt: null },
+      data: { status: 'cancelled', reviewStatus: 'EXCLUDED' }
     });
   } else if (existing.status === 'confirmed' && status !== 'confirmed') {
     // If moving back to negotiation, quoted, or new

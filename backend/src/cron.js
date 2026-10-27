@@ -133,16 +133,58 @@ const startCronJobs = () => {
       console.error('[CRON Error] Session cleanup failed:', error);
     }
 
-    // ── Task 3: Auto-transition Completed Tours & Leads ──
+    // ── Task 3: Auto-transition Running & Completed Tours & Leads ──
     try {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
 
+      // 1. Cancel any tour whose query is lost or invalid
+      await prisma.tour.updateMany({
+        where: {
+          query: { status: { in: ['lost', 'invalid'] } },
+          status: { not: 'cancelled' }
+        },
+        data: {
+          status: 'cancelled',
+          reviewStatus: 'EXCLUDED'
+        }
+      });
+
+      // 2. Auto-transition tours that started (startDate <= today <= endDate) to 'running'
+      const startTours = await prisma.tour.findMany({
+        where: {
+          startDate: { lte: today },
+          endDate: { gte: today },
+          status: 'upcoming',
+          deletedAt: null,
+          query: { status: { notIn: ['lost', 'invalid'] } }
+        },
+        include: { query: true }
+      });
+
+      for (const tour of startTours) {
+        await prisma.tour.update({
+          where: { id: tour.id },
+          data: { status: 'running' }
+        });
+        if (tour.query && !['in_progress', 'completed', 'lost', 'invalid'].includes(tour.query.status)) {
+          await prisma.query.update({
+            where: { id: tour.query.id },
+            data: { status: 'in_progress' }
+          });
+        }
+      }
+      if (startTours.length > 0) {
+        console.log(`[CRON] 🚀 Auto-transitioned ${startTours.length} upcoming tours to running.`);
+      }
+
+      // 3. Auto-transition tours that ended (endDate < today) to 'completed'
       const endedTours = await prisma.tour.findMany({
         where: {
           endDate: { lt: today },
           status: { in: ['upcoming', 'running', 'in_progress'] },
-          deletedAt: null
+          deletedAt: null,
+          query: { status: { notIn: ['lost', 'invalid'] } }
         },
         include: { query: true }
       });
@@ -156,7 +198,7 @@ const startCronJobs = () => {
           }
         });
 
-        if (tour.query && tour.query.status !== 'completed') {
+        if (tour.query && !['completed', 'lost', 'invalid'].includes(tour.query.status)) {
           await prisma.query.update({
             where: { id: tour.query.id },
             data: { status: 'completed' }
@@ -168,7 +210,7 @@ const startCronJobs = () => {
         console.log(`[CRON] 🏁 Auto-completed ${endedTours.length} ended tours & inquiries.`);
       }
     } catch (error) {
-      console.error('[CRON Error] Auto-complete tours failed:', error);
+      console.error('[CRON Error] Auto-transition tours failed:', error);
     }
 
   }, {

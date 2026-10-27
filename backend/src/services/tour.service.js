@@ -5,24 +5,152 @@
 const prisma = require('../config/prisma');
 const { BusinessError, NotFoundError } = require('../utils/AppError');
 
-const listTours = async ({ status, filterType, page = 1, limit = 50, opsUserId }) => {
-  const where = { deletedAt: null };
+/**
+ * Self-healing automatic status reconciliation for tours.
+ * Ensures:
+ * 1. Tours whose query is 'lost' or 'invalid' are cancelled and excluded from reviews.
+ * 2. Ongoing tours (startDate <= today <= endDate) are transitioned to 'running'.
+ * 3. Concluded tours (endDate < today) with valid queries are transitioned to 'completed'.
+ */
+const reconcileTourStatuses = async () => {
+  try {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
 
-  if (status) where.status = status;
+    // 1. Any tour with query in ('lost', 'invalid') must be cancelled
+    await prisma.tour.updateMany({
+      where: {
+        query: { status: { in: ['lost', 'invalid'] } },
+        status: { not: 'cancelled' }
+      },
+      data: {
+        status: 'cancelled',
+        reviewStatus: 'EXCLUDED'
+      }
+    });
+
+    // 2. Any tour whose startDate <= today <= endDate and status === 'upcoming' -> 'running'
+    await prisma.tour.updateMany({
+      where: {
+        startDate: { lte: today },
+        endDate: { gte: today },
+        status: 'upcoming',
+        query: { status: { notIn: ['lost', 'invalid'] } }
+      },
+      data: {
+        status: 'running'
+      }
+    });
+
+    // 3. Any tour whose endDate < today and status in ('upcoming', 'running') and query not lost -> 'completed'
+    await prisma.tour.updateMany({
+      where: {
+        endDate: { lt: today },
+        status: { in: ['upcoming', 'running'] },
+        query: { status: { notIn: ['lost', 'invalid'] } }
+      },
+      data: {
+        status: 'completed'
+      }
+    });
+  } catch (err) {
+    console.error('[Tour Reconciliation Error]:', err.message);
+  }
+};
+
+const listTours = async ({ status, filterType, page = 1, limit = 50, opsUserId }) => {
+  // Self-heal and sync tour statuses on list request
+  await reconcileTourStatuses();
+
+  const baseWhere = { deletedAt: null };
+
+  // If a specific Operations person is logged in and filtering
+  if (opsUserId) {
+    baseWhere.assignedOps = opsUserId;
+  }
+
+  // Calculate live count summaries for all tabs
+  const [totalUpcoming, totalRunning, totalCompleted, totalCancelled] = await Promise.all([
+    prisma.tour.count({
+      where: {
+        ...baseWhere,
+        status: 'upcoming',
+        query: { status: { notIn: ['lost', 'invalid'] } }
+      }
+    }),
+    prisma.tour.count({
+      where: {
+        ...baseWhere,
+        status: 'running',
+        query: { status: { notIn: ['lost', 'invalid'] } }
+      }
+    }),
+    prisma.tour.count({
+      where: {
+        ...baseWhere,
+        status: 'completed',
+        query: { status: { notIn: ['lost', 'invalid'] } }
+      }
+    }),
+    prisma.tour.count({
+      where: {
+        ...baseWhere,
+        OR: [
+          { status: 'cancelled' },
+          { query: { status: { in: ['lost', 'invalid'] } } }
+        ]
+      }
+    })
+  ]);
+
+  const statusCounts = {
+    all: totalUpcoming + totalRunning + totalCompleted,
+    upcoming: totalUpcoming,
+    running: totalRunning,
+    completed: totalCompleted,
+    cancelled: totalCancelled
+  };
+
+  const where = { ...baseWhere };
 
   if (filterType === 'ops') {
     // Ops view shows all running or upcoming
     where.status = { in: ['upcoming', 'running'] };
+    where.query = { status: { notIn: ['lost', 'invalid'] } };
   } else if (filterType === 'field') {
     // Field Agent only sees running tours for today
     where.status = { in: ['running', 'upcoming'] };
     where.startDate = { lte: new Date() };
     where.endDate = { gte: new Date() };
+    where.query = { status: { notIn: ['lost', 'invalid'] } };
+  } else if (status && status !== 'all') {
+    if (status === 'cancelled') {
+      where.OR = [
+        { status: 'cancelled' },
+        { query: { status: { in: ['lost', 'invalid'] } } }
+      ];
+    } else {
+      where.status = status;
+      where.query = { status: { notIn: ['lost', 'invalid'] } };
+    }
+  } else {
+    // If 'all', default to non-cancelled tours to keep active pipeline clean
+    where.status = { in: ['running', 'upcoming', 'completed'] };
+    where.query = { status: { notIn: ['lost', 'invalid'] } };
   }
 
-  // If a specific Operations person is logged in and filtering
-  if (opsUserId) {
-    where.assignedOps = opsUserId;
+  // Dynamic sorting based on view
+  let orderBy = { startDate: 'asc' };
+  if (status === 'completed') {
+    orderBy = { endDate: 'desc' }; // Most recently completed tours first
+  } else if (status === 'running') {
+    orderBy = { endDate: 'asc' }; // Concluding soonest first
+  } else if (status === 'upcoming') {
+    orderBy = { startDate: 'asc' };
+  } else if (status === 'cancelled') {
+    orderBy = { updatedAt: 'desc' };
+  } else {
+    orderBy = { startDate: 'desc' };
   }
 
   const offset = (page - 1) * limit;
@@ -30,22 +158,58 @@ const listTours = async ({ status, filterType, page = 1, limit = 50, opsUserId }
     where,
     skip: offset,
     take: parseInt(limit, 10),
-    orderBy: { startDate: 'asc' }, // Logistics care about what happens soonest
+    orderBy,
     include: {
-      query: { select: { id: true, name: true, phone: true, email: true, destination: true, adults: true, children: true } },
-      assignedOpsUser: { select: { name: true } },
-      // Specifically omit heavy financials for lists if ops/field, handled in controller mapping 
+      query: {
+        select: {
+          id: true,
+          queryCode: true,
+          name: true,
+          phone: true,
+          email: true,
+          destination: true,
+          adults: true,
+          children: true,
+          status: true,
+        }
+      },
+      assignedOpsUser: { select: { id: true, name: true, phone: true } },
+      proposal: {
+        select: {
+          id: true,
+          sellingPrice: true,
+          totalCost: true,
+        }
+      },
+      tourDrivers: {
+        include: {
+          driver: { select: { id: true, name: true, phone: true, vehicleType: true, vehicleNumber: true } }
+        }
+      },
+      payments: {
+        where: { deletedAt: null },
+        select: { id: true, amount: true, status: true }
+      }
     },
   });
 
-  const tours = rawTours.map(t => ({
-    ...t,
-    passengerCount: t.totalPax || (t.query ? ((t.query.adults || 0) + (t.query.children || 0)) : 1),
-    destination: t.query?.destination || 'Destination TBD'
-  }));
+  const tours = rawTours.map(t => {
+    const verifiedPaid = (t.payments || [])
+      .filter(p => p.status === 'verified')
+      .reduce((sum, p) => sum + Number(p.amount || 0), 0);
+
+    return {
+      ...t,
+      passengerCount: t.totalPax || (t.query ? ((t.query.adults || 0) + (t.query.children || 0)) : 1),
+      destination: t.query?.destination || 'Destination TBD',
+      sellingPrice: t.proposal?.sellingPrice ? Number(t.proposal.sellingPrice) : null,
+      totalPaid: verifiedPaid,
+      driver: t.tourDrivers?.[0]?.driver || null
+    };
+  });
 
   const total = await prisma.tour.count({ where });
-  return { tours, total, page, totalPages: Math.ceil(total / limit) };
+  return { tours, total, page, totalPages: Math.ceil(total / limit), statusCounts };
 };
 
 const getTourDetails = async (id) => {
