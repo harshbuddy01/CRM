@@ -664,11 +664,6 @@ export default function TourDetailPage() {
                   );
                 })()}
               </CardContent>
-                    <MapPin className="w-8 h-8 opacity-25 mx-auto mb-2" />
-                    <p className="text-xs">Itinerary outline not available.</p>
-                  </div>
-                )}
-              </CardContent>
             </div>
           </Card>
         </div>
