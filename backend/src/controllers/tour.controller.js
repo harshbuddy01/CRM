@@ -281,23 +281,30 @@ const sendDailyDispatch = async (req, res, next) => {
     const guestName = tour.query?.name || 'Valued Traveler';
     const dayNum = parseInt(dayNumber, 10) || 1;
 
-    // Find driver assigned to this day
+    // Find driver assigned to this day — if not set, omit completely (leave blank)
     const dayDriver = tour.tourDrivers.find(d => d.dayNumber === dayNum)?.driver;
-    const driverInfo = dayDriver 
-      ? `🚗 Assigned Chauffeur: ${dayDriver.name} (${dayDriver.phone}, Vehicle: ${dayDriver.vehicleName || 'Car'} ${dayDriver.vehicleNo || ''})`
-      : `🚗 Chauffeur: Details will be shared shortly by operations.`;
+    let driverInfo = '';
+    if (dayDriver?.name) {
+      const phonePart = dayDriver.phone ? ` (${dayDriver.phone})` : '';
+      const vehiclePart = (dayDriver.vehicleName || dayDriver.vehicleNumber || dayDriver.vehicleNo)
+        ? `, Vehicle: ${dayDriver.vehicleName || ''} ${dayDriver.vehicleNumber || dayDriver.vehicleNo || ''}`.trim()
+        : '';
+      driverInfo = `\n🚗 Assigned Chauffeur: ${dayDriver.name}${phonePart}${vehiclePart}`;
+    }
 
-    // Find hotel for tonight
+    // Find hotel for tonight (check bookingServices or itinerary day hotel)
     const dayHotel = tour.bookingServices.find(b => b.dayNumber === dayNum && b.serviceType === 'hotel');
-    const hotelInfo = dayHotel 
-      ? `🏨 Tonight's Hotel: ${dayHotel.serviceName}`
-      : `🏨 Tonight's Hotel: Included as per your confirmed itinerary.`;
+    const itinDay = tour.proposal?.itinerary?.days?.find(d => d.dayNumber === dayNum);
+    const hotelName = dayHotel?.serviceName || itinDay?.hotel?.name || itinDay?.hotelName;
+    let hotelInfo = '';
+    if (hotelName) {
+      hotelInfo = `\n🏨 Tonight's Hotel: ${hotelName}`;
+    }
 
     // Itinerary title
-    const itinDay = tour.proposal?.itinerary?.days?.find(d => d.dayNumber === dayNum);
     const dayTitle = itinDay?.title || `Day ${dayNum} Sightseeing`;
 
-    const messageText = `Good morning ${guestName}! 🌟 Welcome to Day ${dayNum} of your holiday with Imagica Holidays!\n\n📍 Today's Plan: ${dayTitle}\n${driverInfo}\n${hotelInfo}\n\nHave a safe and enjoyable journey! For any assistance, we are just a call away.\n\n— Imagica Holidays Concierge`;
+    const messageText = `Good morning ${guestName}! 🌟 Welcome to Day ${dayNum} of your holiday with Imagica Holidays!\n\n📍 Today's Plan: ${dayTitle}${driverInfo}${hotelInfo}\n\nHave a safe and enjoyable journey! For any assistance, we are just a call away.\n\n— Imagica Holidays Concierge`;
     const directWaUrl = `https://wa.me/${phone}?text=${encodeURIComponent(messageText)}`;
 
     // Log Query Note
