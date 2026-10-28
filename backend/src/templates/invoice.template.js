@@ -243,14 +243,16 @@ const getArtisanalTemplate = (data) => {
           width: 100%;
           background: #f7fafc;
           overflow: hidden;
-          margin-bottom: 10px;
+          margin-bottom: 6px;
           display: block;
+          flex-shrink: 0;
         }
         
         .top-banner-img {
           width: 100%;
           height: auto;
           display: block;
+          object-fit: contain;
         }
         
         /* 3. Details Row Grid (Invoice & Company Details) */
@@ -258,7 +260,7 @@ const getArtisanalTemplate = (data) => {
           display: grid;
           grid-template-columns: 1.25fr 1fr;
           gap: 10px;
-          margin-bottom: 10px;
+          margin-bottom: 6px;
         }
         
         .details-card {
@@ -339,7 +341,7 @@ const getArtisanalTemplate = (data) => {
           display: grid;
           grid-template-columns: 1fr 2.1fr 1.05fr;
           gap: 10px;
-          margin-bottom: 10px;
+          margin-bottom: 6px;
         }
         
         .middle-card {
@@ -522,7 +524,7 @@ const getArtisanalTemplate = (data) => {
           display: grid;
           grid-template-columns: 1.15fr 1.35fr;
           gap: 12px;
-          margin-bottom: 15px;
+          margin-bottom: 6px;
         }
         
         .lower-card {
@@ -580,18 +582,20 @@ const getArtisanalTemplate = (data) => {
         .middle-poster-container {
           position: relative;
           width: 100%;
-          aspect-ratio: 1000 / 185;
+          aspect-ratio: 2095 / 751;
+          max-height: 52mm;
           background: #f7fafc;
           border-radius: 5px;
           overflow: hidden;
-          margin-bottom: 10px;
+          margin-bottom: 6px;
           box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+          flex-shrink: 0;
         }
         
         .middle-poster-img {
           width: 100%;
           height: 100%;
-          object-fit: fill;
+          object-fit: contain;
           display: block;
         }
 
@@ -629,17 +633,17 @@ const getArtisanalTemplate = (data) => {
           grid-template-columns: 1fr 1fr 1fr;
           gap: 12px;
           border-top: 1px solid #edf2f7;
-          padding-top: 12px;
-          margin-bottom: 12px;
+          padding-top: 6px;
+          margin-bottom: 6px;
         }
         
         .footer-card {
           border: 1px solid #e2e8f0;
           border-radius: 6px;
           background: #ffffff;
-          padding: 10px;
+          padding: 8px 10px;
           box-shadow: 0 4px 6px rgba(0,0,0,0.02);
-          min-height: 128px;
+          min-height: 110px;
           display: flex;
           flex-direction: column;
         }
