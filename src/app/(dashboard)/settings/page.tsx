@@ -436,14 +436,14 @@ export default function SettingsPage() {
                 placeholder="https://example.com/header-banner.jpg" 
                 value={formData.invoiceHeaderBannerUrl || ''} 
                 onChange={(val) => setFormData({ ...formData, invoiceHeaderBannerUrl: val })}
-                description="Upload the top header image banner (e.g. scenic views of Kashmir, Sikkim, Kerala)."
+                description="Recommended: 2097×750 px (~2.8:1 Landscape banner). Full-width header banner for the Tax Invoice PDF."
               />
               <ImageUploadField 
-                label="Invoice Middle Polaroid Banner" 
+                label="Invoice Middle Thank-You Banner" 
                 placeholder="https://example.com/middle-banner.jpg" 
                 value={formData.invoiceMiddleBannerUrl || ''} 
                 onChange={(val) => setFormData({ ...formData, invoiceMiddleBannerUrl: val })}
-                description="Upload the middle/footer polaroid pictures banner."
+                description="Recommended: 2216×709 px (~3.1:1 Landscape banner). Full-width middle section of the Tax Invoice PDF."
               />
               <ImageUploadField 
                 label="Feedback QR Code" 
@@ -578,14 +578,14 @@ export default function SettingsPage() {
                   placeholder="https://example.com/cover-train.jpg" 
                   value={formData.pdfCoverPhoto || ''} 
                   onChange={(val) => setFormData({ ...formData, pdfCoverPhoto: val })}
-                  description="Company-wide default cover image for itinerary PDFs. Individual itineraries can override this by setting their own banner photo directly in the Itinerary Editor."
+                  description="Recommended: 1920×1080 px (16:9 Landscape, focal subject on right). Company-wide default cover image for itinerary headers and PDF proposals when no custom photo is chosen."
                 />
                 <ImageUploadField 
                   label="Page Top Banner" 
                   placeholder="https://example.com/header-banner.jpg" 
                   value={formData.pdfHeaderBanner || ''} 
                   onChange={(val) => setFormData({ ...formData, pdfHeaderBanner: val })}
-                  description="Horizontal landscape/illustration image displayed below page headers (e.g. Page 3, 4)."
+                  description="Recommended: 1200×250 px (~5:1 Landscape ribbon). Horizontal landscape image displayed below inner page headers."
                 />
                 <ImageUploadField 
                   label="Page Background Watermark" 

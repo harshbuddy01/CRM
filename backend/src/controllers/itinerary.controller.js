@@ -243,6 +243,7 @@ const generateItineraryHtml = (itinerary, settings = {}) => {
   const svgBus = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6v6"/><path d="M15 6v6"/><path d="M2 12h19.6"/><path d="M18 18h3s.5-1.7.8-2.8c.1-.4.2-.8.2-1.2 0-.4-.1-.8-.2-1.2l-1.4-5C20.1 6.8 19.1 6 18 6H4a2 2 0 0 0-2 2v10h3"/><circle cx="7" cy="18" r="2"/><path d="M9 18h5"/><circle cx="16" cy="18" r="2"/></svg>`;
 
   const defaultCoverBase64 = loadCoverImageBase64();
+  const defaultCompanyCover = pdfCoverPhoto ? getSafeImageUrl(pdfCoverPhoto) : null;
   const standardFooterHtml = `
   <div class="page-footer">
     <svg viewBox="0 0 800 80" preserveAspectRatio="none" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1;">
@@ -258,7 +259,7 @@ const generateItineraryHtml = (itinerary, settings = {}) => {
   `;
   const coverImageUrl = itinerary.coverPhotoUrl 
     ? getSafeImageUrl(itinerary.coverPhotoUrl) 
-    : (defaultCoverBase64 || 'https://images.unsplash.com/photo-1544735716-392fe2489ffa?q=80&w=1200&auto=format&fit=crop');
+    : (defaultCompanyCover || defaultCoverBase64 || 'https://images.unsplash.com/photo-1544735716-392fe2489ffa?q=80&w=1200&auto=format&fit=crop');
 
   const getItineraryImages = () => {
     const images = [];
@@ -274,9 +275,13 @@ const generateItineraryHtml = (itinerary, settings = {}) => {
         if (day.imageUrl && images.length < 5) images.push(getSafeImageUrl(day.imageUrl));
       });
     }
-    // Priority 3: Cover photo
-    if (images.length < 5 && itinerary.coverPhotoUrl) {
-      images.push(getSafeImageUrl(itinerary.coverPhotoUrl));
+    // Priority 3: Cover photo (custom or company default)
+    if (images.length < 5) {
+      if (itinerary.coverPhotoUrl) {
+        images.push(getSafeImageUrl(itinerary.coverPhotoUrl));
+      } else if (defaultCompanyCover) {
+        images.push(defaultCompanyCover);
+      }
     }
     // Fallback: Himalayan stock photos
     const fallbacks = [

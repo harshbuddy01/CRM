@@ -17,7 +17,7 @@ import {
   Utensils, Car, Plane, Sun, LogIn, LogOut as LogOutIcon,
   Mountain, Compass, IndianRupee, CalendarRange, Sparkles,
   FileText, BookOpen, Pencil, Shield, CreditCard, XCircle, CheckCircle, AlertTriangle, RefreshCw,
-  Link2, RotateCcw
+  Link2, RotateCcw, Info
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -168,11 +168,24 @@ export default function ItineraryBuilderPage() {
   // Unified Cropper State
   const [cropFile, setCropFile] = useState<File | null>(null);
   const [cropTarget, setCropTarget] = useState<'cover' | 'day' | 'event' | null>(null);
+  const [showImageGuideModal, setShowImageGuideModal] = useState(false);
 
   const { data: itinerary, isLoading } = useQuery({
     queryKey: ['itinerary', id],
     queryFn: async () => { const r = await api.get(`/itineraries/${id}`); return r.data.data; },
   });
+
+  const { data: orgSettings } = useQuery({
+    queryKey: ['company-settings'],
+    queryFn: async () => {
+      const res = await api.get('/settings');
+      return res.data.data || res.data;
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const defaultCoverPhotoUrl = orgSettings?.pdfCoverPhoto || null;
+  const activeCoverPhotoUrl = itinerary?.coverPhotoUrl || defaultCoverPhotoUrl;
 
   const { data: destinations = [] } = useQuery({
     queryKey: ['destinations-dropdown'],
@@ -400,21 +413,131 @@ export default function ItineraryBuilderPage() {
         onCropComplete={handleCropComplete}
       />
 
+      {/* Image Guidelines Modal */}
+      <Dialog open={showImageGuideModal} onOpenChange={setShowImageGuideModal}>
+        <DialogContent className="max-w-2xl rounded-2xl p-6 sm:p-8">
+          <DialogHeader>
+            <div className="flex items-center gap-2.5 mb-1">
+              <div className="w-9 h-9 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600">
+                <Sparkles className="w-5 h-5" />
+              </div>
+              <div>
+                <DialogTitle className="text-xl font-bold text-slate-900">
+                  Itinerary Cover Image Guidelines
+                </DialogTitle>
+                <DialogDescription className="text-xs text-slate-500">
+                  Recommended resolution, aspect ratios, and visual composition tips for Canva & Photoshop.
+                </DialogDescription>
+              </div>
+            </div>
+          </DialogHeader>
+
+          <div className="space-y-6 mt-4">
+            {/* Visual Canvas Breakdown Card */}
+            <div className="relative rounded-2xl overflow-hidden border-2 border-dashed border-indigo-200 bg-slate-950 p-3 text-white">
+              <div className="aspect-[16/7] w-full rounded-xl overflow-hidden relative flex flex-col justify-between p-4 bg-gradient-to-r from-slate-900 via-slate-800 to-indigo-950">
+                {/* Mock Image Overlay Grid */}
+                <div className="absolute inset-0 grid grid-cols-2 divide-x divide-dashed divide-white/20 pointer-events-none">
+                  <div className="p-4 flex flex-col justify-end bg-black/50">
+                    <span className="inline-block text-[10px] font-bold text-amber-300 uppercase tracking-wider bg-amber-950/80 px-2 py-0.5 rounded w-fit mb-2">
+                      Left 50%: Text Safe Zone
+                    </span>
+                    <p className="text-[11px] text-slate-300 leading-snug">
+                      Titles, destinations, dates, and badges appear here. Keep this area calm, with open skies or soft scenery.
+                    </p>
+                  </div>
+                  <div className="p-4 flex flex-col justify-end bg-indigo-900/20">
+                    <span className="inline-block text-[10px] font-bold text-emerald-300 uppercase tracking-wider bg-emerald-950/80 px-2 py-0.5 rounded w-fit mb-2">
+                      Right 50%: Focal Subject Area
+                    </span>
+                    <p className="text-[11px] text-slate-300 leading-snug">
+                      Place main landmarks, mountains, boats, monuments, or key highlights here for maximum visual impact!
+                    </p>
+                  </div>
+                </div>
+                
+                <div className="relative z-10 flex justify-between items-start">
+                  <span className="text-[10px] font-mono bg-white/10 px-2 py-1 rounded backdrop-blur-sm text-slate-200">
+                    16:9 Landscape Aspect Ratio
+                  </span>
+                  <span className="text-[10px] font-mono bg-indigo-500/30 text-indigo-200 px-2 py-1 rounded border border-indigo-400/30">
+                    1920 × 1080 px
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Quick Specs Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="p-3.5 rounded-xl border border-slate-200 bg-slate-50/70">
+                <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400 block mb-1">Canvas Size</span>
+                <span className="text-sm font-bold text-slate-900 block">1920 × 1080 px</span>
+                <span className="text-[11px] text-slate-500">16:9 Landscape (Full HD)</span>
+              </div>
+              <div className="p-3.5 rounded-xl border border-slate-200 bg-slate-50/70">
+                <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400 block mb-1">File Formats</span>
+                <span className="text-sm font-bold text-slate-900 block">JPG, PNG, or WebP</span>
+                <span className="text-[11px] text-slate-500">Under 5 MB (1–2 MB ideal)</span>
+              </div>
+              <div className="p-3.5 rounded-xl border border-slate-200 bg-slate-50/70">
+                <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400 block mb-1">Where it appears</span>
+                <span className="text-sm font-bold text-slate-900 block">Header & PDF Cover</span>
+                <span className="text-[11px] text-slate-500">Page 1 Hero of Proposal</span>
+              </div>
+            </div>
+
+            {/* Tips for Canva / Photoshop */}
+            <div className="rounded-xl border border-amber-200 bg-amber-50/60 p-3.5 space-y-2 text-xs text-amber-900">
+              <div className="font-bold flex items-center gap-1.5 text-amber-950">
+                <Sparkles className="w-3.5 h-3.5 text-amber-600" />
+                Tips for your Design Team (Canva / Photoshop):
+              </div>
+              <ul className="list-disc pl-4 space-y-1 text-[11.5px] text-amber-900/90 leading-relaxed">
+                <li><strong>Safe Zone Rule:</strong> Always keep the left side clean and avoid putting logos, faces, or words on the left, as the CRM title covers that space.</li>
+                <li><strong>Contrast:</strong> Images with rich, deeper tones (dusk, golden hour, deep mountain blues, forest greens) make the white title text pop beautifully.</li>
+                <li><strong>Canva Template:</strong> In Canva, create a custom design at <strong>1920 × 1080 px</strong>, export as <strong>JPG (Quality 85%)</strong> or <strong>PNG</strong>.</li>
+              </ul>
+            </div>
+
+            <div className="flex justify-between items-center pt-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-xs font-semibold"
+                onClick={() => {
+                  navigator.clipboard.writeText('1920x1080');
+                  toast.success('Dimensions (1920x1080) copied to clipboard!');
+                }}
+              >
+                <Copy className="w-3.5 h-3.5 mr-1.5" /> Copy Dimensions (1920×1080)
+              </Button>
+              <Button
+                size="sm"
+                className="text-xs font-semibold bg-indigo-600 hover:bg-indigo-700 text-white"
+                onClick={() => setShowImageGuideModal(false)}
+              >
+                Got It
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
        {/* Header with cover photo */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col min-h-0">
         <div className={cn(
           "relative rounded-2xl overflow-hidden shadow-xl min-h-[180px] transition-all duration-700",
-          itinerary.coverPhotoUrl ? "bg-slate-900" : "bg-gradient-to-br from-blue-700 via-indigo-700 to-purple-800"
+          activeCoverPhotoUrl ? "bg-slate-900" : "bg-gradient-to-br from-blue-700 via-indigo-700 to-purple-800"
         )}>
-          {itinerary.coverPhotoUrl && (
+          {activeCoverPhotoUrl && (
             <img 
-              src={itinerary.coverPhotoUrl} 
-              alt="" 
+              src={activeCoverPhotoUrl} 
+              alt="Itinerary Cover" 
               className="absolute inset-0 w-full h-full object-cover opacity-90 transition-opacity duration-1000" 
             />
           )}
           {/* Subtle Overlay to ensure text readability */}
-          <div className="absolute inset-0 bg-black/30" />
+          <div className="absolute inset-0 bg-gradient-to-r from-black/75 via-black/45 to-transparent" />
           
           <div className="relative p-6 md:p-8 z-10">
             <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
@@ -555,16 +678,25 @@ export default function ItineraryBuilderPage() {
                       className="rounded-xl font-bold text-xs h-9 bg-white/20 text-white hover:bg-white/30 border-white/20 shadow-sm transition-all"
                     >
                       <Camera className="w-3.5 h-3.5 mr-1.5" /> 
-                      {itinerary.coverPhotoUrl ? 'Cover Photo' : 'Banner Image'}
+                      {itinerary.coverPhotoUrl ? 'Cover Photo (Custom)' : (defaultCoverPhotoUrl ? 'Cover Photo (Default)' : 'Banner Image')}
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-60 rounded-2xl p-1.5 shadow-2xl border-slate-200">
+                  <DropdownMenuContent align="end" className="w-64 rounded-2xl p-1.5 shadow-2xl border-slate-200">
+                    <div className="px-2.5 py-1.5 text-[11px] text-slate-500 font-medium border-b border-slate-100 mb-1 flex items-center justify-between">
+                      <span className="truncate max-w-[155px]">
+                        {itinerary.coverPhotoUrl ? 'Custom Image Active' : (defaultCoverPhotoUrl ? 'Company Default Active' : 'Gradient Fallback')}
+                      </span>
+                      <span className="text-[10px] text-indigo-600 font-bold bg-indigo-50 px-1.5 py-0.5 rounded">16:9</span>
+                    </div>
                     <DropdownMenuItem 
                       className="rounded-xl font-semibold text-xs py-2 cursor-pointer flex items-center gap-2.5"
                       onClick={() => coverRef.current?.click()}
                     >
                       <Upload className="w-4 h-4 text-blue-500" />
-                      <span>Upload from Device</span>
+                      <div className="flex flex-col">
+                        <span>Upload from Device</span>
+                        <span className="text-[10px] font-normal text-muted-foreground">1920×1080 (16:9) Recommended</span>
+                      </div>
                     </DropdownMenuItem>
                     <DropdownMenuItem 
                       className="rounded-xl font-semibold text-xs py-2 cursor-pointer flex items-center gap-2.5"
@@ -603,6 +735,14 @@ export default function ItineraryBuilderPage() {
                         </DropdownMenuItem>
                       </>
                     )}
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem 
+                      className="rounded-xl font-semibold text-xs py-2 text-indigo-600 focus:text-indigo-700 focus:bg-indigo-50 cursor-pointer flex items-center gap-2.5"
+                      onClick={() => setShowImageGuideModal(true)}
+                    >
+                      <Info className="w-4 h-4 text-indigo-500" />
+                      <span>📐 Recommended Specs & Guide</span>
+                    </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
                 <Button size="sm" variant="secondary" className="rounded-xl font-bold text-xs h-9" onClick={handleShare} disabled={isSharing}>
