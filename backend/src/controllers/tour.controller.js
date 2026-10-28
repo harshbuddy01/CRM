@@ -344,6 +344,12 @@ const setTourPhase = async (req, res, next) => {
     const updateData = { status: phase };
     if (phase === 'completed') {
       updateData.reviewStatus = tour.reviewStatus || 'PENDING';
+    } else if (phase === 'upcoming') {
+      updateData.reviewStatus = 'PENDING';
+      updateData.reviewRating = null;
+      updateData.reviewAction = null;
+      updateData.reviewNotes = null;
+      updateData.reviewDisappointments = [];
     }
 
     const updatedTour = await prisma.tour.update({

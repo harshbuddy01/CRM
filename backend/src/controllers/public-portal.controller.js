@@ -1205,11 +1205,12 @@ const submitReview = async (req, res, next) => {
         ? `⭐ Guest submitted a ${effectiveRating}★ Google Review via public portal.`
         : `⚠️ Guest submitted ${effectiveRating}★ private feedback. Issues: ${effectiveDisappointments.join(', ') || 'General'}. Note: "${effectiveNotes || 'No notes'}"`;
 
-      if (tour.query?.assignedTo) {
+      const noteUserId = tour.query?.assignedTo || (await prisma.user.findFirst({ select: { id: true } }))?.id;
+      if (noteUserId) {
         await prisma.queryNote.create({
           data: {
             queryId: tour.queryId,
-            userId: tour.query.assignedTo,
+            userId: noteUserId,
             note: summaryText,
             noteType: 'note'
           }

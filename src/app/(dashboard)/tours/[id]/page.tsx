@@ -36,7 +36,8 @@ import {
   Send,
   Bell,
   Play,
-  Sparkles
+  Sparkles,
+  RotateCcw
 } from 'lucide-react';
 import Link from 'next/link';
 import { format } from 'date-fns';
@@ -63,6 +64,15 @@ export default function TourDetailPage() {
   const [simulationRunning, setSimulationRunning] = useState(false);
   const [simulationStep, setSimulationStep] = useState<string>('');
   const [selectedDispatchDay, setSelectedDispatchDay] = useState(1);
+  const [activeDispatchResult, setActiveDispatchResult] = useState<{
+    type: 'pretour' | 'daily' | 'review';
+    title: string;
+    phone: string;
+    messageText: string;
+    directWaUrl: string;
+    reviewUrl?: string;
+    timestamp: string;
+  } | null>(null);
 
   // Editing Ops Notes
   const [isEditingOps, setIsEditingOps] = useState(false);
@@ -146,10 +156,22 @@ export default function TourDetailPage() {
     },
     onSuccess: (data: any) => {
       toast.success(data?.message || 'Review invite dispatched!');
+      if (data?.data) {
+        setActiveDispatchResult({
+          type: 'review',
+          title: 'Post-Expedition Guest Review Invitation',
+          phone: data.data.phone,
+          messageText: data.data.messageText,
+          directWaUrl: data.data.directWaUrl,
+          reviewUrl: data.data.reviewUrl,
+          timestamp: new Date().toLocaleTimeString()
+        });
+      }
       if (data?.data?.directWaUrl) {
-        window.open(data.data.directWaUrl, '_blank');
+        try { window.open(data.data.directWaUrl, '_blank'); } catch (e) {}
       }
       queryClient.invalidateQueries({ queryKey: ['tour', tourId] });
+      queryClient.invalidateQueries({ queryKey: ['tours'] });
     },
     onError: (err: any) => {
       toast.error(err.response?.data?.message || 'Failed to dispatch review invite');
@@ -186,8 +208,18 @@ export default function TourDetailPage() {
     },
     onSuccess: (data: any) => {
       toast.success('Pre-tour reminder sent!');
+      if (data?.data) {
+        setActiveDispatchResult({
+          type: 'pretour',
+          title: 'Day -2 Pre-Departure Reminder & Balance Notice',
+          phone: data.data.phone,
+          messageText: data.data.messageText,
+          directWaUrl: data.data.directWaUrl,
+          timestamp: new Date().toLocaleTimeString()
+        });
+      }
       if (data?.data?.directWaUrl) {
-        window.open(data.data.directWaUrl, '_blank');
+        try { window.open(data.data.directWaUrl, '_blank'); } catch (e) {}
       }
       queryClient.invalidateQueries({ queryKey: ['tour', tourId] });
     },
@@ -198,16 +230,27 @@ export default function TourDetailPage() {
 
   const sendDailyDispatchMutation = useMutation({
     mutationFn: async ({ dayNumber, customPhone }: { dayNumber?: number; customPhone?: string }) => {
+      const day = dayNumber || selectedDispatchDay;
       const res = await api.post(`/tours/${tourId}/send-daily-dispatch`, {
-        dayNumber: dayNumber || selectedDispatchDay,
+        dayNumber: day,
         testPhone: customPhone || testPhoneNumber || undefined
       });
-      return res.data;
+      return { ...res.data, requestedDay: day };
     },
     onSuccess: (data: any) => {
       toast.success(data?.message || 'Daily dispatch sent!');
+      if (data?.data) {
+        setActiveDispatchResult({
+          type: 'daily',
+          title: `Day ${data.requestedDay || selectedDispatchDay} Chauffeur & Hotel Logistics Dispatch`,
+          phone: data.data.phone,
+          messageText: data.data.messageText,
+          directWaUrl: data.data.directWaUrl,
+          timestamp: new Date().toLocaleTimeString()
+        });
+      }
       if (data?.data?.directWaUrl) {
-        window.open(data.data.directWaUrl, '_blank');
+        try { window.open(data.data.directWaUrl, '_blank'); } catch (e) {}
       }
       queryClient.invalidateQueries({ queryKey: ['tour', tourId] });
     },
@@ -219,44 +262,72 @@ export default function TourDetailPage() {
   const runSimulation = async () => {
     if (simulationRunning) return;
     setSimulationRunning(true);
-    toast.info('🚀 Starting 2-Minute Full Lifecycle Simulation...');
+    toast.info('Starting Full Lifecycle Simulation...');
 
     try {
-      // Step 1: Upcoming (0s)
-      setSimulationStep('Step 1/3: Phase Upcoming — Sending Day -2 Reminder & Balance Notice...');
+      // Step 1: Upcoming (Day -2)
+      setSimulationStep('Step 1/3: Phase Upcoming — Dispatching Day -2 WhatsApp Excitement & Balance Notice...');
       await api.post(`/tours/${tourId}/set-phase`, { phase: 'upcoming' });
       queryClient.invalidateQueries({ queryKey: ['tour', tourId] });
+      queryClient.invalidateQueries({ queryKey: ['tours'] });
+
       const pretour = await api.post(`/tours/${tourId}/send-pretour-reminder`, { testPhone: testPhoneNumber || undefined });
-      if (pretour.data?.data?.directWaUrl) {
-        window.open(pretour.data.data.directWaUrl, '_blank');
+      if (pretour.data?.data) {
+        setActiveDispatchResult({
+          type: 'pretour',
+          title: 'Step 1 Dispatched: Day -2 Pre-Departure Reminder & Balance Notice',
+          phone: pretour.data.data.phone,
+          messageText: pretour.data.data.messageText,
+          directWaUrl: pretour.data.data.directWaUrl,
+          timestamp: new Date().toLocaleTimeString()
+        });
       }
-      toast.success('Step 1: Pre-Tour Reminder Dispatched via WhatsApp!');
+      toast.success('Step 1 Dispatched: Day -2 WhatsApp sent to +918235337180!');
 
-      // Delay 30s
-      await new Promise(r => setTimeout(r, 30000));
+      // 6 second pause to let user inspect
+      await new Promise(r => setTimeout(r, 6000));
 
-      // Step 2: Running (30s)
-      setSimulationStep('Step 2/3: Phase Running — Trip Starts! Sending Day 1 Logistics...');
+      // Step 2: Running (Day 1 Logistics)
+      setSimulationStep('Step 2/3: Phase Running — Trip Starts! Dispatching Day 1 Chauffeur & Hotel Stay...');
       await api.post(`/tours/${tourId}/set-phase`, { phase: 'running' });
       queryClient.invalidateQueries({ queryKey: ['tour', tourId] });
+      queryClient.invalidateQueries({ queryKey: ['tours'] });
+
       const day1 = await api.post(`/tours/${tourId}/send-daily-dispatch`, { dayNumber: 1, testPhone: testPhoneNumber || undefined });
-      if (day1.data?.data?.directWaUrl) {
-        window.open(day1.data.data.directWaUrl, '_blank');
+      if (day1.data?.data) {
+        setActiveDispatchResult({
+          type: 'daily',
+          title: 'Step 2 Dispatched: Day 1 Chauffeur & Hotel Logistics Dispatch',
+          phone: day1.data.data.phone,
+          messageText: day1.data.data.messageText,
+          directWaUrl: day1.data.data.directWaUrl,
+          timestamp: new Date().toLocaleTimeString()
+        });
       }
-      toast.success('Step 2: Day 1 Driver & Hotel Dispatched via WhatsApp!');
+      toast.success('Step 2 Dispatched: Day 1 Logistics sent to +918235337180!');
 
-      // Delay 30s
-      await new Promise(r => setTimeout(r, 30000));
+      // 6 second pause to let user inspect
+      await new Promise(r => setTimeout(r, 6000));
 
-      // Step 3: Completed (60s)
-      setSimulationStep('Step 3/3: Phase Completed — Tour Concludes! Locking Operations & Sending Review Invite...');
+      // Step 3: Completed (Tour Concluded & Review Invite)
+      setSimulationStep('Step 3/3: Phase Completed — Tour Concluded! Locking Operations & Dispatching Review Link...');
       await api.post(`/tours/${tourId}/set-phase`, { phase: 'completed' });
       queryClient.invalidateQueries({ queryKey: ['tour', tourId] });
+      queryClient.invalidateQueries({ queryKey: ['tours'] });
+
       const review = await api.post(`/tours/${tourId}/send-review-invite`, { testPhone: testPhoneNumber || undefined });
-      if (review.data?.data?.directWaUrl) {
-        window.open(review.data.data.directWaUrl, '_blank');
+      if (review.data?.data) {
+        setActiveDispatchResult({
+          type: 'review',
+          title: 'Step 3 Dispatched: Tour Concluded — Review Invitation & Google Redirect Dispatched',
+          phone: review.data.data.phone,
+          messageText: review.data.data.messageText,
+          directWaUrl: review.data.data.directWaUrl,
+          reviewUrl: review.data.data.reviewUrl,
+          timestamp: new Date().toLocaleTimeString()
+        });
       }
-      toast.success('🎉 Step 3: Tour Concluded and Review Link Dispatched via WhatsApp!');
+      toast.success('Step 3 Dispatched: Review link sent to +918235337180!');
     } catch (e: any) {
       toast.error('Simulation error: ' + (e.response?.data?.message || e.message || 'Failed'));
     } finally {
@@ -516,8 +587,22 @@ export default function TourDetailPage() {
             <h2 className="text-base font-black text-slate-900 mt-1">Tour Phase Progression & Client WhatsApp Dispatch</h2>
           </div>
 
-          {/* Quick Simulation Runner */}
-          <div className="flex items-center gap-2">
+          {/* Quick Simulation & Reset Runner */}
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setPhaseMutation.mutate('upcoming');
+                setActiveDispatchResult(null);
+                toast.info('Tour reset to Upcoming / Confirmed stage');
+              }}
+              disabled={setPhaseMutation.isPending || simulationRunning}
+              className="border-slate-200 text-slate-700 hover:bg-slate-100 text-xs font-bold h-9 rounded-xl shadow-none"
+            >
+              <RotateCcw className="w-3.5 h-3.5 mr-1.5 text-slate-500" />
+              Reset to Step 1 (Upcoming)
+            </Button>
+
             <Button
               onClick={runSimulation}
               disabled={simulationRunning}
@@ -705,6 +790,66 @@ export default function TourDetailPage() {
               </Button>
             </div>
           </div>
+
+          {/* Active WhatsApp Dispatch & Review Redirect Box */}
+          {activeDispatchResult && (
+            <div className="p-4 rounded-xl border border-indigo-200 bg-indigo-50/50 space-y-3 mt-3 animate-in fade-in duration-300">
+              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-indigo-100 pb-2.5">
+                <div className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+                  <span className="text-xs font-black text-indigo-950 uppercase tracking-wide">
+                    {activeDispatchResult.title}
+                  </span>
+                  <span className="text-[11px] text-slate-500">• {activeDispatchResult.timestamp}</span>
+                </div>
+                <span className="text-[11px] font-bold text-slate-600 bg-white/90 px-2 py-0.5 rounded-md border border-slate-200">
+                  Target: +{activeDispatchResult.phone}
+                </span>
+              </div>
+
+              {/* Message Content Preview */}
+              <div className="p-3 bg-white rounded-lg border border-slate-200 text-xs font-mono text-slate-800 whitespace-pre-wrap leading-relaxed shadow-inner">
+                {activeDispatchResult.messageText}
+              </div>
+
+              {/* Direct Actions */}
+              <div className="flex flex-wrap items-center gap-2 pt-1">
+                <a
+                  href={activeDispatchResult.directWaUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-sm transition-all"
+                >
+                  <MessageCircle className="w-3.5 h-3.5 fill-current" />
+                  Open in WhatsApp (+{activeDispatchResult.phone})
+                </a>
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    navigator.clipboard.writeText(activeDispatchResult.messageText);
+                    toast.success('Message copied to clipboard!');
+                  }}
+                  className="text-xs font-bold rounded-lg h-8 bg-white border-slate-200 text-slate-700"
+                >
+                  <Copy className="w-3.5 h-3.5 mr-1" /> Copy Message
+                </Button>
+
+                {activeDispatchResult.reviewUrl && (
+                  <a
+                    href={activeDispatchResult.reviewUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs shadow-sm transition-all ml-auto"
+                  >
+                    <ExternalLink className="w-3.5 h-3.5" />
+                    Open Review & Test Google Redirect
+                  </a>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       </Card>
 
