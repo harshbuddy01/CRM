@@ -755,9 +755,10 @@ export default function JourneysTab() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-muted-foreground text-sm">Manage journey packages displayed on your website. Edit pricing, itineraries, and more.</p>
+          <h2 className="text-lg font-semibold">Our Packages (Website)</h2>
+          <p className="text-muted-foreground text-sm">Manage tour packages displayed on your website (/packages). Edit pricing, itineraries, photos, and SEO.</p>
         </div>
-        <Button onClick={openNew}><Plus className="w-4 h-4 mr-2" /> New Journey</Button>
+        <Button onClick={openNew}><Plus className="w-4 h-4 mr-2" /> New Package</Button>
       </div>
 
       {showForm && (

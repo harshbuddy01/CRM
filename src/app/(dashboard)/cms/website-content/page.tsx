@@ -1,13 +1,13 @@
 'use client';
 
 import { useState } from 'react';
-import { Compass, MapPin, TrendingUp, Laptop } from 'lucide-react';
+import { Compass, Package, TrendingUp, Laptop } from 'lucide-react';
 import JourneysTab from './JourneysTab';
 import TrendingTab from './TrendingTab';
 import WebsiteControlTab from './WebsiteControlTab';
 
 const tabs = [
-  { id: 'journeys', label: 'Journeys', icon: MapPin },
+  { id: 'journeys', label: 'Our Packages', icon: Package },
   { id: 'trending', label: 'Trending Destinations', icon: TrendingUp },
   { id: 'control', label: 'Website Control', icon: Laptop },
 ];

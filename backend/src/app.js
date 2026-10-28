@@ -222,6 +222,12 @@ const cmsCtrl = require('./controllers/cms.controller');
 // The main website (imagicaholidays.com) calls these exact URLs from its JS bundle
 app.get('/v1/public/journeys',                    wcCtrl.getPublicJourneys);
 app.get('/api/v1/public/journeys',                wcCtrl.getPublicJourneys);
+app.get('/v1/public/packages',                    wcCtrl.getPublicJourneys);
+app.get('/api/v1/public/packages',                wcCtrl.getPublicJourneys);
+app.get('/v1/public/journeys/:id',                wcCtrl.getPublicJourney);
+app.get('/api/v1/public/journeys/:id',            wcCtrl.getPublicJourney);
+app.get('/v1/public/packages/:id',                wcCtrl.getPublicJourney);
+app.get('/api/v1/public/packages/:id',            wcCtrl.getPublicJourney);
 app.get('/v1/public/website-config',              websiteConfigCtrl.getWebsiteConfig);
 app.get('/api/v1/public/website-config',          websiteConfigCtrl.getWebsiteConfig);
 app.get('/v1/public/trending',                    wcCtrl.getPublicTrending);

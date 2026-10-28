@@ -35,9 +35,14 @@ const listJourneys = () =>
     orderBy: [{ sequence: 'asc' }, { createdAt: 'desc' }],
   });
 
-const getJourney = (id) =>
-  prisma.websiteJourney.findUnique({
-    where: { id },
+const getJourney = (identifier) =>
+  prisma.websiteJourney.findFirst({
+    where: {
+      OR: [
+        { id: identifier },
+        { slug: identifier },
+      ],
+    },
     include: { days: { orderBy: { dayNumber: 'asc' } } },
   });
 

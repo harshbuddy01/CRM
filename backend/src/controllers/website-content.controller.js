@@ -73,49 +73,61 @@ const deleteTrending = async (req, res, next) => {
   catch (e) { next(e); }
 };
 
+// Helper: format a journey DB record to the frontend package schema
+const formatJourney = (j) => ({
+  id: j.slug,
+  title: j.title,
+  regions: j.regions,
+  durationNights: j.durationNights,
+  durationDays: j.durationDays,
+  pricePerGuest: j.pricePerGuest,
+  originalPrice: j.originalPrice,
+  departurePort: j.departurePort,
+  returnPort: j.returnPort,
+  departureDate: j.departureDate,
+  returnDate: j.returnDate,
+  ports: j.ports,
+  countries: j.countries,
+  vehicle: j.vehicle,
+  badges: j.badges,
+  images: j.images,
+  mapImage: j.mapImage,
+  overview: j.overview,
+  seoTitle: j.seoTitle,
+  seoDescription: j.seoDescription,
+  seoKeywords: j.seoKeywords,
+  highlights: j.highlights,
+  inclusions: j.inclusions,
+  hotels: j.hotels,
+  suitableFor: j.suitableFor,
+  whyChooseUs: j.whyChooseUs,
+  itinerary: (Array.isArray(j.days) ? j.days : []).map(d => ({
+    day: `Day ${d.dayNumber}`,
+    title: d.title,
+    date: d.date,
+    time: d.time,
+    description: d.description,
+    image: d.image,
+  })),
+});
+
 // ─── Public (no auth) ────────────────────────────────────────
 
 const getPublicJourneys = async (req, res, next) => {
   try {
     const data = await svc.getPublicJourneys();
-    // Transform to match the format constants.ts uses on the website
-    const formatted = data.map(j => ({
-      id: j.slug,
-      title: j.title,
-      regions: j.regions,
-      durationNights: j.durationNights,
-      durationDays: j.durationDays,
-      pricePerGuest: j.pricePerGuest,
-      originalPrice: j.originalPrice,
-      departurePort: j.departurePort,
-      returnPort: j.returnPort,
-      departureDate: j.departureDate,
-      returnDate: j.returnDate,
-      ports: j.ports,
-      countries: j.countries,
-      vehicle: j.vehicle,
-      badges: j.badges,
-      images: j.images,
-      mapImage: j.mapImage,
-      overview: j.overview,
-      seoTitle: j.seoTitle,
-      seoDescription: j.seoDescription,
-      seoKeywords: j.seoKeywords,
-      highlights: j.highlights,
-      inclusions: j.inclusions,
-      hotels: j.hotels,
-      suitableFor: j.suitableFor,
-      whyChooseUs: j.whyChooseUs,
-      itinerary: (Array.isArray(j.days) ? j.days : []).map(d => ({
-        day: `Day ${d.dayNumber}`,
-        title: d.title,
-        date: d.date,
-        time: d.time,
-        description: d.description,
-        image: d.image,
-      })),
-    }));
-    res.json({ success: true, data: formatted });
+    res.json({ success: true, data: data.map(formatJourney) });
+  } catch (e) { next(e); }
+};
+
+const getPublicJourney = async (req, res, next) => {
+  try {
+    const slugOrId = req.params.slug || req.params.id;
+    const j = await svc.getJourney(slugOrId);
+    if (!j || !j.isActive) {
+      return res.status(404).json({ success: false, message: 'Package not found' });
+    }
+    res.json({ success: true, data: formatJourney(j) });
   } catch (e) { next(e); }
 };
 
@@ -140,5 +152,5 @@ module.exports = {
   listJourneys, getJourney, createJourney, updateJourney, deleteJourney,
   addJourneyDay, updateJourneyDay, removeJourneyDay,
   listTrending, createTrending, updateTrending, deleteTrending,
-  getPublicJourneys, getPublicTrending,
+  getPublicJourneys, getPublicJourney, getPublicTrending,
 };

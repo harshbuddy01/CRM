@@ -39,30 +39,28 @@ const TRENDING_DATA = [
 
 async function autoSeedWebsiteContent() {
   try {
-    // 1. Check persistent flag in OrgSetting to prevent re-seeding after deletion
+    const journeyCount = await prisma.websiteJourney.count();
+    const trendingCount = await prisma.trendingDestination.count();
+
+    // 1. Check persistent flag in OrgSetting - only skip if BOTH are already populated
     const seedFlag = await prisma.orgSetting.findUnique({
       where: { key: 'website_content_seeded' }
     });
 
-    if (seedFlag && seedFlag.value === 'true') {
+    if (seedFlag && seedFlag.value === 'true' && journeyCount > 0 && trendingCount > 0) {
       return;
     }
 
-    const journeyCount = await prisma.websiteJourney.count();
-    const trendingCount = await prisma.trendingDestination.count();
-
-    // 2. If already populated, set the flag and skip
-    if (journeyCount > 0 || trendingCount > 0) {
+    if (journeyCount > 0 && trendingCount > 0) {
       await prisma.orgSetting.upsert({
         where: { key: 'website_content_seeded' },
         update: { value: 'true' },
         create: { key: 'website_content_seeded', value: 'true', description: 'Flag to prevent website content re-seeding' }
       });
-      console.log(`✅ Website content already populated (${journeyCount} journeys, ${trendingCount} trending). Set OrgSetting flag.`);
       return;
     }
 
-    console.log('🌱 Auto-seeding website content...');
+    console.log(`🌱 Auto-seeding website content (journeys: ${journeyCount}, trending: ${trendingCount})...`);
 
     // Seed journeys if empty
     if (journeyCount === 0) {
