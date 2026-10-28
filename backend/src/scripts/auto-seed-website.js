@@ -39,19 +39,19 @@ const TRENDING_DATA = [
 
 async function autoSeedWebsiteContent() {
   try {
-    const journeyCount = await prisma.websiteJourney.count();
-    const trendingCount = await prisma.trendingDestination.count();
-
-    // 1. Check persistent flag in OrgSetting - only skip if BOTH are already populated
+    // 1. Check persistent flag in OrgSetting - if already seeded once, NEVER re-seed!
     const seedFlag = await prisma.orgSetting.findUnique({
       where: { key: 'website_content_seeded' }
     });
 
-    if (seedFlag && seedFlag.value === 'true' && journeyCount > 0 && trendingCount > 0) {
+    if (seedFlag && seedFlag.value === 'true') {
       return;
     }
 
-    if (journeyCount > 0 && trendingCount > 0) {
+    const journeyCount = await prisma.websiteJourney.count();
+    const trendingCount = await prisma.trendingDestination.count();
+
+    if (journeyCount > 0 || trendingCount > 0) {
       await prisma.orgSetting.upsert({
         where: { key: 'website_content_seeded' },
         update: { value: 'true' },

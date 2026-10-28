@@ -7,7 +7,10 @@ const svc = require('../services/website-content.service');
 // ─── Journeys ────────────────────────────────────────────────
 
 const listJourneys = async (req, res, next) => {
-  try { res.json({ success: true, data: await svc.listJourneys() }); }
+  try {
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.json({ success: true, data: await svc.listJourneys() });
+  }
   catch (e) { next(e); }
 };
 
@@ -54,7 +57,10 @@ const removeJourneyDay = async (req, res, next) => {
 // ─── Trending Destinations ──────────────────────────────────
 
 const listTrending = async (req, res, next) => {
-  try { res.json({ success: true, data: await svc.listTrending() }); }
+  try {
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.json({ success: true, data: await svc.listTrending() });
+  }
   catch (e) { next(e); }
 };
 
@@ -115,6 +121,7 @@ const formatJourney = (j) => ({
 
 const getPublicJourneys = async (req, res, next) => {
   try {
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
     const data = await svc.getPublicJourneys();
     res.json({ success: true, data: data.map(formatJourney) });
   } catch (e) { next(e); }
@@ -122,6 +129,7 @@ const getPublicJourneys = async (req, res, next) => {
 
 const getPublicJourney = async (req, res, next) => {
   try {
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
     const slugOrId = req.params.slug || req.params.id;
     const j = await svc.getJourney(slugOrId);
     if (!j || !j.isActive) {
@@ -133,6 +141,7 @@ const getPublicJourney = async (req, res, next) => {
 
 const getPublicTrending = async (req, res, next) => {
   try {
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
     const data = await svc.getPublicTrending();
     // Transform to match the TRENDING_COLLECTION format
     const formatted = data.map((t, i) => ({

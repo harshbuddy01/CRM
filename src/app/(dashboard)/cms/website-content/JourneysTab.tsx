@@ -737,15 +737,28 @@ export default function JourneysTab() {
   const { data: journeys, isLoading } = useQuery({
     queryKey: ['wc-journeys'],
     queryFn: () => api.get('/website-content/journeys').then(r => r.data.data),
-    staleTime: Infinity,
-    refetchInterval: false,
-    refetchOnWindowFocus: false,
+    staleTime: 5000,
   });
 
   const deleteMut = useMutation({
     mutationFn: (id: string) => api.delete(`/website-content/journeys/${id}`),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['wc-journeys'] }); toast.success('Journey deleted'); },
-    onError: (error: any) => { console.error('Delete journey failed:', error); toast.error(error.response?.data?.message || 'Failed to delete journey'); },
+    onMutate: async (id: string) => {
+      await qc.cancelQueries({ queryKey: ['wc-journeys'] });
+      const previous = qc.getQueryData(['wc-journeys']);
+      qc.setQueryData(['wc-journeys'], (old: any) => Array.isArray(old) ? old.filter(j => j.id !== id) : []);
+      return { previous };
+    },
+    onError: (error: any, id: string, context: any) => {
+      if (context?.previous) qc.setQueryData(['wc-journeys'], context.previous);
+      console.error('Delete journey failed:', error);
+      toast.error(error.response?.data?.message || 'Failed to delete journey');
+    },
+    onSuccess: () => {
+      toast.success('Journey deleted');
+    },
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: ['wc-journeys'] });
+    },
   });
 
   const openEdit = (j: any) => { setEditing(j); setShowForm(true); };

@@ -109,15 +109,28 @@ export default function TrendingTab() {
   const { data: items, isLoading } = useQuery({
     queryKey: ['wc-trending'],
     queryFn: () => api.get('/website-content/trending').then(r => r.data.data),
-    staleTime: Infinity,
-    refetchInterval: false,
-    refetchOnWindowFocus: false,
+    staleTime: 5000,
   });
 
   const deleteMut = useMutation({
     mutationFn: (id: string) => api.delete(`/website-content/trending/${id}`),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['wc-trending'] }); toast.success('Deleted'); },
-    onError: (error: any) => { console.error('Delete trending failed:', error); toast.error(error.response?.data?.message || 'Failed to delete'); },
+    onMutate: async (id: string) => {
+      await qc.cancelQueries({ queryKey: ['wc-trending'] });
+      const previous = qc.getQueryData(['wc-trending']);
+      qc.setQueryData(['wc-trending'], (old: any) => Array.isArray(old) ? old.filter(t => t.id !== id) : []);
+      return { previous };
+    },
+    onError: (error: any, id: string, context: any) => {
+      if (context?.previous) qc.setQueryData(['wc-trending'], context.previous);
+      console.error('Delete trending failed:', error);
+      toast.error(error.response?.data?.message || 'Failed to delete');
+    },
+    onSuccess: () => {
+      toast.success('Deleted');
+    },
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: ['wc-trending'] });
+    },
   });
 
   return (
