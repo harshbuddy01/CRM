@@ -50,7 +50,25 @@ const sendTemplateMessage = async (phone, templateName, components = [], languag
   };
 
   if (components && components.length > 0) {
-    payload.template.components = components;
+    // Sanitize parameters for Meta API: strip tabs, newlines, and excessive whitespace that cause #132018
+    const sanitizedComponents = components.map(c => {
+      if (c.parameters && Array.isArray(c.parameters)) {
+        return {
+          ...c,
+          parameters: c.parameters.map(p => {
+            if (p.type === 'text' && typeof p.text === 'string') {
+              return {
+                ...p,
+                text: p.text.replace(/[\t\r\n]+/g, ' ').replace(/\s{2,}/g, ' ').trim()
+              };
+            }
+            return p;
+          })
+        };
+      }
+      return c;
+    });
+    payload.template.components = sanitizedComponents;
   }
 
   try {
