@@ -159,6 +159,22 @@ const sendTextMessage = async (phone, textMessage) => {
     });
 
     const messageId = response.data?.messages?.[0]?.id;
+
+    // Auto-store in WhatsappMessage DB for CRM Live Chat Inbox
+    try {
+      const prisma = require('../config/prisma');
+      await prisma.whatsappMessage.create({
+        data: {
+          phone: cleanPhone,
+          direction: 'OUTBOUND',
+          message: textMessage.trim(),
+          status: 'SENT'
+        }
+      });
+    } catch (dbErr) {
+      logger.error('[WhatsApp Service] Failed to store outbound text message in DB:', dbErr.message);
+    }
+
     return { success: true, messageId };
   } catch (error) {
     const errorMsg = error.response?.data?.error?.message || error.message;
