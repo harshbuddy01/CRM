@@ -232,26 +232,35 @@ const sendPretourReminder = async (req, res, next) => {
     const messageText = `Hi ${guestName}, greetings from Imagica Holidays! 🌟 Are you excited for your upcoming tour to ${destination}? We are finalizing your tour arrangements to ensure a seamless experience. We look forward to hosting you on ${startDateStr}!${balanceMsg}\n\n— Imagica Holidays Team`;
     const directWaUrl = `https://wa.me/${phone}?text=${encodeURIComponent(messageText)}`;
 
-    // 1. Queue Cloud API template if available (WhatsApp)
+    // 1. WhatsApp Dispatch: Prioritize direct text message for exact, un-templated copy
     let whatsappSent = false;
     let whatsappError = null;
     try {
-      const queueService = require('../services/queue.service');
-      await queueService.enqueueWhatsappJob(
-        tour.id,
-        phone,
-        'travel_inquiry_update',
-        [
-          {
-            type: 'body',
-            parameters: [
-              { type: 'text', text: guestName },
-              { type: 'text', text: tour.tourCode }
-            ]
-          }
-        ]
-      ).catch(() => {});
-      whatsappSent = true;
+      const whatsappService = require('../services/whatsapp.service');
+      const waRes = await whatsappService.sendTextMessage(phone, messageText);
+      if (waRes?.success) {
+        whatsappSent = true;
+      } else {
+        // Fallback to queue if direct text fails (e.g. outside 24h window)
+        const queueService = require('../services/queue.service');
+        await queueService.enqueueWhatsappJob(
+          tour.id,
+          phone,
+          'tour_pretrip_reminder',
+          [
+            {
+              type: 'body',
+              parameters: [
+                { type: 'text', text: guestName },
+                { type: 'text', text: destination },
+                { type: 'text', text: startDateStr },
+                { type: 'text', text: `₹${balanceDue.toLocaleString('en-IN')}` }
+              ]
+            }
+          ]
+        ).catch(() => {});
+        whatsappSent = true;
+      }
     } catch (e) {
       whatsappError = e.message;
     }
@@ -371,26 +380,36 @@ const sendDailyDispatch = async (req, res, next) => {
     const messageText = `Good morning ${guestName}! 🌟 Welcome to Day ${dayNum} of your holiday with Imagica Holidays!\n\n📍 Today's Plan: ${dayTitle}${driverInfo}${hotelInfo}\n\nHave a safe and enjoyable journey! For any assistance, we are just a call away.\n\n— Imagica Holidays Concierge`;
     const directWaUrl = `https://wa.me/${phone}?text=${encodeURIComponent(messageText)}`;
 
-    // 1. WhatsApp Cloud API Dispatch
+    // 1. WhatsApp Dispatch: Prioritize direct text message for exact day plan, hotel, and driver
     let whatsappSent = false;
     let whatsappError = null;
     try {
-      const queueService = require('../services/queue.service');
-      await queueService.enqueueWhatsappJob(
-        tour.id,
-        phone,
-        'travel_inquiry_update',
-        [
-          {
-            type: 'body',
-            parameters: [
-              { type: 'text', text: guestName },
-              { type: 'text', text: `Day ${dayNum}: ${dayTitle}` }
-            ]
-          }
-        ]
-      ).catch(() => {});
-      whatsappSent = true;
+      const whatsappService = require('../services/whatsapp.service');
+      const waRes = await whatsappService.sendTextMessage(phone, messageText);
+      if (waRes?.success) {
+        whatsappSent = true;
+      } else {
+        // Fallback to queue if direct text fails (e.g. outside 24h window)
+        const queueService = require('../services/queue.service');
+        await queueService.enqueueWhatsappJob(
+          tour.id,
+          phone,
+          'tour_daily_logistics',
+          [
+            {
+              type: 'body',
+              parameters: [
+                { type: 'text', text: guestName },
+                { type: 'text', text: String(dayNum) },
+                { type: 'text', text: dayTitle },
+                { type: 'text', text: hotelName || 'As per itinerary' },
+                { type: 'text', text: dayDriver?.name ? `${dayDriver.name} (${dayDriver.phone || ''})` : 'Self / Arranged' }
+              ]
+            }
+          ]
+        ).catch(() => {});
+        whatsappSent = true;
+      }
     } catch (e) {
       whatsappError = e.message;
     }

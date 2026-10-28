@@ -103,20 +103,32 @@ const startCronJobs = () => {
           const balanceDue = Math.max(0, totalCost - totalPaid);
           const startDateStr = tour.startDate ? new Date(tour.startDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'soon';
 
+          let balanceMsg = '';
+          if (balanceDue > 0) {
+            balanceMsg = `\n\n💳 Friendly Reminder: Your remaining package balance is ₹${balanceDue.toLocaleString('en-IN')}, scheduled prior to departure.`;
+          }
+          const messageText = `Hi ${guestName}, greetings from Imagica Holidays! 🌟 Are you excited for your upcoming tour to ${destination}? We are finalizing your tour arrangements to ensure a seamless experience. We look forward to hosting you on ${startDateStr}!${balanceMsg}\n\n— Imagica Holidays Team`;
+
           if (guestPhone) {
             try {
-              const queueService = require('./services/queue.service');
-              await queueService.enqueueWhatsappJob(
-                tour.id,
-                guestPhone,
-                'travel_inquiry_update',
-                [
-                  { type: 'body', parameters: [
-                    { type: 'text', text: guestName },
-                    { type: 'text', text: tour.tourCode }
-                  ]}
-                ]
-              ).catch(() => {});
+              const whatsappService = require('./services/whatsapp.service');
+              const waRes = await whatsappService.sendTextMessage(guestPhone, messageText);
+              if (!waRes?.success) {
+                const queueService = require('./services/queue.service');
+                await queueService.enqueueWhatsappJob(
+                  tour.id,
+                  guestPhone,
+                  'tour_pretrip_reminder',
+                  [
+                    { type: 'body', parameters: [
+                      { type: 'text', text: guestName },
+                      { type: 'text', text: destination },
+                      { type: 'text', text: startDateStr },
+                      { type: 'text', text: `₹${balanceDue.toLocaleString('en-IN')}` }
+                    ]}
+                  ]
+                ).catch(() => {});
+              }
             } catch (e) {
               console.error(`[CRON Error] Day -2 client WhatsApp dispatch error for ${tour.tourCode}:`, e);
             }
@@ -362,18 +374,25 @@ const startCronJobs = () => {
 
         try {
           if (guestPhone) {
-            const queueService = require('./services/queue.service');
-            await queueService.enqueueWhatsappJob(
-              tour.id,
-              guestPhone,
-              'travel_inquiry_update',
-              [
-                { type: 'body', parameters: [
-                  { type: 'text', text: guestName },
-                  { type: 'text', text: `Day ${dayNum}: ${dayTitle}` }
-                ]}
-              ]
-            ).catch(() => {});
+            const whatsappService = require('./services/whatsapp.service');
+            const waRes = await whatsappService.sendTextMessage(guestPhone, messageText);
+            if (!waRes?.success) {
+              const queueService = require('./services/queue.service');
+              await queueService.enqueueWhatsappJob(
+                tour.id,
+                guestPhone,
+                'tour_daily_logistics',
+                [
+                  { type: 'body', parameters: [
+                    { type: 'text', text: guestName },
+                    { type: 'text', text: String(dayNum) },
+                    { type: 'text', text: dayTitle },
+                    { type: 'text', text: hotelName || 'As per itinerary' },
+                    { type: 'text', text: dayDriver?.name ? `${dayDriver.name} (${dayDriver.phone || ''})` : 'Self / Arranged' }
+                  ]}
+                ]
+              ).catch(() => {});
+            }
           }
 
           if (guestEmail) {
