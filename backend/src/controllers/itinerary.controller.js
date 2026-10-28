@@ -752,7 +752,7 @@ const generateItineraryHtml = (itinerary, settings = {}) => {
             </div>
 
             <!-- Hero Image with Overlay -->
-            <div style="height: 125mm; width: 100%; margin-top: 35mm; position: relative; background-image: url('${pdfCoverPhoto || coverImageUrl}'); background-size: cover; background-position: center;">
+            <div style="height: 125mm; width: 100%; margin-top: 35mm; position: relative; background-image: url('${coverImageUrl}'); background-size: cover; background-position: center;">
               <div style="position: absolute; inset: 0; background: linear-gradient(to bottom, rgba(15, 61, 47, 0.12), rgba(15, 61, 47, 0.45));"></div>
               <div style="position: absolute; bottom: 18mm; left: 15mm; color: white; text-align: left; max-width: 75%;">
                 <h2 style="font-family: 'Playfair Display', serif; font-size: 34px; font-weight: 800; color: white; margin: 0; letter-spacing: 1.5px; text-transform: uppercase; line-height: 1.1; text-shadow: 0 2px 8px rgba(0,0,0,0.5);">

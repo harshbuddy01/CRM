@@ -16,8 +16,16 @@ import {
   Share2, Download, Copy, Check, GripVertical, Eye,
   Utensils, Car, Plane, Sun, LogIn, LogOut as LogOutIcon,
   Mountain, Compass, IndianRupee, CalendarRange, Sparkles,
-  FileText, BookOpen, Pencil, Shield, CreditCard, XCircle, CheckCircle, AlertTriangle, RefreshCw
+  FileText, BookOpen, Pencil, Shield, CreditCard, XCircle, CheckCircle, AlertTriangle, RefreshCw,
+  Link2, RotateCcw
 } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+} from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
@@ -539,14 +547,64 @@ export default function ItineraryBuilderPage() {
                   <TabsTrigger value="final" className="rounded-lg font-bold text-[10px] uppercase tracking-wider text-white/70 data-[state=active]:bg-white data-[state=active]:text-primary px-3 transition-all">Preview & Share</TabsTrigger>
                 </TabsList>
 
-                <Button 
-                  size="sm" 
-                  variant="secondary" 
-                  className="rounded-xl font-bold text-xs h-9 bg-white/20 text-white hover:bg-white/30 border-white/20" 
-                  onClick={() => openMediaLibrary('cover')}
-                >
-                  <Camera className="w-3.5 h-3.5 mr-1" /> Banner Image
-                </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button 
+                      size="sm" 
+                      variant="secondary" 
+                      className="rounded-xl font-bold text-xs h-9 bg-white/20 text-white hover:bg-white/30 border-white/20 shadow-sm transition-all"
+                    >
+                      <Camera className="w-3.5 h-3.5 mr-1.5" /> 
+                      {itinerary.coverPhotoUrl ? 'Cover Photo' : 'Banner Image'}
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-60 rounded-2xl p-1.5 shadow-2xl border-slate-200">
+                    <DropdownMenuItem 
+                      className="rounded-xl font-semibold text-xs py-2 cursor-pointer flex items-center gap-2.5"
+                      onClick={() => coverRef.current?.click()}
+                    >
+                      <Upload className="w-4 h-4 text-blue-500" />
+                      <span>Upload from Device</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem 
+                      className="rounded-xl font-semibold text-xs py-2 cursor-pointer flex items-center gap-2.5"
+                      onClick={() => openMediaLibrary('cover')}
+                    >
+                      <ImageIcon className="w-4 h-4 text-emerald-500" />
+                      <span>Choose from Library</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem 
+                      className="rounded-xl font-semibold text-xs py-2 cursor-pointer flex items-center gap-2.5"
+                      onClick={() => {
+                        const url = window.prompt('Paste image URL for cover photo:', itinerary.coverPhotoUrl || '');
+                        if (url !== null && url.trim()) {
+                          updateMut.mutate({ coverPhotoUrl: url.trim() }, {
+                            onSuccess: () => toast.success('Cover photo updated!')
+                          });
+                        }
+                      }}
+                    >
+                      <Link2 className="w-4 h-4 text-indigo-500" />
+                      <span>Paste Image URL</span>
+                    </DropdownMenuItem>
+                    {itinerary.coverPhotoUrl && (
+                      <>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem 
+                          className="rounded-xl font-semibold text-xs py-2 text-rose-600 focus:text-rose-700 focus:bg-rose-50 cursor-pointer flex items-center gap-2.5"
+                          onClick={() => {
+                            updateMut.mutate({ coverPhotoUrl: null }, {
+                              onSuccess: () => toast.success('Reset to company default cover photo')
+                            });
+                          }}
+                        >
+                          <RotateCcw className="w-4 h-4 text-rose-500" />
+                          <span>Reset to Company Default</span>
+                        </DropdownMenuItem>
+                      </>
+                    )}
+                  </DropdownMenuContent>
+                </DropdownMenu>
                 <Button size="sm" variant="secondary" className="rounded-xl font-bold text-xs h-9" onClick={handleShare} disabled={isSharing}>
                   {isSharing ? <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" /> : <Share2 className="w-3.5 h-3.5 mr-1" />} {isSharing ? 'Sharing...' : 'Share'}
                 </Button>

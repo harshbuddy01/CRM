@@ -574,11 +574,11 @@ export default function SettingsPage() {
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <ImageUploadField 
-                  label="Cover Page Hero Photo" 
+                  label="Default Cover Photo (Fallback)" 
                   placeholder="https://example.com/cover-train.jpg" 
                   value={formData.pdfCoverPhoto || ''} 
                   onChange={(val) => setFormData({ ...formData, pdfCoverPhoto: val })}
-                  description="This is the main cover image. Defaults to the Darjeeling toy train photo."
+                  description="Company-wide default cover image for itinerary PDFs. Individual itineraries can override this by setting their own banner photo directly in the Itinerary Editor."
                 />
                 <ImageUploadField 
                   label="Page Top Banner" 
