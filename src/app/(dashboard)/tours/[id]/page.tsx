@@ -33,7 +33,10 @@ import {
   Copy,
   ExternalLink,
   MessageCircle,
-  Send
+  Send,
+  Bell,
+  Play,
+  Sparkles
 } from 'lucide-react';
 import Link from 'next/link';
 import { format } from 'date-fns';
@@ -57,6 +60,9 @@ export default function TourDetailPage() {
   const [refundEstimate, setRefundEstimate] = useState<any>(null);
   const [isLoadingEstimate, setIsLoadingEstimate] = useState(false);
   const [testPhoneNumber, setTestPhoneNumber] = useState('');
+  const [simulationRunning, setSimulationRunning] = useState(false);
+  const [simulationStep, setSimulationStep] = useState<string>('');
+  const [selectedDispatchDay, setSelectedDispatchDay] = useState(1);
 
   // Editing Ops Notes
   const [isEditingOps, setIsEditingOps] = useState(false);
@@ -154,6 +160,109 @@ export default function TourDetailPage() {
     const url = `https://imagicaholidays.com/review/${code}`;
     navigator.clipboard.writeText(url);
     toast.success('Review link copied to clipboard!');
+  };
+
+  const setPhaseMutation = useMutation({
+    mutationFn: async (phase: 'upcoming' | 'running' | 'completed') => {
+      const res = await api.post(`/tours/${tourId}/set-phase`, { phase });
+      return res.data;
+    },
+    onSuccess: (data: any) => {
+      toast.success(data?.message || 'Tour phase updated!');
+      queryClient.invalidateQueries({ queryKey: ['tour', tourId] });
+      queryClient.invalidateQueries({ queryKey: ['tours'] });
+    },
+    onError: (err: any) => {
+      toast.error(err.response?.data?.message || 'Failed to update phase');
+    }
+  });
+
+  const sendPretourReminderMutation = useMutation({
+    mutationFn: async (customPhone?: string) => {
+      const res = await api.post(`/tours/${tourId}/send-pretour-reminder`, {
+        testPhone: customPhone || testPhoneNumber || undefined
+      });
+      return res.data;
+    },
+    onSuccess: (data: any) => {
+      toast.success('Pre-tour reminder sent!');
+      if (data?.data?.directWaUrl) {
+        window.open(data.data.directWaUrl, '_blank');
+      }
+      queryClient.invalidateQueries({ queryKey: ['tour', tourId] });
+    },
+    onError: (err: any) => {
+      toast.error(err.response?.data?.message || 'Failed to send pre-tour reminder');
+    }
+  });
+
+  const sendDailyDispatchMutation = useMutation({
+    mutationFn: async ({ dayNumber, customPhone }: { dayNumber?: number; customPhone?: string }) => {
+      const res = await api.post(`/tours/${tourId}/send-daily-dispatch`, {
+        dayNumber: dayNumber || selectedDispatchDay,
+        testPhone: customPhone || testPhoneNumber || undefined
+      });
+      return res.data;
+    },
+    onSuccess: (data: any) => {
+      toast.success(data?.message || 'Daily dispatch sent!');
+      if (data?.data?.directWaUrl) {
+        window.open(data.data.directWaUrl, '_blank');
+      }
+      queryClient.invalidateQueries({ queryKey: ['tour', tourId] });
+    },
+    onError: (err: any) => {
+      toast.error(err.response?.data?.message || 'Failed to send daily dispatch');
+    }
+  });
+
+  const runSimulation = async () => {
+    if (simulationRunning) return;
+    setSimulationRunning(true);
+    toast.info('🚀 Starting 2-Minute Full Lifecycle Simulation...');
+
+    try {
+      // Step 1: Upcoming (0s)
+      setSimulationStep('Step 1/3: Phase Upcoming — Sending Day -2 Reminder & Balance Notice...');
+      await api.post(`/tours/${tourId}/set-phase`, { phase: 'upcoming' });
+      queryClient.invalidateQueries({ queryKey: ['tour', tourId] });
+      const pretour = await api.post(`/tours/${tourId}/send-pretour-reminder`, { testPhone: testPhoneNumber || undefined });
+      if (pretour.data?.data?.directWaUrl) {
+        window.open(pretour.data.data.directWaUrl, '_blank');
+      }
+      toast.success('Step 1: Pre-Tour Reminder Dispatched via WhatsApp!');
+
+      // Delay 30s
+      await new Promise(r => setTimeout(r, 30000));
+
+      // Step 2: Running (30s)
+      setSimulationStep('Step 2/3: Phase Running — Trip Starts! Sending Day 1 Logistics...');
+      await api.post(`/tours/${tourId}/set-phase`, { phase: 'running' });
+      queryClient.invalidateQueries({ queryKey: ['tour', tourId] });
+      const day1 = await api.post(`/tours/${tourId}/send-daily-dispatch`, { dayNumber: 1, testPhone: testPhoneNumber || undefined });
+      if (day1.data?.data?.directWaUrl) {
+        window.open(day1.data.data.directWaUrl, '_blank');
+      }
+      toast.success('Step 2: Day 1 Driver & Hotel Dispatched via WhatsApp!');
+
+      // Delay 30s
+      await new Promise(r => setTimeout(r, 30000));
+
+      // Step 3: Completed (60s)
+      setSimulationStep('Step 3/3: Phase Completed — Tour Concludes! Locking Operations & Sending Review Invite...');
+      await api.post(`/tours/${tourId}/set-phase`, { phase: 'completed' });
+      queryClient.invalidateQueries({ queryKey: ['tour', tourId] });
+      const review = await api.post(`/tours/${tourId}/send-review-invite`, { testPhone: testPhoneNumber || undefined });
+      if (review.data?.data?.directWaUrl) {
+        window.open(review.data.data.directWaUrl, '_blank');
+      }
+      toast.success('🎉 Step 3: Tour Concluded and Review Link Dispatched via WhatsApp!');
+    } catch (e: any) {
+      toast.error('Simulation error: ' + (e.response?.data?.message || e.message || 'Failed'));
+    } finally {
+      setSimulationRunning(false);
+      setSimulationStep('');
+    }
   };
 
   if (isLoading) {
@@ -392,6 +501,212 @@ export default function TourDetailPage() {
           </div>
         </div>
       )}
+
+      {/* ── Comprehensive Tour Lifecycle & Communication Dispatcher ── */}
+      <Card className="rounded-2xl border-slate-200 shadow-sm bg-white overflow-hidden">
+        <div className="p-4 sm:p-5 border-b border-slate-100 bg-slate-50/70 flex flex-col md:flex-row md:items-center justify-between gap-3">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-black uppercase tracking-wider text-slate-500 bg-slate-200/80 px-2 py-0.5 rounded-full">
+                Interactive Lifecycle Suite
+              </span>
+              <span className="text-xs text-slate-400">•</span>
+              <span className="text-xs font-bold text-slate-600">Test every phase on +{tour.query?.phone?.replace(/\D/g, '') || '918235337180'}</span>
+            </div>
+            <h2 className="text-base font-black text-slate-900 mt-1">Tour Phase Progression & Client WhatsApp Dispatch</h2>
+          </div>
+
+          {/* Quick Simulation Runner */}
+          <div className="flex items-center gap-2">
+            <Button
+              onClick={runSimulation}
+              disabled={simulationRunning}
+              className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs h-9 px-3.5 rounded-xl shadow-sm flex items-center gap-1.5"
+            >
+              {simulationRunning ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" />
+                  <span>Simulating (Check WhatsApp)...</span>
+                </>
+              ) : (
+                <>
+                  <Play className="w-3.5 h-3.5 fill-current mr-1" />
+                  <span>Run 2-Min Full Lifecycle Simulation</span>
+                </>
+              )}
+            </Button>
+          </div>
+        </div>
+
+        {simulationStep && (
+          <div className="px-5 py-2.5 bg-indigo-50 border-b border-indigo-100 flex items-center gap-2 text-indigo-900 text-xs font-bold animate-pulse">
+            <Sparkles className="w-4 h-4 text-indigo-600 shrink-0" />
+            <span>{simulationStep}</span>
+          </div>
+        )}
+
+        <div className="p-4 sm:p-5 space-y-4">
+          {/* Phase Switcher Buttons */}
+          <div>
+            <label className="text-[10px] font-black uppercase tracking-wider text-slate-400 block mb-2">
+              Current Tour Phase (Click Any Phase to Transition)
+            </label>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+              {/* Phase 1: Upcoming */}
+              <button
+                type="button"
+                onClick={() => setPhaseMutation.mutate('upcoming')}
+                disabled={setPhaseMutation.isPending || simulationRunning}
+                className={`flex items-start gap-3 p-3 rounded-xl border text-left transition-all ${
+                  isUpcoming 
+                    ? 'border-amber-400 bg-amber-50/70 shadow-sm ring-1 ring-amber-300' 
+                    : 'border-slate-200 hover:bg-slate-50 text-slate-600'
+                }`}
+              >
+                <div className={`w-7 h-7 rounded-lg flex items-center justify-center font-bold text-xs shrink-0 ${
+                  isUpcoming ? 'bg-amber-500 text-white' : 'bg-slate-100 text-slate-500'
+                }`}>
+                  1
+                </div>
+                <div>
+                  <p className="text-xs font-black text-slate-900 flex items-center gap-1.5">
+                    Upcoming (Pre-Trip)
+                    {isUpcoming && <span className="w-2 h-2 rounded-full bg-amber-500 inline-block animate-ping" />}
+                  </p>
+                  <p className="text-[11px] text-slate-500 mt-0.5">Pre-trip countdown, Day -2 reminder & balance payment notices</p>
+                </div>
+              </button>
+
+              {/* Phase 2: Running */}
+              <button
+                type="button"
+                onClick={() => setPhaseMutation.mutate('running')}
+                disabled={setPhaseMutation.isPending || simulationRunning}
+                className={`flex items-start gap-3 p-3 rounded-xl border text-left transition-all ${
+                  isRunning 
+                    ? 'border-emerald-500 bg-emerald-50/70 shadow-sm ring-1 ring-emerald-400' 
+                    : 'border-slate-200 hover:bg-slate-50 text-slate-600'
+                }`}
+              >
+                <div className={`w-7 h-7 rounded-lg flex items-center justify-center font-bold text-xs shrink-0 ${
+                  isRunning ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-500'
+                }`}>
+                  2
+                </div>
+                <div>
+                  <p className="text-xs font-black text-slate-900 flex items-center gap-1.5">
+                    Running (In Progress)
+                    {isRunning && <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block animate-ping" />}
+                  </p>
+                  <p className="text-[11px] text-slate-500 mt-0.5">Active journey, daily driver/hotel dispatch & timeline progression</p>
+                </div>
+              </button>
+
+              {/* Phase 3: Completed */}
+              <button
+                type="button"
+                onClick={() => setPhaseMutation.mutate('completed')}
+                disabled={setPhaseMutation.isPending || simulationRunning}
+                className={`flex items-start gap-3 p-3 rounded-xl border text-left transition-all ${
+                  isCompleted 
+                    ? 'border-blue-500 bg-blue-50/70 shadow-sm ring-1 ring-blue-400' 
+                    : 'border-slate-200 hover:bg-slate-50 text-slate-600'
+                }`}
+              >
+                <div className={`w-7 h-7 rounded-lg flex items-center justify-center font-bold text-xs shrink-0 ${
+                  isCompleted ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-500'
+                }`}>
+                  3
+                </div>
+                <div>
+                  <p className="text-xs font-black text-slate-900 flex items-center gap-1.5">
+                    Completed (Concluded)
+                    {isCompleted && <span className="w-2 h-2 rounded-full bg-blue-500 inline-block" />}
+                  </p>
+                  <p className="text-[11px] text-slate-500 mt-0.5">Operations locked, settlement balance open & automated review invites</p>
+                </div>
+              </button>
+            </div>
+          </div>
+
+          {/* Interactive Trigger Buttons */}
+          <div className="pt-2 border-t border-slate-100 grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {/* Action 1: Pre-Trip Reminder */}
+            <div className="p-3 bg-amber-50/50 border border-amber-200/80 rounded-xl space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-black uppercase tracking-wider text-amber-800 flex items-center gap-1">
+                  <Bell className="w-3 h-3 text-amber-600" /> Day -2 Reminder
+                </span>
+                <span className="text-[10px] text-amber-700/80 font-bold">₹{Math.max(0, balance).toLocaleString('en-IN')} Due</span>
+              </div>
+              <p className="text-[11px] text-slate-600 line-clamp-2">
+                "Are you excited traveling with Imagica Holidays? Pre-departure balance reminder..."
+              </p>
+              <Button
+                size="sm"
+                onClick={() => sendPretourReminderMutation.mutate(undefined)}
+                disabled={sendPretourReminderMutation.isPending || simulationRunning}
+                className="w-full bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs h-8 rounded-lg shadow-none"
+              >
+                {sendPretourReminderMutation.isPending ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <MessageCircle className="w-3 h-3 mr-1" />}
+                Send Pre-Trip WhatsApp
+              </Button>
+            </div>
+
+            {/* Action 2: Daily Logistics Dispatch */}
+            <div className="p-3 bg-emerald-50/50 border border-emerald-200/80 rounded-xl space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-black uppercase tracking-wider text-emerald-800 flex items-center gap-1">
+                  <Car className="w-3 h-3 text-emerald-600" /> Daily Dispatch
+                </span>
+                <select
+                  value={selectedDispatchDay}
+                  onChange={(e) => setSelectedDispatchDay(Number(e.target.value))}
+                  className="text-[10px] font-bold bg-white border border-emerald-300 rounded px-1.5 py-0.5 text-emerald-900"
+                >
+                  {[1, 2, 3, 4, 5, 6, 7].map(d => (
+                    <option key={d} value={d}>Day {d}</option>
+                  ))}
+                </select>
+              </div>
+              <p className="text-[11px] text-slate-600 line-clamp-2">
+                "Good morning! Assigned Driver: Samar A, Tonight's Hotel: Hotel Hangsha Regency..."
+              </p>
+              <Button
+                size="sm"
+                onClick={() => sendDailyDispatchMutation.mutate({ dayNumber: selectedDispatchDay })}
+                disabled={sendDailyDispatchMutation.isPending || simulationRunning}
+                className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs h-8 rounded-lg shadow-none"
+              >
+                {sendDailyDispatchMutation.isPending ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <MessageCircle className="w-3 h-3 mr-1" />}
+                Send Day {selectedDispatchDay} WhatsApp
+              </Button>
+            </div>
+
+            {/* Action 3: Review Link Invitation */}
+            <div className="p-3 bg-blue-50/50 border border-blue-200/80 rounded-xl space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-black uppercase tracking-wider text-blue-800 flex items-center gap-1">
+                  <Star className="w-3 h-3 fill-amber-400 text-amber-500" /> Review Invite
+                </span>
+                <span className="text-[10px] text-blue-700/80 font-bold">{tour.reviewStatus || 'PENDING'}</span>
+              </div>
+              <p className="text-[11px] text-slate-600 line-clamp-2">
+                "Thank you for traveling with us! Share review: imagicaholidays.com/review/{tour.tourCode}..."
+              </p>
+              <Button
+                size="sm"
+                onClick={() => sendReviewInviteMutation.mutate(undefined)}
+                disabled={sendReviewInviteMutation.isPending || simulationRunning}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs h-8 rounded-lg shadow-none"
+              >
+                {sendReviewInviteMutation.isPending ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <MessageCircle className="w-3 h-3 mr-1" />}
+                Send Review WhatsApp
+              </Button>
+            </div>
+          </div>
+        </div>
+      </Card>
 
       {/* Main Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

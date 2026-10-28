@@ -1146,7 +1146,8 @@ const getReviewTourInfo = async (req, res, next) => {
         endDate: tour.endDate,
         status: tour.status,
         reviewStatus: tour.reviewStatus,
-        reviewRating: tour.reviewRating
+        reviewRating: tour.reviewRating,
+        googleReviewUrl: 'https://maps.app.goo.gl/nYMH3mYr92GBcfCTA'
       }
     });
   } catch (error) {

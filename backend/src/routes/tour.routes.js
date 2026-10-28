@@ -16,5 +16,8 @@ router.get('/:id/refund-estimate', can('cancellation.create'), tourController.re
 router.patch('/:id/ops', can('tour.view_assigned'), tourController.updateOps);
 router.post('/:id/cancel', can('cancellation.create'), tourController.cancel);
 router.post('/:id/send-review-invite', can('tour.view_assigned'), tourController.sendReviewInvite);
+router.post('/:id/send-pretour-reminder', can('tour.view_assigned'), tourController.sendPretourReminder);
+router.post('/:id/send-daily-dispatch', can('tour.view_assigned'), tourController.sendDailyDispatch);
+router.post('/:id/set-phase', can('tour.view_assigned'), tourController.setTourPhase);
 
 module.exports = router;

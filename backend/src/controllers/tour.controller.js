@@ -159,6 +159,217 @@ const sendReviewInvite = async (req, res, next) => {
   }
 };
 
+const sendPretourReminder = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { testPhone } = req.body;
+    const prisma = require('../config/prisma');
+
+    const tour = await prisma.tour.findUnique({
+      where: { id },
+      include: {
+        query: true,
+        proposal: true,
+        payments: { where: { deletedAt: null } }
+      }
+    });
+    if (!tour) throw new BusinessError('Tour not found');
+
+    const rawPhone = testPhone || tour.query?.phone;
+    if (!rawPhone) throw new BusinessError('No recipient phone number available');
+
+    let phone = rawPhone.replace(/\D/g, '');
+    if (phone.length === 10) phone = '91' + phone;
+
+    const guestName = tour.query?.name || 'Valued Traveler';
+    const destination = tour.query?.destination || 'your destination';
+    const totalCost = Number(tour.proposal?.sellingPrice || 0);
+    const totalPaid = tour.payments.reduce((s, p) => s + Number(p.amount), 0);
+    const balanceDue = Math.max(0, totalCost - totalPaid);
+
+    const startDateStr = tour.startDate ? new Date(tour.startDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'soon';
+
+    let balanceMsg = '';
+    if (balanceDue > 0) {
+      balanceMsg = `\n\n💳 Friendly Reminder: Your remaining package balance is ₹${balanceDue.toLocaleString('en-IN')}, scheduled prior to departure.`;
+    }
+
+    const messageText = `Hi ${guestName}, greetings from Imagica Holidays! 🌟 Are you excited for your upcoming tour to ${destination}? We are finalizing your tour arrangements to ensure a seamless experience. We look forward to hosting you on ${startDateStr}!${balanceMsg}\n\n— Imagica Holidays Team`;
+    const directWaUrl = `https://wa.me/${phone}?text=${encodeURIComponent(messageText)}`;
+
+    // Queue Cloud API template if available
+    let whatsappSent = false;
+    try {
+      const queueService = require('../services/queue.service');
+      await queueService.enqueueWhatsappJob(
+        tour.id,
+        phone,
+        'travel_inquiry_update',
+        [
+          {
+            type: 'body',
+            parameters: [
+              { type: 'text', text: guestName },
+              { type: 'text', text: tour.tourCode }
+            ]
+          }
+        ]
+      ).catch(() => {});
+      whatsappSent = true;
+    } catch (e) {}
+
+    // Log Query Activity / Note
+    await prisma.queryNote.create({
+      data: {
+        queryId: tour.queryId,
+        userId: req.user.id,
+        note: `📱 Pre-Tour (Day -2) reminder message dispatched to +${phone}. Balance due: ₹${balanceDue}.`,
+        noteType: 'note'
+      }
+    }).catch(() => {});
+
+    res.json({
+      success: true,
+      message: `Pre-tour reminder dispatched to +${phone}`,
+      data: {
+        phone,
+        messageText,
+        directWaUrl,
+        balanceDue,
+        whatsappSent
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const sendDailyDispatch = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { dayNumber = 1, testPhone } = req.body;
+    const prisma = require('../config/prisma');
+
+    const tour = await prisma.tour.findUnique({
+      where: { id },
+      include: {
+        query: true,
+        proposal: {
+          include: {
+            itinerary: {
+              include: {
+                days: {
+                  include: { events: true },
+                  orderBy: { dayNumber: 'asc' }
+                }
+              }
+            }
+          }
+        },
+        tourDrivers: { include: { driver: true } },
+        bookingServices: true
+      }
+    });
+    if (!tour) throw new BusinessError('Tour not found');
+
+    const rawPhone = testPhone || tour.query?.phone;
+    if (!rawPhone) throw new BusinessError('No recipient phone number available');
+
+    let phone = rawPhone.replace(/\D/g, '');
+    if (phone.length === 10) phone = '91' + phone;
+
+    const guestName = tour.query?.name || 'Valued Traveler';
+    const dayNum = parseInt(dayNumber, 10) || 1;
+
+    // Find driver assigned to this day
+    const dayDriver = tour.tourDrivers.find(d => d.dayNumber === dayNum)?.driver;
+    const driverInfo = dayDriver 
+      ? `🚗 Assigned Chauffeur: ${dayDriver.name} (${dayDriver.phone}, Vehicle: ${dayDriver.vehicleName || 'Car'} ${dayDriver.vehicleNo || ''})`
+      : `🚗 Chauffeur: Details will be shared shortly by operations.`;
+
+    // Find hotel for tonight
+    const dayHotel = tour.bookingServices.find(b => b.dayNumber === dayNum && b.serviceType === 'hotel');
+    const hotelInfo = dayHotel 
+      ? `🏨 Tonight's Hotel: ${dayHotel.serviceName}`
+      : `🏨 Tonight's Hotel: Included as per your confirmed itinerary.`;
+
+    // Itinerary title
+    const itinDay = tour.proposal?.itinerary?.days?.find(d => d.dayNumber === dayNum);
+    const dayTitle = itinDay?.title || `Day ${dayNum} Sightseeing`;
+
+    const messageText = `Good morning ${guestName}! 🌟 Welcome to Day ${dayNum} of your holiday with Imagica Holidays!\n\n📍 Today's Plan: ${dayTitle}\n${driverInfo}\n${hotelInfo}\n\nHave a safe and enjoyable journey! For any assistance, we are just a call away.\n\n— Imagica Holidays Concierge`;
+    const directWaUrl = `https://wa.me/${phone}?text=${encodeURIComponent(messageText)}`;
+
+    // Log Query Note
+    await prisma.queryNote.create({
+      data: {
+        queryId: tour.queryId,
+        userId: req.user.id,
+        note: `🚗 Day ${dayNum} Logistics dispatch sent to +${phone}. Driver: ${dayDriver?.name || 'TBD'}, Hotel: ${dayHotel?.serviceName || 'TBD'}.`,
+        noteType: 'note'
+      }
+    }).catch(() => {});
+
+    res.json({
+      success: true,
+      message: `Day ${dayNum} logistics dispatch sent to +${phone}`,
+      data: {
+        phone,
+        dayNumber: dayNum,
+        messageText,
+        directWaUrl
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const setTourPhase = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { phase } = req.body; // 'upcoming', 'running', 'completed'
+    const prisma = require('../config/prisma');
+
+    if (!['upcoming', 'running', 'completed'].includes(phase)) {
+      throw new BusinessError('Invalid phase. Must be upcoming, running, or completed');
+    }
+
+    const tour = await prisma.tour.findUnique({
+      where: { id },
+      include: { query: true }
+    });
+    if (!tour) throw new BusinessError('Tour not found');
+
+    const updateData = { status: phase };
+    if (phase === 'completed') {
+      updateData.reviewStatus = tour.reviewStatus || 'PENDING';
+    }
+
+    const updatedTour = await prisma.tour.update({
+      where: { id },
+      data: updateData
+    });
+
+    // Sync query status
+    if (tour.queryId) {
+      const queryStatus = phase === 'upcoming' ? 'confirmed' : (phase === 'running' ? 'in_progress' : 'completed');
+      await prisma.query.update({
+        where: { id: tour.queryId },
+        data: { status: queryStatus }
+      });
+    }
+
+    res.json({
+      success: true,
+      message: `Tour phase transitioned to: ${phase}`,
+      data: updatedTour
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   list,
   getById,
@@ -166,4 +377,7 @@ module.exports = {
   cancel,
   refundEstimate,
   sendReviewInvite,
+  sendPretourReminder,
+  sendDailyDispatch,
+  setTourPhase,
 };
