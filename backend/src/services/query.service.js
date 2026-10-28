@@ -122,9 +122,63 @@ const createQuery = async (data, creatorId = null) => {
   return query;
 };
 
+let lastTransitionCheck = 0;
+async function syncTourTransitions() {
+  const now = Date.now();
+  if (now - lastTransitionCheck < 15000) return; // Cache for 15s
+  lastTransitionCheck = now;
+  try {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // 1. Move upcoming tours whose start date has arrived to running / in_progress
+    const startingTours = await prisma.tour.findMany({
+      where: {
+        startDate: { lte: today },
+        endDate: { gte: today },
+        status: 'upcoming',
+        deletedAt: null,
+        query: { status: { notIn: ['lost', 'invalid', 'cancelled'] } }
+      },
+      include: { query: true }
+    });
+
+    for (const t of startingTours) {
+      await prisma.tour.update({ where: { id: t.id }, data: { status: 'running' } });
+      if (t.queryId && t.query?.status !== 'in_progress') {
+        await prisma.query.update({ where: { id: t.queryId }, data: { status: 'in_progress' } });
+      }
+    }
+
+    // 2. Move ended tours to completed
+    const endedTours = await prisma.tour.findMany({
+      where: {
+        endDate: { lt: today },
+        status: { in: ['upcoming', 'running', 'in_progress'] },
+        deletedAt: null,
+        query: { status: { notIn: ['lost', 'invalid', 'cancelled'] } }
+      },
+      include: { query: true }
+    });
+
+    for (const t of endedTours) {
+      await prisma.tour.update({
+        where: { id: t.id },
+        data: { status: 'completed', reviewStatus: t.reviewStatus || 'PENDING' }
+      });
+      if (t.queryId && t.query?.status !== 'completed') {
+        await prisma.query.update({ where: { id: t.queryId }, data: { status: 'completed' } });
+      }
+    }
+  } catch (err) {
+    // Non-blocking background sync
+  }
+}
+
 const listQueries = async ({ 
   page = 1, limit = 20, status, search, assignedTo, dateFrom, dateTo, leadSource, userId, canViewAll 
 }) => {
+  await syncTourTransitions();
   const where = { deletedAt: null };
 
   // RBAC scope constraint
