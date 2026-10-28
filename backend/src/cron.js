@@ -92,15 +92,18 @@ const startCronJobs = () => {
           });
         }
 
-        // Automated Pre-Tour (Day -2) WhatsApp message to client
-        if (process.env.ENABLE_AUTOMATED_CLIENT_DISPATCH === 'true') {
+        // Automated Pre-Tour (Day -2) dual dispatch (WhatsApp + Email) to client
+        if (process.env.ENABLE_AUTOMATED_CLIENT_DISPATCH !== 'false') {
           const guestPhone = tour.query?.phone;
-          if (guestPhone) {
-            const guestName = tour.query?.name || 'Valued Guest';
-            const totalCost = Number(tour.proposal?.sellingPrice || 0);
-            const totalPaid = (tour.payments || []).filter(p => p.status === 'verified').reduce((s, p) => s + Number(p.amount), 0);
-            const balanceDue = Math.max(0, totalCost - totalPaid);
+          const guestEmail = tour.query?.email;
+          const guestName = tour.query?.name || 'Valued Guest';
+          const destination = tour.query?.destination || 'your destination';
+          const totalCost = Number(tour.proposal?.sellingPrice || 0);
+          const totalPaid = (tour.payments || []).filter(p => p.status === 'verified').reduce((s, p) => s + Number(p.amount), 0);
+          const balanceDue = Math.max(0, totalCost - totalPaid);
+          const startDateStr = tour.startDate ? new Date(tour.startDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'soon';
 
+          if (guestPhone) {
             try {
               const queueService = require('./services/queue.service');
               await queueService.enqueueWhatsappJob(
@@ -114,23 +117,40 @@ const startCronJobs = () => {
                   ]}
                 ]
               ).catch(() => {});
-
-              if (tour.queryId) {
-                const adminUser = await prisma.user.findFirst({ select: { id: true } });
-                if (adminUser) {
-                  await prisma.queryNote.create({
-                    data: {
-                      queryId: tour.queryId,
-                      userId: adminUser.id,
-                      note: `📱 Automated Pre-Tour (Day -2) reminder dispatched to +${guestPhone.replace(/\D/g, '')}. Balance due: ₹${balanceDue}.`,
-                      noteType: 'note'
-                    }
-                  }).catch(() => {});
-                }
-              }
-              console.log(`[CRON] Dispatched Day -2 reminder to ${guestName} (${tour.tourCode})`);
             } catch (e) {
-              console.error(`[CRON Error] Day -2 client dispatch error for ${tour.tourCode}:`, e);
+              console.error(`[CRON Error] Day -2 client WhatsApp dispatch error for ${tour.tourCode}:`, e);
+            }
+          }
+
+          if (guestEmail) {
+            try {
+              const emailService = require('./services/email.service');
+              await emailService.sendPretourEmail({
+                to: guestEmail,
+                guestName,
+                destination,
+                startDateStr,
+                totalCost,
+                balanceDue,
+                tourCode: tour.tourCode
+              });
+              console.log(`[CRON] Dispatched Day -2 email to ${guestEmail} (${tour.tourCode})`);
+            } catch (e) {
+              console.error(`[CRON Error] Day -2 client email dispatch error for ${tour.tourCode}:`, e);
+            }
+          }
+
+          if (tour.queryId) {
+            const adminUser = await prisma.user.findFirst({ select: { id: true } });
+            if (adminUser) {
+              await prisma.queryNote.create({
+                data: {
+                  queryId: tour.queryId,
+                  userId: adminUser.id,
+                  note: `📱 Automated Pre-Tour (Day -2) reminder dispatched to ${guestPhone ? '+' + guestPhone.replace(/\D/g, '') : 'None'}${guestEmail ? ` & ${guestEmail}` : ''}. Balance due: ₹${balanceDue}.`,
+                  noteType: 'note'
+                }
+              }).catch(() => {});
             }
           }
         }
@@ -264,8 +284,8 @@ const startCronJobs = () => {
 
   // ── Daily Tour Logistics Morning Dispatch (Daily at 08:00 AM IST) ──
   cron.schedule('0 8 * * *', async () => {
-    if (process.env.ENABLE_AUTOMATED_CLIENT_DISPATCH !== 'true') {
-      console.log('[CRON] Automated client daily logistics dispatch is currently paused for safety (testing mode).');
+    if (process.env.ENABLE_AUTOMATED_CLIENT_DISPATCH === 'false') {
+      console.log('[CRON] Automated client daily logistics dispatch is paused via env.');
       return;
     }
 
@@ -307,7 +327,8 @@ const startCronJobs = () => {
 
       for (const tour of activeTours) {
         const guestPhone = tour.query?.phone;
-        if (!guestPhone) continue;
+        const guestEmail = tour.query?.email;
+        if (!guestPhone && !guestEmail) continue;
 
         // Calculate dayNumber (1-based)
         const tourStart = new Date(tour.startDate);
@@ -340,18 +361,33 @@ const startCronJobs = () => {
         const messageText = `Good morning ${guestName}! 🌟 Welcome to Day ${dayNum} of your holiday with Imagica Holidays!\n\n📍 Today's Plan: ${dayTitle}${driverInfo}${hotelInfo}\n\nHave a safe and enjoyable journey! For any assistance, we are just a call away.\n\n— Imagica Holidays Concierge`;
 
         try {
-          const queueService = require('./services/queue.service');
-          await queueService.enqueueWhatsappJob(
-            tour.id,
-            guestPhone,
-            'travel_inquiry_update',
-            [
-              { type: 'body', parameters: [
-                { type: 'text', text: guestName },
-                { type: 'text', text: `Day ${dayNum}: ${dayTitle}` }
-              ]}
-            ]
-          ).catch(() => {});
+          if (guestPhone) {
+            const queueService = require('./services/queue.service');
+            await queueService.enqueueWhatsappJob(
+              tour.id,
+              guestPhone,
+              'travel_inquiry_update',
+              [
+                { type: 'body', parameters: [
+                  { type: 'text', text: guestName },
+                  { type: 'text', text: `Day ${dayNum}: ${dayTitle}` }
+                ]}
+              ]
+            ).catch(() => {});
+          }
+
+          if (guestEmail) {
+            const emailService = require('./services/email.service');
+            await emailService.sendDailyDispatchEmail({
+              to: guestEmail,
+              guestName,
+              dayNumber: dayNum,
+              dayTitle,
+              driverInfo,
+              hotelInfo,
+              tourCode: tour.tourCode
+            }).catch(e => console.error('[CRON Email Error]', e));
+          }
 
           if (tour.queryId) {
             const adminUser = await prisma.user.findFirst({ select: { id: true } });
@@ -360,7 +396,7 @@ const startCronJobs = () => {
                 data: {
                   queryId: tour.queryId,
                   userId: adminUser.id,
-                  note: `🚗 Automated Day ${dayNum} Logistics dispatch sent to +${guestPhone.replace(/\D/g, '')}. Driver: ${dayDriver?.name || 'None'}, Hotel: ${hotelName || 'None'}.`,
+                  note: `🚗 Automated Day ${dayNum} Logistics dispatch sent to ${guestPhone ? '+' + guestPhone.replace(/\D/g, '') : 'None'}${guestEmail ? ` & ${guestEmail}` : ''}. Driver: ${dayDriver?.name || 'None (Blank)'}, Hotel: ${hotelName || 'None'}.`,
                   noteType: 'note'
                 }
               }).catch(() => {});
@@ -381,9 +417,8 @@ const startCronJobs = () => {
 
   // ── Post-Journey Review Sender & Reminder Loop (Daily at 10:00 AM IST) ──
   cron.schedule('0 10 * * *', async () => {
-    // Strict Safety Guard: Keep automated client messaging disabled until explicitly tested and enabled
-    if (process.env.ENABLE_AUTOMATED_CLIENT_DISPATCH !== 'true') {
-      console.log('[CRON] Automated client review dispatch is currently paused for safety (testing mode).');
+    if (process.env.ENABLE_AUTOMATED_CLIENT_DISPATCH === 'false') {
+      console.log('[CRON] Automated client review dispatch is paused via env.');
       return;
     }
 
@@ -412,9 +447,9 @@ const startCronJobs = () => {
 
       for (const tour of eligibleTours) {
         const guestPhone = tour.query?.phone;
+        const guestEmail = tour.query?.email;
         const guestName = tour.query?.name || 'Valued Guest';
         const reviewUrl = `https://imagicaholidays.com/review/${tour.tourCode}`;
-        const isFirstTime = tour.reviewStatus === 'PENDING' || tour.reviewFollowupCount === 0;
         const nextAttempt = (tour.reviewFollowupCount || 0) + 1;
 
         // Dispatch WhatsApp invitation
@@ -439,6 +474,23 @@ const startCronJobs = () => {
           }
         }
 
+        // Dual Dispatch: Email invitation
+        if (guestEmail) {
+          try {
+            const emailService = require('./services/email.service');
+            const destination = tour.query?.destination || 'your destination';
+            await emailService.sendReviewInviteEmail({
+              to: guestEmail,
+              guestName,
+              destination,
+              reviewUrl,
+              tourCode: tour.tourCode
+            }).catch(e => console.error('[CRON Email Error]', e));
+          } catch (e) {
+            console.error(`[CRON] Email review dispatch error for ${tour.tourCode}:`, e);
+          }
+        }
+
         // Update tracking
         await prisma.tour.update({
           where: { id: tour.id },
@@ -456,6 +508,60 @@ const startCronJobs = () => {
     }
   }, {
     timezone: "Asia/Kolkata"
+  });
+
+  // ── Hourly Auto-Transition Evaluation (Upcoming -> Running -> Completed) ──
+  cron.schedule('0 * * * *', async () => {
+    try {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      // 1. Move upcoming to running
+      const startingTours = await prisma.tour.findMany({
+        where: {
+          startDate: { lte: today },
+          endDate: { gte: today },
+          status: 'upcoming',
+          deletedAt: null,
+          query: { status: { notIn: ['lost', 'invalid', 'cancelled'] } }
+        },
+        include: { query: true }
+      });
+
+      for (const t of startingTours) {
+        await prisma.tour.update({ where: { id: t.id }, data: { status: 'running' } });
+        if (t.query && !['in_progress', 'completed', 'lost', 'invalid'].includes(t.query.status)) {
+          await prisma.query.update({ where: { id: t.query.id }, data: { status: 'in_progress' } });
+        }
+      }
+
+      // 2. Move ended to completed
+      const endedTours = await prisma.tour.findMany({
+        where: {
+          endDate: { lt: today },
+          status: { in: ['upcoming', 'running', 'in_progress'] },
+          deletedAt: null,
+          query: { status: { notIn: ['lost', 'invalid', 'cancelled'] } }
+        },
+        include: { query: true }
+      });
+
+      for (const t of endedTours) {
+        await prisma.tour.update({
+          where: { id: t.id },
+          data: { status: 'completed', reviewStatus: t.reviewStatus || 'PENDING' }
+        });
+        if (t.query && !['completed', 'lost', 'invalid'].includes(t.query.status)) {
+          await prisma.query.update({ where: { id: t.query.id }, data: { status: 'completed' } });
+        }
+      }
+
+      if (startingTours.length > 0 || endedTours.length > 0) {
+        console.log(`[CRON Hourly] Auto-transitioned ${startingTours.length} to running, ${endedTours.length} to completed.`);
+      }
+    } catch (e) {
+      console.error('[CRON Hourly Error] Auto-transition check failed:', e);
+    }
   });
 
   console.log('⏰ Midnight Cron scheduler active (sessions + 7-day activity log purge + auto-complete).');

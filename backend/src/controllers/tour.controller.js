@@ -80,8 +80,9 @@ const refundEstimate = async (req, res, next) => {
 const sendReviewInvite = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { testPhone } = req.body;
+    const { testPhone, testEmail } = req.body;
     const prisma = require('../config/prisma');
+    const emailService = require('../services/email.service');
 
     const tour = await prisma.tour.findUnique({
       where: { id },
@@ -95,19 +96,22 @@ const sendReviewInvite = async (req, res, next) => {
     let phone = rawPhone.replace(/\D/g, '');
     if (phone.length === 10) phone = '91' + phone;
 
+    const recipientEmail = testEmail || tour.query?.email;
     const guestName = tour.query?.name || 'Valued Traveler';
     const destination = tour.query?.destination || 'your destination';
     const reviewUrl = `https://imagicaholidays.com/review/${tour.tourCode}`;
     const nextAttempt = (tour.reviewFollowupCount || 0) + 1;
 
     let whatsappSent = false;
-    let errorDetail = null;
+    let whatsappError = null;
+    let emailSent = false;
+    let emailError = null;
 
     // Direct WhatsApp Click-to-Chat URL
     const messageText = `Hi ${guestName}, thank you for traveling with Imagica Holidays to ${destination}! We hope you had a memorable holiday. Please share your review here: ${reviewUrl} — Imagica Holidays Team.`;
     const directWaUrl = `https://wa.me/${phone}?text=${encodeURIComponent(messageText)}`;
 
-    // Queue Cloud API Template Dispatch
+    // 1. Queue Cloud API Template Dispatch (WhatsApp)
     try {
       const queueService = require('../services/queue.service');
       await queueService.enqueueWhatsappJob(
@@ -127,7 +131,23 @@ const sendReviewInvite = async (req, res, next) => {
       );
       whatsappSent = true;
     } catch (err) {
-      errorDetail = err.message;
+      whatsappError = err.message;
+    }
+
+    // 2. Dual Dispatch: Send Branded Review Email via Brevo SMTP
+    if (recipientEmail) {
+      try {
+        await emailService.sendReviewInviteEmail({
+          to: recipientEmail,
+          guestName,
+          destination,
+          reviewUrl,
+          tourCode: tour.tourCode
+        });
+        emailSent = true;
+      } catch (err) {
+        emailError = err.message;
+      }
     }
 
     // Update tour review record
@@ -140,18 +160,31 @@ const sendReviewInvite = async (req, res, next) => {
       }
     });
 
+    // Query Note
+    await prisma.queryNote.create({
+      data: {
+        queryId: tour.queryId,
+        userId: req.user.id,
+        note: `⭐ Review invite dispatched to +${phone}${recipientEmail ? ` & ${recipientEmail}` : ''}. Link: ${reviewUrl}.`,
+        noteType: 'note'
+      }
+    }).catch(() => {});
+
     res.json({
       success: true,
-      message: `Review invite dispatched to +${phone}`,
+      message: `Review invite dispatched to +${phone}${recipientEmail ? ` & ${recipientEmail}` : ''}`,
       data: {
         phone,
+        email: recipientEmail,
         reviewUrl,
         directWaUrl,
         messageText,
         reviewStatus: updatedTour.reviewStatus,
         reviewFollowupCount: updatedTour.reviewFollowupCount,
         whatsappSent,
-        errorDetail
+        whatsappError,
+        emailSent,
+        emailError
       }
     });
   } catch (error) {
@@ -162,8 +195,9 @@ const sendReviewInvite = async (req, res, next) => {
 const sendPretourReminder = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { testPhone } = req.body;
+    const { testPhone, testEmail } = req.body;
     const prisma = require('../config/prisma');
+    const emailService = require('../services/email.service');
 
     const tour = await prisma.tour.findUnique({
       where: { id },
@@ -181,6 +215,7 @@ const sendPretourReminder = async (req, res, next) => {
     let phone = rawPhone.replace(/\D/g, '');
     if (phone.length === 10) phone = '91' + phone;
 
+    const recipientEmail = testEmail || tour.query?.email;
     const guestName = tour.query?.name || 'Valued Traveler';
     const destination = tour.query?.destination || 'your destination';
     const totalCost = Number(tour.proposal?.sellingPrice || 0);
@@ -197,8 +232,9 @@ const sendPretourReminder = async (req, res, next) => {
     const messageText = `Hi ${guestName}, greetings from Imagica Holidays! 🌟 Are you excited for your upcoming tour to ${destination}? We are finalizing your tour arrangements to ensure a seamless experience. We look forward to hosting you on ${startDateStr}!${balanceMsg}\n\n— Imagica Holidays Team`;
     const directWaUrl = `https://wa.me/${phone}?text=${encodeURIComponent(messageText)}`;
 
-    // Queue Cloud API template if available
+    // 1. Queue Cloud API template if available (WhatsApp)
     let whatsappSent = false;
+    let whatsappError = null;
     try {
       const queueService = require('../services/queue.service');
       await queueService.enqueueWhatsappJob(
@@ -216,27 +252,53 @@ const sendPretourReminder = async (req, res, next) => {
         ]
       ).catch(() => {});
       whatsappSent = true;
-    } catch (e) {}
+    } catch (e) {
+      whatsappError = e.message;
+    }
+
+    // 2. Dual Dispatch: Send Branded Pre-Tour Email via Brevo SMTP
+    let emailSent = false;
+    let emailError = null;
+    if (recipientEmail) {
+      try {
+        await emailService.sendPretourEmail({
+          to: recipientEmail,
+          guestName,
+          destination,
+          startDateStr,
+          totalCost,
+          balanceDue,
+          tourCode: tour.tourCode
+        });
+        emailSent = true;
+      } catch (err) {
+        emailError = err.message;
+      }
+    }
 
     // Log Query Activity / Note
     await prisma.queryNote.create({
       data: {
         queryId: tour.queryId,
         userId: req.user.id,
-        note: `📱 Pre-Tour (Day -2) reminder message dispatched to +${phone}. Balance due: ₹${balanceDue}.`,
+        note: `📱 Pre-Tour (Day -2) reminder message dispatched to +${phone}${recipientEmail ? ` & ${recipientEmail}` : ''}. Balance due: ₹${balanceDue}.`,
         noteType: 'note'
       }
     }).catch(() => {});
 
     res.json({
       success: true,
-      message: `Pre-tour reminder dispatched to +${phone}`,
+      message: `Pre-tour reminder dispatched to +${phone}${recipientEmail ? ` & ${recipientEmail}` : ''}`,
       data: {
         phone,
+        email: recipientEmail,
         messageText,
         directWaUrl,
         balanceDue,
-        whatsappSent
+        whatsappSent,
+        whatsappError,
+        emailSent,
+        emailError
       }
     });
   } catch (error) {
@@ -247,8 +309,9 @@ const sendPretourReminder = async (req, res, next) => {
 const sendDailyDispatch = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { dayNumber = 1, testPhone } = req.body;
+    const { dayNumber = 1, testPhone, testEmail } = req.body;
     const prisma = require('../config/prisma');
+    const emailService = require('../services/email.service');
 
     const tour = await prisma.tour.findUnique({
       where: { id },
@@ -278,10 +341,11 @@ const sendDailyDispatch = async (req, res, next) => {
     let phone = rawPhone.replace(/\D/g, '');
     if (phone.length === 10) phone = '91' + phone;
 
+    const recipientEmail = testEmail || tour.query?.email;
     const guestName = tour.query?.name || 'Valued Traveler';
     const dayNum = parseInt(dayNumber, 10) || 1;
 
-    // Find driver assigned to this day — if not set, omit completely (leave blank)
+    // Find driver assigned to this day — if not set, omit completely (leave blank as instructed)
     const dayDriver = tour.tourDrivers.find(d => d.dayNumber === dayNum)?.driver;
     let driverInfo = '';
     if (dayDriver?.name) {
@@ -307,24 +371,73 @@ const sendDailyDispatch = async (req, res, next) => {
     const messageText = `Good morning ${guestName}! 🌟 Welcome to Day ${dayNum} of your holiday with Imagica Holidays!\n\n📍 Today's Plan: ${dayTitle}${driverInfo}${hotelInfo}\n\nHave a safe and enjoyable journey! For any assistance, we are just a call away.\n\n— Imagica Holidays Concierge`;
     const directWaUrl = `https://wa.me/${phone}?text=${encodeURIComponent(messageText)}`;
 
+    // 1. WhatsApp Cloud API Dispatch
+    let whatsappSent = false;
+    let whatsappError = null;
+    try {
+      const queueService = require('../services/queue.service');
+      await queueService.enqueueWhatsappJob(
+        tour.id,
+        phone,
+        'travel_inquiry_update',
+        [
+          {
+            type: 'body',
+            parameters: [
+              { type: 'text', text: guestName },
+              { type: 'text', text: `Day ${dayNum}: ${dayTitle}` }
+            ]
+          }
+        ]
+      ).catch(() => {});
+      whatsappSent = true;
+    } catch (e) {
+      whatsappError = e.message;
+    }
+
+    // 2. Dual Dispatch: Send Branded Daily Logistics Email via Brevo SMTP
+    let emailSent = false;
+    let emailError = null;
+    if (recipientEmail) {
+      try {
+        await emailService.sendDailyDispatchEmail({
+          to: recipientEmail,
+          guestName,
+          dayNumber: dayNum,
+          dayTitle,
+          driverInfo,
+          hotelInfo,
+          tourCode: tour.tourCode
+        });
+        emailSent = true;
+      } catch (err) {
+        emailError = err.message;
+      }
+    }
+
     // Log Query Note
     await prisma.queryNote.create({
       data: {
         queryId: tour.queryId,
         userId: req.user.id,
-        note: `🚗 Day ${dayNum} Logistics dispatch sent to +${phone}. Driver: ${dayDriver?.name || 'TBD'}, Hotel: ${dayHotel?.serviceName || 'TBD'}.`,
+        note: `🚗 Day ${dayNum} Logistics dispatch sent to +${phone}${recipientEmail ? ` & ${recipientEmail}` : ''}. Driver: ${dayDriver?.name || 'None (Blank)'}, Hotel: ${hotelName || 'None'}.`,
         noteType: 'note'
       }
     }).catch(() => {});
 
     res.json({
       success: true,
-      message: `Day ${dayNum} logistics dispatch sent to +${phone}`,
+      message: `Day ${dayNum} logistics dispatch sent to +${phone}${recipientEmail ? ` & ${recipientEmail}` : ''}`,
       data: {
         phone,
+        email: recipientEmail,
         dayNumber: dayNum,
         messageText,
-        directWaUrl
+        directWaUrl,
+        whatsappSent,
+        whatsappError,
+        emailSent,
+        emailError
       }
     });
   } catch (error) {
@@ -383,6 +496,81 @@ const setTourPhase = async (req, res, next) => {
   }
 };
 
+const evaluateTourTransitions = async (req, res, next) => {
+  try {
+    const prisma = require('../config/prisma');
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // 1. Auto-transition tours that started (startDate <= today <= endDate) to 'running'
+    const startingTours = await prisma.tour.findMany({
+      where: {
+        startDate: { lte: today },
+        endDate: { gte: today },
+        status: 'upcoming',
+        deletedAt: null,
+        query: { status: { notIn: ['lost', 'invalid', 'cancelled'] } }
+      },
+      include: { query: true }
+    });
+
+    const transitionedToRunning = [];
+    for (const tour of startingTours) {
+      await prisma.tour.update({
+        where: { id: tour.id },
+        data: { status: 'running' }
+      });
+      if (tour.query && !['in_progress', 'completed', 'lost', 'invalid'].includes(tour.query.status)) {
+        await prisma.query.update({
+          where: { id: tour.query.id },
+          data: { status: 'in_progress' }
+        });
+      }
+      transitionedToRunning.push(tour.tourCode);
+    }
+
+    // 2. Auto-transition tours that ended (endDate < today) to 'completed'
+    const endedTours = await prisma.tour.findMany({
+      where: {
+        endDate: { lt: today },
+        status: { in: ['upcoming', 'running', 'in_progress'] },
+        deletedAt: null,
+        query: { status: { notIn: ['lost', 'invalid', 'cancelled'] } }
+      },
+      include: { query: true }
+    });
+
+    const transitionedToCompleted = [];
+    for (const tour of endedTours) {
+      await prisma.tour.update({
+        where: { id: tour.id },
+        data: {
+          status: 'completed',
+          reviewStatus: tour.reviewStatus || 'PENDING'
+        }
+      });
+      if (tour.query && !['completed', 'lost', 'invalid'].includes(tour.query.status)) {
+        await prisma.query.update({
+          where: { id: tour.query.id },
+          data: { status: 'completed' }
+        });
+      }
+      transitionedToCompleted.push(tour.tourCode);
+    }
+
+    res.json({
+      success: true,
+      message: `Evaluated tour transitions. ${transitionedToRunning.length} moved to running, ${transitionedToCompleted.length} moved to completed.`,
+      data: {
+        transitionedToRunning,
+        transitionedToCompleted
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   list,
   getById,
@@ -393,4 +581,5 @@ module.exports = {
   sendPretourReminder,
   sendDailyDispatch,
   setTourPhase,
+  evaluateTourTransitions,
 };
