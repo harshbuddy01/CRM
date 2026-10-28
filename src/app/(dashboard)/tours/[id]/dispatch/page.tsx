@@ -387,6 +387,7 @@ export default function TourDispatchPage() {
   if (isLoading) return <div className="flex h-[60vh] items-center justify-center"><Loader2 className="w-8 h-8 animate-spin opacity-40" /></div>;
   if (!dispatch) return <p className="text-center text-red-500 mt-20">Tour not found.</p>;
 
+  const isCompleted = dispatch.status === 'completed';
   const guestLink = `https://guest.${process.env.NEXT_PUBLIC_APP_DOMAIN || 'travelcrm.app'}/${dispatch.tourCode}`;
 
   return (
@@ -402,6 +403,29 @@ export default function TourDispatchPage() {
           <p className="text-muted-foreground text-sm mt-0.5">{dispatch.guestName} • {dispatch.days?.length} Day Trip</p>
         </div>
       </div>
+
+      {/* ── Completed Tour Lockdown Notice ── */}
+      {isCompleted && (
+        <div className="bg-slate-100 border border-slate-200 rounded-2xl p-4 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-slate-200 text-slate-700 flex items-center justify-center shrink-0">
+              <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+            </div>
+            <div>
+              <p className="text-sm font-bold text-slate-900">Tour Concluded — Operational Assignments Locked</p>
+              <p className="text-xs text-slate-600">Field logistics (Drivers & Hotels) are locked in read-only mode to safeguard historical records. Post-tour collections and payments remain active.</p>
+            </div>
+          </div>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => router.push(`/tours/${id}`)}
+            className="rounded-xl text-xs font-bold bg-white shrink-0"
+          >
+            Tour Overview & Payments
+          </Button>
+        </div>
+      )}
 
       {/* ── Guest Credentials Panel ── */}
       <div className={`rounded-2xl border-2 p-6 ${dispatch.guestCredentialsGenerated ? 'border-emerald-200 bg-emerald-50/40' : 'border-dashed border-amber-300 bg-amber-50/40'}`}>
@@ -500,40 +524,42 @@ export default function TourDispatchPage() {
             <p className="text-xs text-slate-500">Assign chauffeurs and hotel stays per day. Unassign or edit anytime.</p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2.5">
-            {/* Auto-Fill All Hotels from Itinerary Button */}
-            <Button
-              type="button"
-              onClick={() => autoHotelsMut.mutate()}
-              disabled={autoHotelsMut.isPending}
-              className="h-9 px-3.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold text-xs rounded-xl shadow-sm flex items-center gap-1.5 cursor-pointer"
-            >
-              {autoHotelsMut.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" /> : <Sparkles className="w-3.5 h-3.5 text-yellow-300 mr-1" />}
-              Auto-Fill Hotels from Itinerary
-            </Button>
+          {!isCompleted && (
+            <div className="flex flex-wrap items-center gap-2.5">
+              {/* Auto-Fill All Hotels from Itinerary Button */}
+              <Button
+                type="button"
+                onClick={() => autoHotelsMut.mutate()}
+                disabled={autoHotelsMut.isPending}
+                className="h-9 px-3.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold text-xs rounded-xl shadow-sm flex items-center gap-1.5 cursor-pointer"
+              >
+                {autoHotelsMut.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" /> : <Sparkles className="w-3.5 h-3.5 text-yellow-300 mr-1" />}
+                Auto-Fill Hotels from Itinerary
+              </Button>
 
-            {dispatch.days?.length > 0 && drivers.length > 0 && (
-              <div className="flex items-center gap-1.5">
-                <select
-                  className="border border-gray-200 rounded-xl px-3 py-1.5 text-xs font-bold bg-white shadow-sm focus:border-blue-400 outline-none cursor-pointer h-9"
-                  defaultValue=""
-                  onChange={(e) => {
-                    if (e.target.value === 'unassign_all') {
-                      assignDriverMut.mutate({ driverId: 'unassigned', allDays: true });
-                      e.target.value = '';
-                    } else if (e.target.value) {
-                      assignDriverMut.mutate({ driverId: e.target.value, allDays: true });
-                      e.target.value = '';
-                    }
-                  }}
-                >
-                  <option value="">Bulk Driver: Apply to All Days</option>
-                  <option value="unassign_all" className="text-rose-600 font-bold">✕ Unassign from All Days</option>
-                  {drivers.map(d => <option key={d.id} value={d.id}>{d.name} • {d.vehicleNo}</option>)}
-                </select>
-              </div>
-            )}
-          </div>
+              {dispatch.days?.length > 0 && drivers.length > 0 && (
+                <div className="flex items-center gap-1.5">
+                  <select
+                    className="border border-gray-200 rounded-xl px-3 py-1.5 text-xs font-bold bg-white shadow-sm focus:border-blue-400 outline-none cursor-pointer h-9"
+                    defaultValue=""
+                    onChange={(e) => {
+                      if (e.target.value === 'unassign_all') {
+                        assignDriverMut.mutate({ driverId: 'unassigned', allDays: true });
+                        e.target.value = '';
+                      } else if (e.target.value) {
+                        assignDriverMut.mutate({ driverId: e.target.value, allDays: true });
+                        e.target.value = '';
+                      }
+                    }}
+                  >
+                    <option value="">Bulk Driver: Apply to All Days</option>
+                    <option value="unassign_all" className="text-rose-600 font-bold">✕ Unassign from All Days</option>
+                    {drivers.map(d => <option key={d.id} value={d.id}>{d.name} • {d.vehicleNo}</option>)}
+                  </select>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         <div className="space-y-3">
@@ -607,13 +633,26 @@ export default function TourDispatchPage() {
                         </a>
                       )}
                     </div>
-                    <DriverSelect
-                      dayNumber={day.dayNumber}
-                      currentDriver={day.driver}
-                      drivers={drivers}
-                      onAssign={(driverId, days) => assignDriverMut.mutate({ driverId, days })}
-                      onAddNew={() => setShowAddDriver(true)}
-                    />
+                    {isCompleted ? (
+                      day.driver ? (
+                        <div className="px-3 py-2.5 rounded-xl border border-blue-200 bg-blue-50 text-blue-900 text-sm font-semibold flex items-center gap-2">
+                          <Car className="w-4 h-4 text-blue-600 shrink-0" />
+                          <span className="truncate">{day.driver.name} ({day.driver.vehicleNo})</span>
+                        </div>
+                      ) : (
+                        <div className="px-3 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-slate-400 text-xs italic">
+                          No chauffeur assigned
+                        </div>
+                      )
+                    ) : (
+                      <DriverSelect
+                        dayNumber={day.dayNumber}
+                        currentDriver={day.driver}
+                        drivers={drivers}
+                        onAssign={(driverId, days) => assignDriverMut.mutate({ driverId, days })}
+                        onAddNew={() => setShowAddDriver(true)}
+                      />
+                    )}
                   </div>
 
                   {/* Hotel Assignment */}
@@ -624,7 +663,21 @@ export default function TourDispatchPage() {
                         <span className="text-[10px] font-bold text-emerald-600">Assigned</span>
                       )}
                     </div>
-                    {day.hotel ? (
+                    {isCompleted ? (
+                      day.hotel ? (
+                        <div className="px-3 py-2.5 rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-900 text-sm font-semibold flex items-center justify-between gap-2">
+                          <span className="flex items-center gap-2 truncate">
+                            <Building2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                            <span className="truncate">{day.hotel.name}</span>
+                          </span>
+                          <span className="text-[10px] font-black uppercase tracking-wider text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full shrink-0">Confirmed</span>
+                        </div>
+                      ) : (
+                        <div className="px-3 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-slate-400 text-xs italic">
+                          No hotel assigned
+                        </div>
+                      )
+                    ) : day.hotel ? (
                       <div className="flex items-center gap-1.5">
                         <button
                           onClick={() => setHotelEditingDay({ dayNumber: day.dayNumber, currentHotelName: day.hotel?.name || '', proposedHotelName: day.proposedHotel })}

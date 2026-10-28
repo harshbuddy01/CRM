@@ -366,11 +366,26 @@ const updateTourOps = async (id, data) => {
       ...(assignedOps !== undefined && { assignedOps }),
       ...(opsNotes !== undefined && { opsNotes }),
       ...(status !== undefined && { status }),
+      ...(status === 'completed' && { reviewStatus: 'PENDING' }),
     },
     include: {
       proposal: { select: { itineraryId: true } }
     }
   });
+
+  // When a tour is completed, also sync the associated Inquiry/Query status
+  if (status === 'completed') {
+    const tourWithQuery = await prisma.tour.findUnique({
+      where: { id },
+      select: { queryId: true, query: { select: { status: true } } }
+    });
+    if (tourWithQuery?.queryId && !['completed', 'lost', 'invalid'].includes(tourWithQuery.query?.status)) {
+      await prisma.query.update({
+        where: { id: tourWithQuery.queryId },
+        data: { status: 'completed' }
+      });
+    }
+  }
 
   // Lifecycle cleanup: This is now handled by the 48-hour GC cron job in worker.js
   // to ensure client copies remain visible for 48 hours after the trip is completed.

@@ -102,6 +102,7 @@ const getDispatch = async (req, res, next) => {
         guestUsername: tour.guestUsername,
         guestPin: tour.guestPassword,
         guestCredentialsGenerated: !!tour.guestUsername,
+        status: tour.status,
         startDate: tour.startDate,
         endDate: tour.endDate,
         days,

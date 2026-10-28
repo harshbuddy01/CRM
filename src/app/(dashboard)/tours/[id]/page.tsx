@@ -29,7 +29,11 @@ import {
   Star, 
   AlertTriangle,
   Clock,
-  Compass
+  Compass,
+  Copy,
+  ExternalLink,
+  MessageCircle,
+  Send
 } from 'lucide-react';
 import Link from 'next/link';
 import { format } from 'date-fns';
@@ -52,6 +56,7 @@ export default function TourDetailPage() {
   const [cancelReason, setCancelReason] = useState('');
   const [refundEstimate, setRefundEstimate] = useState<any>(null);
   const [isLoadingEstimate, setIsLoadingEstimate] = useState(false);
+  const [testPhoneNumber, setTestPhoneNumber] = useState('');
 
   // Editing Ops Notes
   const [isEditingOps, setIsEditingOps] = useState(false);
@@ -125,6 +130,31 @@ export default function TourDetailPage() {
       toast.error(err.response?.data?.message || 'Failed to cancel tour');
     }
   });
+
+  const sendReviewInviteMutation = useMutation({
+    mutationFn: async (customPhone?: string) => {
+      const res = await api.post(`/tours/${tourId}/send-review-invite`, {
+        testPhone: customPhone || testPhoneNumber || undefined
+      });
+      return res.data;
+    },
+    onSuccess: (data: any) => {
+      toast.success(data?.message || 'Review invite dispatched!');
+      if (data?.data?.directWaUrl) {
+        window.open(data.data.directWaUrl, '_blank');
+      }
+      queryClient.invalidateQueries({ queryKey: ['tour', tourId] });
+    },
+    onError: (err: any) => {
+      toast.error(err.response?.data?.message || 'Failed to dispatch review invite');
+    }
+  });
+
+  const handleCopyReviewLink = (code: string) => {
+    const url = `https://imagicaholidays.com/review/${code}`;
+    navigator.clipboard.writeText(url);
+    toast.success('Review link copied to clipboard!');
+  };
 
   if (isLoading) {
     return <div className="flex justify-center h-[50vh] items-center"><Loader2 className="w-8 h-8 animate-spin opacity-50" /></div>;
@@ -296,7 +326,7 @@ export default function TourDetailPage() {
               )}
 
               {/* Cancel Tour (Hidden on completed tours) */}
-              {!isCancelled && (user?.role === 'admin' || user?.role === 'system_owner' || user?.role === 'ops') && (
+              {!isCancelled && !isCompleted && (user?.role === 'admin' || user?.role === 'system_owner' || user?.role === 'ops') && (
                 <PermissionGate perm="cancellation.create">
                   <Dialog open={isCancelModalOpen} onOpenChange={handleOpenCancelModal}>
                     <DialogTrigger asChild>
@@ -509,110 +539,131 @@ export default function TourDetailPage() {
               </CardHeader>
 
               <CardContent className="pt-4">
-                {latestProposal?.days && latestProposal.days.length > 0 ? (
-                  <div className="space-y-4 relative before:absolute before:inset-0 before:left-3.5 before:-translate-x-px before:h-full before:w-0.5 before:bg-slate-200">
-                    {(latestProposal.days as any[]).map((day: any, idx: number) => {
-                      const assignedHotel = tour.bookingServices?.find((b: any) => b.dayNumber === day.dayNumber);
-                      const assignedDriver = tour.tourDrivers?.find((td: any) => td.dayNumber === day.dayNumber)?.driver;
-                      const lifecycle = getDayLifecycle(idx);
+                {(() => {
+                  const tourDays = (latestProposal?.days && latestProposal.days.length > 0)
+                    ? latestProposal.days
+                    : (latestProposal?.itinerary?.days || []);
 
-                      return (
-                        <div 
-                          key={idx} 
-                          className={`relative flex items-start transition-all ${
-                            lifecycle.status === 'active_today'
-                              ? 'bg-emerald-50/40 p-2.5 rounded-xl border border-emerald-200 shadow-sm -ml-2 pl-3'
-                              : lifecycle.status === 'completed'
-                              ? 'opacity-85'
-                              : ''
-                          }`}
-                        >
-                          {/* Animated Timeline Pin */}
-                          <div className={`flex items-center justify-center w-7 h-7 rounded-full text-xs font-black shrink-0 z-10 mr-3 shadow-sm ${
-                            lifecycle.status === 'active_today'
-                              ? 'bg-emerald-600 text-white ring-4 ring-emerald-200 shadow-md animate-pulse'
-                              : lifecycle.status === 'completed'
-                              ? 'bg-emerald-500 text-white'
-                              : 'bg-white border-2 border-slate-300 text-slate-600'
-                          }`}>
-                            {lifecycle.status === 'completed' ? (
-                              <Check className="w-3.5 h-3.5" />
-                            ) : (
-                              <span>{day.dayNumber}</span>
-                            )}
-                          </div>
+                  if (!tourDays || tourDays.length === 0) {
+                    return (
+                      <div className="text-center py-10 text-slate-400">
+                        <MapPin className="w-8 h-8 opacity-25 mx-auto mb-2" />
+                        <p className="text-xs">Itinerary outline not available.</p>
+                      </div>
+                    );
+                  }
 
-                          <div className="pt-0.5 w-full text-xs space-y-1">
-                            {/* Day Title & Status Badge */}
-                            <div className="flex flex-wrap items-center justify-between gap-1.5 mb-1">
-                              <p className={`font-bold leading-tight ${
-                                lifecycle.status === 'active_today' ? 'text-slate-900' : 'text-slate-700'
-                              }`}>
-                                {typeof day.title === 'object' ? (day.title?.name || JSON.stringify(day.title)) : (day.title || `Day ${day.dayNumber}`)}
-                              </p>
+                  return (
+                    <div className="space-y-4 relative before:absolute before:inset-0 before:left-3.5 before:-translate-x-px before:h-full before:w-0.5 before:bg-slate-200">
+                      {(tourDays as any[]).map((day: any, idx: number) => {
+                        const assignedHotel = tour.bookingServices?.find((b: any) => b.dayNumber === day.dayNumber && b.serviceType === 'hotel');
+                        const assignedDriver = tour.tourDrivers?.find((td: any) => td.dayNumber === day.dayNumber)?.driver;
+                        const lifecycle = getDayLifecycle(idx);
 
-                              {lifecycle.status === 'active_today' ? (
-                                <span className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-emerald-500 text-white shadow-sm">
-                                  <span className="relative flex h-1.5 w-1.5">
-                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
-                                    <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-white"></span>
-                                  </span>
-                                  Today
-                                </span>
-                              ) : lifecycle.status === 'completed' ? (
-                                <span className="px-1.5 py-0.2 rounded-full text-[9px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                                  ✓ Concluded
-                                </span>
+                        const proposedHotel = typeof day.hotel === 'object' 
+                          ? day.hotel?.name 
+                          : (day.hotel || day.events?.find((e: any) => e.type === 'accommodation')?.title || null);
+
+                        const activitiesList = day.activities 
+                          ? (typeof day.activities === 'string' ? day.activities.split(',').map((a: string) => a.trim()).filter(Boolean) : [])
+                          : (day.events?.filter((e: any) => e.type === 'sightseeing' || e.type === 'activity').map((e: any) => e.title) || []);
+
+                        return (
+                          <div 
+                            key={idx} 
+                            className={`relative flex items-start transition-all ${
+                              lifecycle.status === 'active_today'
+                                ? 'bg-emerald-50/40 p-2.5 rounded-xl border border-emerald-200 shadow-sm -ml-2 pl-3'
+                                : lifecycle.status === 'completed'
+                                ? 'opacity-85'
+                                : ''
+                            }`}
+                          >
+                            {/* Animated Timeline Pin */}
+                            <div className={`flex items-center justify-center w-7 h-7 rounded-full text-xs font-black shrink-0 z-10 mr-3 shadow-sm ${
+                              lifecycle.status === 'active_today'
+                                ? 'bg-emerald-600 text-white ring-4 ring-emerald-200 shadow-md animate-pulse'
+                                : lifecycle.status === 'completed'
+                                ? 'bg-emerald-500 text-white'
+                                : 'bg-white border-2 border-slate-300 text-slate-600'
+                            }`}>
+                              {lifecycle.status === 'completed' ? (
+                                <Check className="w-3.5 h-3.5" />
                               ) : (
-                                <span className="px-1.5 py-0.2 rounded-full text-[9px] font-semibold bg-slate-100 text-slate-500">
-                                  Upcoming
-                                </span>
+                                <span>{day.dayNumber}</span>
                               )}
                             </div>
 
-                            {/* Assigned Hotel */}
-                            {assignedHotel ? (
-                              <p className="text-emerald-700 font-bold flex items-center text-[11px] bg-emerald-50/80 border border-emerald-100 px-2 py-0.5 rounded-lg w-fit">
-                                <Building className="w-3 h-3 mr-1 text-emerald-600 shrink-0" />
-                                <span>Hotel: {assignedHotel.serviceName}</span>
-                              </p>
-                            ) : day.hotel ? (
-                              <p className="text-slate-500 flex items-center text-[11px] bg-slate-50 px-2 py-0.5 rounded-lg w-fit">
-                                <Building className="w-3 h-3 mr-1 text-slate-400 shrink-0" />
-                                <span>Proposed: {typeof day.hotel === 'object' ? day.hotel?.name : day.hotel}</span>
-                              </p>
-                            ) : null}
+                            <div className="pt-0.5 w-full text-xs space-y-1">
+                              {/* Day Title & Status Badge */}
+                              <div className="flex flex-wrap items-center justify-between gap-1.5 mb-1">
+                                <p className={`font-bold leading-tight ${
+                                  lifecycle.status === 'active_today' ? 'text-slate-900' : 'text-slate-700'
+                                }`}>
+                                  {typeof day.title === 'object' ? (day.title?.name || JSON.stringify(day.title)) : (day.title || `Day ${day.dayNumber}`)}
+                                </p>
 
-                            {/* Assigned Chauffeur */}
-                            {assignedDriver ? (
-                              <p className="text-blue-700 font-bold flex items-center text-[11px] bg-blue-50 border border-blue-100 px-2 py-0.5 rounded-lg w-fit">
-                                <Car className="w-3 h-3 mr-1 text-blue-600 shrink-0" />
-                                <span>Driver: {assignedDriver.name} ({assignedDriver.vehicleNo})</span>
-                              </p>
-                            ) : (
-                              <p className="text-slate-400 flex items-center text-[10px] italic">
-                                <Car className="w-3 h-3 mr-1 text-slate-300 shrink-0" />
-                                <span>No chauffeur assigned yet</span>
-                              </p>
-                            )}
-
-                            {/* Activities Outline */}
-                            {day.activities && (
-                              <div className="text-slate-500 mt-1 pl-2.5 border-l border-slate-200 text-[11px] space-y-0.5">
-                                {typeof day.activities === 'string' ? (
-                                  day.activities.split(',').map((act: string, i: number) => act.trim() && (
-                                    <p key={i}>• {act.trim()}</p>
-                                  ))
-                                ) : null}
+                                {lifecycle.status === 'active_today' ? (
+                                  <span className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-emerald-500 text-white shadow-sm">
+                                    <span className="relative flex h-1.5 w-1.5">
+                                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
+                                      <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-white"></span>
+                                    </span>
+                                    Today
+                                  </span>
+                                ) : lifecycle.status === 'completed' ? (
+                                  <span className="px-1.5 py-0.2 rounded-full text-[9px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                    ✓ Concluded
+                                  </span>
+                                ) : (
+                                  <span className="px-1.5 py-0.2 rounded-full text-[9px] font-semibold bg-slate-100 text-slate-500">
+                                    Upcoming
+                                  </span>
+                                )}
                               </div>
-                            )}
+
+                              {/* Assigned Hotel */}
+                              {assignedHotel ? (
+                                <p className="text-emerald-700 font-bold flex items-center text-[11px] bg-emerald-50/80 border border-emerald-100 px-2 py-0.5 rounded-lg w-fit">
+                                  <Building className="w-3 h-3 mr-1 text-emerald-600 shrink-0" />
+                                  <span>Hotel: {assignedHotel.serviceName}</span>
+                                </p>
+                              ) : proposedHotel ? (
+                                <p className="text-slate-500 flex items-center text-[11px] bg-slate-50 px-2 py-0.5 rounded-lg w-fit">
+                                  <Building className="w-3 h-3 mr-1 text-slate-400 shrink-0" />
+                                  <span>Proposed: {proposedHotel}</span>
+                                </p>
+                              ) : null}
+
+                              {/* Assigned Chauffeur */}
+                              {assignedDriver ? (
+                                <p className="text-blue-700 font-bold flex items-center text-[11px] bg-blue-50 border border-blue-100 px-2 py-0.5 rounded-lg w-fit">
+                                  <Car className="w-3 h-3 mr-1 text-blue-600 shrink-0" />
+                                  <span>Driver: {assignedDriver.name} ({assignedDriver.vehicleNo})</span>
+                                </p>
+                              ) : (
+                                <p className="text-slate-400 flex items-center text-[10px] italic">
+                                  <Car className="w-3 h-3 mr-1 text-slate-300 shrink-0" />
+                                  <span>No chauffeur assigned yet</span>
+                                </p>
+                              )}
+
+                              {/* Activities Outline */}
+                              {activitiesList.length > 0 && (
+                                <div className="text-slate-500 mt-1 pl-2.5 border-l border-slate-200 text-[11px] space-y-0.5">
+                                  {activitiesList.map((act: string, i: number) => (
+                                    <p key={i}>• {act}</p>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
                           </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <div className="text-center py-10 text-slate-400">
+                        );
+                      })}
+                    </div>
+                  );
+                })()}
+              </CardContent>
                     <MapPin className="w-8 h-8 opacity-25 mx-auto mb-2" />
                     <p className="text-xs">Itinerary outline not available.</p>
                   </div>
@@ -624,14 +675,31 @@ export default function TourDetailPage() {
 
         {/* Right Column: Operations Overview & Review Outcome */}
         <div className="lg:col-span-1 space-y-6">
-          {/* Post-Tour Review Banner if Completed */}
-          {isCompleted && (
-            <Card className="rounded-2xl border-slate-200 shadow-sm bg-gradient-to-b from-slate-50 to-white">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base font-black text-slate-900">Post-Journey Review</CardTitle>
+          {/* Post-Tour Review Banner if Completed or if Review Triggered */}
+          {(isCompleted || tour.reviewStatus === 'SENT' || tour.reviewStatus === 'COMPLETED') && (
+            <Card className="rounded-2xl border-slate-200 shadow-sm bg-gradient-to-b from-slate-50 to-white overflow-hidden">
+              <CardHeader className="pb-3 border-b border-slate-100 bg-white">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center text-amber-600">
+                      <Star className="w-4 h-4 fill-amber-500 text-amber-500" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-sm font-black text-slate-900">Post-Journey Review</CardTitle>
+                      <p className="text-[11px] text-slate-500">Google Reviews & Private Feedback</p>
+                    </div>
+                  </div>
+                  <span className={`text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full ${
+                    tour.reviewStatus === 'COMPLETED' ? 'bg-emerald-100 text-emerald-800' :
+                    tour.reviewStatus === 'SENT' ? 'bg-blue-100 text-blue-800' :
+                    'bg-slate-100 text-slate-700'
+                  }`}>
+                    {tour.reviewStatus || 'PENDING'}
+                  </span>
+                </div>
               </CardHeader>
-              <CardContent className="space-y-3">
-                {tour.reviewRating === 5 || tour.reviewAction === 'google_review_redirect' ? (
+              <CardContent className="space-y-4 pt-4">
+                {tour.reviewRating === 5 || tour.reviewAction === 'google_review_redirect' || tour.reviewAction === 'opened_google_review' ? (
                   <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-amber-900 text-xs space-y-1">
                     <div className="flex items-center gap-1.5 font-black">
                       <Star className="w-4 h-4 fill-amber-400 text-amber-500" />
@@ -640,7 +708,7 @@ export default function TourDetailPage() {
                     <p className="text-[11px] text-amber-800/80">Guest completed a verified 5-star Google Review.</p>
                   </div>
                 ) : tour.reviewRating && tour.reviewRating < 5 ? (
-                  <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-rose-900 text-xs space-y-1.5">
+                  <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-rose-900 text-xs space-y-2">
                     <div className="flex items-center gap-1.5 font-black">
                       <AlertTriangle className="w-4 h-4 text-rose-600" />
                       <span>{tour.reviewRating}.0 ★ Service Feedback</span>
@@ -655,15 +723,102 @@ export default function TourDetailPage() {
                       </div>
                     )}
                     {tour.reviewNotes && (
-                      <p className="text-[11px] text-rose-800 italic">"{tour.reviewNotes}"</p>
+                      <p className="text-[11px] text-rose-800 italic bg-white/70 p-2 rounded-lg border border-rose-100">
+                        "{tour.reviewNotes}"
+                      </p>
                     )}
                   </div>
                 ) : (
-                  <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-600 text-xs">
-                    <p className="font-bold">Review Status: {tour.reviewStatus || 'PENDING'}</p>
-                    <p className="text-[11px] text-slate-400 mt-0.5">Portal: imagicaholidays.com/review/{tour.tourCode}</p>
+                  <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-1">
+                    <p className="text-xs font-bold text-slate-800">
+                      {tour.reviewStatus === 'SENT' 
+                        ? `Review Invitation Dispatched (Attempt ${tour.reviewFollowupCount || 1}/3)` 
+                        : 'Review invitation awaiting dispatch'}
+                    </p>
+                    <p className="text-[11px] text-slate-500">
+                      {tour.reviewSentAt 
+                        ? `Last sent on ${format(new Date(tour.reviewSentAt), 'dd MMM yyyy, hh:mm a')}`
+                        : 'Scheduled via 10:00 AM daily cron or manual trigger below.'}
+                    </p>
                   </div>
                 )}
+
+                {/* Review Link & Quick Actions */}
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase tracking-wider text-slate-400">Public Review URL</label>
+                  <div className="flex items-center gap-1.5 p-1.5 bg-slate-50 border border-slate-200 rounded-xl">
+                    <input 
+                      type="text" 
+                      readOnly 
+                      value={`https://imagicaholidays.com/review/${tour.tourCode}`} 
+                      className="bg-transparent text-[11px] text-slate-600 font-mono flex-1 outline-none px-1"
+                    />
+                    <Button 
+                      size="sm" 
+                      variant="ghost" 
+                      onClick={() => handleCopyReviewLink(tour.tourCode)} 
+                      className="h-7 px-2 text-xs font-bold hover:bg-white"
+                      title="Copy link"
+                    >
+                      <Copy className="w-3.5 h-3.5 mr-1" /> Copy
+                    </Button>
+                    <a 
+                      href={`https://imagicaholidays.com/review/${tour.tourCode}`} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center justify-center h-7 px-2 text-xs font-bold text-slate-700 hover:bg-white rounded-md transition-colors"
+                      title="Open in new tab"
+                    >
+                      <ExternalLink className="w-3.5 h-3.5" />
+                    </a>
+                  </div>
+                </div>
+
+                {/* 1-Click WhatsApp Trigger */}
+                <div className="space-y-2 pt-1">
+                  <Button 
+                    onClick={() => sendReviewInviteMutation.mutate(undefined)} 
+                    disabled={sendReviewInviteMutation.isPending}
+                    className="w-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl h-10 shadow-sm"
+                  >
+                    {sendReviewInviteMutation.isPending ? (
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    ) : (
+                      <MessageCircle className="w-4 h-4 mr-2" />
+                    )}
+                    Send Review via WhatsApp ({tour.query?.phone || 'Guest'})
+                  </Button>
+                </div>
+
+                {/* Custom Test Dispatch */}
+                <div className="pt-2 border-t border-slate-100">
+                  <p className="text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1.5">
+                    Send Test to Any Number
+                  </p>
+                  <div className="flex gap-1.5">
+                    <Input 
+                      placeholder="+918235337180 or +917889..." 
+                      value={testPhoneNumber} 
+                      onChange={(e) => setTestPhoneNumber(e.target.value)}
+                      className="text-xs h-9 rounded-xl border-slate-200"
+                    />
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => {
+                        if (!testPhoneNumber) {
+                          toast.error('Enter a phone number to test');
+                          return;
+                        }
+                        sendReviewInviteMutation.mutate(testPhoneNumber);
+                      }}
+                      disabled={sendReviewInviteMutation.isPending}
+                      className="h-9 px-3 rounded-xl text-xs font-bold shrink-0"
+                    >
+                      Send Test
+                    </Button>
+                  </div>
+                </div>
               </CardContent>
             </Card>
           )}

@@ -259,6 +259,7 @@ const startCronJobs = () => {
         if (guestPhone) {
           try {
             const queueService = require('./services/queue.service');
+            const destination = tour.query?.destination || 'your destination';
             await queueService.enqueueWhatsappJob(
               tour.id,
               guestPhone,
@@ -266,6 +267,7 @@ const startCronJobs = () => {
               [
                 { type: 'body', parameters: [
                   { type: 'text', text: guestName },
+                  { type: 'text', text: destination },
                   { type: 'text', text: reviewUrl }
                 ]}
               ]

@@ -77,10 +77,93 @@ const refundEstimate = async (req, res, next) => {
   }
 };
 
+const sendReviewInvite = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { testPhone } = req.body;
+    const prisma = require('../config/prisma');
+
+    const tour = await prisma.tour.findUnique({
+      where: { id },
+      include: { query: true }
+    });
+    if (!tour) throw new BusinessError('Tour not found');
+
+    const rawPhone = testPhone || tour.query?.phone;
+    if (!rawPhone) throw new BusinessError('No recipient phone number available');
+
+    let phone = rawPhone.replace(/\D/g, '');
+    if (phone.length === 10) phone = '91' + phone;
+
+    const guestName = tour.query?.name || 'Valued Traveler';
+    const destination = tour.query?.destination || 'your destination';
+    const reviewUrl = `https://imagicaholidays.com/review/${tour.tourCode}`;
+    const nextAttempt = (tour.reviewFollowupCount || 0) + 1;
+
+    let whatsappSent = false;
+    let errorDetail = null;
+
+    // Direct WhatsApp Click-to-Chat URL
+    const messageText = `Hi ${guestName}, thank you for traveling with Imagica Holidays to ${destination}! We hope you had a memorable holiday. Please share your review here: ${reviewUrl} — Imagica Holidays Team.`;
+    const directWaUrl = `https://wa.me/${phone}?text=${encodeURIComponent(messageText)}`;
+
+    // Queue Cloud API Template Dispatch
+    try {
+      const queueService = require('../services/queue.service');
+      await queueService.enqueueWhatsappJob(
+        tour.id,
+        phone,
+        'customer_review_invite',
+        [
+          {
+            type: 'body',
+            parameters: [
+              { type: 'text', text: guestName },
+              { type: 'text', text: destination },
+              { type: 'text', text: reviewUrl }
+            ]
+          }
+        ]
+      );
+      whatsappSent = true;
+    } catch (err) {
+      errorDetail = err.message;
+    }
+
+    // Update tour review record
+    const updatedTour = await prisma.tour.update({
+      where: { id: tour.id },
+      data: {
+        reviewStatus: 'SENT',
+        reviewSentAt: new Date(),
+        reviewFollowupCount: nextAttempt
+      }
+    });
+
+    res.json({
+      success: true,
+      message: `Review invite dispatched to +${phone}`,
+      data: {
+        phone,
+        reviewUrl,
+        directWaUrl,
+        messageText,
+        reviewStatus: updatedTour.reviewStatus,
+        reviewFollowupCount: updatedTour.reviewFollowupCount,
+        whatsappSent,
+        errorDetail
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   list,
   getById,
   updateOps,
   cancel,
   refundEstimate,
+  sendReviewInvite,
 };
