@@ -259,8 +259,8 @@ const getArtisanalTemplate = (data) => {
         .details-grid {
           display: grid;
           grid-template-columns: 1.25fr 1fr;
-          gap: 10px;
-          margin-bottom: 6px;
+          gap: 8px;
+          margin-bottom: 4px;
         }
         
         .details-card {
@@ -274,10 +274,10 @@ const getArtisanalTemplate = (data) => {
           background: #0f3d2f;
           color: #ffffff;
           font-family: 'Cinzel', serif;
-          font-size: 9px;
+          font-size: 8.5px;
           font-weight: 700;
           letter-spacing: 0.05em;
-          padding: 5px 8px;
+          padding: 3.5px 7px;
           text-transform: uppercase;
           display: flex;
           align-items: center;
@@ -289,10 +289,10 @@ const getArtisanalTemplate = (data) => {
         }
         
         .details-card-body {
-          padding: 6px 8px;
+          padding: 4px 7px;
           display: grid;
           grid-template-columns: 1fr 1.05fr;
-          gap: 8px;
+          gap: 6px;
         }
         
         .details-col-val {
@@ -340,8 +340,8 @@ const getArtisanalTemplate = (data) => {
         .middle-block {
           display: grid;
           grid-template-columns: 1fr 2.1fr 1.05fr;
-          gap: 10px;
-          margin-bottom: 6px;
+          gap: 8px;
+          margin-bottom: 4px;
         }
         
         .middle-card {
@@ -355,10 +355,10 @@ const getArtisanalTemplate = (data) => {
           background: #0f3d2f;
           color: #ffffff;
           font-family: 'Cinzel', serif;
-          font-size: 9px;
+          font-size: 8.5px;
           font-weight: 700;
           letter-spacing: 0.05em;
-          padding: 5px 8px;
+          padding: 3.5px 7px;
           text-transform: uppercase;
           display: flex;
           align-items: center;
@@ -370,14 +370,14 @@ const getArtisanalTemplate = (data) => {
         }
         
         .middle-card-body {
-          padding: 8px;
+          padding: 5px 7px;
         }
         
         .billto-row {
           display: flex;
-          margin-bottom: 5px;
+          margin-bottom: 2.5px;
           font-size: 8.5px;
-          line-height: 1.3;
+          line-height: 1.25;
         }
         
         .billto-row:last-child {
@@ -540,7 +540,7 @@ const getArtisanalTemplate = (data) => {
           font-size: 8px;
           font-weight: 800;
           letter-spacing: 0.12em;
-          padding: 5px 8px;
+          padding: 3.5px 7px;
           text-transform: uppercase;
           display: flex;
           align-items: center;
@@ -562,14 +562,14 @@ const getArtisanalTemplate = (data) => {
           font-size: 7.5px;
           font-weight: 800;
           color: #718096;
-          padding: 4px 6px;
+          padding: 3.5px 6px;
           text-transform: uppercase;
           text-align: left;
         }
         
         table.lower-table td {
           border-bottom: 1px solid #edf2f7;
-          padding: 5px 6px;
+          padding: 3px 6px;
           font-size: 8px;
           color: #2d3748;
         }
@@ -582,20 +582,18 @@ const getArtisanalTemplate = (data) => {
         .middle-poster-container {
           position: relative;
           width: 100%;
-          aspect-ratio: 2095 / 751;
-          max-height: 52mm;
-          background: #f7fafc;
-          border-radius: 5px;
+          height: 46mm;
+          border-radius: 4px;
           overflow: hidden;
-          margin-bottom: 6px;
-          box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+          margin-bottom: 4px;
           flex-shrink: 0;
         }
         
         .middle-poster-img {
           width: 100%;
           height: 100%;
-          object-fit: contain;
+          object-fit: cover;
+          object-position: center 60%;
           display: block;
         }
 
@@ -603,8 +601,8 @@ const getArtisanalTemplate = (data) => {
         .info-row {
           display: flex;
           align-items: center;
-          gap: 6px;
-          margin-bottom: 4px;
+          gap: 5px;
+          margin-bottom: 2px;
         }
         .info-icon-wrapper {
           background: #f7fafc;
@@ -631,19 +629,18 @@ const getArtisanalTemplate = (data) => {
         .footer-cards-grid {
           display: grid;
           grid-template-columns: 1fr 1fr 1fr;
-          gap: 12px;
+          gap: 10px;
           border-top: 1px solid #edf2f7;
-          padding-top: 6px;
-          margin-bottom: 6px;
+          padding-top: 4px;
+          margin-bottom: 4px;
         }
         
         .footer-card {
           border: 1px solid #e2e8f0;
-          border-radius: 6px;
+          border-radius: 5px;
           background: #ffffff;
-          padding: 8px 10px;
-          box-shadow: 0 4px 6px rgba(0,0,0,0.02);
-          min-height: 110px;
+          padding: 5px 8px;
+          box-shadow: 0 2px 4px rgba(0,0,0,0.02);
           display: flex;
           flex-direction: column;
         }
@@ -739,12 +736,12 @@ const getArtisanalTemplate = (data) => {
         .bottom-footer-bar {
           background: #0f3d2f;
           color: #ffffff;
-          padding: 12px 20px;
+          padding: 6px 14px;
           border-radius: 4px;
           position: relative;
           overflow: hidden;
-          margin-top: 5px;
-          margin-bottom: 5px;
+          margin-top: 3px;
+          margin-bottom: 6px;
         }
         
         .footer-top-row {
@@ -831,7 +828,7 @@ const getArtisanalTemplate = (data) => {
         .footer-divider-line {
           border: 0;
           border-top: 1px solid #c5a059;
-          margin: 6px 0;
+          margin: 3px 0;
           opacity: 0.6;
           width: 100%;
         }
