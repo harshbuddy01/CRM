@@ -1088,13 +1088,14 @@ function QueryProposalsList({ queryId, queryCode, customerName, customerEmail, q
 
       {!proposals || proposals.length === 0 ? renderEmptyState() : (
         <div className="grid grid-cols-1 gap-4">
-          {(proposals.some((p: any) => p.status === 'confirmed' && queryStatus === 'confirmed') 
-            ? proposals.filter((p: any) => p.status === 'confirmed') 
+          {(proposals.some((p: any) => (p.status === 'confirmed' || p.status === 'accepted') && queryStatus === 'confirmed') 
+            ? proposals.filter((p: any) => (p.status === 'confirmed' || p.status === 'accepted')) 
             : proposals
           ).map((p: any) => {
             const isLeadLost = queryStatus === 'lost' || queryStatus === 'invalid';
-            const isProposalConfirmed = p.status === 'confirmed' && !isLeadLost;
-            const isProposalRejected = p.status === 'rejected' || (p.status === 'confirmed' && isLeadLost);
+            const isProposalConfirmed = (p.status === 'confirmed' || p.status === 'accepted') && !isLeadLost;
+            const isProposalRejected = p.status === 'rejected' || ((p.status === 'confirmed' || p.status === 'accepted') && isLeadLost);
+            const tourId = p.tourId || p.tours?.[0]?.id;
 
             return (
             <div key={p.id} className={cn(
@@ -1126,10 +1127,10 @@ function QueryProposalsList({ queryId, queryCode, customerName, customerEmail, q
                   )}
 
                   {/* CONFIRMED BANNER — Go to Operations (only when lead is actually confirmed) */}
-                  {isProposalConfirmed && p.tourId && (
+                  {isProposalConfirmed && tourId && (
                     <div className="absolute -bottom-px left-0 right-0 bg-gradient-to-r from-emerald-500 to-teal-500 text-white text-[10px] font-black uppercase tracking-widest px-3 py-1 flex items-center justify-between">
                       <span>✅ Confirmed Tour</span>
-                      <Link href={`/tours/${p.tourId}/dispatch`} className="bg-white/20 hover:bg-white/30 px-2 py-0.5 rounded text-white font-black transition-colors">
+                      <Link href={`/tours/${tourId}`} className="bg-white/20 hover:bg-white/30 px-2 py-0.5 rounded text-white font-black transition-colors">
                         Open Operations →
                       </Link>
                     </div>
@@ -1145,14 +1146,14 @@ function QueryProposalsList({ queryId, queryCode, customerName, customerEmail, q
                     <p className="font-black text-slate-900 text-lg leading-none">v{p.version}</p>
                     {p.status !== 'pending' && (
                       <span className={cn(
-                        "px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest",
+                        "px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border",
                         isLeadLost 
-                          ? "bg-rose-100 text-rose-700"
+                          ? "bg-rose-100 text-rose-700 border-rose-200"
                           : isProposalConfirmed 
-                          ? "bg-emerald-100 text-emerald-700" 
-                          : "bg-slate-100 text-slate-600"
+                          ? "bg-emerald-100 text-emerald-800 border-emerald-300 shadow-sm" 
+                          : "bg-slate-100 text-slate-600 border-slate-200"
                       )}>
-                        {isLeadLost ? "LOST" : p.status}
+                        {isLeadLost ? "LOST" : (isProposalConfirmed ? "CONFIRMED" : p.status)}
                       </span>
                     )}
                   </div>

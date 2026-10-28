@@ -122,6 +122,10 @@ const createProposalFromItinerary = async (queryId, userId, itineraryId) => {
     },
     include: {
       user: { select: { name: true } },
+      tours: {
+        where: { deletedAt: null },
+        select: { id: true, tourCode: true, status: true }
+      },
       itinerary: { select: { id: true, title: true, coverPhotoUrl: true } }
     }
   });
@@ -171,6 +175,10 @@ const createProposalWithNewItinerary = async (queryId, userId, title) => {
     },
     include: {
       user: { select: { name: true } },
+      tours: {
+        where: { deletedAt: null },
+        select: { id: true, tourCode: true, status: true }
+      },
       itinerary: { select: { id: true, title: true, coverPhotoUrl: true } }
     }
   });
@@ -184,6 +192,10 @@ const getProposalsByQuery = async (queryId) => {
     orderBy: { version: 'desc' },
     include: {
       user: { select: { name: true } },
+      tours: {
+        where: { deletedAt: null },
+        select: { id: true, tourCode: true, status: true }
+      },
       itinerary: {
         select: {
           id: true,
